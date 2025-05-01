@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstdint>
 
+#include "SBUI_Component.h"
+
 constexpr uint16_t UNDEF = 0xFFFF;
 
 enum class NodeType
@@ -16,7 +18,7 @@ enum class NodeType
 };
 
 
-struct Node
+struct SBUI_node
 {
     std::string name = "Unnamed Node";
     NodeType type = NodeType::COMPONENT;
@@ -25,10 +27,14 @@ struct Node
     uint16_t hPx  = UNDEF;
     float wFac    = -1.0f;
     float hFac    = -1.0f;
-    Node* parent  = nullptr;
-    std::vector<Node*> children;
+    SBUI_node* parent  = nullptr;
 
-    Node(NodeType type, Node* parent, const std::string& name, int id);
+    std::vector<SBUI_node*> children;
+
+    BaseComponent* component = nullptr;
+    
+    SBUI_node(NodeType type, SBUI_node* parent, const std::string& name, int id);
 };
 
-void SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx);
+void SetupRootNode(SBUI_node* root, uint16_t wPx, uint16_t hPx);
+void SetComponent(SBUI_node* node, BaseComponent* component);

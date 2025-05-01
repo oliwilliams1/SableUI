@@ -19,8 +19,8 @@ cd SableUI
 ### Windows
 1. Run ```setup.bat``` to generate project files for Microsoft Visual Studio via CMake.
 2. Navigate to the build directory and open ```SableUI.sln```.
-3. In Solution Explorer, set SableUI as the startup project if you are running the demo, skip step if building libraries.
-4. Build!
+3. In Solution Explorer, set ```SableUI``` as the startup project if you are running the demo, skip step if building libraries.
+4. Build and Run!
 
 ### Linux / macOS
 1. Create a build directory and navigate into it:
