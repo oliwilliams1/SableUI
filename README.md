@@ -41,3 +41,28 @@ make -j12
 ```
 ./SableUI
 ```
+
+## Basic use example
+```
+#include "SableUI.h"
+
+int main()
+{
+	// Can add two params at end of function defining window pos
+	SableUI::CreateWindow("SableUI", 800, 600);
+
+	/* Maximum FPS so draws do not submitted at a rate too fase for monitors,
+	   a way of keeping this UI framework lightweight */
+	SableUI::SetMaxFPS(60);
+
+	// Basic usage lifetime, loop waits for an event before drawing
+	while (SableUI::PollEvents())
+	{
+		// Draw all components when something changed
+		SableUI::Draw();
+	}
+
+	// Exit safely
+	SableUI::Destroy();
+}
+```

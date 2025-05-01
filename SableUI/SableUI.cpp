@@ -3,9 +3,14 @@
 #include <SDL2/SDL.h>
 #include <cstdio>
 
+#include "node.h"
+
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
+static Node* root = nullptr;
+
+static std::vector<Node*> nodes;
 
 void SableUI::CreateWindow(const std::string& title, int width, int height, int x, int y)
 {
@@ -31,6 +36,25 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 	}
 
 	surface = SDL_GetWindowSurface(window);
+
+
+	if (root != nullptr)
+	{
+		printf("Root node already created!\n");
+		return;
+	}
+
+	root = new Node(NodeType::ROOTNODE, nullptr, "Root Node", 0);
+	SetupRootNode(root, width, height);
+	nodes.push_back(root);
+}
+
+static void AddNodeToParent(NodeType type, const std::string& name, Node* parent)
+{
+	Node* node = new Node(type, parent, name, nodes.size() + 1);
+	nodes.push_back(node);
+
+	printf("%i", (int)node->wFac);
 }
 
 bool SableUI::PollEvents()
@@ -82,12 +106,24 @@ void SableUI::Destroy()
 {
 	if (window == nullptr || surface == nullptr)
 	{
-		printf("Window not created!\n");
+		printf("Destroying when window or surface not created!\n");
 		return;
+	}
+
+	for (Node* node : nodes)
+	{
+		delete node;
+	}
+	nodes.clear();
+
+	if (surface != nullptr)
+	{
+		SDL_FreeSurface(surface);
+		surface = nullptr;
 	}
 
 	SDL_DestroyWindow(window);
 	window = nullptr;
-	SDL_FreeSurface(surface);
-	surface = nullptr;
+
+	SDL_Quit();
 }
