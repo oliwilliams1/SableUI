@@ -5,7 +5,7 @@ project(SableUI VERSION 0.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_subdirectory("vendor/SDL2" EXCLUDE_FROM_ALL)
+add_subdirectory("vendor/SDL" EXCLUDE_FROM_ALL)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 
@@ -16,9 +16,5 @@ if(NOT SABLE_UI_SOURCES)
 endif()
 
 add_executable(SableUI ${SABLE_UI_SOURCES})
-
-if(TARGET SDL2::SDL2main)
-    target_link_libraries(SableUI PRIVATE SDL2::SDL2main)
-endif()
 
 target_link_libraries(SableUI PRIVATE "SDL2::SDL2-static")
