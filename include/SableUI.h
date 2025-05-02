@@ -14,10 +14,10 @@ namespace SableUI
 	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
 	void AttachComponentToNode(const std::string& nodeName, const BaseComponent& component);
 
-	SBUI_node* GetRoot();
-	SBUI_node* FindNodeByName(const std::string& name);
+	SbUI_node* GetRoot();
+	SbUI_node* FindNodeByName(const std::string& name);
 
 	void Destroy();
 
-	void CaclulateNodeDimensions(SBUI_node* node);
+	void CaclulateNodeDimensions(SbUI_node* node);
 }

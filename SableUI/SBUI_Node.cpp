@@ -1,6 +1,6 @@
 #include "SBUI_Node.h"
 
-SBUI_node::SBUI_node(NodeType type, SBUI_node* parent, const std::string& name, int id)
+SbUI_node::SbUI_node(NodeType type, SbUI_node* parent, const std::string& name, int id)
 	: type(type), parent(parent), name(name), id(id)
 {
 	if (type != NodeType::ROOTNODE)
@@ -14,7 +14,7 @@ SBUI_node::SBUI_node(NodeType type, SBUI_node* parent, const std::string& name, 
 	}
 }
 
-void SetupRootNode(SBUI_node* root, uint16_t wPx, uint16_t hPx)
+void SetupRootNode(SbUI_node* root, uint16_t wPx, uint16_t hPx)
 {
 	if (root->type != NodeType::ROOTNODE)
 	{

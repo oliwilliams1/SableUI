@@ -32,7 +32,7 @@ static bool UserModifyNodeGraphViaTerminal()
     std::string parentName;
     std::getline(std::cin, parentName);
 
-    SBUI_node* parentNode = SableUI::FindNodeByName(parentName);
+    SbUI_node* parentNode = SableUI::FindNodeByName(parentName);
 
     if (parentNode) {
         SableUI::AddNodeToParent(type, nodeName, parentNode->name);
@@ -50,19 +50,23 @@ int main()
 
     SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 1", "Root Node");
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 1", "H-Splitter 1");
-    SableUI::AttachComponentToNode("Component 1", BaseComponent(1.0f));
+    SableUI::AttachComponentToNode("Component 1", BaseComponent(SbUIcolour(255, 0, 0)));
 
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 2", "H-Splitter 1");
+    SableUI::AttachComponentToNode("Component 2", BaseComponent(SbUIcolour(0, 255, 0)));
 
     SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 1", "H-Splitter 1");
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 3", "V-Splitter 1");
+    SableUI::AttachComponentToNode("Component 3", BaseComponent(SbUIcolour(0, 255, 255)));
+
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 4", "V-Splitter 1");
+    SableUI::AttachComponentToNode("Component 4", BaseComponent(SbUIcolour(255, 255, 0)));
 
 	SableUI::PrintNodeTree();
 
 	while (SableUI::PollEvents())
 	{
-
+        
         // UserModifyNodeGraphViaTerminal();
 
 		SableUI::Draw();

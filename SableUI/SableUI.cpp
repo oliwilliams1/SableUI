@@ -4,14 +4,15 @@
 #include <cstdio>
 #include <iostream>
 
+#include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
 
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
-static SBUI_node* root = nullptr;
+static SbUI_node* root = nullptr;
 
-static std::vector<SBUI_node*> nodes;
+static std::vector<SbUI_node*> nodes;
 
 void SableUI::CreateWindow(const std::string& title, int width, int height, int x, int y)
 {
@@ -38,6 +39,14 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 
 	surface = SDL_GetWindowSurface(window);
 
+	if (!surface)
+	{
+		printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
+	}
+	
+	SetMaxFPS(60); // Default value
+
+	SbUI_Renderer::Init(surface);
 
 	if (root != nullptr)
 	{
@@ -45,14 +54,14 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 		return;
 	}
 
-	root = new SBUI_node(NodeType::ROOTNODE, nullptr, "Root Node", 0);
+	root = new SbUI_node(NodeType::ROOTNODE, nullptr, "Root Node", 0);
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
 }
 
 void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
 {
-	SBUI_node* parent = FindNodeByName(parentName);
+	SbUI_node* parent = FindNodeByName(parentName);
 
 	if (parent == nullptr)
 	{
@@ -72,7 +81,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 		return;
 	}
 
-	SBUI_node* node = new SBUI_node(type, parent, name, nodes.size() + 1);
+	SbUI_node* node = new SbUI_node(type, parent, name, (int)nodes.size() + 1);
 
 	if (node->parent->type == NodeType::ROOTNODE)
 	{
@@ -84,7 +93,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	{
 		float hFac = 1.0f / node->parent->children.size();
 
-		for (SBUI_node* child : node->parent->children)
+		for (SbUI_node* child : node->parent->children)
 		{
 			child->wFac = 1.0f;
 			child->hFac = hFac;
@@ -95,7 +104,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	{
 		float wFac = 1.0f / node->parent->children.size();
 
-		for (SBUI_node* child : node->parent->children)
+		for (SbUI_node* child : node->parent->children)
 		{
 			child->wFac = wFac;
 			child->hFac = 1.0f;
@@ -109,7 +118,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 
 void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseComponent& component)
 {
-	SBUI_node* node = FindNodeByName(nodeName);
+	SbUI_node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -128,8 +137,8 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseCompo
 		printf("Node: %s already has a component attached!\n", nodeName.c_str());
 		return;
 	}
-
 	node->component = std::make_unique<BaseComponent>(component);
+	node->component.get()->parent = node;
 }
 
 bool SableUI::PollEvents()
@@ -157,23 +166,88 @@ void SableUI::SetMaxFPS(int fps)
 
 void SableUI::Draw()
 {
-	Uint32 frameStart = SDL_GetTicks();
+	uint32_t frameStart = SDL_GetTicks();
 
-	if (SDL_LockSurface(surface) < 0) {
-		printf("Unable to lock surface! SDL_Error: %s\n", SDL_GetError());
-		return;
+	SbUI_Renderer& renderer = SbUI_Renderer::Get();
+
+	renderer.Clear({ 32, 32, 32 });
+
+	for (SbUI_node* node : nodes)
+	{
+		if (node->type == NodeType::COMPONENT && node->component != nullptr)
+		{
+			node->component.get()->Render();
+		}
 	}
 
-	Uint32 color = SDL_MapRGB(surface->format, 32, 32, 32);
-	SDL_FillRect(surface, nullptr, color);
-
-	SDL_UnlockSurface(surface);
+	renderer.Draw();
 
 	SDL_UpdateWindowSurface(window);
 
-	Uint32 frameTime = SDL_GetTicks() - frameStart;
-	if (frameTime < frameDelay) {
+	uint32_t frameTime = SDL_GetTicks() - frameStart;
+	if ((int)frameTime < frameDelay) {
 		SDL_Delay(frameDelay - frameTime);
+	}
+}
+
+static void PrintNode(SbUI_node* node, int depth = 0)
+{
+	if (node == nullptr) return;
+
+	std::string indent(depth * 2, ' ');
+
+	size_t nameLength = node->name.length();
+	int spacesNeeded = 24 - (int)nameLength;
+
+	if (spacesNeeded < 0) spacesNeeded = 0;
+
+	std::cout << indent << node->name;
+	std::cout << std::string(spacesNeeded, ' ');
+	printf("%fx%f, %ix%i\n", node->wFac, node->hFac, node->wPx, node->hPx);
+
+	for (SbUI_node* child : node->children)
+	{
+		PrintNode(child, depth + 1);
+	}
+}
+
+void SableUI::PrintNodeTree()
+{
+	PrintNode(root);
+}
+
+SbUI_node* SableUI::GetRoot()
+{
+	return root;
+}
+
+SbUI_node* SableUI::FindNodeByName(const std::string& name)
+{
+	for (SbUI_node* node : nodes)
+	{
+		if (node->name == name)
+		{
+			return node;
+		}
+	}
+
+	return nullptr;
+}
+
+void SableUI::CaclulateNodeDimensions(SbUI_node* node)
+{
+	if (node == nullptr) return;
+
+	if (node->parent) {
+		node->wPx = static_cast<uint16_t>(node->parent->wPx * node->wFac);
+		node->hPx = static_cast<uint16_t>(node->parent->hPx * node->hFac);
+
+		node->xPx = static_cast<uint16_t>(node->parent->wPx - node->wPx);
+		node->yPx = 0;
+	}
+
+	for (SbUI_node* child : node->children) {
+		SableUI::CaclulateNodeDimensions(child);
 	}
 }
 
@@ -185,11 +259,13 @@ void SableUI::Destroy()
 		return;
 	}
 
-	for (SBUI_node* node : nodes)
+	for (SbUI_node* node : nodes)
 	{
 		delete node;
 	}
 	nodes.clear();
+
+	SbUI_Renderer::Shutdown();
 
 	if (surface != nullptr)
 	{
@@ -201,62 +277,4 @@ void SableUI::Destroy()
 	window = nullptr;
 
 	SDL_Quit();
-}
-
-static void PrintNode(SBUI_node* node, int depth = 0)
-{
-	if (node == nullptr) return;
-
-	std::string indent(depth * 2, ' ');
-
-	int nameLength = node->name.length();
-	int spacesNeeded = 24 - nameLength;
-
-	if (spacesNeeded < 0) spacesNeeded = 0;
-
-	std::cout << indent << node->name;
-	std::cout << std::string(spacesNeeded, ' ');
-	printf("%fx%f, %ix%i\n", node->wFac, node->hFac, node->wPx, node->hPx);
-
-	for (SBUI_node* child : node->children)
-	{
-		PrintNode(child, depth + 1);
-	}
-}
-
-void SableUI::PrintNodeTree()
-{
-	PrintNode(root);
-}
-
-SBUI_node* SableUI::GetRoot()
-{
-	return root;
-}
-
-SBUI_node* SableUI::FindNodeByName(const std::string& name)
-{
-	for (SBUI_node* node : nodes)
-	{
-		if (node->name == name)
-		{
-			return node;
-		}
-	}
-
-	return nullptr;
-}
-
-void SableUI::CaclulateNodeDimensions(SBUI_node* node)
-{
-	if (node == nullptr) return;
-
-	if (node->parent) {
-		node->wPx = static_cast<uint16_t>(node->parent->wPx * node->wFac);
-		node->hPx = static_cast<uint16_t>(node->parent->hPx * node->hFac);
-	}
-
-	for (SBUI_node* child : node->children) {
-		SableUI::CaclulateNodeDimensions(child);
-	}
 }

@@ -20,7 +20,7 @@ enum class NodeType
     HSPLITTER = 0x03
 };
 
-struct SBUI_node
+struct SbUI_node
 {
     std::string name = "Unnamed Node";
     NodeType type = NodeType::COMPONENT;
@@ -33,12 +33,12 @@ struct SBUI_node
     float wFac   = -1.0f;
     float hFac   = -1.0f;
 
-    SBUI_node* parent  = nullptr;
-    std::vector<SBUI_node*> children;
+    SbUI_node* parent  = nullptr;
+    std::vector<SbUI_node*> children;
 
     std::unique_ptr<BaseComponent> component;
     
-    SBUI_node(NodeType type, SBUI_node* parent, const std::string& name, int id);
+    SbUI_node(NodeType type, SbUI_node* parent, const std::string& name, int id);
 };
 
-void SetupRootNode(SBUI_node* root, uint16_t wPx, uint16_t hPx);
+void SetupRootNode(SbUI_node* root, uint16_t wPx, uint16_t hPx);
