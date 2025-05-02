@@ -1,4 +1,4 @@
-#include "node.h"
+#include "SBUI_Node.h"
 
 SBUI_node::SBUI_node(NodeType type, SBUI_node* parent, const std::string& name, int id)
 	: type(type), parent(parent), name(name), id(id)
@@ -22,16 +22,8 @@ void SetupRootNode(SBUI_node* root, uint16_t wPx, uint16_t hPx)
 		return;
 	}
 
-	root->wPx = wPx;
-	root->hPx = hPx;
-}
-
-void SetComponent(SBUI_node* node, BaseComponent* component)
-{
-	if (node->component != nullptr)
-	{
-		printf("Setting a component on a node that already has one\n");
-		return;
-	}
-	node->component = component;
+	root->wPx  = wPx;
+	root->hPx  = hPx;
+	root->wFac = 1.0f;
+	root->hFac = 1.0f;
 }

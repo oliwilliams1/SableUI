@@ -35,7 +35,7 @@ static bool UserModifyNodeGraphViaTerminal()
     SBUI_node* parentNode = SableUI::FindNodeByName(parentName);
 
     if (parentNode) {
-        SableUI::AddNodeToParent(type, nodeName, parentNode);
+        SableUI::AddNodeToParent(type, nodeName, parentNode->name);
         std::cout << "Node added!" << std::endl;
     }
     else {
@@ -48,32 +48,22 @@ int main()
 	SableUI::CreateWindow("SableUI", 800, 600);
 	SableUI::SetMaxFPS(60);
 
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 1", SableUI::FindNodeByName("Root Node"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 1", SableUI::FindNodeByName("H-Splitter 1"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 2", SableUI::FindNodeByName("H-Splitter 1"));
+    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 1", "Root Node");
+    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 1", "H-Splitter 1");
+    SableUI::AttachComponentToNode("Component 1", BaseComponent(1.0f));
 
-    SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 1", SableUI::FindNodeByName("H-Splitter 1"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 3", SableUI::FindNodeByName("V-Splitter 1"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 4", SableUI::FindNodeByName("V-Splitter 1"));
+    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 2", "H-Splitter 1");
 
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 2", SableUI::FindNodeByName("Root Node"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 5", SableUI::FindNodeByName("H-Splitter 2"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 6", SableUI::FindNodeByName("H-Splitter 2"));
+    SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 1", "H-Splitter 1");
+    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 3", "V-Splitter 1");
+    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 4", "V-Splitter 1");
 
-    SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 2", SableUI::FindNodeByName("H-Splitter 2"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 7", SableUI::FindNodeByName("V-Splitter 2"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 8", SableUI::FindNodeByName("V-Splitter 2"));
-
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 3", SableUI::FindNodeByName("V-Splitter 2"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 9", SableUI::FindNodeByName("H-Splitter 3"));
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 10", SableUI::FindNodeByName("H-Splitter 3"));
-
+	SableUI::PrintNodeTree();
 
 	while (SableUI::PollEvents())
 	{
-		SableUI::PrintNodeTree();
 
-        UserModifyNodeGraphViaTerminal();
+        // UserModifyNodeGraphViaTerminal();
 
 		SableUI::Draw();
 	}

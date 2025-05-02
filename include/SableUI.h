@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "node.h"
+#include "SBUI_Node.h"
 
 namespace SableUI
 {
@@ -11,10 +11,13 @@ namespace SableUI
 	void SetMaxFPS(int fps);
 
 	void PrintNodeTree();
-	void AddNodeToParent(NodeType type, const std::string& name, SBUI_node* parent);
+	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
+	void AttachComponentToNode(const std::string& nodeName, const BaseComponent& component);
 
 	SBUI_node* GetRoot();
 	SBUI_node* FindNodeByName(const std::string& name);
 
 	void Destroy();
+
+	void CaclulateNodeDimensions(SBUI_node* node);
 }
