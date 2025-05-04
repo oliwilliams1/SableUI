@@ -32,7 +32,7 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 	int windowX = (x == -1) ? SDL_WINDOWPOS_CENTERED : x;
 	int windowY = (y == -1) ? SDL_WINDOWPOS_CENTERED : y;
 
-	window = SDL_CreateWindow(title.c_str(), windowX, windowY, width, height, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(title.c_str(), windowX, windowY, width, height, SDL_WINDOW_RESIZABLE);
 	if (!window)
 	{
 		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -47,7 +47,7 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 	
 	SetMaxFPS(60); // Default value
 
-	SbUI_Renderer::Init(surface);
+	Renderer::Init(surface);
 
 	if (root != nullptr)
 	{
@@ -151,6 +151,26 @@ bool SableUI::PollEvents()
 		case SDL_QUIT:
 			return false;
 			break;
+
+		case SDL_WINDOWEVENT:
+			if (e.window.event == SDL_WINDOWEVENT_RESIZED)
+			{
+				int w, h;
+				SDL_GetWindowSize(window, &w, &h);
+				SetupRootNode(root, w, h);
+				CalculateNodeDimensions();
+
+				surface = SDL_GetWindowSurface(window);
+				SableUI::Renderer::SetSurface(surface);
+				if (!surface)
+				{
+					printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
+				}
+				break;
+			}
+		case SDL_MOUSEMOTION:
+			break;
+
 		default:
 			break;
 		}
@@ -168,7 +188,7 @@ void SableUI::Draw()
 {
 	uint32_t frameStart = SDL_GetTicks();
 
-	SbUI_Renderer& renderer = SbUI_Renderer::Get();
+	SableUI::Renderer& renderer = Renderer::Get();
 
 	renderer.Clear({ 32, 32, 32 });
 
@@ -293,7 +313,7 @@ void SableUI::Destroy()
 	}
 	nodes.clear();
 
-	SbUI_Renderer::Shutdown();
+	Renderer::Shutdown();
 
 	if (surface != nullptr)
 	{

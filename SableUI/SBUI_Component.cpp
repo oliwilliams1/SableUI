@@ -4,5 +4,5 @@
 
 void BaseComponent::Render()
 {
-	SbUI_Renderer::Get().DrawRect(parent->rect, colour);
+	SableUI::Renderer::Get().DrawRect(parent->rect, colour);
 }

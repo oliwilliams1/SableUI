@@ -25,25 +25,29 @@ namespace Drawable
 	};
 }
 
-class SbUI_Renderer
+namespace SableUI
 {
-public:
-	SbUI_Renderer(const SbUI_Renderer&) = delete;
-	SbUI_Renderer& operator=(const SbUI_Renderer&) = delete;
+	class Renderer
+	{
+	public:
+		Renderer(const Renderer&) = delete;
+		Renderer& operator=(const Renderer&) = delete;
 
-	static void Init(SDL_Surface* surface);
-	static void Shutdown();
+		static void Init(SDL_Surface* surface);
+		static void Shutdown();
+		static void SetSurface(SDL_Surface* surface);
 
-	static SbUI_Renderer& Get();
+		static Renderer& Get();
 
-	void DrawRect(const SableUI::rect& rect, const SableUI::colour& colour);
-	void Clear(const SableUI::colour& colour);
+		void DrawRect(const SableUI::rect& rect, const SableUI::colour& colour);
+		void Clear(const SableUI::colour& colour);
 
-	void Draw();
+		void Draw();
 
-private:
-	SbUI_Renderer(SDL_Surface* surface) : surface(surface) {}
-	std::vector<Drawable::SbUI_DrawableRect> queue;
+	private:
+		Renderer(SDL_Surface* surface) : surface(surface) {}
+		std::vector<Drawable::SbUI_DrawableRect> queue;
 
-	SDL_Surface* surface;
-};
+		SDL_Surface* surface;
+	};
+}

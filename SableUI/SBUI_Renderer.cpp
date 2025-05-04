@@ -2,13 +2,13 @@
 #include <cmath>
 #include "SBUI_Renderer.h"
 
-static SbUI_Renderer* renderer = nullptr;
+static SableUI::Renderer* renderer = nullptr;
 
-void SbUI_Renderer::Init(SDL_Surface* surface)
+void SableUI::Renderer::Init(SDL_Surface* surface)
 {
 	if (renderer == nullptr)
 	{
-		renderer = new SbUI_Renderer(surface);
+		renderer = new Renderer(surface);
 	}
 	else
 	{
@@ -16,7 +16,7 @@ void SbUI_Renderer::Init(SDL_Surface* surface)
 	}
 }
 
-void SbUI_Renderer::Shutdown()
+void SableUI::Renderer::Shutdown()
 {
 	if (renderer != nullptr)
 	{
@@ -29,12 +29,17 @@ void SbUI_Renderer::Shutdown()
 	}
 }
 
-SbUI_Renderer& SbUI_Renderer::Get()
+void SableUI::Renderer::SetSurface(SDL_Surface* surface)
+{
+    Get().surface = surface;
+}
+
+SableUI::Renderer& SableUI::Renderer::Get()
 {
 	return *renderer;
 }
 
-void SbUI_Renderer::DrawRect(const SableUI::rect& rect, const SableUI::colour& colour)
+void SableUI::Renderer::DrawRect(const SableUI::rect& rect, const SableUI::colour& colour)
 {
 	SableUI::rect r = rect;
 
@@ -47,12 +52,12 @@ void SbUI_Renderer::DrawRect(const SableUI::rect& rect, const SableUI::colour& c
 	queue.push_back({ r, colour });
 }
 
-void SbUI_Renderer::Clear(const SableUI::colour& colour)
+void SableUI::Renderer::Clear(const SableUI::colour& colour)
 {
 	DrawRect({ 0, 0, (float)surface->w, (float)surface->h }, colour);
 }
 
-void SbUI_Renderer::Draw()
+void SableUI::Renderer::Draw()
 {
     if (renderer == nullptr)
     {
