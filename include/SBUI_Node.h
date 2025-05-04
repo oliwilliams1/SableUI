@@ -8,6 +8,7 @@
 
 #include "SBUI_Component.h"
 #include "SBUI_Utils.h"
+#include "SBUI_Renderer.h"
 
 constexpr uint16_t UNDEF = 0xFFFF;
 
@@ -23,22 +24,15 @@ enum class NodeType
 
 struct SbUI_node
 {
-    std::string name = "Unnamed Node";
+    std::string name = "";
     NodeType type = NodeType::COMPONENT;
 
     uint16_t index = UNDEF;
-    uint16_t wPx   = UNDEF;
-    uint16_t hPx   = UNDEF;
-    uint16_t xPx   = UNDEF;
-    uint16_t yPx   = UNDEF;
-    float wFac     = -1.0f;
-    float hFac     = -1.0f;
+    SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
+    SableUI::vec2 scaleFac = { -1.0f, -1.0f };
 
     SbUI_node* parent  = nullptr;
     std::vector<SbUI_node*> children;
-
-    SbUIvec2 cursor = { 0, 0 };
-
     std::unique_ptr<BaseComponent> component;
     
     SbUI_node(NodeType type, SbUI_node* parent, const std::string& name);

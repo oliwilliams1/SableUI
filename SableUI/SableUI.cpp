@@ -86,29 +86,29 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 
 	if (node->parent->type == NodeType::ROOTNODE)
 	{
-		node->wFac = 1.0f;
-		node->hFac = 1.0f;
+		node->scaleFac.x = 1.0f;
+		node->scaleFac.y = 1.0f;
 	}
 
 	if (node->parent->type == NodeType::VSPLITTER)
 	{
-		float hFac = 1.0f / node->parent->children.size();
+		float scaleFac_y = 1.0f / node->parent->children.size();
 
 		for (SbUI_node* child : node->parent->children)
 		{
-			child->wFac = 1.0f;
-			child->hFac = hFac;
+			child->scaleFac.x = 1.0f;
+			child->scaleFac.y = scaleFac_y;
 		}
 	}
 
 	if (node->parent->type == NodeType::HSPLITTER)
 	{
-		float wFac = 1.0f / node->parent->children.size();
+		float scaleFac_x = 1.0f / node->parent->children.size();
 
 		for (SbUI_node* child : node->parent->children)
 		{
-			child->wFac = wFac;
-			child->hFac = 1.0f;
+			child->scaleFac.x = scaleFac_x;
+			child->scaleFac.y = 1.0f;
 		}
 	}
 
@@ -127,7 +127,8 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseCompo
 
 	if (node->type != NodeType::COMPONENT)
 	{
-		printf("Node: %s is not a component node! Cannot attach component to a non-component node\n", nodeName.c_str());
+		printf("Node: %s is not a component node! Cannot attach component to a non-component node\n",
+			nodeName.c_str());
 		return;
 	}
 
@@ -200,9 +201,10 @@ static void PrintNode(SbUI_node* node, int depth = 0)
 
 	if (spacesNeeded < 0) spacesNeeded = 0;
 
-	std::cout << indent << node->name;
-	std::cout << std::string(spacesNeeded, ' ');
-	printf("%fx%f, size %ix%i, pos: %ix%i, index: %i\n", node->wFac, node->hFac, node->wPx, node->hPx, node->xPx, node->yPx, node->index);
+	printf("name: %s scaleFac: (%.2f x %.2f), sizePx: (%.2f x %.2f), pos: (%.2f x %.2f), index: %i\n",
+		node->name.c_str(), node->scaleFac.x, node->scaleFac.y, 
+		node->rect.w, node->rect.h, node->rect.x, node->rect.y,
+		node->index);
 
 	for (SbUI_node* child : node->children)
 	{
@@ -244,35 +246,32 @@ void SableUI::CalculateNodeDimensions(SbUI_node* node)
 		return;
 	}
 
-	node->wPx = static_cast<uint16_t>(node->parent->wPx * node->wFac);
-	node->hPx = static_cast<uint16_t>(node->parent->hPx * node->hFac);
+	node->rect.w = node->parent->rect.w * node->scaleFac.x;
+	node->rect.h = node->parent->rect.h * node->scaleFac.y;
 
-	SbUIvec2 cursor = { 0, 0 };
+	SableUI::vec2 cursor = { 0, 0 };
 
-	cursor.x += static_cast<float>(node->parent->xPx);
-	cursor.y += static_cast<float>(node->parent->yPx);
+	cursor.x += node->parent->rect.x;
+	cursor.y += node->parent->rect.y;
 
-	// Reset cursor for the current node calculation
 	for (SbUI_node* sibling : node->parent->children)
 	{
 		if (sibling->index < node->index)
 		{
 			if (node->parent->type == NodeType::HSPLITTER)
 			{
-				cursor.x += static_cast<float>(sibling->wPx * node->parent->wFac);
+				cursor.x += sibling->rect.w * node->parent->scaleFac.x;
 			}
 			else if (node->parent->type == NodeType::VSPLITTER)
 			{
-				cursor.y += static_cast<float>(sibling->hPx * node->parent->hFac);
+				cursor.y += sibling->rect.h * node->parent->scaleFac.y;
 			}
 		}
-		else break; // Stop when we reach the current node
+		else break;
 	}
 
-	node->xPx = static_cast<uint16_t>(cursor.x);
-	node->yPx = static_cast<uint16_t>(cursor.y);
-
-	std::cout << "Node: " << node->name << " x: " << node->xPx << ", y: " << node->yPx << ", w: " << node->wPx << ", h: " << node->hPx << std::endl;
+	node->rect.x = cursor.x;
+	node->rect.y = cursor.y;
 
 	for (SbUI_node* child : node->children)
 	{

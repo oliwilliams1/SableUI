@@ -1,4 +1,5 @@
 #pragma once
+#define SDL_MAIN_HANDLED
 #include <string>
 #include "SBUI_Node.h"
 

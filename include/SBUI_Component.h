@@ -8,12 +8,12 @@ class BaseComponent
 {
 public:
 	BaseComponent() {}
-	BaseComponent(SbUIcolour colour) { this->colour = colour; }
+	BaseComponent(SableUI::colour colour) { this->colour = colour; }
 
 	SbUI_node* parent = nullptr;
 
 	virtual void Render();
 
 private:
-	SbUIcolour colour = SbUIcolour(255, 255, 255);
+	SableUI::colour colour = SableUI::colour(255, 255, 255);
 };

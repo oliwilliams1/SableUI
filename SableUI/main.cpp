@@ -48,24 +48,19 @@ int main()
 	SableUI::CreateWindow("SableUI", 800, 600);
 	SableUI::SetMaxFPS(60);
 
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 0", "Root Node");
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 2", "H-Splitter 0");
-    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 3", "H-Splitter 0");
+    SableUI::AddNodeToParent(NodeType::HSPLITTER, "H-Splitter 1", "Root Node");
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 1", "H-Splitter 1");
-    SableUI::AttachComponentToNode("Component 1", BaseComponent(SbUIcolour(255, 0, 0)));
+    SableUI::AttachComponentToNode("Component 1", BaseComponent(SableUI::colour(255, 0, 0)));
 
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 2", "H-Splitter 2");
-    SableUI::AttachComponentToNode("Component 2", BaseComponent(SbUIcolour(128, 255, 128)));
+    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 2", "H-Splitter 1");
+    SableUI::AttachComponentToNode("Component 2", BaseComponent(SableUI::colour(0, 255, 0)));
 
-    SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 3", "H-Splitter 1");
-    SableUI::AttachComponentToNode("Component 3", BaseComponent(SbUIcolour(128, 255, 128)));
-
-    SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 1", "H-Splitter 0");
+    SableUI::AddNodeToParent(NodeType::VSPLITTER, "V-Splitter 1", "H-Splitter 1");
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 3", "V-Splitter 1");
-    SableUI::AttachComponentToNode("Component 3", BaseComponent(SbUIcolour(0, 255, 255)));
+    SableUI::AttachComponentToNode("Component 3", BaseComponent(SableUI::colour(0, 255, 255)));
 
     SableUI::AddNodeToParent(NodeType::COMPONENT, "Component 4", "V-Splitter 1");
-    SableUI::AttachComponentToNode("Component 4", BaseComponent(SbUIcolour(255, 255, 0)));
+    SableUI::AttachComponentToNode("Component 4", BaseComponent(SableUI::colour(255, 255, 0)));
 
     SableUI::CalculateNodeDimensions();
 

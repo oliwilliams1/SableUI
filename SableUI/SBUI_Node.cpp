@@ -27,10 +27,6 @@ void SetupRootNode(SbUI_node* root, uint16_t wPx, uint16_t hPx)
 		return;
 	}
 
-	root->xPx  = 0;
-	root->yPx  = 0;
-	root->wPx  = wPx;
-	root->hPx  = hPx;
-	root->wFac = 1.0f;
-	root->hFac = 1.0f;
+	root->rect = { 0, 0, static_cast<float>(wPx), static_cast<float>(hPx )};
+	root->scaleFac = { 1.0f, 1.0f };
 }

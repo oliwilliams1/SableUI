@@ -5,23 +5,25 @@
 
 #include "SBUI_Utils.h"
 
-struct SbUI_Rect
+namespace SableUI
 {
-	uint16_t x = 0;
-	uint16_t y = 0;
-	uint16_t w = 0;
-	uint16_t h = 0;
-};
+	struct rect
+	{
+		float x = 0;
+		float y = 0;
+		float w = 0;
+		float h = 0;
+	};
+}
 
 namespace Drawable
 {
 	struct SbUI_DrawableRect
 	{
-		SbUI_Rect rect;
-		SbUIcolour colour;
+		SableUI::rect rect;
+		SableUI::colour colour;
 	};
 }
-
 
 class SbUI_Renderer
 {
@@ -34,8 +36,8 @@ public:
 
 	static SbUI_Renderer& Get();
 
-	void DrawRect(const SbUI_Rect& rect, const SbUIcolour& colour);
-	void Clear(const SbUIcolour& colour);
+	void DrawRect(const SableUI::rect& rect, const SableUI::colour& colour);
+	void Clear(const SableUI::colour& colour);
 
 	void Draw();
 
