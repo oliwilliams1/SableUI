@@ -19,5 +19,5 @@ namespace SableUI
 
 	void Destroy();
 
-	void CaclulateNodeDimensions(SbUI_node* node);
+	void CalculateNodeDimensions(SbUI_node* node = nullptr);
 }

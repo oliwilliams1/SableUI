@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <cstdio>
 #include <iostream>
+#include <functional>
 
 #include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
@@ -54,7 +55,7 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 		return;
 	}
 
-	root = new SbUI_node(NodeType::ROOTNODE, nullptr, "Root Node", 0);
+	root = new SbUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
 }
@@ -81,7 +82,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 		return;
 	}
 
-	SbUI_node* node = new SbUI_node(type, parent, name, (int)nodes.size() + 1);
+	SbUI_node* node = new SbUI_node(type, parent, name);
 
 	if (node->parent->type == NodeType::ROOTNODE)
 	{
@@ -112,8 +113,6 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	}
 
 	nodes.push_back(node);
-
-	CaclulateNodeDimensions(root);
 }
 
 void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseComponent& component)
@@ -203,7 +202,7 @@ static void PrintNode(SbUI_node* node, int depth = 0)
 
 	std::cout << indent << node->name;
 	std::cout << std::string(spacesNeeded, ' ');
-	printf("%fx%f, %ix%i\n", node->wFac, node->hFac, node->wPx, node->hPx);
+	printf("%fx%f, size %ix%i, pos: %ix%i, index: %i\n", node->wFac, node->hFac, node->wPx, node->hPx, node->xPx, node->yPx, node->index);
 
 	for (SbUI_node* child : node->children)
 	{
@@ -234,20 +233,50 @@ SbUI_node* SableUI::FindNodeByName(const std::string& name)
 	return nullptr;
 }
 
-void SableUI::CaclulateNodeDimensions(SbUI_node* node)
+void SableUI::CalculateNodeDimensions(SbUI_node* node)
 {
-	if (node == nullptr) return;
-
-	if (node->parent) {
-		node->wPx = static_cast<uint16_t>(node->parent->wPx * node->wFac);
-		node->hPx = static_cast<uint16_t>(node->parent->hPx * node->hFac);
-
-		node->xPx = static_cast<uint16_t>(node->parent->wPx - node->wPx);
-		node->yPx = 0;
+	if (node == nullptr)
+	{
+		for (SbUI_node* child : root->children)
+		{
+			CalculateNodeDimensions(child);
+		}
+		return;
 	}
 
-	for (SbUI_node* child : node->children) {
-		SableUI::CaclulateNodeDimensions(child);
+	node->wPx = static_cast<uint16_t>(node->parent->wPx * node->wFac);
+	node->hPx = static_cast<uint16_t>(node->parent->hPx * node->hFac);
+
+	SbUIvec2 cursor = { 0, 0 };
+
+	cursor.x += static_cast<float>(node->parent->xPx);
+	cursor.y += static_cast<float>(node->parent->yPx);
+
+	// Reset cursor for the current node calculation
+	for (SbUI_node* sibling : node->parent->children)
+	{
+		if (sibling->index < node->index)
+		{
+			if (node->parent->type == NodeType::HSPLITTER)
+			{
+				cursor.x += static_cast<float>(sibling->wPx * node->parent->wFac);
+			}
+			else if (node->parent->type == NodeType::VSPLITTER)
+			{
+				cursor.y += static_cast<float>(sibling->hPx * node->parent->hFac);
+			}
+		}
+		else break; // Stop when we reach the current node
+	}
+
+	node->xPx = static_cast<uint16_t>(cursor.x);
+	node->yPx = static_cast<uint16_t>(cursor.y);
+
+	std::cout << "Node: " << node->name << " x: " << node->xPx << ", y: " << node->yPx << ", w: " << node->wPx << ", h: " << node->hPx << std::endl;
+
+	for (SbUI_node* child : node->children)
+	{
+		CalculateNodeDimensions(child);
 	}
 }
 

@@ -37,16 +37,13 @@ void SbUI_Renderer::DrawRect(const SbUI_Rect& rect, const SbUIcolour& colour)
 {
 	SbUI_Rect r = rect;
 
-	/*
 	r.x = std::clamp(r.x, (uint16_t)0, (uint16_t)(surface->w - 1));
 	r.y = std::clamp(r.y, (uint16_t)0, (uint16_t)(surface->h - 1));
 
 	r.w = std::clamp(r.w, (uint16_t)0, (uint16_t)(surface->w - r.x));
 	r.h = std::clamp(r.h, (uint16_t)0, (uint16_t)(surface->h - r.y));
-	*/
 
 	queue.push_back({ r, colour });
-	printf("Draw rect called with rect (%d, %d, %d, %d)\n", r.x, r.y, r.w, r.h);
 }
 
 void SbUI_Renderer::Clear(const SbUIcolour& colour)
