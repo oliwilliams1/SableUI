@@ -76,6 +76,7 @@ void SableUI::Renderer::Draw()
 
     for (const Drawable::SbUI_DrawableRect& rect : queue)
     {
+
         int x = std::min(static_cast<int>(std::ceil(rect.rect.x)), surfaceWidth - 1);
         int y = std::min(static_cast<int>(std::ceil(rect.rect.y)), surfaceHeight - 1);
         int width = std::min(static_cast<int>(std::ceil(rect.rect.w)), surfaceWidth - x);

@@ -55,6 +55,8 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 		return;
 	}
 
+	Renderer::Get().Clear({ 32, 32, 32 });
+
 	root = new SbUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
@@ -157,22 +159,19 @@ bool SableUI::PollEvents()
 			{
 				int w, h;
 				SDL_GetWindowSize(window, &w, &h);
-				SetupRootNode(root, w, h);
-				CalculateNodeDimensions();
 
 				surface = SDL_GetWindowSurface(window);
-				SableUI::Renderer::SetSurface(surface);
+				Renderer::SetSurface(surface);
+				Renderer::Get().Clear({ 32, 32, 32 });
+
+				SetupRootNode(root, w, h);
+				CalculateNodeDimensions();
 				if (!surface)
 				{
 					printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
 				}
 				break;
 			}
-		case SDL_MOUSEMOTION:
-			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -188,15 +187,27 @@ void SableUI::Draw()
 {
 	uint32_t frameStart = SDL_GetTicks();
 
-	SableUI::Renderer& renderer = Renderer::Get();
+	Renderer& renderer = Renderer::Get();
 
-	renderer.Clear({ 32, 32, 32 });
+	ivec2 cursorPos = { 0, 0 };
+	SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
 
 	for (SbUI_node* node : nodes)
 	{
 		if (node->type == NodeType::COMPONENT && node->component != nullptr)
 		{
-			node->component.get()->Render();
+			if (RectBoundingBox(node->rect, cursorPos))
+			{
+				node->component.get()->Render();
+
+				EdgeType edgeType = NONE;
+				float d = DistToEdge(node->rect, cursorPos, edgeType);
+
+				if (d < 5.0f)
+				{
+					std::cout << "hovering over edge: " << node->name << std::endl;
+				}
+			}
 		}
 	}
 
@@ -269,7 +280,7 @@ void SableUI::CalculateNodeDimensions(SbUI_node* node)
 	node->rect.w = node->parent->rect.w * node->scaleFac.x;
 	node->rect.h = node->parent->rect.h * node->scaleFac.y;
 
-	SableUI::vec2 cursor = { 0, 0 };
+	vec2 cursor = { 0, 0 };
 
 	cursor.x += node->parent->rect.x;
 	cursor.y += node->parent->rect.y;
@@ -292,6 +303,11 @@ void SableUI::CalculateNodeDimensions(SbUI_node* node)
 
 	node->rect.x = cursor.x;
 	node->rect.y = cursor.y;
+
+	if (node->component)
+	{
+		node->component.get()->Render();
+	}
 
 	for (SbUI_node* child : node->children)
 	{

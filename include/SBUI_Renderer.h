@@ -5,17 +5,6 @@
 
 #include "SBUI_Utils.h"
 
-namespace SableUI
-{
-	struct rect
-	{
-		float x = 0;
-		float y = 0;
-		float w = 0;
-		float h = 0;
-	};
-}
-
 namespace Drawable
 {
 	struct SbUI_DrawableRect
