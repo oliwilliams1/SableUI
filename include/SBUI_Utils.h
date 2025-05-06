@@ -122,5 +122,4 @@ namespace SableUI
     };
 
     bool RectBoundingBox(rect r, ivec2 p);
-    float DistToEdge(rect r, ivec2 p, EdgeType& edgeType);
 }

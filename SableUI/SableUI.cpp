@@ -194,7 +194,7 @@ void SableUI::SetMaxFPS(int fps)
 	frameDelay = 1000 / fps;
 }
 
-static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr, SableUI::EdgeType edgeType = SableUI::EdgeType::NONE)
+static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 {
 	static SableUI_node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
@@ -204,6 +204,10 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr, SableUI::Ed
 	static SableUI::vec2 oldScaleFac = { 0, 0 };
 	static float nParentsChildren = 1.0f; // prev div 0
 
+	static SableUI_node* olderSiblingNode = nullptr;
+	static SableUI::rect olderSiblingOldRect = { 0, 0, 0, 0 };
+	static SableUI::vec2 olderSiblingOldFac = { 0, 0 };
+
 	// First resize call fills data
 	if (node != nullptr)
 	{
@@ -211,8 +215,35 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr, SableUI::Ed
 		selectedNode = node;
 		oldNodeRect = node->rect;
 		oldScaleFac = node->scaleFac;
-		currentEdgeType = edgeType;
 		nParentsChildren = node->parent->children.size();
+
+		if (node->parent == nullptr)
+		{
+			olderSiblingNode = nullptr;
+			olderSiblingOldRect = { 0, 0, 0, 0 };
+			olderSiblingOldFac = { 0, 0 };
+			return;
+		}
+
+		int olderSiblingIndex = node->index + 1;
+		if (olderSiblingIndex <= node->parent->children.size())
+		{
+			olderSiblingNode = node->parent->children[olderSiblingIndex];
+			olderSiblingOldRect = olderSiblingNode->rect;
+			olderSiblingOldFac = olderSiblingNode->scaleFac;
+		}
+
+
+		switch (node->parent->type)
+		{
+		case NodeType::HSPLITTER:
+			currentEdgeType = SableUI::EdgeType::EW_EDGE;
+			break;
+
+		case NodeType::VSPLITTER:
+			currentEdgeType = SableUI::EdgeType::NS_EDGE;
+			break;
+		}
 
 		return;
 	}
@@ -221,14 +252,42 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr, SableUI::Ed
 
 	if (currentEdgeType == SableUI::EW_EDGE)
 	{
-		selectedNode->scaleFac.x = oldScaleFac.x + (deltaPos.x / (float)oldNodeRect.w) / nParentsChildren;
+		float f = (deltaPos.x / oldNodeRect.w) / (1.0f / oldScaleFac.x);
+		selectedNode->scaleFac.x = oldScaleFac.x + f;
+		olderSiblingNode->scaleFac.x = olderSiblingOldFac.x - f;
 	}
 	else if (currentEdgeType == SableUI::NS_EDGE)
 	{
-		selectedNode->scaleFac.y = oldScaleFac.y + (deltaPos.y / (float)oldNodeRect.h) / nParentsChildren;
+		float f = (deltaPos.y / oldNodeRect.h) / (1.0f / oldScaleFac.y);
+		selectedNode->scaleFac.y = oldScaleFac.y + f;
+		olderSiblingNode->scaleFac.y = olderSiblingOldFac.y - f;
 	}
 
 	SableUI::CalculateNodeDimensions();
+}
+
+static float DistToEdge(SableUI_node* node, SableUI::ivec2 p)
+{
+	SableUI::rect r = node->rect;
+	NodeType parentType = NodeType::ROOTNODE;
+
+	if (node->parent != nullptr)
+	{
+		parentType = node->parent->type;
+	}
+
+	if (parentType == NodeType::HSPLITTER) {
+		float distRight = (r.x + r.w) - p.x;
+		return (distRight < 0) ? 0 : distRight;
+	}
+
+	if (parentType == NodeType::VSPLITTER)
+	{
+		float distBottom = (r.y + r.h) - p.y;
+		return (distBottom < 0) ? 0 : distBottom;
+	}
+
+	return 0;
 }
 
 void SableUI::Draw()
@@ -245,38 +304,26 @@ void SableUI::Draw()
 
 	for (SableUI_node* node : nodes)
 	{
-		if (node->type != NodeType::COMPONENT || node->component == nullptr)
-		{
-			continue;
-		}
+		if (node->type != NodeType::COMPONENT || node->component == nullptr) continue;
 
-		if (!RectBoundingBox(node->rect, cursorPos))
-{
-			continue;
-		}
+		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
 		node->component.get()->Render();
 
-		EdgeType edgeType = NONE;
-		float d1 = DistToEdge(node->rect, cursorPos, edgeType);
+		float d1 = DistToEdge(node, cursorPos);
+
 		SDL_Cursor* cursorToSet = cursorPointer;
 
-		EdgeType e = NONE;
-		if (d1 < 5.0f && DistToEdge(root->rect, cursorPos, e) > 5.0f)
+		if (d1 < 5.0f)
 		{
-			switch (edgeType)
+			switch (node->parent->type)
 			{
-			case NS_EDGE:
-				if (node->parent->type == NodeType::VSPLITTER)
-				{
-					cursorToSet = cursorNS;
-				}
+			case NodeType::VSPLITTER:
+				cursorToSet = cursorNS;
 				break;
-			case EW_EDGE:
-				if (node->parent->type == NodeType::HSPLITTER)
-				{
-					cursorToSet = cursorEW;
-				}
+
+			case NodeType::HSPLITTER:
+				cursorToSet = cursorEW;
 				break;
 			}
 		}
@@ -285,27 +332,10 @@ void SableUI::Draw()
 		{
 			resCalled = true;
 
-			int indexYoungerSibling = node->index - 1;
-			if (indexYoungerSibling < 0)
-			{
-				Resize(cursorPos, node, edgeType);
-				resizing = true;
-				continue;
-			}
+			Resize(cursorPos, node);
 
-			SableUI_node* youngerSibling = node->parent->children[indexYoungerSibling];
-			float d2 = DistToEdge(youngerSibling->rect, cursorPos, edgeType);
-
-			if (d2 < 10.0f)
-			{
-				Resize(cursorPos, youngerSibling, edgeType);
-				resizing = true;
-				continue;
-			}
-			else
-			{
-				Resize(cursorPos, node, edgeType);
-			}
+			resizing = true;
+			continue;
 		}
 
 		if (currentCursor != cursorToSet && !resizing)
