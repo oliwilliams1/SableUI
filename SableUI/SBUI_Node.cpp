@@ -1,6 +1,6 @@
 #include "SBUI_Node.h"
 
-SbUI_node::SbUI_node(NodeType type, SbUI_node* parent, const std::string& name)
+SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::string& name)
 	: type(type), parent(parent), name(name)
 {
 	if (type != NodeType::ROOTNODE)
@@ -11,7 +11,7 @@ SbUI_node::SbUI_node(NodeType type, SbUI_node* parent, const std::string& name)
 			return;
 		}
 		parent->children.push_back(this);
-		index = parent->children.size() - 1;
+		index = static_cast<uint16_t>(parent->children.size() - 1);
 	}
 	else
 	{
@@ -19,7 +19,7 @@ SbUI_node::SbUI_node(NodeType type, SbUI_node* parent, const std::string& name)
 	}
 }
 
-void SetupRootNode(SbUI_node* root, uint16_t wPx, uint16_t hPx)
+void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx)
 {
 	if (root->type != NodeType::ROOTNODE)
 	{

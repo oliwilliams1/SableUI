@@ -22,7 +22,7 @@ enum class NodeType
     HSPLITTER = 0x03
 };
 
-struct SbUI_node
+struct SableUI_node
 {
     std::string name = "";
     NodeType type = NodeType::COMPONENT;
@@ -31,11 +31,11 @@ struct SbUI_node
     SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
     SableUI::vec2 scaleFac = { -1.0f, -1.0f };
 
-    SbUI_node* parent  = nullptr;
-    std::vector<SbUI_node*> children;
+    SableUI_node* parent  = nullptr;
+    std::vector<SableUI_node*> children;
     std::unique_ptr<BaseComponent> component;
     
-    SbUI_node(NodeType type, SbUI_node* parent, const std::string& name);
+    SableUI_node(NodeType type, SableUI_node* parent, const std::string& name);
 };
 
-void SetupRootNode(SbUI_node* root, uint16_t wPx, uint16_t hPx);
+void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx);

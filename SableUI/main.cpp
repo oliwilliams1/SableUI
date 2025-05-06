@@ -32,7 +32,7 @@ static bool UserModifyNodeGraphViaTerminal()
     std::string parentName;
     std::getline(std::cin, parentName);
 
-    SbUI_node* parentNode = SableUI::FindNodeByName(parentName);
+    SableUI_node* parentNode = SableUI::FindNodeByName(parentName);
 
     if (parentNode) {
         SableUI::AddNodeToParent(type, nodeName, parentNode->name);

@@ -11,13 +11,13 @@
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
-static SbUI_node* root = nullptr;
+static SableUI_node* root = nullptr;
 static SDL_Cursor* cursorPointer = nullptr;
 static SDL_Cursor* cursorNS = nullptr;
 static SDL_Cursor* cursorEW = nullptr;
 static bool resizing = false;
 
-static std::vector<SbUI_node*> nodes;
+static std::vector<SableUI_node*> nodes;
 
 void SableUI::CreateWindow(const std::string& title, int width, int height, int x, int y)
 {
@@ -65,14 +65,14 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 
 	Renderer::Get().Clear({ 32, 32, 32 });
 
-	root = new SbUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
+	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
 }
 
 void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
 {
-	SbUI_node* parent = FindNodeByName(parentName);
+	SableUI_node* parent = FindNodeByName(parentName);
 
 	if (parent == nullptr)
 	{
@@ -92,7 +92,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 		return;
 	}
 
-	SbUI_node* node = new SbUI_node(type, parent, name);
+	SableUI_node* node = new SableUI_node(type, parent, name);
 
 	if (node->parent->type == NodeType::ROOTNODE)
 	{
@@ -104,7 +104,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	{
 		float scaleFac_y = 1.0f / node->parent->children.size();
 
-		for (SbUI_node* child : node->parent->children)
+		for (SableUI_node* child : node->parent->children)
 		{
 			child->scaleFac.x = 1.0f;
 			child->scaleFac.y = scaleFac_y;
@@ -115,7 +115,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	{
 		float scaleFac_x = 1.0f / node->parent->children.size();
 
-		for (SbUI_node* child : node->parent->children)
+		for (SableUI_node* child : node->parent->children)
 		{
 			child->scaleFac.x = scaleFac_x;
 			child->scaleFac.y = 1.0f;
@@ -127,7 +127,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 
 void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseComponent& component)
 {
-	SbUI_node* node = FindNodeByName(nodeName);
+	SableUI_node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -194,9 +194,41 @@ void SableUI::SetMaxFPS(int fps)
 	frameDelay = 1000 / fps;
 }
 
-void Resize()
+static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr, SableUI::EdgeType edgeType = SableUI::EdgeType::NONE)
 {
+	static SableUI_node* selectedNode = nullptr;
+	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
 
+	static SableUI::ivec2 oldPos = { 0, 0 };
+	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
+	static SableUI::vec2 oldScaleFac = { 0, 0 };
+	static float nParentsChildren = 1.0f; // prev div 0
+
+	// First resize call fills data
+	if (node != nullptr)
+	{
+		oldPos = pos;
+		selectedNode = node;
+		oldNodeRect = node->rect;
+		oldScaleFac = node->scaleFac;
+		currentEdgeType = edgeType;
+		nParentsChildren = node->parent->children.size();
+
+		return;
+	}
+
+	SableUI::ivec2 deltaPos = pos - oldPos;
+
+	if (currentEdgeType == SableUI::EW_EDGE)
+	{
+		selectedNode->scaleFac.x = oldScaleFac.x + (deltaPos.x / (float)oldNodeRect.w) / nParentsChildren;
+	}
+	else if (currentEdgeType == SableUI::NS_EDGE)
+	{
+		selectedNode->scaleFac.y = oldScaleFac.y + (deltaPos.y / (float)oldNodeRect.h) / nParentsChildren;
+	}
+
+	SableUI::CalculateNodeDimensions();
 }
 
 void SableUI::Draw()
@@ -209,8 +241,9 @@ void SableUI::Draw()
 	uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
 
 	static SDL_Cursor* currentCursor = cursorPointer;
+	static bool resCalled = false;
 
-	for (SbUI_node* node : nodes)
+	for (SableUI_node* node : nodes)
 	{
 		if (node->type != NodeType::COMPONENT || node->component == nullptr)
 		{
@@ -225,24 +258,55 @@ void SableUI::Draw()
 		node->component.get()->Render();
 
 		EdgeType edgeType = NONE;
-		float d = DistToEdge(node->rect, cursorPos, edgeType);
+		float d1 = DistToEdge(node->rect, cursorPos, edgeType);
 		SDL_Cursor* cursorToSet = cursorPointer;
 
 		EdgeType e = NONE;
-		if (d < 5.0f && DistToEdge(root->rect, cursorPos, e) > 5.0f)
+		if (d1 < 5.0f && DistToEdge(root->rect, cursorPos, e) > 5.0f)
 		{
 			switch (edgeType)
 			{
 			case NS_EDGE:
-				cursorToSet = cursorNS;
+				if (node->parent->type == NodeType::VSPLITTER)
+				{
+					cursorToSet = cursorNS;
+				}
 				break;
 			case EW_EDGE:
-				cursorToSet = cursorEW;
+				if (node->parent->type == NodeType::HSPLITTER)
+				{
+					cursorToSet = cursorEW;
+				}
 				break;
 			}
 		}
 
-		if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer) resizing = true;
+		if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
+		{
+			resCalled = true;
+
+			int indexYoungerSibling = node->index - 1;
+			if (indexYoungerSibling < 0)
+			{
+				Resize(cursorPos, node, edgeType);
+				resizing = true;
+				continue;
+			}
+
+			SableUI_node* youngerSibling = node->parent->children[indexYoungerSibling];
+			float d2 = DistToEdge(youngerSibling->rect, cursorPos, edgeType);
+
+			if (d2 < 10.0f)
+			{
+				Resize(cursorPos, youngerSibling, edgeType);
+				resizing = true;
+				continue;
+			}
+			else
+			{
+				Resize(cursorPos, node, edgeType);
+			}
+		}
 
 		if (currentCursor != cursorToSet && !resizing)
 		{
@@ -253,10 +317,17 @@ void SableUI::Draw()
 
 	if (resizing)
 	{
-		Resize();
-		if (!(mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)))
+		if (!resCalled)
 		{
-			resizing = false;
+			Resize(cursorPos);
+			if (!(mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)))
+			{
+				resizing = false;
+			}
+		}
+		else
+		{
+			resCalled = false;
 		}
 	}
 
@@ -264,14 +335,13 @@ void SableUI::Draw()
 	SDL_UpdateWindowSurface(window);
 
 	uint32_t frameTime = SDL_GetTicks() - frameStart;
-	if (frameTime < frameDelay)
+	if (frameTime < static_cast<uint32_t>(frameDelay))
 	{
 		SDL_Delay(frameDelay - frameTime);
 	}
 }
 
-
-static void PrintNode(SbUI_node* node, int depth = 0)
+static void PrintNode(SableUI_node* node, int depth = 0)
 {
 	if (node == nullptr) return;
 
@@ -287,7 +357,7 @@ static void PrintNode(SbUI_node* node, int depth = 0)
 		node->rect.w, node->rect.h, node->rect.x, node->rect.y,
 		node->index);
 
-	for (SbUI_node* child : node->children)
+	for (SableUI_node* child : node->children)
 	{
 		PrintNode(child, depth + 1);
 	}
@@ -298,14 +368,14 @@ void SableUI::PrintNodeTree()
 	PrintNode(root);
 }
 
-SbUI_node* SableUI::GetRoot()
+SableUI_node* SableUI::GetRoot()
 {
 	return root;
 }
 
-SbUI_node* SableUI::FindNodeByName(const std::string& name)
+SableUI_node* SableUI::FindNodeByName(const std::string& name)
 {
-	for (SbUI_node* node : nodes)
+	for (SableUI_node* node : nodes)
 	{
 		if (node->name == name)
 		{
@@ -316,11 +386,11 @@ SbUI_node* SableUI::FindNodeByName(const std::string& name)
 	return nullptr;
 }
 
-void SableUI::CalculateNodeDimensions(SbUI_node* node)
+void SableUI::CalculateNodeDimensions(SableUI_node* node)
 {
 	if (node == nullptr)
 	{
-		for (SbUI_node* child : root->children)
+		for (SableUI_node* child : root->children)
 		{
 			CalculateNodeDimensions(child);
 		}
@@ -335,7 +405,7 @@ void SableUI::CalculateNodeDimensions(SbUI_node* node)
 	cursor.x += node->parent->rect.x;
 	cursor.y += node->parent->rect.y;
 
-	for (SbUI_node* sibling : node->parent->children)
+	for (SableUI_node* sibling : node->parent->children)
 	{
 		if (sibling->index < node->index)
 		{
@@ -359,7 +429,7 @@ void SableUI::CalculateNodeDimensions(SbUI_node* node)
 		node->component.get()->Render();
 	}
 
-	for (SbUI_node* child : node->children)
+	for (SableUI_node* child : node->children)
 	{
 		CalculateNodeDimensions(child);
 	}
@@ -373,7 +443,7 @@ void SableUI::Destroy()
 		return;
 	}
 
-	for (SbUI_node* node : nodes)
+	for (SableUI_node* node : nodes)
 	{
 		delete node;
 	}
