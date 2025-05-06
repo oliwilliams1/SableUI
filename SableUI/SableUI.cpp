@@ -12,6 +12,10 @@ static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
 static SbUI_node* root = nullptr;
+static SDL_Cursor* cursorPointer = nullptr;
+static SDL_Cursor* cursorNS = nullptr;
+static SDL_Cursor* cursorEW = nullptr;
+static bool resizing = false;
 
 static std::vector<SbUI_node*> nodes;
 
@@ -54,6 +58,10 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 		printf("Root node already created!\n");
 		return;
 	}
+
+	cursorPointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	cursorNS      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	cursorEW = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
 	Renderer::Get().Clear({ 32, 32, 32 });
 
@@ -172,6 +180,9 @@ bool SableUI::PollEvents()
 				}
 				break;
 			}
+		case SDL_MOUSEBUTTONUP:
+			resizing = false;
+			break;
 		}
 	}
 
@@ -183,6 +194,11 @@ void SableUI::SetMaxFPS(int fps)
 	frameDelay = 1000 / fps;
 }
 
+void Resize()
+{
+
+}
+
 void SableUI::Draw()
 {
 	uint32_t frameStart = SDL_GetTicks();
@@ -190,36 +206,70 @@ void SableUI::Draw()
 	Renderer& renderer = Renderer::Get();
 
 	ivec2 cursorPos = { 0, 0 };
-	SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
+	uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
+
+	static SDL_Cursor* currentCursor = cursorPointer;
 
 	for (SbUI_node* node : nodes)
 	{
-		if (node->type == NodeType::COMPONENT && node->component != nullptr)
+		if (node->type != NodeType::COMPONENT || node->component == nullptr)
 		{
-			if (RectBoundingBox(node->rect, cursorPos))
+			continue;
+		}
+
+		if (!RectBoundingBox(node->rect, cursorPos))
+{
+			continue;
+		}
+
+		node->component.get()->Render();
+
+		EdgeType edgeType = NONE;
+		float d = DistToEdge(node->rect, cursorPos, edgeType);
+		SDL_Cursor* cursorToSet = cursorPointer;
+
+		EdgeType e = NONE;
+		if (d < 5.0f && DistToEdge(root->rect, cursorPos, e) > 5.0f)
+		{
+			switch (edgeType)
 			{
-				node->component.get()->Render();
-
-				EdgeType edgeType = NONE;
-				float d = DistToEdge(node->rect, cursorPos, edgeType);
-
-				if (d < 5.0f)
-				{
-					std::cout << "hovering over edge: " << node->name << std::endl;
-				}
+			case NS_EDGE:
+				cursorToSet = cursorNS;
+				break;
+			case EW_EDGE:
+				cursorToSet = cursorEW;
+				break;
 			}
+		}
+
+		if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer) resizing = true;
+
+		if (currentCursor != cursorToSet && !resizing)
+		{
+			SDL_SetCursor(cursorToSet);
+			currentCursor = cursorToSet;
+		}
+	}
+
+	if (resizing)
+	{
+		Resize();
+		if (!(mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)))
+		{
+			resizing = false;
 		}
 	}
 
 	renderer.Draw();
-
 	SDL_UpdateWindowSurface(window);
 
 	uint32_t frameTime = SDL_GetTicks() - frameStart;
-	if ((int)frameTime < frameDelay) {
+	if (frameTime < frameDelay)
+	{
 		SDL_Delay(frameDelay - frameTime);
 	}
 }
+
 
 static void PrintNode(SbUI_node* node, int depth = 0)
 {
@@ -330,6 +380,10 @@ void SableUI::Destroy()
 	nodes.clear();
 
 	Renderer::Shutdown();
+
+	SDL_FreeCursor(cursorPointer);
+	SDL_FreeCursor(cursorNS);
+	SDL_FreeCursor(cursorEW);
 
 	if (surface != nullptr)
 	{
