@@ -12,7 +12,6 @@
 #include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
 
-
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
@@ -311,17 +310,18 @@ void SableUI::Draw()
 	static SDL_Cursor* currentCursor = cursorPointer;
 	static bool resCalled = false;
 
+	SDL_Cursor* cursorToSet = cursorPointer;
+
 	for (SableUI_node* node : nodes)
 	{
-		if (node->type != NodeType::COMPONENT || node->component == nullptr) continue;
+		if (node->component != nullptr) node->component.get()->Render();
 
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
-		node->component.get()->Render();
-
 		float d1 = DistToEdge(node, cursorPos);
 
-		SDL_Cursor* cursorToSet = cursorPointer;
+
+		if (node->parent == nullptr) continue;
 
 		if (d1 < 5.0f)
 		{
@@ -346,12 +346,12 @@ void SableUI::Draw()
 			resizing = true;
 			continue;
 		}
+	}
 
-		if (currentCursor != cursorToSet && !resizing)
-		{
-			SDL_SetCursor(cursorToSet);
-			currentCursor = cursorToSet;
-		}
+	if (currentCursor != cursorToSet && !resizing)
+	{
+		SDL_SetCursor(cursorToSet);
+		currentCursor = cursorToSet;
 	}
 
 	if (resizing)
@@ -517,9 +517,7 @@ void SableUI::OpenUIFile(const std::string& path)
 			delete node;
 		}
 		nodes.clear();
-
 		root = nullptr;
-
 		printf("Reloading UI\n");
 	}
 
@@ -539,7 +537,6 @@ void SableUI::OpenUIFile(const std::string& path)
 	}
 
 	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
-
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 	SetupRootNode(root, w, h);
@@ -548,22 +545,26 @@ void SableUI::OpenUIFile(const std::string& path)
 	std::stack<std::string> parentStack;
 	parentStack.push("Root Node");
 
+
 	std::function<void(XMLElement*, const std::string&)> parseNode;
 	parseNode = [&](XMLElement* element, const std::string& parentName)
 		{
-			while (element) {
+			while (element)
+			{
 				std::string elementName = element->Name();
 				const char* nameAttr = element->Attribute("name");
 				const char* colourAttr = element->Attribute("colour");
 				SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
 
-				if (!nameAttr) {
-					std::cerr << "Error: Missing 'name' attribute in element <" << elementName << ">\n";
-					element = element->NextSiblingElement();
-					continue;
+				std::string nodeName;
+				if (nameAttr)
+				{
+					nodeName = nameAttr;
 				}
-
-				std::string nodeName = nameAttr;
+				else
+				{
+					nodeName = elementName + " " + std::to_string(nodes.size());
+				}
 
 				if (elementName == "hsplitter")
 				{
@@ -590,7 +591,6 @@ void SableUI::OpenUIFile(const std::string& path)
 		};
 
 	parseNode(rootElement->FirstChildElement(), parentStack.top());
-
 	SableUI::CalculateNodeDimensions();
 
 	for (const SableUI_node* node : nodes)
