@@ -1,13 +1,17 @@
 #define SDL_MAIN_HANDLED
 #include "SableUI.h"
+
 #include <SDL2/SDL.h>
+#include <tinyxml2.h>
 #include <cstdio>
 #include <iostream>
 #include <functional>
 #include <algorithm>
+#include <stack>
 
 #include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
+
 
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
@@ -423,6 +427,8 @@ SableUI_node* SableUI::FindNodeByName(const std::string& name)
 
 void SableUI::CalculateNodeDimensions(SableUI_node* node)
 {
+	if (nodes.size() == 0) return;
+
 	if (node == nullptr)
 	{
 		for (SableUI_node* child : root->children)
@@ -500,4 +506,98 @@ void SableUI::Destroy()
 	window = nullptr;
 
 	SDL_Quit();
+}
+
+void SableUI::OpenUIFile(const std::string& path)
+{
+	if (nodes.size() > 0)
+	{
+		for (SableUI_node* node : nodes)
+		{
+			delete node;
+		}
+		nodes.clear();
+
+		root = nullptr;
+
+		printf("Reloading UI\n");
+	}
+
+	using namespace tinyxml2;
+
+	XMLDocument doc;
+	if (doc.LoadFile(path.c_str()) != XML_SUCCESS)
+	{
+		std::cerr << "Failed to load file: " << path << "\n";
+		return;
+	}
+
+	XMLElement* rootElement = doc.FirstChildElement("root");
+	if (!rootElement) {
+		std::cerr << "Invalid XML structure: Missing <root> element\n";
+		return;
+	}
+
+	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
+
+	int w, h;
+	SDL_GetWindowSize(window, &w, &h);
+	SetupRootNode(root, w, h);
+	nodes.push_back(root);
+
+	std::stack<std::string> parentStack;
+	parentStack.push("Root Node");
+
+	std::function<void(XMLElement*, const std::string&)> parseNode;
+	parseNode = [&](XMLElement* element, const std::string& parentName)
+		{
+			while (element) {
+				std::string elementName = element->Name();
+				const char* nameAttr = element->Attribute("name");
+				const char* colourAttr = element->Attribute("colour");
+				SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
+
+				if (!nameAttr) {
+					std::cerr << "Error: Missing 'name' attribute in element <" << elementName << ">\n";
+					element = element->NextSiblingElement();
+					continue;
+				}
+
+				std::string nodeName = nameAttr;
+
+				if (elementName == "hsplitter")
+				{
+					SableUI::AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
+					parentStack.push(nodeName);
+					parseNode(element->FirstChildElement(), nodeName);
+					parentStack.pop();
+				}
+				else if (elementName == "vsplitter")
+				{
+					SableUI::AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
+					parentStack.push(nodeName);
+					parseNode(element->FirstChildElement(), nodeName);
+					parentStack.pop();
+				}
+				else if (elementName == "component")
+				{
+					SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
+					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour));
+				}
+
+				element = element->NextSiblingElement();
+			}
+		};
+
+	parseNode(rootElement->FirstChildElement(), parentStack.top());
+
+	SableUI::CalculateNodeDimensions();
+
+	for (const SableUI_node* node : nodes)
+	{
+		if (node->type == NodeType::COMPONENT && node->component != nullptr)
+		{
+			node->component->Render();
+		}
+	}
 }

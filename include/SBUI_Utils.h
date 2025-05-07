@@ -122,4 +122,6 @@ namespace SableUI
     };
 
     bool RectBoundingBox(rect r, ivec2 p);
+
+    colour StringTupleToColour(const char* str);
 }
