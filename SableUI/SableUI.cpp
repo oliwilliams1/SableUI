@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <functional>
+#include <algorithm>
 
 #include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
@@ -252,12 +253,16 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 
 	if (currentEdgeType == SableUI::EW_EDGE)
 	{
+		deltaPos.x = std::clamp(deltaPos.x, static_cast<int>(-oldNodeRect.w + 15), static_cast<int>(olderSiblingOldRect.w - 15));
+
 		float f = (deltaPos.x / oldNodeRect.w) / (1.0f / oldScaleFac.x);
 		selectedNode->scaleFac.x = oldScaleFac.x + f;
 		olderSiblingNode->scaleFac.x = olderSiblingOldFac.x - f;
 	}
 	else if (currentEdgeType == SableUI::NS_EDGE)
 	{
+		deltaPos.y = std::clamp(deltaPos.y, static_cast<int>(-oldNodeRect.h + 15), static_cast<int>(olderSiblingOldRect.h - 15));
+
 		float f = (deltaPos.y / oldNodeRect.h) / (1.0f / oldScaleFac.y);
 		selectedNode->scaleFac.y = oldScaleFac.y + f;
 		olderSiblingNode->scaleFac.y = olderSiblingOldFac.y - f;
