@@ -14,6 +14,8 @@ namespace Drawable
 		
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour colour = { 255, 255, 255 };
+
+		std::vector<uint32_t> rowBuffer;
 	};
 
 	struct rectBorder
@@ -24,6 +26,9 @@ namespace Drawable
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour colour = { 255, 255, 255 };
 		float border = 0.0f;
+
+		std::vector<uint32_t> topRowBuffer;
+		std::vector<uint32_t> sideRowBuffer;
 	};
 }
 
@@ -41,7 +46,12 @@ namespace SableUI
 
 		static Renderer& Get();
 
-		Drawable::rect GetDrawableRect(const SableUI::rect& rect, const SableUI::colour& colour, float border = 0.0f, bool draw = true);
+		void GetDrawableRect(Drawable::rect& drawableRect, const SableUI::rect& rect,
+			const SableUI::colour& colour, float border = 0.0f, bool draw = true);
+
+		void GetDrawableRectBorder(Drawable::rectBorder& drawableRectBorder, const SableUI::rect& rect,
+			const SableUI::colour& colour, float border = 0.0f, bool draw = true);
+
 		void Clear(const SableUI::colour& colour);
 
 		void Draw();
@@ -54,7 +64,7 @@ namespace SableUI
 
 		void DrawRects(int surfaceWidth, int surfaceHeight);
 
-		void DrawRectBorders();
+		void DrawRectBorders(int surfaceWidth, int surfaceHeight);
 
 		SDL_Surface* surface;
 	};

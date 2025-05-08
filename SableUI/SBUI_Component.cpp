@@ -15,8 +15,15 @@ void BaseComponent::UpdateDrawable()
 	{
 		renderer = &SableUI::Renderer::Get();
 	}
-	drawableRect = renderer->GetDrawableRect(parent->rect, colour, border);
+
+	renderer->GetDrawableRect(drawableRect, parent->rect, colour, border);
 	renderer->rectQueue.push_back(drawableRect);
+
+	if (border > 0.0f)
+	{
+		renderer->GetDrawableRectBorder(drawableRectBorder, parent->rect, SableUI::colour(0, 0, 0, 0), border);
+		renderer->rectBorderQueue.push_back(drawableRectBorder);
+	}
 }
 
 void BaseComponent::Render()
@@ -27,4 +34,9 @@ void BaseComponent::Render()
 	}
 
 	renderer->rectQueue.push_back(drawableRect);
+
+	if (drawableRectBorder.border > 0.0f)
+	{
+		renderer->rectBorderQueue.push_back(drawableRectBorder);
+	}
 }
