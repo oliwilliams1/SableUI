@@ -39,7 +39,7 @@ SableUI::Renderer& SableUI::Renderer::Get()
 	return *renderer;
 }
 
-void SableUI::Renderer::DrawRect(const SableUI::rect& rect, const SableUI::colour& colour)
+Drawable::rect SableUI::Renderer::GetDrawableRect(const SableUI::rect& rect, const SableUI::colour& colour, float border, bool draw)
 {
 	SableUI::rect r = rect;
 
@@ -49,12 +49,56 @@ void SableUI::Renderer::DrawRect(const SableUI::rect& rect, const SableUI::colou
 	r.w = std::clamp(r.w, 0.0f, surface->w - r.x);
 	r.h = std::clamp(r.h, 0.0f, surface->h - r.y);
 
-	queue.push_back({ r, colour });
+    if (border > 0.0f)
+    {
+        r.x += border;
+	    r.y += border;
+	    r.w -= border * 2;
+	    r.h -= border * 2;
+    }
+
+    if (draw)
+    {
+        rectQueue.push_back({ r, colour });
+    }
+
+    return { r, colour };
 }
 
 void SableUI::Renderer::Clear(const SableUI::colour& colour)
 {
-	DrawRect({ 0, 0, (float)surface->w, (float)surface->h }, colour);
+    rect r = { 0, 0, (float)surface->w, (float)surface->h };
+    Drawable::rect rect = { r, colour };
+
+    rectQueue.push_back(rect);
+}
+
+void SableUI::Renderer::DrawRects(int surfaceWidth, int surfaceHeight)
+{
+    for (const Drawable::rect& rect : rectQueue)
+    {
+
+        int x = std::min(static_cast<int>(std::ceil(rect.r.x)), surfaceWidth - 1);
+        int y = std::min(static_cast<int>(std::ceil(rect.r.y)), surfaceHeight - 1);
+        int width = std::min(static_cast<int>(std::ceil(rect.r.w)), surfaceWidth - x);
+        int height = std::min(static_cast<int>(std::ceil(rect.r.h)), surfaceHeight - y);
+
+        if (width <= 0 || height <= 0)
+            continue;
+
+        uint32_t* pixelBuffer = new uint32_t[width];
+        std::fill(pixelBuffer, pixelBuffer + width, rect.colour.value);
+
+        uint32_t* surfacePixels = static_cast<uint32_t*>(surface->pixels);
+
+        // Use a single memcpy call
+        for (int i = 0; i < height; i++)
+        {
+            std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + x, pixelBuffer, width * sizeof(uint32_t));
+        }
+
+        delete[] pixelBuffer;
+    }
 }
 
 void SableUI::Renderer::Draw()
@@ -74,31 +118,8 @@ void SableUI::Renderer::Draw()
     int surfaceWidth = surface->w;
     int surfaceHeight = surface->h;
 
-    for (const Drawable::SbUI_DrawableRect& rect : queue)
-    {
-
-        int x = std::min(static_cast<int>(std::ceil(rect.rect.x)), surfaceWidth - 1);
-        int y = std::min(static_cast<int>(std::ceil(rect.rect.y)), surfaceHeight - 1);
-        int width = std::min(static_cast<int>(std::ceil(rect.rect.w)), surfaceWidth - x);
-        int height = std::min(static_cast<int>(std::ceil(rect.rect.h)), surfaceHeight - y);
-
-        if (width <= 0 || height <= 0)
-            continue;
-
-        uint32_t* pixelBuffer = new uint32_t[width];
-        std::fill(pixelBuffer, pixelBuffer + width, rect.colour.value);
-
-        uint32_t* surfacePixels = static_cast<uint32_t*>(surface->pixels);
-
-        // Use a single memcpy call
-        for (int i = 0; i < height; i++)
-        {
-            std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + x, pixelBuffer, width * sizeof(uint32_t));
-        }
-
-        delete[] pixelBuffer;
-    }
+    DrawRects(surfaceWidth, surfaceHeight);
 
     SDL_UnlockSurface(surface);
-    queue.clear();
+    rectQueue.clear();
 }

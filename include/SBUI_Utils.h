@@ -109,6 +109,7 @@ namespace SableUI
 
     struct rect
     {
+        rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
         float x = 0;
         float y = 0;
         float w = 0;

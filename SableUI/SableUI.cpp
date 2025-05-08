@@ -53,7 +53,15 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 		printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
 	}
 	
-	SetMaxFPS(60); // Default value
+	SDL_DisplayMode displayMode;
+	if (SDL_GetCurrentDisplayMode(0, &displayMode) != 0)
+	{
+		printf("Failed to get display mode! SDL_Error: %s\n", SDL_GetError());
+	}
+	else
+	{
+		SetMaxFPS(displayMode.refresh_rate);
+	}
 
 	Renderer::Init(surface);
 
@@ -219,7 +227,7 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 		selectedNode = node;
 		oldNodeRect = node->rect;
 		oldScaleFac = node->scaleFac;
-		nParentsChildren = node->parent->children.size();
+		nParentsChildren = static_cast<float>(node->parent->children.size());
 
 		if (node->parent == nullptr)
 		{
@@ -319,7 +327,6 @@ void SableUI::Draw()
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
 		float d1 = DistToEdge(node, cursorPos);
-
 
 		if (node->parent == nullptr) continue;
 
@@ -467,7 +474,7 @@ void SableUI::CalculateNodeDimensions(SableUI_node* node)
 
 	if (node->component)
 	{
-		node->component.get()->Render();
+		node->component.get()->UpdateDrawable();
 	}
 
 	for (SableUI_node* child : node->children)
@@ -555,6 +562,10 @@ void SableUI::OpenUIFile(const std::string& path)
 				const char* nameAttr = element->Attribute("name");
 				const char* colourAttr = element->Attribute("colour");
 				SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
+				const char* borderAttr = element->Attribute("border");
+				float border = 0.0f;
+				
+				if (borderAttr) border = std::stof(borderAttr);
 
 				std::string nodeName;
 				if (nameAttr)
@@ -583,7 +594,7 @@ void SableUI::OpenUIFile(const std::string& path)
 				else if (elementName == "component")
 				{
 					SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour));
+					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border));
 				}
 
 				element = element->NextSiblingElement();
