@@ -29,7 +29,7 @@ struct SableUI_node
 
     uint16_t index = UNDEF;
     SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
-    SableUI::vec2 scaleFac = { -1.0f, -1.0f };
+    SableUI::vec2 scaleFac ={ -1.0f, -1.0f };
 
     SableUI_node* parent  = nullptr;
     std::vector<SableUI_node*> children;

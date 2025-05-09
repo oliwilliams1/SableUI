@@ -1,15 +1,20 @@
 <root>
-  <hsplitter>
-    <component colour="(255, 0, 255)" />
-    <vsplitter>
-      <component colour="(0, 255, 0)" />
-      
-      <hsplitter>
-        <component colour="(0, 128, 128)" />
-        <component colour="(128, 0, 128)" />
-      </hsplitter>
-      
-      <component colour="(255, 255, 0)" />
-    </vsplitter>
-  </hsplitter>
+  <vsplitter>
+    <hsplitter>
+      <component colour="(255, 128, 0)" />
+      <vsplitter>
+        <component colour="(0, 128, 255)" />
+        <hsplitter>
+          <component
+            colour="(128, 255, 0)"
+            border="4"
+            borderColour="(32, 32, 32)"
+            size="80px"
+          />
+          <component colour="(255, 0, 128)" />
+        </hsplitter>
+      </vsplitter>
+    </hsplitter>
+    <component colour="(200, 200, 200)" />
+  </vsplitter>
 </root>

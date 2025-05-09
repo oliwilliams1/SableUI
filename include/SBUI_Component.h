@@ -9,11 +9,14 @@ class BaseComponent
 {
 public:
 	BaseComponent() {}
-	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255), float border = 0);
+	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255), 
+		float border = 0, SableUI::colour borderColour = SableUI::colour(255, 255, 255),
+		Drawable::size s = Drawable::size());
 
 	SableUI_node* parent = nullptr;
 
 	Drawable::Rect drawable;
+	Drawable::size size;
 
 	virtual void Render();
 	void UpdateDrawable();
@@ -22,5 +25,7 @@ public:
 
 private:
 	SableUI::colour colour = SableUI::colour(255, 255, 255);
+
 	float border = 0.0f;
+	SableUI::colour bColour = SableUI::colour(255, 255, 255);
 };

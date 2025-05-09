@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cmath>
+#include <string>
+
 #include "SBUI_Renderer.h"
 
 static SableUI::Renderer* s_renderer = nullptr;
@@ -185,4 +187,25 @@ void SableUI::Renderer::Draw()
 
     SDL_UnlockSurface(s_surface);
     drawStack.clear();
+}
+
+Drawable::size::size(const char* str)
+{
+    if (str == nullptr) return;
+
+    std::string s(str);
+    if (s.length() > 1 && s.substr(s.length() - 2) == "px")
+    {
+        type = SizeType::PX;
+        v = std::stof(s.substr(0, s.length() - 2));
+    }
+    else if (s.back() == '%')
+    {
+        type = SizeType::PERCENT;
+        v = std::stof(s.substr(0, s.length() - 1));
+    }
+    else
+    {
+        v = -1.0f;
+    }
 }

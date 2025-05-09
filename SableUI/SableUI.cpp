@@ -84,6 +84,8 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 
 void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
 {
+	CalculateNodeDimensions();
+
 	SableUI_node* parent = FindNodeByName(parentName);
 
 	if (parent == nullptr)
@@ -562,12 +564,19 @@ void SableUI::OpenUIFile(const std::string& path)
 			{
 				std::string elementName = element->Name();
 				const char* nameAttr = element->Attribute("name");
+
 				const char* colourAttr = element->Attribute("colour");
 				SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
+
 				const char* borderAttr = element->Attribute("border");
 				float border = 0.0f;
-				
 				if (borderAttr) border = std::stof(borderAttr);
+
+				const char* borderColourAttr = element->Attribute("borderColour");
+				SableUI::colour borderColour = SableUI::StringTupleToColour(borderColourAttr);
+
+				const char* size = element->Attribute("size");
+				Drawable::size s = Drawable::size(size);
 
 				std::string nodeName;
 				if (nameAttr)
@@ -596,7 +605,7 @@ void SableUI::OpenUIFile(const std::string& path)
 				else if (elementName == "component")
 				{
 					SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border));
+					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border, borderColour, s));
 				}
 
 				element = element->NextSiblingElement();
