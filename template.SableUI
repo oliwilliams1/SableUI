@@ -1,15 +1,15 @@
 <root>
-  <hsplitter name="h splitter 4">
-    <component name="component 1" colour="(255, 0, 255)" />
-    <vsplitter name="v splitter 2">
-      <component name="component 2" colour="(0, 255, 0)" />
+  <hsplitter>
+    <component colour="(255, 0, 255)" />
+    <vsplitter>
+      <component colour="(0, 255, 0)" />
       
-      <hsplitter name="h splitter 7">
-        <component name="component 4" colour="(0, 128, 128)" />
-        <component name="component 6" colour="(128, 0, 128)" />
+      <hsplitter>
+        <component colour="(0, 128, 128)" />
+        <component colour="(128, 0, 128)" />
       </hsplitter>
       
-      <component name="component 6" colour="(255, 255, 0)" />
+      <component colour="(255, 255, 0)" />
     </vsplitter>
   </hsplitter>
 </root>

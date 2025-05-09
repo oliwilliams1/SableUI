@@ -30,20 +30,20 @@ cd build
 ```
 
 2. Run CMake to configure the project:
-```
+```bash
 cmake ..
 ```
 3. Compile the project using ```make```. You can use the ```-j``` flag for faster compilation (e.g., ```-j12```):
-```
+```bash
 make -j12
 ```
 4. Run the application (if running demo)
-```
+```bash
 ./SableUI
 ```
 
 ## Basic use example
-```
+```cpp
 #include "SableUI.h"
 
 int main()
@@ -51,9 +51,8 @@ int main()
 	// Can add two params at end of function defining window pos
 	SableUI::CreateWindow("SableUI", 800, 600);
 
-	/* Maximum FPS so draws do not submitted at a rate too fase for monitors,
-	   a way of keeping this UI framework lightweight */
-	SableUI::SetMaxFPS(60);
+	// Open xml-based file for ui to configure itself
+	SableUI::OpenUIFile("template.SableUI");
 
 	// Basic usage lifetime, loop waits for an event before drawing
 	while (SableUI::PollEvents())
@@ -65,4 +64,24 @@ int main()
 	// Exit safely
 	SableUI::Destroy();
 }
+```
+
+```xml
+<!-- template.SableUI -->
+<root> <!-- Root must be declared for main layout, can only have one child -->
+  <hsplitter> <!-- Solid component on left (first declared), vertical splitter with 3 components on right -->
+    <component colour="(255, 0, 255)" />
+    
+    <vsplitter> <!-- 3 Vertical components stacked on one another -->
+      <component colour="(0, 255, 0)" />
+
+      <hsplitter> <!-- Middle component with 2 components split on vertical axis (one on right, one on left) -->
+        <component colour="(0, 128, 128)" />
+        <component colour="(128, 0, 128)" />
+      </hsplitter>
+
+      <component colour="(255, 255, 0)" />
+    </vsplitter>
+  </hsplitter>
+</root>
 ```

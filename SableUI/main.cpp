@@ -46,7 +46,6 @@ static bool UserModifyNodeGraphViaTerminal()
 int main()
 {
 	SableUI::CreateWindow("SableUI", 800, 600);
-	SableUI::SetMaxFPS(60);
 
     SableUI::OpenUIFile("template.SableUI");
 
