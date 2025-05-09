@@ -75,7 +75,7 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 	cursorNS      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
 	cursorEW = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
-	Renderer::Get().Clear({ 32, 32, 32 });
+	// Renderer::Get().Clear({32, 32, 32});
 
 	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
@@ -182,7 +182,7 @@ bool SableUI::PollEvents()
 
 				surface = SDL_GetWindowSurface(window);
 				Renderer::SetSurface(surface);
-				Renderer::Get().Clear({ 32, 32, 32 });
+				// Renderer::Get().Clear({ 32, 32, 32 });
 
 				SetupRootNode(root, w, h);
 				CalculateNodeDimensions();
@@ -238,13 +238,13 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 		}
 
 		int olderSiblingIndex = node->index + 1;
-		if (olderSiblingIndex <= node->parent->children.size())
+		if (olderSiblingIndex < node->parent->children.size())
 		{
 			olderSiblingNode = node->parent->children[olderSiblingIndex];
 			olderSiblingOldRect = olderSiblingNode->rect;
 			olderSiblingOldFac = olderSiblingNode->scaleFac;
 		}
-
+		else return;
 
 		switch (node->parent->type)
 		{
@@ -268,6 +268,7 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 
 		float f = (deltaPos.x / oldNodeRect.w) / (1.0f / oldScaleFac.x);
 		selectedNode->scaleFac.x = oldScaleFac.x + f;
+
 		olderSiblingNode->scaleFac.x = olderSiblingOldFac.x - f;
 	}
 	else if (currentEdgeType == SableUI::NS_EDGE)
@@ -276,6 +277,7 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 
 		float f = (deltaPos.y / oldNodeRect.h) / (1.0f / oldScaleFac.y);
 		selectedNode->scaleFac.y = oldScaleFac.y + f;
+
 		olderSiblingNode->scaleFac.y = olderSiblingOldFac.y - f;
 	}
 

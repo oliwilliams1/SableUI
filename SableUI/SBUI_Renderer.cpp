@@ -2,13 +2,15 @@
 #include <cmath>
 #include "SBUI_Renderer.h"
 
-static SableUI::Renderer* renderer = nullptr;
+static SableUI::Renderer* s_renderer = nullptr;
+static SDL_Surface* s_surface = nullptr;
 
 void SableUI::Renderer::Init(SDL_Surface* surface)
 {
-	if (renderer == nullptr)
+	if (s_renderer == nullptr)
 	{
-		renderer = new Renderer(surface);
+		s_renderer = new Renderer();
+        s_surface = surface;
 	}
 	else
 	{
@@ -18,10 +20,10 @@ void SableUI::Renderer::Init(SDL_Surface* surface)
 
 void SableUI::Renderer::Shutdown()
 {
-	if (renderer != nullptr)
+	if (s_renderer != nullptr)
 	{
-		delete renderer;
-		renderer = nullptr;
+		delete s_renderer;
+		s_renderer = nullptr;
 	}
 	else
 	{
@@ -31,183 +33,156 @@ void SableUI::Renderer::Shutdown()
 
 void SableUI::Renderer::SetSurface(SDL_Surface* surface)
 {
-    Get().surface = surface;
+    s_surface = surface;
 }
 
 SableUI::Renderer& SableUI::Renderer::Get()
 {
-	return *renderer;
+	return *s_renderer;
 }
 
-void SableUI::Renderer::Clear(const SableUI::colour& colour)
+void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float border, SableUI::colour bColour, bool draw)
 {
-    rect r = { 0, 0, (float)surface->w, (float)surface->h };
-    Drawable::rect rect = { r, colour };
+    this->rowBuffer.clear();
 
-    rectQueue.push_back(rect);
-}
+    this->r = rect;
+    this->colour = colour;
+    this->bColour = bColour;
+    this->border = border;
 
-void SableUI::Renderer::GetDrawableRect(Drawable::rect& drawableRect, const SableUI::rect& rect, const SableUI::colour& colour, float border, bool draw)
-{
-    drawableRect.rowBuffer.clear();
+    r.x = std::clamp(r.x, 0.0f, s_surface->w - 1.0f);
+    r.y = std::clamp(r.y, 0.0f, s_surface->h - 1.0f);
 
-    SableUI::rect r = rect;
-
-    r.x = std::clamp(r.x, 0.0f, surface->w - 1.0f);
-    r.y = std::clamp(r.y, 0.0f, surface->h - 1.0f);
-
-    r.w = std::clamp(r.w, 0.0f, surface->w - r.x);
-    r.h = std::clamp(r.h, 0.0f, surface->h - r.y);
+    r.w = std::clamp(r.w, 0.0f, s_surface->w - r.x);
+    r.h = std::clamp(r.h, 0.0f, s_surface->h - r.y);
 
     if (border > 0.0f)
     {
-        r.x += border;
-        r.y += border;
-        r.w -= border * 2;
-        r.h -= border * 2;
+		r.x += border;
+		r.y += border;
+		r.w -= border * 2;
+		r.h -= border * 2;
     }
 
-    r.w = std::max(r.w, 0.0f);
-    r.h = std::max(r.h, 0.0f);
+	r.w = std::max(r.w, 0.0f);
+	r.h = std::max(r.h, 0.0f);
 
-    drawableRect = { r, colour };
+    int x = std::min(static_cast<int>(std::ceil(r.x)), s_surface->w - 1);
+    int y = std::min(static_cast<int>(std::ceil(r.y)), s_surface->h - 1);
+    int width = std::min(static_cast<int>(std::ceil(r.w)), s_surface->w - x);
+    int height = std::min(static_cast<int>(std::ceil(r.h)), s_surface->h - y);
 
-    int x = std::min(static_cast<int>(std::ceil(r.x)), surface->w - 1);
-    int y = std::min(static_cast<int>(std::ceil(r.y)), surface->h - 1);
-    int width = std::min(static_cast<int>(std::ceil(r.w)), surface->w - x);
-    int height = std::min(static_cast<int>(std::ceil(r.h)), surface->h - y);
+    this->rowBuffer.resize(width);
+    std::fill(this->rowBuffer.begin(), this->rowBuffer.end(), colour.value);
 
-    drawableRect.rowBuffer.resize(width);
-    std::fill(drawableRect.rowBuffer.begin(), drawableRect.rowBuffer.end(), colour.value);
+    if (border > 0.0f)
+    {
+        SableUI::rect temp_br = rect;
+
+        bTBRowBuffer.resize(static_cast<size_t>(r.w + 1 + border * 2));
+        bLRRowBuffer.resize(static_cast<size_t>(border));
+
+        std::fill(bTBRowBuffer.begin(), bTBRowBuffer.end(), bColour.value);
+        std::fill(bLRRowBuffer.begin(), bLRRowBuffer.end(), bColour.value);
+    }
 
     if (draw)
     {
-        rectQueue.push_back(drawableRect);
+        SableUI::Renderer::Get().Draw(std::make_unique<Drawable::Rect>(*this));
     }
 }
 
-void SableUI::Renderer::DrawRects(int surfaceWidth, int surfaceHeight)
+void Drawable::Rect::Draw()
 {
-    for (Drawable::rect& rect : rectQueue)
+    uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
+    uint32_t* rowPixels = rowBuffer.data();
+
+    if (rowPixels == nullptr) return;
+
+	int x = std::min(static_cast<int>(std::ceil(r.x)), s_surface->w - 1);
+	int y = std::min(static_cast<int>(std::ceil(r.y)), s_surface->h - 1);
+	int width = std::min(static_cast<int>(std::ceil(r.w)), s_surface->w - x);
+	int height = std::min(static_cast<int>(std::ceil(r.h)), s_surface->h - y);
+
+	for (int i = 0; i < height; i++)
+	{
+		if (y + i < s_surface->h)
+		{
+			std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
+		}
+	}
+
+
+    if (border <= 0.0f) return;
+
+    if (bLRRowBuffer.size() == 0 || bTBRowBuffer.size() == 0) return;
+
+	uint32_t* bTBRowPixels = bTBRowBuffer.data();
+	uint32_t* bLRRowPixels = bLRRowBuffer.data();
+
+    size_t sH1 = (width + 1 + 2 * border) * sizeof(uint32_t);
+
+    for (int i = 0; i < border; i++)
     {
-        uint32_t* surfacePixels = static_cast<uint32_t*>(surface->pixels);
-        uint32_t* rowPixels = rect.rowBuffer.data();
-
-        if (rowPixels == nullptr) continue;
-
-        int x = std::min(static_cast<int>(std::ceil(rect.r.x)), surface->w - 1);
-        int y = std::min(static_cast<int>(std::ceil(rect.r.y)), surface->h - 1);
-        int width = std::min(static_cast<int>(std::ceil(rect.r.w)), surface->w - x);
-        int height = std::min(static_cast<int>(std::ceil(rect.r.h)), surface->h - y);
-
-        for (int i = 0; i < height; i++)
+        if (y + i < s_surface->h)
         {
-            if (y + i < surfaceHeight)
-            {
-                std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + x, rowPixels, width * sizeof(uint32_t));
-            }
+            std::memcpy(surfacePixels + ((y + i - (int)border) * s_surface->w) + x - (int)border, bTBRowPixels, sH1);
         }
+
+        if (y + i < s_surface->h)
+		{
+            std::memcpy(surfacePixels + ((y + height + i) * s_surface->w) + x - (int)border, bTBRowPixels, sH1);
+		}
     }
 
-    rectQueue.clear();
-}
+    int f1 = x - border;
+    int f2 = x + width;
 
-void SableUI::Renderer::GetDrawableRectBorder(Drawable::rectBorder& drawableRectBorder, const SableUI::rect& rect, const SableUI::colour& colour, float border, bool draw)
-{
-    drawableRectBorder.topRowBuffer.clear();
-    drawableRectBorder.sideRowBuffer.clear();
-    drawableRectBorder.border = border;
-    drawableRectBorder.colour = colour;
-    drawableRectBorder.r = rect;
+    size_t sH2 = border * sizeof(uint32_t);
 
-    SableUI::rect r = rect;
-
-    r.x = std::clamp(r.x, 0.0f, surface->w - 1.0f);
-    r.y = std::clamp(r.y, 0.0f, surface->h - 1.0f);
-
-    r.w = std::clamp(r.w, 0.0f, surface->w - r.x);
-    r.h = std::clamp(r.h, 0.0f, surface->h - r.y);
-
-    drawableRectBorder.topRowBuffer.resize(static_cast<size_t>(r.w));
-    drawableRectBorder.sideRowBuffer.resize(static_cast<size_t>(border));
-
-    std::fill(drawableRectBorder.topRowBuffer.begin(), drawableRectBorder.topRowBuffer.end(), colour.value);
-    std::fill(drawableRectBorder.sideRowBuffer.begin(), drawableRectBorder.sideRowBuffer.end(), colour.value);
-
-    if (draw)
+    for (int i = 0; i < height; i++)
     {
-        rectBorderQueue.push_back(drawableRectBorder);
-    }
-}
-
-void SableUI::Renderer::DrawRectBorders(int surfaceWidth, int surfaceHeight)
-{
-    for (Drawable::rectBorder& rectBorder : rectBorderQueue)
-    {
-        uint32_t* surfacePixels = static_cast<uint32_t*>(surface->pixels);
-        uint32_t* topRowPixels = rectBorder.topRowBuffer.data();
-        uint32_t* sideRowPixels = rectBorder.sideRowBuffer.data();
-
-        if (topRowPixels == nullptr || sideRowPixels == nullptr) continue;
-
-        int x = std::min(static_cast<int>(std::ceil(rectBorder.r.x)), surface->w - 1);
-        int y = std::min(static_cast<int>(std::ceil(rectBorder.r.y)), surface->h - 1);
-        int width = std::min(static_cast<int>(std::ceil(rectBorder.r.w)), surface->w - x);
-        int height = std::min(static_cast<int>(std::ceil(rectBorder.r.h)), surface->h - y);
-
-        for (int i = 0; i < rectBorder.border; i++)
+        if (y + i < s_surface->h)
         {
-            if (y + i < surfaceHeight)
+            if (f1 >= 0)
             {
-                std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + x, topRowPixels, width * sizeof(uint32_t));
+				std::memcpy(surfacePixels + ((y + i) * s_surface->w) + f1, bLRRowPixels, sH2);
             }
-
-			if (y + height - rectBorder.border + i < surfaceHeight)
-			{
-				std::memcpy(surfacePixels + ((y + height - (int)rectBorder.border + i) * surfaceWidth) + x, topRowPixels, width * sizeof(uint32_t));
+            if (f2 < s_surface->w)
+            {
+                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + f2, bLRRowPixels, sH2);
 			}
         }
-
-        for (int i = 0; i < height; i++)
-        {
-            int f1 = x;
-            int f2 = x + width - rectBorder.border;
-
-            if (y + i < surfaceHeight)
-            {
-                if (f1 >= 0) {
-                    std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + f1, sideRowPixels, rectBorder.sideRowBuffer.size() * sizeof(uint32_t));
-                }
-                if (f2 < surfaceWidth) {
-                    std::memcpy(surfacePixels + ((y + i) * surfaceWidth) + f2, sideRowPixels, rectBorder.sideRowBuffer.size() * sizeof(uint32_t));
-                }
-            }
-        }
     }
+}
 
-    rectBorderQueue.clear();
+void SableUI::Renderer::Draw(std::unique_ptr<Drawable::Base> drawable)
+{
+    drawStack.push_back(std::move(drawable));
 }
 
 void SableUI::Renderer::Draw()
 {
-    if (renderer == nullptr)
+    if (s_renderer == nullptr)
     {
         printf("Renderer not initialized!\n");
         return;
     }
 
-    if (SDL_LockSurface(surface) < 0)
+    if (SDL_LockSurface(s_surface) < 0)
     {
         printf("Unable to lock surface! SDL_Error: %s\n", SDL_GetError());
         return;
     }
 
-    int surfaceWidth = surface->w;
-    int surfaceHeight = surface->h;
+    int surfaceWidth = s_surface->w;
+    int surfaceHeight = s_surface->h;
 
-    DrawRects(surfaceWidth, surfaceHeight);
-    DrawRectBorders(surfaceWidth, surfaceHeight);
+    for (const auto &drawable : drawStack)
+	{
+		drawable.get()->Draw();
+	}
 
-    SDL_UnlockSurface(surface);
-    rectQueue.clear();
+    SDL_UnlockSurface(s_surface);
+    drawStack.clear();
 }

@@ -13,8 +13,7 @@ public:
 
 	SableUI_node* parent = nullptr;
 
-	Drawable::rect drawableRect;
-	Drawable::rectBorder drawableRectBorder;
+	Drawable::Rect drawable;
 
 	virtual void Render();
 	void UpdateDrawable();

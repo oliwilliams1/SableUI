@@ -16,27 +16,15 @@ void BaseComponent::UpdateDrawable()
 		renderer = &SableUI::Renderer::Get();
 	}
 
-	renderer->GetDrawableRect(drawableRect, parent->rect, colour, border);
-	renderer->rectQueue.push_back(drawableRect);
-
-	if (border > 0.0f)
-	{
-		renderer->GetDrawableRectBorder(drawableRectBorder, parent->rect, SableUI::colour(0, 0, 0, 0), border);
-		renderer->rectBorderQueue.push_back(drawableRectBorder);
-	}
+	drawable.Update(parent->rect, colour, border);
 }
 
 void BaseComponent::Render()
 {
-	if (renderer == nullptr)
-	{
-		renderer = &SableUI::Renderer::Get();
-	}
+    if (renderer == nullptr)
+    {
+        renderer = &SableUI::Renderer::Get();
+    }
 
-	renderer->rectQueue.push_back(drawableRect);
-
-	if (drawableRectBorder.border > 0.0f)
-	{
-		renderer->rectBorderQueue.push_back(drawableRectBorder);
-	}
+    renderer->Draw(std::make_unique<Drawable::Base>(drawable));
 }

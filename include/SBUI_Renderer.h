@@ -2,33 +2,40 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 #include "SBUI_Utils.h"
 
 namespace Drawable
 {
-	struct rect
+	class Base
 	{
-		rect() {};
-		rect(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
-		
-		SableUI::rect r = { 0, 0, 0, 0 };
-		SableUI::colour colour = { 255, 255, 255 };
-
-		std::vector<uint32_t> rowBuffer;
+	public:
+		virtual void Draw() {};
+		virtual ~Base() {};
 	};
 
-	struct rectBorder
+	class Rect : public Base
 	{
-		rectBorder() {};
-		rectBorder(SableUI::rect& r, SableUI::colour colour, float border) : r(r), colour(colour), border(border) {}
+	public:
+		Rect() {};
+		~Rect() { rowBuffer.clear(); };
+		Rect(SableUI::rect& r, SableUI::colour colour, float border = 0.0f) 
+			: r(r), colour(colour), border(border) {}
+
+		void Update(SableUI::rect& rect, SableUI::colour colour, float border = 0.0f, 
+			SableUI::colour bColour = { 32, 32, 32 }, bool draw = true);
+
+		void Draw() override;
 
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour colour = { 255, 255, 255 };
-		float border = 0.0f;
+		std::vector<uint32_t> rowBuffer;
 
-		std::vector<uint32_t> topRowBuffer;
-		std::vector<uint32_t> sideRowBuffer;
+		float border = 0.0f;
+		SableUI::colour bColour = { 255, 255, 255 };
+		std::vector<uint32_t> bTBRowBuffer;
+		std::vector<uint32_t> bLRRowBuffer;
 	};
 }
 
@@ -46,26 +53,15 @@ namespace SableUI
 
 		static Renderer& Get();
 
-		void GetDrawableRect(Drawable::rect& drawableRect, const SableUI::rect& rect,
-			const SableUI::colour& colour, float border = 0.0f, bool draw = true);
-
-		void GetDrawableRectBorder(Drawable::rectBorder& drawableRectBorder, const SableUI::rect& rect,
-			const SableUI::colour& colour, float border = 0.0f, bool draw = true);
-
 		void Clear(const SableUI::colour& colour);
+
+		void Draw(std::unique_ptr<Drawable::Base> drawable);
 
 		void Draw();
 
-		std::vector<Drawable::rect> rectQueue;
-		std::vector<Drawable::rectBorder> rectBorderQueue;
-
 	private:
-		Renderer(SDL_Surface* surface) : surface(surface) {}
+		Renderer() {}
 
-		void DrawRects(int surfaceWidth, int surfaceHeight);
-
-		void DrawRectBorders(int surfaceWidth, int surfaceHeight);
-
-		SDL_Surface* surface;
+		std::vector<std::shared_ptr<Drawable::Base>> drawStack;
 	};
 }
