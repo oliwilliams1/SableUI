@@ -29,13 +29,14 @@ struct SableUI_node
 
     uint16_t index = UNDEF;
     SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
-    SableUI::vec2 scaleFac ={ -1.0f, -1.0f };
+    SableUI::vec2 scaleFac = { -1.0f, -1.0f };
+    Drawable::size size;
 
     SableUI_node* parent  = nullptr;
     std::vector<SableUI_node*> children;
     std::unique_ptr<BaseComponent> component;
     
-    SableUI_node(NodeType type, SableUI_node* parent, const std::string& name);
+    SableUI_node(NodeType type, SableUI_node* parent, const std::string& name, Drawable::size size = Drawable::size());
 };
 
 void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx);

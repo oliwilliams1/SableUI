@@ -436,6 +436,12 @@ SableUI_node* SableUI::FindNodeByName(const std::string& name)
 	return nullptr;
 }
 
+static void CalculateNodeScale(SableUI_node* node)
+{
+	node->rect.w = static_cast<float>(static_cast<int>(node->parent->rect.w * node->scaleFac.x));
+	node->rect.h = static_cast<float>(static_cast<int>(node->parent->rect.h * node->scaleFac.y));
+}
+
 void SableUI::CalculateNodeDimensions(SableUI_node* node)
 {
 	if (nodes.size() == 0) return;
@@ -449,8 +455,7 @@ void SableUI::CalculateNodeDimensions(SableUI_node* node)
 		return;
 	}
 
-	node->rect.w = node->parent->rect.w * node->scaleFac.x;
-	node->rect.h = node->parent->rect.h * node->scaleFac.y;
+	CalculateNodeScale(node);
 
 	vec2 cursor = { 0, 0 };
 
@@ -559,58 +564,58 @@ void SableUI::OpenUIFile(const std::string& path)
 
 	std::function<void(XMLElement*, const std::string&)> parseNode;
 	parseNode = [&](XMLElement* element, const std::string& parentName)
+	{
+		while (element)
 		{
-			while (element)
+			std::string elementName = element->Name();
+			const char* nameAttr = element->Attribute("name");
+
+			const char* colourAttr = element->Attribute("colour");
+			SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
+
+			const char* borderAttr = element->Attribute("border");
+			float border = 0.0f;
+			if (borderAttr) border = std::stof(borderAttr);
+
+			const char* borderColourAttr = element->Attribute("borderColour");
+			SableUI::colour borderColour = SableUI::StringTupleToColour(borderColourAttr);
+
+			const char* size = element->Attribute("size");
+			Drawable::size s = Drawable::size(size);
+
+			std::string nodeName;
+			if (nameAttr)
 			{
-				std::string elementName = element->Name();
-				const char* nameAttr = element->Attribute("name");
-
-				const char* colourAttr = element->Attribute("colour");
-				SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
-
-				const char* borderAttr = element->Attribute("border");
-				float border = 0.0f;
-				if (borderAttr) border = std::stof(borderAttr);
-
-				const char* borderColourAttr = element->Attribute("borderColour");
-				SableUI::colour borderColour = SableUI::StringTupleToColour(borderColourAttr);
-
-				const char* size = element->Attribute("size");
-				Drawable::size s = Drawable::size(size);
-
-				std::string nodeName;
-				if (nameAttr)
-				{
-					nodeName = nameAttr;
-				}
-				else
-				{
-					nodeName = elementName + " " + std::to_string(nodes.size());
-				}
-
-				if (elementName == "hsplitter")
-				{
-					SableUI::AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
-					parentStack.push(nodeName);
-					parseNode(element->FirstChildElement(), nodeName);
-					parentStack.pop();
-				}
-				else if (elementName == "vsplitter")
-				{
-					SableUI::AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
-					parentStack.push(nodeName);
-					parseNode(element->FirstChildElement(), nodeName);
-					parentStack.pop();
-				}
-				else if (elementName == "component")
-				{
-					SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-					SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border, borderColour, s));
-				}
-
-				element = element->NextSiblingElement();
+				nodeName = nameAttr;
 			}
-		};
+			else
+			{
+				nodeName = elementName + " " + std::to_string(nodes.size());
+			}
+
+			if (elementName == "hsplitter")
+			{
+				SableUI::AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
+				parentStack.push(nodeName);
+				parseNode(element->FirstChildElement(), nodeName);
+				parentStack.pop();
+			}
+			else if (elementName == "vsplitter")
+			{
+				SableUI::AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
+				parentStack.push(nodeName);
+				parseNode(element->FirstChildElement(), nodeName);
+				parentStack.pop();
+			}
+			else if (elementName == "component")
+			{
+				SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
+				SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border, borderColour));
+			}
+
+			element = element->NextSiblingElement();
+		}
+	};
 
 	parseNode(rootElement->FirstChildElement(), parentStack.top());
 	SableUI::CalculateNodeDimensions();

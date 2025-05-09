@@ -1,6 +1,6 @@
 #include "SBUI_Node.h"
 
-SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::string& name)
+SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::string& name, Drawable::size s)
 	: type(type), parent(parent), name(name)
 {
 	if (type != NodeType::ROOTNODE)
@@ -16,6 +16,21 @@ SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::strin
 	else
 	{
 		index = 0;
+	}
+
+	if (s.v != -1.0f && size.type == Drawable::SizeType::PERCENT)
+	{
+		if (parent == nullptr) return;
+
+		if (parent->type == NodeType::VSPLITTER)
+		{
+			parent->scaleFac.y = s.v / 100.0f;
+		}
+
+		if (parent->type == NodeType::HSPLITTER)
+		{
+			parent->scaleFac.x = s.v / 100.0f;
+		}
 	}
 }
 

@@ -10,13 +10,11 @@ class BaseComponent
 public:
 	BaseComponent() {}
 	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255), 
-		float border = 0, SableUI::colour borderColour = SableUI::colour(255, 255, 255),
-		Drawable::size s = Drawable::size());
+		float border = 0, SableUI::colour borderColour = SableUI::colour(255, 255, 255));
 
 	SableUI_node* parent = nullptr;
 
 	Drawable::Rect drawable;
-	Drawable::size size;
 
 	virtual void Render();
 	void UpdateDrawable();

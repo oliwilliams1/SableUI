@@ -101,10 +101,10 @@ void Drawable::Rect::Draw()
 
     if (rowPixels == nullptr) return;
 
-	int x = std::min(static_cast<int>(std::ceil(r.x)), s_surface->w - 1);
-	int y = std::min(static_cast<int>(std::ceil(r.y)), s_surface->h - 1);
-	int width = std::min(static_cast<int>(std::ceil(r.w)), s_surface->w - x);
-	int height = std::min(static_cast<int>(std::ceil(r.h)), s_surface->h - y);
+    int x      = static_cast<int>(std::min(r.x, static_cast<float>(s_surface->w)));
+	int y      = static_cast<int>(std::min(r.y, static_cast<float>(s_surface->h)));
+	int width  = static_cast<int>(std::min(r.w, static_cast<float>(s_surface->w - x)));
+	int height = static_cast<int>(std::min(r.h, static_cast<float>(s_surface->h - y)));
 
 	for (int i = 0; i < height; i++)
 	{
@@ -113,7 +113,6 @@ void Drawable::Rect::Draw()
 			std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
 		}
 	}
-
 
     if (border <= 0.0f) return;
 
@@ -137,8 +136,8 @@ void Drawable::Rect::Draw()
 		}
     }
 
-    int f1 = x - border;
-    int f2 = x + width;
+    int f1 = static_cast<int>(x - border);
+    int f2 = static_cast<int>(x + width);
 
     size_t sH2 = border * sizeof(uint32_t);
 
