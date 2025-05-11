@@ -70,8 +70,6 @@ namespace SableUI
 
 		static Renderer& Get();
 
-		void Clear(const SableUI::colour& colour);
-
 		void Draw(std::unique_ptr<Drawable::Base> drawable);
 
 		void Draw();

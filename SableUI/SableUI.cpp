@@ -208,12 +208,12 @@ void SableUI::SetMaxFPS(int fps)
 	frameDelay = 1000 / fps;
 }
 
-static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
+static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 {
 	static SableUI_node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
 
-	static SableUI::ivec2 oldPos = { 0, 0 };
+	static SableUI::vec2 oldPos = { 0, 0 };
 	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
 	static SableUI::vec2 oldScaleFac = { 0, 0 };
 	static float nParentsChildren = 1.0f; // prev div 0
@@ -262,24 +262,28 @@ static void Resize(SableUI::ivec2 pos, SableUI_node* node = nullptr)
 		return;
 	}
 
-	SableUI::ivec2 deltaPos = pos - oldPos;
+	SableUI::vec2 deltaPos = pos - oldPos;
 
 	if (currentEdgeType == SableUI::EW_EDGE)
 	{
-		deltaPos.x = std::clamp(deltaPos.x, static_cast<int>(-oldNodeRect.w + 15), static_cast<int>(olderSiblingOldRect.w - 15));
+		deltaPos.x = std::clamp(deltaPos.x,
+			-oldNodeRect.w + 15.0f,
+			olderSiblingOldRect.w - 15.0f);
 
 		float f = (deltaPos.x / oldNodeRect.w) / (1.0f / oldScaleFac.x);
-		selectedNode->scaleFac.x = oldScaleFac.x + f;
 
+		selectedNode->scaleFac.x = oldScaleFac.x + f;
 		olderSiblingNode->scaleFac.x = olderSiblingOldFac.x - f;
 	}
 	else if (currentEdgeType == SableUI::NS_EDGE)
 	{
-		deltaPos.y = std::clamp(deltaPos.y, static_cast<int>(-oldNodeRect.h + 15), static_cast<int>(olderSiblingOldRect.h - 15));
+		deltaPos.y = std::clamp(deltaPos.y,
+			-oldNodeRect.h + 15.0f,
+			olderSiblingOldRect.h - 15.0f);
 
 		float f = (deltaPos.y / oldNodeRect.h) / (1.0f / oldScaleFac.y);
-		selectedNode->scaleFac.y = oldScaleFac.y + f;
 
+		selectedNode->scaleFac.y = oldScaleFac.y + f;
 		olderSiblingNode->scaleFac.y = olderSiblingOldFac.y - f;
 	}
 
@@ -438,8 +442,8 @@ SableUI_node* SableUI::FindNodeByName(const std::string& name)
 
 static void CalculateNodeScale(SableUI_node* node)
 {
-	node->rect.w = static_cast<float>(static_cast<int>(node->parent->rect.w * node->scaleFac.x));
-	node->rect.h = static_cast<float>(static_cast<int>(node->parent->rect.h * node->scaleFac.y));
+	node->rect.w = node->parent->rect.w * node->scaleFac.x;
+	node->rect.h = node->parent->rect.h * node->scaleFac.y;
 }
 
 void SableUI::CalculateNodeDimensions(SableUI_node* node)

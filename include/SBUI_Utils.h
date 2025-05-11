@@ -1,9 +1,41 @@
 #pragma once
 #include <stdio.h>
 #include <cstdint>
+#include <cmath>
 
 namespace SableUI
 {
+    struct ivec2
+    {
+        int x;
+        int y;
+
+        ivec2(int x, int y) : x(x), y(y) {}
+        ivec2(int x) : x(x), y(x) {}
+
+        ivec2 operator+(const ivec2& other) const {
+            return { x + other.x, y + other.y };
+        }
+
+        ivec2 operator-(const ivec2& other) const {
+            return { x - other.x, y - other.y };
+        }
+
+        ivec2 operator*(int scalar) const {
+            return { x * scalar, y * scalar };
+        }
+
+        ivec2 operator/(int scalar) const {
+            if (scalar != 0) {
+                return { x / scalar, y / scalar };
+            }
+            else {
+                printf("Error: Division by zero error\n");
+                return { 0, 0 };
+            }
+        }
+    };
+
     struct vec3
     {
         float x;
@@ -43,6 +75,9 @@ namespace SableUI
 
         vec2(float x, float y) : x(x), y(y) {}
         vec2(float x) : x(x), y(x) {}
+        vec2(int x, int y) : x(x), y(y) {}
+		vec2(int x) : x(x), y(x) {}
+        vec2(ivec2 v) : x(v.x), y(v.y) {}
 
         vec2 operator+(const vec2& other) const {
             return { x + other.x, y + other.y };
@@ -57,37 +92,6 @@ namespace SableUI
         }
 
         vec2 operator/(float scalar) const {
-            if (scalar != 0) {
-                return { x / scalar, y / scalar };
-            }
-            else {
-                printf("Error: Division by zero error\n");
-                return { 0, 0 };
-            }
-        }
-    };
-
-    struct ivec2
-    {
-        int x;
-        int y;
-
-        ivec2(int x, int y) : x(x), y(y) {}
-        ivec2(int x) : x(x), y(x) {}
-
-        ivec2 operator+(const ivec2& other) const {
-            return { x + other.x, y + other.y };
-        }
-
-        ivec2 operator-(const ivec2& other) const {
-            return { x - other.x, y - other.y };
-        }
-
-        ivec2 operator*(int scalar) const {
-            return { x * scalar, y * scalar };
-        }
-
-        ivec2 operator/(int scalar) const {
             if (scalar != 0) {
                 return { x / scalar, y / scalar };
             }
@@ -125,4 +129,6 @@ namespace SableUI
     bool RectBoundingBox(rect r, ivec2 p);
 
     colour StringTupleToColour(const char* str);
+
+    inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 }
