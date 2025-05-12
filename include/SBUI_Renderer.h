@@ -37,23 +37,6 @@ namespace Drawable
 		std::vector<uint32_t> bTBRowBuffer;
 		std::vector<uint32_t> bLRRowBuffer;
 	};
-
-	enum class SizeType
-	{
-		PX = 0,
-		PERCENT = 1,
-		AUTO = 2
-	};
-
-	struct size
-	{
-		size() {};
-		size(const char* str);
-
-		SizeType type = SizeType::AUTO;
-
-		float v = -1.0f;
-	};
 }
 
 namespace SableUI

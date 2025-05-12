@@ -101,10 +101,10 @@ void Drawable::Rect::Draw()
 
     if (rowPixels == nullptr) return;
 
-    int x      = SableUI::f2i(std::min(r.x - 0.25f, static_cast<float>(s_surface->w)));
-    int y      = SableUI::f2i(std::min(r.y - 0.25f, static_cast<float>(s_surface->h)));
-    int width  = SableUI::f2i(std::min(r.w - 0.25f, static_cast<float>(s_surface->w - x)));
-    int height = SableUI::f2i(std::min(r.h - 0.25f, static_cast<float>(s_surface->h - y)));
+    int x      = SableUI::f2i(std::min(r.x, static_cast<float>(s_surface->w)));
+    int y      = SableUI::f2i(std::min(r.y, static_cast<float>(s_surface->h)));
+    int width  = SableUI::f2i(std::min(r.w, static_cast<float>(s_surface->w - x)));
+    int height = SableUI::f2i(std::min(r.h, static_cast<float>(s_surface->h - y)));
 
 	for (int i = 0; i < height; i++)
 	{
@@ -123,7 +123,7 @@ void Drawable::Rect::Draw()
 
     int iBorder = SableUI::f2i(border);
 
-    size_t sH1 = static_cast<size_t>(width + 1 + 2 * iBorder) * sizeof(uint32_t);
+    size_t sH1 = static_cast<size_t>(width - 2 * iBorder) * sizeof(uint32_t);
 
     for (int i = 0; i < iBorder; i++)
     {
@@ -132,10 +132,10 @@ void Drawable::Rect::Draw()
             std::memcpy(surfacePixels + ((y + i - iBorder) * s_surface->w) + x - iBorder, bTBRowPixels, sH1);
         }
 
-        if (y + i < s_surface->h)
-		{
-            std::memcpy(surfacePixels + ((y + height + i) * s_surface->w) + x - iBorder, bTBRowPixels, sH1);
-		}
+        if (y + height + i - iBorder < s_surface->h)
+        {
+            std::memcpy(surfacePixels + ((y + height + i - iBorder) * s_surface->w) + x - iBorder, bTBRowPixels, sH1);
+        }
     }
 
     int f1 = x - iBorder;
@@ -225,25 +225,4 @@ void SableUI::Renderer::Draw()
 
     SDL_UnlockSurface(s_surface);
     drawStack.clear();
-}
-
-Drawable::size::size(const char* str)
-{
-    if (str == nullptr) return;
-
-    std::string s(str);
-    if (s.length() > 1 && s.substr(s.length() - 2) == "px")
-    {
-        type = SizeType::PX;
-        v = std::stof(s.substr(0, s.length() - 2));
-    }
-    else if (s.back() == '%')
-    {
-        type = SizeType::PERCENT;
-        v = std::stof(s.substr(0, s.length() - 1));
-    }
-    else
-    {
-        v = -1.0f;
-    }
 }

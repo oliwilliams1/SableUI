@@ -22,5 +22,5 @@ namespace SableUI
 
 	void OpenUIFile(const std::string& path);
 
-	void CalculateNodeDimensions(SableUI_node* node = nullptr);
+	void CalculateNodePositions(SableUI_node* node = nullptr);
 }
