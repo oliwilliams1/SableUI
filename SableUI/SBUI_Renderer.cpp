@@ -54,34 +54,31 @@ void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float b
 
     r.x = std::clamp(r.x, 0.0f, s_surface->w - 1.0f);
     r.y = std::clamp(r.y, 0.0f, s_surface->h - 1.0f);
-
     r.w = std::clamp(r.w, 0.0f, s_surface->w - r.x);
     r.h = std::clamp(r.h, 0.0f, s_surface->h - r.y);
 
     if (border > 0.0f)
     {
-		r.x += border;
-		r.y += border;
-		r.w -= border * 2;
-		r.h -= border * 2;
+        r.x += border;
+        r.y += border;
+        r.w -= border * 2;
+        r.h -= border * 2;
     }
 
-	r.w = std::max(r.w, 0.0f);
-	r.h = std::max(r.h, 0.0f);
+    r.w = std::max(r.w, 0.0f);
+    r.h = std::max(r.h, 0.0f);
 
-    int x = std::min(static_cast<int>(std::ceil(r.x)), s_surface->w - 1);
-    int y = std::min(static_cast<int>(std::ceil(r.y)), s_surface->h - 1);
-    int width = std::min(static_cast<int>(std::ceil(r.w)), s_surface->w - x);
-    int height = std::min(static_cast<int>(std::ceil(r.h)), s_surface->h - y);
+    int x = std::clamp(static_cast<int>(std::ceil(r.x)), 0, s_surface->w - 1);
+    int y = std::clamp(static_cast<int>(std::ceil(r.y)), 0, s_surface->h - 1);
+    int width = std::clamp(static_cast<int>(std::ceil(r.w)), 0, s_surface->w - x);
+    int height = std::clamp(static_cast<int>(std::ceil(r.h)), 0, s_surface->h - y);
 
     this->rowBuffer.resize(width);
     std::fill(this->rowBuffer.begin(), this->rowBuffer.end(), colour.value);
 
     if (border > 0.0f)
     {
-        SableUI::rect temp_br = rect;
-
-        bTBRowBuffer.resize(static_cast<size_t>(r.w + 1 + border * 2));
+        bTBRowBuffer.resize(static_cast<size_t>(width + 2 * border));
         bLRRowBuffer.resize(static_cast<size_t>(border));
 
         std::fill(bTBRowBuffer.begin(), bTBRowBuffer.end(), bColour.value);
@@ -99,62 +96,59 @@ void Drawable::Rect::Draw()
     uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
     uint32_t* rowPixels = rowBuffer.data();
 
-    if (rowPixels == nullptr) return;
+    if (rowPixels == nullptr || surfacePixels == nullptr) return;
 
-    int x      = SableUI::f2i(std::min(r.x, static_cast<float>(s_surface->w)));
-    int y      = SableUI::f2i(std::min(r.y, static_cast<float>(s_surface->h)));
-    int width  = SableUI::f2i(std::min(r.w, static_cast<float>(s_surface->w - x)));
-    int height = SableUI::f2i(std::min(r.h, static_cast<float>(s_surface->h - y)));
-
-	for (int i = 0; i < height; i++)
-	{
-		if (y + i < s_surface->h)
-		{
-			std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
-		}
-	}
-
-    if (border <= 0.0f) return;
-
-    if (bLRRowBuffer.size() == 0 || bTBRowBuffer.size() == 0) return;
-
-	uint32_t* bTBRowPixels = bTBRowBuffer.data();
-	uint32_t* bLRRowPixels = bLRRowBuffer.data();
-
-    int iBorder = SableUI::f2i(border);
-
-    size_t sH1 = static_cast<size_t>(width - 2 * iBorder) * sizeof(uint32_t);
-
-    for (int i = 0; i < iBorder; i++)
-    {
-        if (y + i < s_surface->h)
-        {
-            std::memcpy(surfacePixels + ((y + i - iBorder) * s_surface->w) + x - iBorder, bTBRowPixels, sH1);
-        }
-
-        if (y + height + i - iBorder < s_surface->h)
-        {
-            std::memcpy(surfacePixels + ((y + height + i - iBorder) * s_surface->w) + x - iBorder, bTBRowPixels, sH1);
-        }
-    }
-
-    int f1 = x - iBorder;
-    int f2 = x + width;
-
-    size_t sH2 = iBorder * sizeof(uint32_t);
+    int x = SableUI::f2i(std::clamp(r.x, 0.0f, static_cast<float>(s_surface->w)));
+    int y = SableUI::f2i(std::clamp(r.y, 0.0f, static_cast<float>(s_surface->h)));
+    int width = SableUI::f2i(std::clamp(r.w, 0.0f, static_cast<float>(s_surface->w - x)));
+    int height = SableUI::f2i(std::clamp(r.h, 0.0f, static_cast<float>(s_surface->h - y)));
 
     for (int i = 0; i < height; i++)
     {
         if (y + i < s_surface->h)
         {
-            if (f1 >= 0)
+            std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
+        }
+    }
+
+    if (border <= 0.0f) return;
+
+    if (bLRRowBuffer.empty() || bTBRowBuffer.empty()) return;
+
+    uint32_t* bTBRowPixels = bTBRowBuffer.data();
+    uint32_t* bLRRowPixels = bLRRowBuffer.data();
+    int iBorder = SableUI::f2i(border);
+    size_t sH1 = static_cast<size_t>(width + 2 * iBorder) * sizeof(uint32_t);
+
+    for (int i = 0; i < iBorder; i++)
+    {
+        if (y + i < s_surface->h)
+        {
+            std::memcpy(surfacePixels + ((y + i - iBorder) * s_surface->w) + (x - iBorder), bTBRowPixels, sH1);
+        }
+    }
+
+    for (int i = 0; i < iBorder; i++)
+    {
+        if (y + height + i < s_surface->h)
+        {
+            std::memcpy(surfacePixels + ((y + height + i) * s_surface->w) + (x - iBorder), bTBRowPixels, sH1);
+        }
+    }
+
+    size_t sH2 = static_cast<size_t>(iBorder) * sizeof(uint32_t);
+    for (int i = 0; i < height; i++)
+    {
+        if (y + i < s_surface->h)
+        {
+            if (x - iBorder >= 0)
             {
-				std::memcpy(surfacePixels + ((y + i) * s_surface->w) + f1, bLRRowPixels, sH2);
+                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + (x - iBorder), bLRRowPixels, sH2);
             }
-            if (f2 < s_surface->w)
+            if (x + width < s_surface->w)
             {
-                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + f2, bLRRowPixels, sH2);
-			}
+                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + (x + width), bLRRowPixels, sH2);
+            }
         }
     }
 }
