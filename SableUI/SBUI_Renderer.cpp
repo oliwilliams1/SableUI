@@ -48,7 +48,7 @@ void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float p
     this->rowBuffer.clear();
 
     this->r = rect;
-    this->colour = colour;
+    this->c = colour;
 
     r.x = std::clamp(r.x, 0.0f, s_surface->w - 1.0f);
     r.y = std::clamp(r.y, 0.0f, s_surface->h - 1.0f);
@@ -95,6 +95,42 @@ void Drawable::Rect::Draw()
     }
 }
 
+void Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, float pBSize, 
+    const std::vector<int>& segments, float borderSize, bool draw)
+{
+    this->r = rect;
+    this->c = colour;
+    this->b = SableUI::f2i(borderSize);
+    this->segments = segments;
+
+    this->rowBuffer.clear();
+    this->colBuffer.clear();
+
+    rowBuffer.resize(r.w);
+    std::fill(rowBuffer.begin(), rowBuffer.end(), c.value);
+}
+
+void Drawable::bSplitter::Draw()
+{
+    uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
+    uint32_t* rowPixels = rowBuffer.data();
+
+    if (rowPixels == nullptr || surfacePixels == nullptr) return;
+
+    int x = SableUI::f2i(std::clamp(r.x, 0.0f, static_cast<float>(s_surface->w)));
+    int y = SableUI::f2i(std::clamp(r.y, 0.0f, static_cast<float>(s_surface->h)));
+    int width = SableUI::f2i(std::clamp(r.w, 0.0f, static_cast<float>(s_surface->w - x)));
+    int height = SableUI::f2i(std::clamp(r.h, 0.0f, static_cast<float>(s_surface->h - y)));
+
+    for (int i = 0; i < b; i++)
+    {
+        if (y + i < s_surface->h)
+        {
+            std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
+        }
+    }
+}
+
 void SableUI::Renderer::Draw(std::unique_ptr<Drawable::Base> drawable)
 {
     drawStack.push_back(std::move(drawable));
@@ -121,6 +157,8 @@ void SableUI::Renderer::Draw()
 	{
 		drawable.get()->Draw();
 	}
+
+    printf("%i\n", (int)drawStack.size());
 
     SDL_UnlockSurface(s_surface);
     drawStack.clear();

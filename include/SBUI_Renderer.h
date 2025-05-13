@@ -6,13 +6,21 @@
 
 #include "SBUI_Utils.h"
 
+enum class NodeType
+{
+	ROOTNODE = 0x00,
+	COMPONENT = 0x01,
+	VSPLITTER = 0x02,
+	HSPLITTER = 0x03
+};
+
 namespace Drawable
 {
 	class Base
 	{
 	public:
-		virtual void Draw() {};
-		virtual ~Base() {};
+		virtual void Draw() = 0;
+		virtual ~Base() = default;
 	};
 
 	class Rect : public Base
@@ -20,14 +28,14 @@ namespace Drawable
 	public:
 		Rect() {};
 		~Rect() { rowBuffer.clear(); };
-		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
+		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
 
 		void Update(SableUI::rect& rect, SableUI::colour colour, float pBSize = 0.0f, bool draw = true);
 
 		void Draw() override;
 
 		SableUI::rect r = { 0, 0, 0, 0 };
-		SableUI::colour colour = { 255, 255, 255 };
+		SableUI::colour c = { 255, 255, 255 };
 		std::vector<uint32_t> rowBuffer;
 	};
 
@@ -36,14 +44,17 @@ namespace Drawable
 	public:
 		bSplitter() {};
 		~bSplitter() { rowBuffer.clear(); colBuffer.clear(); };
-		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
+		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
 
-		void Update(SableUI::rect& rect, SableUI::colour colour, float pBSize = 0.0f, bool draw = true);
+		void Update(SableUI::rect& rect, SableUI::colour colour, float pBSize = 0.0f, 
+			const std::vector<int>& segments = { 0 }, float borderSize = 0.0f, bool draw = true);
 
 		void Draw() override;
 
 		SableUI::rect r = { 0, 0, 0, 0 };
-		SableUI::colour colour = { 255, 255, 255 };
+		SableUI::colour c = { 255, 255, 255 };
+		int b = 0;
+		std::vector<int> segments;
 		std::vector<uint32_t> rowBuffer;
 		std::vector<uint32_t> colBuffer;
 	};

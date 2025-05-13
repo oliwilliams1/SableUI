@@ -14,14 +14,6 @@ constexpr uint16_t UNDEF = 0xFFFF;
 
 class BaseComponent;
 
-enum class NodeType
-{
-    ROOTNODE  = 0x00,
-    COMPONENT = 0x01,
-    VSPLITTER = 0x02,
-    HSPLITTER = 0x03
-};
-
 struct SableUI_node
 {
     std::string name = "";
@@ -35,7 +27,6 @@ struct SableUI_node
     std::unique_ptr<BaseComponent> component;
 
     float bSize = 0.0f;
-    SableUI::colour bColour = { 255, 0, 0, 0 };
     
     SableUI_node(NodeType type, SableUI_node* parent, const std::string& name);
 };

@@ -269,14 +269,13 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 	}
 }
 
-static void SetupSplitter(const std::string& name, float bSize, SableUI::colour bColour)
+void SableUI::SetupSplitter(const std::string& name, float bSize)
 {
 	SableUI_node* node = SableUI::FindNodeByName(name);
 
 	if (node == nullptr) return;
 
 	node->bSize = bSize;
-	node->bColour = bColour;
 }
 
 void SableUI::SBCreateWindow(const std::string& title, int width, int height, int x, int y)
@@ -383,7 +382,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 	nodes.push_back(node);
 }
 
-void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseComponent& component)
+void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component)
 {
 	SableUI_node* node = FindNodeByName(nodeName);
 
@@ -393,20 +392,14 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, const BaseCompo
 		return;
 	}
 
-	if (node->type != NodeType::COMPONENT)
-	{
-		printf("Node: %s is not a component node! Cannot attach component to a non-component node\n",
-			nodeName.c_str());
-		return;
-	}
-
 	if (node->component != nullptr)
 	{
 		printf("Node: %s already has a component attached!\n", nodeName.c_str());
 		return;
 	}
-	node->component = std::make_unique<BaseComponent>(component);
-	node->component.get()->parent = node;
+
+	node->component = std::move(component);
+	node->component->SetParent(node);
 }
 
 bool SableUI::PollEvents()
@@ -428,7 +421,6 @@ bool SableUI::PollEvents()
 
 				surface = SDL_GetWindowSurface(window);
 				Renderer::SetSurface(surface);
-				// Renderer::Get().Clear({ 32, 32, 32 });
 
 				SetupRootNode(root, w, h);
 				CalculateNodeScales();
@@ -439,6 +431,8 @@ bool SableUI::PollEvents()
 				}
 				break;
 			}
+			break;
+
 		case SDL_MOUSEBUTTONUP:
 			resizing = false;
 			break;
@@ -459,6 +453,7 @@ void SableUI::Draw()
 
 	Renderer& renderer = Renderer::Get();
 
+	// Components
 	ivec2 cursorPos = { 0, 0 };
 	uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
 
@@ -472,8 +467,6 @@ void SableUI::Draw()
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
 		if (cursorPos.x == 0 && cursorPos.y == 0) continue;
-
-		if (node->component != nullptr) node->component.get()->Render();
 	
 		float d1 = DistToEdge(node, cursorPos);
 
@@ -523,6 +516,19 @@ void SableUI::Draw()
 		else
 		{
 			resCalled = false;
+		}
+	}
+
+	// Splitters
+
+	for (const SableUI_node* node : nodes)
+	{
+		if (node->component != nullptr)
+		{
+			if (auto* splitterComponent = dynamic_cast<SplitterComponent*>(node->component.get()))
+			{
+				splitterComponent->Render();
+			}
 		}
 	}
 
@@ -598,7 +604,10 @@ void SableUI::CalculateNodePositions(SableUI_node* node)
 
 	if (node->component)
 	{
-		node->component.get()->UpdateDrawable();
+		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
+		{
+			defaultComponent->UpdateDrawable();
+		}
 	}
 
 	for (SableUI_node* child : node->children)
@@ -701,7 +710,8 @@ void SableUI::OpenUIFile(const std::string& path)
 			if (elementName == "hsplitter")
 			{
 				SableUI::AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
-				SetupSplitter(nodeName, border, borderColour);
+				SableUI::SetupSplitter(nodeName, border);
+				SableUI::AttachComponentToNode(nodeName, std::make_unique<SplitterComponent>(colour));
 
 				parentStack.push(nodeName);
 				parseNode(element->FirstChildElement(), nodeName);
@@ -710,7 +720,8 @@ void SableUI::OpenUIFile(const std::string& path)
 			else if (elementName == "vsplitter")
 			{
 				SableUI::AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
-				SetupSplitter(nodeName, border, borderColour);
+				SableUI::SetupSplitter(nodeName, border);
+				SableUI::AttachComponentToNode(nodeName, std::make_unique<SplitterComponent>(colour));
 
 				parentStack.push(nodeName);
 				parseNode(element->FirstChildElement(), nodeName);
@@ -719,7 +730,7 @@ void SableUI::OpenUIFile(const std::string& path)
 			else if (elementName == "component")
 			{
 				SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-				SableUI::AttachComponentToNode(nodeName, BaseComponent(colour));
+				SableUI::AttachComponentToNode(nodeName, std::make_unique<DefaultComponent>(colour));
 			}
 
 			element = element->NextSiblingElement();

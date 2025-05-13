@@ -8,18 +8,40 @@ struct SableUI_node;
 class BaseComponent
 {
 public:
-	BaseComponent() {}
-	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255));
+	BaseComponent(SableUI_node* parent) : parent(parent) {}
 
+	virtual void Render() {}
+	SableUI_node* GetParent() { return parent; }
+	void SetParent(SableUI_node* n) { parent = n; }
+
+protected:
 	SableUI_node* parent = nullptr;
+};
 
-	Drawable::Rect drawable;
+class DefaultComponent : public BaseComponent
+{
+public:
+	DefaultComponent(SableUI::colour colour = SableUI::colour(255, 255, 255, 255), 
+		SableUI_node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 
-	virtual void Render();
+	void Render() override;
 	void UpdateDrawable();
 
-	SableUI::Renderer* renderer = nullptr;
-
 private:
-	SableUI::colour colour = SableUI::colour(255, 255, 255);
+	SableUI::colour colour;
+	Drawable::Rect drawable;
+};
+
+class SplitterComponent : public BaseComponent
+{
+public:
+	SplitterComponent(SableUI::colour bColour = SableUI::colour(255, 32, 32, 32),
+		SableUI_node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
+
+	void Render() override;
+	void UpdateDrawable();
+	
+private:
+	SableUI::colour bColour;
+	Drawable::bSplitter drawable;
 };
