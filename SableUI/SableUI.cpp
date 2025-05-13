@@ -269,6 +269,16 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 	}
 }
 
+static void SetupSplitter(const std::string& name, float bSize, SableUI::colour bColour)
+{
+	SableUI_node* node = SableUI::FindNodeByName(name);
+
+	if (node == nullptr) return;
+
+	node->bSize = bSize;
+	node->bColour = bColour;
+}
+
 void SableUI::SBCreateWindow(const std::string& title, int width, int height, int x, int y)
 {
 	if (window != nullptr || surface != nullptr)
@@ -459,10 +469,12 @@ void SableUI::Draw()
 
 	for (SableUI_node* node : nodes)
 	{
-		if (node->component != nullptr) node->component.get()->Render();
-
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
+		if (cursorPos.x == 0 && cursorPos.y == 0) continue;
+
+		if (node->component != nullptr) node->component.get()->Render();
+	
 		float d1 = DistToEdge(node, cursorPos);
 
 		if (node->parent == nullptr) continue;
@@ -674,28 +686,23 @@ void SableUI::OpenUIFile(const std::string& path)
 			const char* nameAttr = element->Attribute("name");
 
 			const char* colourAttr = element->Attribute("colour");
-			SableUI::colour colour = SableUI::StringTupleToColour(colourAttr);
+			SableUI::colour colour = SableUI::colour(32, 32, 32);
+			if (colourAttr) colour = SableUI::StringTupleToColour(colourAttr);
 
 			const char* borderAttr = element->Attribute("border");
-			float border = 0.0f;
+			float border = 1.0f;
 			if (borderAttr) border = std::stof(borderAttr);
 
 			const char* borderColourAttr = element->Attribute("borderColour");
 			SableUI::colour borderColour = SableUI::StringTupleToColour(borderColourAttr);
 
-			std::string nodeName;
-			if (nameAttr)
-			{
-				nodeName = nameAttr;
-			}
-			else
-			{
-				nodeName = elementName + " " + std::to_string(nodes.size());
-			}
+			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(nodes.size());
 
 			if (elementName == "hsplitter")
 			{
 				SableUI::AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
+				SetupSplitter(nodeName, border, borderColour);
+
 				parentStack.push(nodeName);
 				parseNode(element->FirstChildElement(), nodeName);
 				parentStack.pop();
@@ -703,6 +710,8 @@ void SableUI::OpenUIFile(const std::string& path)
 			else if (elementName == "vsplitter")
 			{
 				SableUI::AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
+				SetupSplitter(nodeName, border, borderColour);
+
 				parentStack.push(nodeName);
 				parseNode(element->FirstChildElement(), nodeName);
 				parentStack.pop();
@@ -718,14 +727,6 @@ void SableUI::OpenUIFile(const std::string& path)
 	};
 
 	parseNode(rootElement->FirstChildElement(), parentStack.top());
-
-	for (const SableUI_node* node : nodes)
-	{
-		if (node->type == NodeType::COMPONENT && node->component != nullptr)
-		{
-			node->component->Render();
-		}
-	}
 
 	CalculateNodeScales();
 	SableUI::CalculateNodePositions();

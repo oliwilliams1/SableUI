@@ -33,6 +33,9 @@ struct SableUI_node
     SableUI_node* parent  = nullptr;
     std::vector<SableUI_node*> children;
     std::unique_ptr<BaseComponent> component;
+
+    float bSize = 0.0f;
+    SableUI::colour bColour = { 255, 0, 0, 0 };
     
     SableUI_node(NodeType type, SableUI_node* parent, const std::string& name);
 };

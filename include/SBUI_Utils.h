@@ -131,6 +131,10 @@ namespace SableUI
 
         RectType wType = FILL;
         RectType hType = FILL;
+
+        bool operator !=(const rect& other) const {
+			return x != other.x || y != other.y || w != other.w || h != other.h;
+		}
     };
 
     enum EdgeType

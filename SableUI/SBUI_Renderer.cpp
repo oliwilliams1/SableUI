@@ -43,7 +43,7 @@ SableUI::Renderer& SableUI::Renderer::Get()
 	return *s_renderer;
 }
 
-void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, bool draw)
+void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float pBSize, bool draw)
 {
     this->rowBuffer.clear();
 
@@ -54,6 +54,11 @@ void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, bool dr
     r.y = std::clamp(r.y, 0.0f, s_surface->h - 1.0f);
     r.w = std::clamp(r.w, 0.0f, s_surface->w - r.x);
     r.h = std::clamp(r.h, 0.0f, s_surface->h - r.y);
+
+    r.x += pBSize;
+	r.y += pBSize;
+	r.w -= pBSize * 2.0f;
+	r.h -= pBSize * 2.0f;
 
     int x = std::clamp(static_cast<int>(std::ceil(r.x)), 0, s_surface->w - 1);
     int y = std::clamp(static_cast<int>(std::ceil(r.y)), 0, s_surface->h - 1);

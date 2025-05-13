@@ -14,7 +14,14 @@ void BaseComponent::UpdateDrawable()
 		renderer = &SableUI::Renderer::Get();
 	}
 
-	drawable.Update(parent->rect, colour);
+	float bSize = 0.0f;
+
+	if (parent->parent != nullptr)
+	{
+		bSize = parent->parent->bSize; // Components parent
+	}
+
+	drawable.Update(parent->rect, colour, bSize, true);
 }
 
 void BaseComponent::Render()

@@ -22,13 +22,30 @@ namespace Drawable
 		~Rect() { rowBuffer.clear(); };
 		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
 
-		void Update(SableUI::rect& rect, SableUI::colour colour, bool draw = true);
+		void Update(SableUI::rect& rect, SableUI::colour colour, float pBSize = 0.0f, bool draw = true);
 
 		void Draw() override;
 
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour colour = { 255, 255, 255 };
 		std::vector<uint32_t> rowBuffer;
+	};
+
+	class bSplitter : public Base
+	{
+	public:
+		bSplitter() {};
+		~bSplitter() { rowBuffer.clear(); colBuffer.clear(); };
+		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
+
+		void Update(SableUI::rect& rect, SableUI::colour colour, float pBSize = 0.0f, bool draw = true);
+
+		void Draw() override;
+
+		SableUI::rect r = { 0, 0, 0, 0 };
+		SableUI::colour colour = { 255, 255, 255 };
+		std::vector<uint32_t> rowBuffer;
+		std::vector<uint32_t> colBuffer;
 	};
 }
 

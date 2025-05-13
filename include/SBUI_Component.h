@@ -22,7 +22,4 @@ public:
 
 private:
 	SableUI::colour colour = SableUI::colour(255, 255, 255);
-
-	float border = 0.0f;
-	SableUI::colour bColour = SableUI::colour(255, 255, 255);
 };
