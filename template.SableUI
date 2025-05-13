@@ -1,20 +1,15 @@
 <root>
   <vsplitter>
     <hsplitter>
-      <component colour="(255, 128, 0)" />
+      <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
       <vsplitter>
-        <component colour="(0, 128, 255)" />
+        <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
         <hsplitter>
-          <component
-            colour="(128, 255, 0)"
-            border="4"
-            borderColour="(32, 32, 32)"
-            size="80px"
-          />
-          <component colour="(255, 0, 128)" />
+          <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)"/>
+          <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
         </hsplitter>
       </vsplitter>
     </hsplitter>
-    <component colour="(200, 200, 200)" />
+    <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
   </vsplitter>
 </root>

@@ -144,5 +144,7 @@ namespace SableUI
 
     colour StringTupleToColour(const char* str);
 
+    void ChangeWindowBackground(SableUI::colour c);
+
     inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 }

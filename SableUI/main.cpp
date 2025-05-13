@@ -45,7 +45,7 @@ static bool UserModifyNodeGraphViaTerminal()
 
 int main()
 {
-	SableUI::CreateWindow("SableUI", 800, 600);
+	SableUI::SBCreateWindow("SableUI", 800, 600);
 
     SableUI::OpenUIFile("template.SableUI");
 

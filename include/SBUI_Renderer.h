@@ -20,22 +20,15 @@ namespace Drawable
 	public:
 		Rect() {};
 		~Rect() { rowBuffer.clear(); };
-		Rect(SableUI::rect& r, SableUI::colour colour, float border = 0.0f) 
-			: r(r), colour(colour), border(border) {}
+		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), colour(colour) {}
 
-		void Update(SableUI::rect& rect, SableUI::colour colour, float border = 0.0f, 
-			SableUI::colour bColour = { 32, 32, 32 }, bool draw = true);
+		void Update(SableUI::rect& rect, SableUI::colour colour, bool draw = true);
 
 		void Draw() override;
 
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour colour = { 255, 255, 255 };
 		std::vector<uint32_t> rowBuffer;
-
-		float border = 0.0f;
-		SableUI::colour bColour = { 255, 255, 255 };
-		std::vector<uint32_t> bTBRowBuffer;
-		std::vector<uint32_t> bLRRowBuffer;
 	};
 }
 

@@ -9,8 +9,7 @@ class BaseComponent
 {
 public:
 	BaseComponent() {}
-	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255), 
-		float border = 0, SableUI::colour borderColour = SableUI::colour(255, 255, 255));
+	BaseComponent(SableUI::colour colour = SableUI::colour(255, 255, 255));
 
 	SableUI_node* parent = nullptr;
 

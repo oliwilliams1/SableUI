@@ -12,6 +12,13 @@
 #include "SBUI_Renderer.h"
 #include "SBUI_Node.h"
 
+#ifdef _WIN32
+#pragma comment(lib, "Dwmapi.lib")
+#include <SDL_syswm.h>
+#include <windows.h>
+#include <dwmapi.h>
+#endif
+
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
@@ -46,6 +53,8 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 	case NodeType::HSPLITTER:
 	{
+		node->rect.h = node->parent->rect.h;
+
 		if (node->rect.wType == SableUI::RectType::FIXED) break;
 
 		float wLeft = node->parent->rect.w;
@@ -72,13 +81,13 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 			node->rect.w = wLeft;
 		}
 
-		node->rect.h = node->parent->rect.h;
-
 		break;
 	}
 
 	case NodeType::VSPLITTER:
 	{
+		node->rect.w = node->parent->rect.w;
+
 		if (node->rect.hType == SableUI::RectType::FIXED) break;
 
 		float hTop = node->parent->rect.h;
@@ -105,8 +114,6 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 			node->rect.h = hTop;
 		}
 
-		node->rect.w = node->parent->rect.w;
-
 		break;
 	}
 	}
@@ -117,7 +124,152 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 	}
 }
 
-void SableUI::CreateWindow(const std::string& title, int width, int height, int x, int y)
+static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
+{
+	static SableUI_node* selectedNode = nullptr;
+	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
+
+	static SableUI::vec2 oldPos = { 0, 0 };
+	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
+	static float nParentsChildren = 1.0f; // prev div 0
+
+	static SableUI_node* olderSiblingNode = nullptr;
+	static SableUI::rect olderSiblingOldRect = { 0, 0, 0, 0 };
+
+	// First resize call fills data
+	if (node != nullptr)
+	{
+		oldPos = pos;
+		selectedNode = node;
+		oldNodeRect = node->rect;
+		nParentsChildren = static_cast<float>(node->parent->children.size());
+
+		if (node->parent == nullptr)
+		{
+			olderSiblingNode = nullptr;
+			olderSiblingOldRect = { 0, 0, 0, 0 };
+			return;
+		}
+
+		int olderSiblingIndex = node->index + 1;
+		if (olderSiblingIndex < node->parent->children.size())
+		{
+			olderSiblingNode = node->parent->children[olderSiblingIndex];
+			olderSiblingOldRect = olderSiblingNode->rect;
+		}
+		else return;
+
+		switch (node->parent->type)
+		{
+		case NodeType::HSPLITTER:
+			currentEdgeType = SableUI::EdgeType::EW_EDGE;
+			break;
+
+		case NodeType::VSPLITTER:
+			currentEdgeType = SableUI::EdgeType::NS_EDGE;
+			break;
+		}
+
+		return;
+	}
+
+	SableUI::vec2 deltaPos = pos - oldPos;
+
+	if (currentEdgeType == SableUI::EW_EDGE)
+	{
+		deltaPos.x = std::clamp(deltaPos.x,
+			-oldNodeRect.w + 15.0f,
+			olderSiblingOldRect.w - 15.0f);
+
+		selectedNode->rect.w = oldNodeRect.w + deltaPos.x;
+		olderSiblingNode->rect.w = olderSiblingOldRect.w - deltaPos.x;
+
+		selectedNode->rect.wType = SableUI::RectType::FIXED;
+
+		for (SableUI_node* sibling : selectedNode->parent->children)
+		{
+			if (sibling->index != selectedNode->index)
+			{
+				sibling->rect.wType = SableUI::RectType::FILL;
+				sibling->rect.hType = SableUI::RectType::FILL;
+			}
+		}
+
+		CalculateNodeScales(selectedNode->parent);
+	}
+	else if (currentEdgeType == SableUI::NS_EDGE)
+	{
+		deltaPos.y = std::clamp(deltaPos.y,
+			-oldNodeRect.h + 15.0f,
+			olderSiblingOldRect.h - 15.0f);
+
+		selectedNode->rect.h = oldNodeRect.h + deltaPos.y;
+		olderSiblingNode->rect.h = olderSiblingOldRect.h - deltaPos.y;
+
+		selectedNode->rect.hType = SableUI::RectType::FIXED;
+
+		for (SableUI_node* sibling : selectedNode->parent->children)
+		{
+			if (sibling->index != selectedNode->index)
+			{
+				sibling->rect.hType = SableUI::RectType::FILL;
+				sibling->rect.wType = SableUI::RectType::FILL;
+			}
+		}
+
+		CalculateNodeScales(selectedNode->parent);
+	}
+
+	SableUI::CalculateNodePositions();
+}
+
+static float DistToEdge(SableUI_node* node, SableUI::ivec2 p)
+{
+	SableUI::rect r = node->rect;
+	NodeType parentType = NodeType::ROOTNODE;
+
+	if (node->parent != nullptr)
+	{
+		parentType = node->parent->type;
+	}
+
+	if (parentType == NodeType::HSPLITTER) {
+		float distRight = (r.x + r.w) - p.x;
+		return (distRight < 0) ? 0 : distRight;
+	}
+
+	if (parentType == NodeType::VSPLITTER)
+	{
+		float distBottom = (r.y + r.h) - p.y;
+		return (distBottom < 0) ? 0 : distBottom;
+	}
+
+	return 0;
+}
+
+static void PrintNode(SableUI_node* node, int depth = 0)
+{
+	if (node == nullptr) return;
+
+	std::string indent(depth * 2, ' ');
+
+	size_t nameLength = node->name.length();
+	int spacesNeeded = 24 - (int)nameLength;
+
+	if (spacesNeeded < 0) spacesNeeded = 0;
+
+	printf("%s name: %s, w: %.2f, h: %.2f, x: %.2f, y: %.2f, htype: %i, wtype: %i\n",
+		indent.c_str(), node->name.c_str(), node->rect.w,
+		node->rect.h, node->rect.x, node->rect.y,
+		node->rect.hType, node->rect.wType);
+
+	for (SableUI_node* child : node->children)
+	{
+		PrintNode(child, depth + 1);
+	}
+}
+
+void SableUI::SBCreateWindow(const std::string& title, int width, int height, int x, int y)
 {
 	if (window != nullptr || surface != nullptr)
 	{
@@ -139,6 +291,22 @@ void SableUI::CreateWindow(const std::string& title, int width, int height, int 
 	{
 		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 	}
+
+#ifdef _WIN32
+	SDL_SysWMinfo sysInfo{};
+
+	SDL_VERSION(&sysInfo.version);
+	SDL_GetWindowWMInfo(window, &sysInfo);
+
+	HWND hwnd = sysInfo.info.win.window;
+
+	BOOL dark_mode = true;
+	DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
+
+	// Force update of immersive dark mode
+	ShowWindow(hwnd, SW_HIDE);
+	ShowWindow(hwnd, SW_SHOW);
+#endif
 
 	surface = SDL_GetWindowSurface(window);
 
@@ -275,127 +443,6 @@ void SableUI::SetMaxFPS(int fps)
 	frameDelay = 1000 / fps;
 }
 
-static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
-{
-	static SableUI_node* selectedNode = nullptr;
-	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
-
-	static SableUI::vec2 oldPos = { 0, 0 };
-	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
-	static float nParentsChildren = 1.0f; // prev div 0
-
-	static SableUI_node* olderSiblingNode = nullptr;
-	static SableUI::rect olderSiblingOldRect = { 0, 0, 0, 0 };
-
-	// First resize call fills data
-	if (node != nullptr)
-	{
-		oldPos = pos;
-		selectedNode = node;
-		oldNodeRect = node->rect;
-		nParentsChildren = static_cast<float>(node->parent->children.size());
-
-		if (node->parent == nullptr)
-		{
-			olderSiblingNode = nullptr;
-			olderSiblingOldRect = { 0, 0, 0, 0 };
-			return;
-		}
-
-		int olderSiblingIndex = node->index + 1;
-		if (olderSiblingIndex < node->parent->children.size())
-		{
-			olderSiblingNode = node->parent->children[olderSiblingIndex];
-			olderSiblingOldRect = olderSiblingNode->rect;
-		}
-		else return;
-
-		switch (node->parent->type)
-		{
-		case NodeType::HSPLITTER:
-			currentEdgeType = SableUI::EdgeType::EW_EDGE;
-			break;
-
-		case NodeType::VSPLITTER:
-			currentEdgeType = SableUI::EdgeType::NS_EDGE;
-			break;
-		}
-
-		return;
-	}
-
-	SableUI::vec2 deltaPos = pos - oldPos;
-
-	if (currentEdgeType == SableUI::EW_EDGE)
-	{
-		deltaPos.x = std::clamp(deltaPos.x,
-			-oldNodeRect.w + 15.0f,
-			olderSiblingOldRect.w - 15.0f);
-
-		selectedNode->rect.w = oldNodeRect.w + deltaPos.x;
-		olderSiblingNode->rect.w = olderSiblingOldRect.w - deltaPos.x;
-
-		selectedNode->rect.wType = SableUI::RectType::FIXED;
-		
-		for (SableUI_node* sibling : selectedNode->parent->children)
-		{
-			if (sibling->index > selectedNode->index)
-			{
-				sibling->rect.wType = SableUI::RectType::FILL;
-			}
-		}
-
-		CalculateNodeScales(selectedNode->parent);
-	}
-	else if (currentEdgeType == SableUI::NS_EDGE)
-	{
-		deltaPos.y = std::clamp(deltaPos.y,
-			-oldNodeRect.h + 15.0f,
-			olderSiblingOldRect.h - 15.0f);
-
-		selectedNode->rect.h = oldNodeRect.h + deltaPos.y;
-		olderSiblingNode->rect.h = olderSiblingOldRect.h - deltaPos.y;
-
-		selectedNode->rect.hType = SableUI::RectType::FIXED;
-		
-		for (SableUI_node* sibling : selectedNode->parent->children)
-		{
-			if (sibling->index > selectedNode->index)
-			{
-				sibling->rect.hType = SableUI::RectType::FILL;
-			}
-		}
-
-		CalculateNodeScales(selectedNode->parent);
-	}
-
-	SableUI::CalculateNodePositions();
-}
-
-static float DistToEdge(SableUI_node* node, SableUI::ivec2 p)
-{
-	SableUI::rect r = node->rect;
-	NodeType parentType = NodeType::ROOTNODE;
-
-	if (node->parent != nullptr)
-	{
-		parentType = node->parent->type;
-	}
-
-	if (parentType == NodeType::HSPLITTER) {
-		float distRight = (r.x + r.w) - p.x;
-		return (distRight < 0) ? 0 : distRight;
-	}
-
-	if (parentType == NodeType::VSPLITTER)
-	{
-		float distBottom = (r.y + r.h) - p.y;
-		return (distBottom < 0) ? 0 : distBottom;
-	}
-
-	return 0;
-}
-
 void SableUI::Draw()
 {
 	uint32_t frameStart = SDL_GetTicks();
@@ -474,28 +521,6 @@ void SableUI::Draw()
 	if (frameTime < static_cast<uint32_t>(frameDelay))
 	{
 		SDL_Delay(frameDelay - frameTime);
-	}
-}
-
-static void PrintNode(SableUI_node* node, int depth = 0)
-{
-	if (node == nullptr) return;
-
-	std::string indent(depth * 2, ' ');
-
-	size_t nameLength = node->name.length();
-	int spacesNeeded = 24 - (int)nameLength;
-
-	if (spacesNeeded < 0) spacesNeeded = 0;
-
-	printf("name: %s, sizePx: (%.2f x %.2f), pos: (%.2f x %.2f), index: %i\n",
-		node->name.c_str(), node->rect.w, node->rect.h, 
-		node->rect.x, node->rect.y,
-		node->index);
-
-	for (SableUI_node* child : node->children)
-	{
-		PrintNode(child, depth + 1);
 	}
 }
 
@@ -617,7 +642,7 @@ void SableUI::OpenUIFile(const std::string& path)
 
 	using namespace tinyxml2;
 
-	XMLDocument doc;
+	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != XML_SUCCESS)
 	{
 		std::cerr << "Failed to load file: " << path << "\n";
@@ -685,7 +710,7 @@ void SableUI::OpenUIFile(const std::string& path)
 			else if (elementName == "component")
 			{
 				SableUI::AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-				SableUI::AttachComponentToNode(nodeName, BaseComponent(colour, border, borderColour));
+				SableUI::AttachComponentToNode(nodeName, BaseComponent(colour));
 			}
 
 			element = element->NextSiblingElement();

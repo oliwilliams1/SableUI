@@ -43,30 +43,17 @@ SableUI::Renderer& SableUI::Renderer::Get()
 	return *s_renderer;
 }
 
-void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float border, SableUI::colour bColour, bool draw)
+void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, bool draw)
 {
     this->rowBuffer.clear();
 
     this->r = rect;
     this->colour = colour;
-    this->bColour = bColour;
-    this->border = border;
 
     r.x = std::clamp(r.x, 0.0f, s_surface->w - 1.0f);
     r.y = std::clamp(r.y, 0.0f, s_surface->h - 1.0f);
     r.w = std::clamp(r.w, 0.0f, s_surface->w - r.x);
     r.h = std::clamp(r.h, 0.0f, s_surface->h - r.y);
-
-    if (border > 0.0f)
-    {
-        r.x += border;
-        r.y += border;
-        r.w -= border * 2;
-        r.h -= border * 2;
-    }
-
-    r.w = std::max(r.w, 0.0f);
-    r.h = std::max(r.h, 0.0f);
 
     int x = std::clamp(static_cast<int>(std::ceil(r.x)), 0, s_surface->w - 1);
     int y = std::clamp(static_cast<int>(std::ceil(r.y)), 0, s_surface->h - 1);
@@ -75,15 +62,6 @@ void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float b
 
     this->rowBuffer.resize(width);
     std::fill(this->rowBuffer.begin(), this->rowBuffer.end(), colour.value);
-
-    if (border > 0.0f)
-    {
-        bTBRowBuffer.resize(static_cast<size_t>(width + 2 * border));
-        bLRRowBuffer.resize(static_cast<size_t>(border));
-
-        std::fill(bTBRowBuffer.begin(), bTBRowBuffer.end(), bColour.value);
-        std::fill(bLRRowBuffer.begin(), bLRRowBuffer.end(), bColour.value);
-    }
 
     if (draw)
     {
@@ -110,87 +88,11 @@ void Drawable::Rect::Draw()
             std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, width * sizeof(uint32_t));
         }
     }
-
-    if (border <= 0.0f) return;
-
-    if (bLRRowBuffer.empty() || bTBRowBuffer.empty()) return;
-
-    uint32_t* bTBRowPixels = bTBRowBuffer.data();
-    uint32_t* bLRRowPixels = bLRRowBuffer.data();
-    int iBorder = SableUI::f2i(border);
-    size_t sH1 = static_cast<size_t>(width + 2 * iBorder) * sizeof(uint32_t);
-
-    for (int i = 0; i < iBorder; i++)
-    {
-        if (y + i < s_surface->h)
-        {
-            std::memcpy(surfacePixels + ((y + i - iBorder) * s_surface->w) + (x - iBorder), bTBRowPixels, sH1);
-        }
-    }
-
-    for (int i = 0; i < iBorder; i++)
-    {
-        if (y + height + i < s_surface->h)
-        {
-            std::memcpy(surfacePixels + ((y + height + i) * s_surface->w) + (x - iBorder), bTBRowPixels, sH1);
-        }
-    }
-
-    size_t sH2 = static_cast<size_t>(iBorder) * sizeof(uint32_t);
-    for (int i = 0; i < height; i++)
-    {
-        if (y + i < s_surface->h)
-        {
-            if (x - iBorder >= 0)
-            {
-                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + (x - iBorder), bLRRowPixels, sH2);
-            }
-            if (x + width < s_surface->w)
-            {
-                std::memcpy(surfacePixels + ((y + i) * s_surface->w) + (x + width), bLRRowPixels, sH2);
-            }
-        }
-    }
 }
 
 void SableUI::Renderer::Draw(std::unique_ptr<Drawable::Base> drawable)
 {
     drawStack.push_back(std::move(drawable));
-}
-
-static void DrawWindowBorder()
-{
-    static std::vector<uint32_t> TBRowBuffer(0);
-    static std::vector<uint32_t> LRRowBuffer(0);
-
-    static int borderWidth = 2;
-
-
-    if (TBRowBuffer.size() != s_surface->w)
-    {
-        TBRowBuffer.resize(static_cast<size_t>(s_surface->w * 2));
-        std::fill(TBRowBuffer.begin(), TBRowBuffer.end(), 0xFF333333);
-    }
-
-    if (LRRowBuffer.size() != borderWidth)
-    {
-        LRRowBuffer.resize(borderWidth);
-        std::fill(LRRowBuffer.begin(), LRRowBuffer.end(), 0xFF333333);
-    }
-
-    uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-    uint32_t* TBRowPixels = TBRowBuffer.data();
-    uint32_t* LRRowPixels = LRRowBuffer.data();
-
-    
-    std::memcpy(surfacePixels, TBRowPixels, TBRowBuffer.size() * sizeof(uint32_t));
-    std::memcpy(surfacePixels + (s_surface->h - borderWidth) * s_surface->w, TBRowPixels, TBRowBuffer.size() * sizeof(uint32_t));
-
-	for (int i = 0; i < s_surface->h; i++)
-	{
-		std::memcpy(surfacePixels + i * s_surface->w, LRRowPixels, borderWidth * sizeof(uint32_t));
-		std::memcpy(surfacePixels + i * s_surface->w + s_surface->w - borderWidth, LRRowPixels, borderWidth * sizeof(uint32_t));
-	}
 }
 
 void SableUI::Renderer::Draw()
@@ -214,8 +116,6 @@ void SableUI::Renderer::Draw()
 	{
 		drawable.get()->Draw();
 	}
-
-    DrawWindowBorder();
 
     SDL_UnlockSurface(s_surface);
     drawStack.clear();

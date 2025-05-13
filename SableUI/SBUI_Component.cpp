@@ -2,12 +2,9 @@
 #include "SBUI_Component.h"
 #include "SBUI_Renderer.h"
 
-BaseComponent::BaseComponent(SableUI::colour colour, float border, SableUI::colour bColour)
+BaseComponent::BaseComponent(SableUI::colour colour)
 {
 	this->colour = colour;
-	this->border = border;
-	this->renderer = &SableUI::Renderer::Get();
-	this->bColour = bColour;
 }
 
 void BaseComponent::UpdateDrawable()
@@ -17,7 +14,7 @@ void BaseComponent::UpdateDrawable()
 		renderer = &SableUI::Renderer::Get();
 	}
 
-	drawable.Update(parent->rect, colour, border, bColour);
+	drawable.Update(parent->rect, colour);
 }
 
 void BaseComponent::Render()
