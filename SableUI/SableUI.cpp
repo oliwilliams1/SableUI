@@ -604,10 +604,7 @@ void SableUI::CalculateNodePositions(SableUI_node* node)
 
 	if (node->component)
 	{
-		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
-		{
-			defaultComponent->UpdateDrawable();
-		}
+		node->component.get()->UpdateDrawable();
 	}
 
 	for (SableUI_node* child : node->children)
@@ -685,7 +682,6 @@ void SableUI::OpenUIFile(const std::string& path)
 	std::stack<std::string> parentStack;
 	parentStack.push("Root Node");
 
-
 	std::function<void(XMLElement*, const std::string&)> parseNode;
 	parseNode = [&](XMLElement* element, const std::string& parentName)
 	{
@@ -695,11 +691,11 @@ void SableUI::OpenUIFile(const std::string& path)
 			const char* nameAttr = element->Attribute("name");
 
 			const char* colourAttr = element->Attribute("colour");
-			SableUI::colour colour = SableUI::colour(32, 32, 32);
+			SableUI::colour colour = SableUI::colour(51, 51, 51);
 			if (colourAttr) colour = SableUI::StringTupleToColour(colourAttr);
 
 			const char* borderAttr = element->Attribute("border");
-			float border = 1.0f;
+			float border = 3.0f;
 			if (borderAttr) border = std::stof(borderAttr);
 
 			const char* borderColourAttr = element->Attribute("borderColour");

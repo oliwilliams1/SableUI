@@ -11,6 +11,7 @@ public:
 	BaseComponent(SableUI_node* parent) : parent(parent) {}
 
 	virtual void Render() {}
+	virtual void UpdateDrawable() {}
 	SableUI_node* GetParent() { return parent; }
 	void SetParent(SableUI_node* n) { parent = n; }
 
@@ -25,7 +26,7 @@ public:
 		SableUI_node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 
 	void Render() override;
-	void UpdateDrawable();
+	void UpdateDrawable() override;
 
 private:
 	SableUI::colour colour;
@@ -39,7 +40,7 @@ public:
 		SableUI_node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
 
 	void Render() override;
-	void UpdateDrawable();
+	void UpdateDrawable() override;
 	
 private:
 	SableUI::colour bColour;

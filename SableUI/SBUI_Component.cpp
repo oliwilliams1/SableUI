@@ -45,7 +45,7 @@ void SplitterComponent::UpdateDrawable()
 		}
 	}
 
-	drawable.Update(parent->rect, bColour, bSize, segments, true);
+	drawable.Update(parent->rect, bColour, parent->type, bSize, segments, true);
 }
 
 void SplitterComponent::Render()
