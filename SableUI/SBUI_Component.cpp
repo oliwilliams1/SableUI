@@ -29,23 +29,22 @@ void DefaultComponent::Render()
 
 void SplitterComponent::UpdateDrawable()
 {
-	float bSize = parent->bSize;
-
 	std::vector<int> segments;
 
 	for (SableUI_node* child : parent->children)
 	{
 		if (parent->type == NodeType::HSPLITTER)
 		{
-			segments.push_back(SableUI::f2i(child->rect.x));
+			segments.push_back(SableUI::f2i(child->rect.x - parent->rect.x));
 		}
-		else
+
+		if (parent->type == NodeType::VSPLITTER)
 		{
-			segments.push_back(SableUI::f2i(child->rect.y));
+			segments.push_back(SableUI::f2i(child->rect.y - parent->rect.y));
 		}
 	}
 
-	drawable.Update(parent->rect, bColour, parent->type, bSize, segments, true);
+	drawable.Update(parent->rect, bColour, parent->type, parent->bSize, segments, true);
 }
 
 void SplitterComponent::Render()

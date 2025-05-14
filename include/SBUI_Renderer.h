@@ -49,7 +49,7 @@ namespace Drawable
 		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
 
 		void Update(SableUI::rect& rect, SableUI::colour colour, NodeType type, float pBSize = 0.0f, 
-			const std::vector<int>& segments = { 0 }, float borderSize = 0.0f, bool draw = true);
+			const std::vector<int>& segments = { 0 }, bool draw = true);
 
 		void Draw() override;
 

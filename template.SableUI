@@ -1,15 +1,15 @@
 <root>
   <vsplitter>
     <hsplitter>
-      <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
+      <component colour="(32, 32, 32)" />
       <vsplitter>
-        <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
+        <component colour="(32, 32, 32)" />
         <hsplitter>
-          <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)"/>
-          <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
+          <component colour="(32, 32, 32)" />
+          <component colour="(32, 32, 32)" />
         </hsplitter>
       </vsplitter>
     </hsplitter>
-    <component colour="(32, 32, 32)" border="1" borderColour="(51, 51, 51)" />
+    <component colour="(32, 32, 32)" />
   </vsplitter>
 </root>

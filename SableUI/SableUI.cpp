@@ -695,7 +695,7 @@ void SableUI::OpenUIFile(const std::string& path)
 			if (colourAttr) colour = SableUI::StringTupleToColour(colourAttr);
 
 			const char* borderAttr = element->Attribute("border");
-			float border = 3.0f;
+			float border = 1.0f;
 			if (borderAttr) border = std::stof(borderAttr);
 
 			const char* borderColourAttr = element->Attribute("borderColour");
@@ -737,4 +737,12 @@ void SableUI::OpenUIFile(const std::string& path)
 
 	CalculateNodeScales();
 	SableUI::CalculateNodePositions();
+
+	for (SableUI_node* node : nodes)
+	{
+		if (node->component != nullptr && node->type != NodeType::COMPONENT)
+		{
+			node->component.get()->UpdateDrawable();
+		}
+	}
 }

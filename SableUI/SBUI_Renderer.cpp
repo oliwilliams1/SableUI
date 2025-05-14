@@ -95,18 +95,23 @@ void Drawable::Rect::Draw()
     }
 }
 
-void Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, NodeType type, float pBSize, const std::vector<int>& segments, float borderSize, bool draw)
+void Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, NodeType type, float pBSize, const std::vector<int>& segments, bool draw)
 {
     this->r = rect;
     this->c = colour;
     this->type = type;
-    this->b = borderSize;
+    this->b = SableUI::f2i(pBSize);
     this->offsets = segments;
 
-    int bufferSize = (int)borderSize;
-    if (bufferSize > 0)
+    if (type == NodeType::HSPLITTER)
     {
-        this->buffer.resize(bufferSize);
+        this->buffer.resize(static_cast<size_t>(b * 2));
+        std::fill(this->buffer.begin(), this->buffer.end(), colour.value);
+    }
+
+    if (type == NodeType::VSPLITTER)
+    {
+        this->buffer.resize(static_cast<size_t>(r.w));
         std::fill(this->buffer.begin(), this->buffer.end(), colour.value);
     }
 
@@ -134,18 +139,36 @@ void Drawable::bSplitter::Draw()
     {
         for (int offset : offsets)
         {
-            int drawX = x + offset;
+            int drawX = x + offset - b;
 
-            for (int i = 0; i < height; i++)
+            for (int i = b; i < height; i++)
             {
-                if (y + i < s_surface->h && drawX < s_surface->w)
+                if (y + i < s_surface->h && drawX >= 0 && drawX < s_surface->w)
                 {
-                    std::memcpy(surfacePixels + (y + i) * s_surface->w + drawX, bufferPixels, b * sizeof(uint32_t));
+                    std::memcpy(surfacePixels + (y + i) * s_surface->w + drawX, bufferPixels,
+                        static_cast<size_t>(buffer.size() * sizeof(uint32_t)));
                 }
             }
         }
         break;
+    }
 
+    case NodeType::VSPLITTER:
+    {
+        for (int offset : offsets)
+        {
+            int drawY = y + offset - b;
+
+            for (int i = 0; i < b * 2; i++)
+            {
+                if (drawY + i >= 0 && drawY + i < s_surface->h && x < s_surface->w)
+				{
+					std::memcpy(surfacePixels + (drawY + i) * s_surface->w + x, bufferPixels,
+						static_cast<size_t>(buffer.size() * sizeof(uint32_t)));
+				}
+            }
+        }
+        break;
     }
     }
 }

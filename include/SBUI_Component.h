@@ -22,7 +22,7 @@ protected:
 class DefaultComponent : public BaseComponent
 {
 public:
-	DefaultComponent(SableUI::colour colour = SableUI::colour(255, 255, 255, 255), 
+	DefaultComponent(SableUI::colour colour = SableUI::colour(255, 32, 32, 32), 
 		SableUI_node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 
 	void Render() override;
@@ -36,7 +36,7 @@ private:
 class SplitterComponent : public BaseComponent
 {
 public:
-	SplitterComponent(SableUI::colour bColour = SableUI::colour(255, 32, 32, 32),
+	SplitterComponent(SableUI::colour bColour = SableUI::colour(255, 51, 51, 51),
 		SableUI_node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
 
 	void Render() override;
