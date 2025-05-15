@@ -1,11 +1,6 @@
 # SableUI
 A high-performance and low-cost UI library inspired by foobar2000's ColumnsUI component-based UI extenstion, written in C++.
 
-## Libraries used
-[SDL2](https://github.com/libsdl-org/SDL/tree/SDL2)
-
-Planned: [stb_image](https://github.com/nothings/stb)
-
 ## Building from Source
 Ensure you have CMake installed on your machine with a C++ compiler like MSVC for windows, gcc for Linux, MacOS.
 
@@ -85,3 +80,22 @@ int main()
   </hsplitter>
 </root>
 ```
+
+## Acknowledgments
+
+This project uses the following libraries:
+### TinyXML2
+- **Attribution**: TinyXML2 is a simple, small, efficient, C++ XML parser that can be easily integrated into various projects.
+- **Website**: [TinyXML2 GitHub](https://github.com/leethomason/tinyxml2)
+
+### SDL2
+- **Attribution**: SDL2 (Simple DirectMedia Layer) is a cross-platform multimedia library designed to provide low-level access to audio, keyboard, mouse, joystick, and graphics hardware.
+- **Website**: [SDL2 Website](https://www.libsdl.org)
+
+### FreeType
+- **Attribution**: FreeType is a freely available software library to render fonts.
+- **Website**: [FreeType Website](https://www.freetype.org)
+
+### stb, stb_image
+- **Attribution**: stb_image is a single-file public domain library for loading images in various formats.
+- **Website**: [stb_image GitHub](https://github.com/nothings/stb)
