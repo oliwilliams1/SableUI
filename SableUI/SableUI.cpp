@@ -19,6 +19,8 @@
 #include <dwmapi.h>
 #endif
 
+constexpr float minComponentSize = 20.0f;
+
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
@@ -81,6 +83,14 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 			node->rect.w = wLeft;
 		}
 
+		if (wLeft <= minComponentSize * node->parent->children.size())
+		{
+			node->parent->children[node->parent->children.size() - 1]->rect.wType = SableUI::RectType::FIXED;
+			node->parent->children[node->parent->children.size() - 1]->rect.w = minComponentSize;
+
+			node->parent->children[node->parent->children.size() - 2]->rect.wType = SableUI::RectType::FILL;
+		}
+
 		break;
 	}
 
@@ -90,7 +100,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 		if (node->rect.hType == SableUI::RectType::FIXED) break;
 
-		float hTop = node->parent->rect.h;
+		float hLeft = node->parent->rect.h;
 		int amntOfFillSiblingsH = 0;
 
 		for (SableUI_node* sibling : node->parent->children)
@@ -101,17 +111,25 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 			}
 			else
 			{
-				hTop -= sibling->rect.h;
+				hLeft -= sibling->rect.h;
 			}
 		}
 
 		if (amntOfFillSiblingsH > 0)
 		{
-			node->rect.h = hTop / static_cast<float>(amntOfFillSiblingsH);
+			node->rect.h = hLeft / static_cast<float>(amntOfFillSiblingsH);
 		}
 		else
 		{
-			node->rect.h = hTop;
+			node->rect.h = hLeft;
+		}
+
+		if (hLeft <= minComponentSize)
+		{
+			node->parent->children[node->parent->children.size() - 1]->rect.hType = SableUI::RectType::FIXED;
+			node->parent->children[node->parent->children.size() - 1]->rect.h = minComponentSize;
+
+			node->parent->children[node->parent->children.size() - 2]->rect.hType = SableUI::RectType::FILL;
 		}
 
 		break;
@@ -178,8 +196,8 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 	if (currentEdgeType == SableUI::EW_EDGE)
 	{
 		deltaPos.x = std::clamp(deltaPos.x,
-			-oldNodeRect.w + 15.0f,
-			olderSiblingOldRect.w - 15.0f);
+			-oldNodeRect.w + minComponentSize,
+			olderSiblingOldRect.w - minComponentSize);
 
 		selectedNode->rect.w = oldNodeRect.w + deltaPos.x;
 		olderSiblingNode->rect.w = olderSiblingOldRect.w - deltaPos.x;
@@ -200,8 +218,8 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 	else if (currentEdgeType == SableUI::NS_EDGE)
 	{
 		deltaPos.y = std::clamp(deltaPos.y,
-			-oldNodeRect.h + 15.0f,
-			olderSiblingOldRect.h - 15.0f);
+			-oldNodeRect.h + minComponentSize,
+			olderSiblingOldRect.h - minComponentSize);
 
 		selectedNode->rect.h = oldNodeRect.h + deltaPos.y;
 		olderSiblingNode->rect.h = olderSiblingOldRect.h - deltaPos.y;
@@ -266,6 +284,17 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 	for (SableUI_node* child : node->children)
 	{
 		PrintNode(child, depth + 1);
+	}
+}
+
+static void RerenderAllNodes()
+{
+	for (SableUI_node* node : nodes)
+	{
+		if (node->component)
+		{
+			node->component.get()->UpdateDrawable();
+		}
 	}
 }
 
@@ -405,7 +434,7 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr
 bool SableUI::PollEvents()
 {
 	SDL_Event e;
-	if (SDL_WaitEvent(&e) != 0)
+	if (SDL_PollEvent(&e) != 0)
 	{
 		switch (e.type)
 		{
@@ -414,7 +443,8 @@ bool SableUI::PollEvents()
 			break;
 
 		case SDL_WINDOWEVENT:
-			if (e.window.event == SDL_WINDOWEVENT_RESIZED)
+			if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
+				|| e.window.event == SDL_WINDOW_MINIMIZED || e.window.event == SDL_WINDOW_MAXIMIZED)
 			{
 				int w, h;
 				SDL_GetWindowSize(window, &w, &h);
@@ -425,6 +455,11 @@ bool SableUI::PollEvents()
 				SetupRootNode(root, w, h);
 				CalculateNodeScales();
 				CalculateNodePositions();
+
+				Draw();
+				RerenderAllNodes();
+				Draw();
+
 				if (!surface)
 				{
 					printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -435,6 +470,7 @@ bool SableUI::PollEvents()
 
 		case SDL_MOUSEBUTTONUP:
 			resizing = false;
+			RerenderAllNodes();
 			break;
 		}
 	}
@@ -484,16 +520,16 @@ void SableUI::Draw()
 				cursorToSet = cursorEW;
 				break;
 			}
-		}
 
-		if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
-		{
-			resCalled = true;
+			if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
+			{
+				resCalled = true;
 
-			Resize(cursorPos, node);
+				Resize(cursorPos, node);
 
-			resizing = true;
-			continue;
+				resizing = true;
+				continue;
+			}
 		}
 	}
 
@@ -520,7 +556,6 @@ void SableUI::Draw()
 	}
 
 	// Splitters
-
 	for (const SableUI_node* node : nodes)
 	{
 		if (node->component != nullptr)
