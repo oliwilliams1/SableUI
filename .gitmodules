@@ -5,3 +5,6 @@
 	path = vendor/SDL
 	url = https://github.com/libsdl-org/SDL
 	branch = SDL2
+[submodule "vendor/freetype"]
+	path = vendor/freetype
+	url = https://github.com/freetype/freetype
