@@ -1,58 +1,16 @@
 #include "SableUI/SableUI.h"
-#include <iostream>
-
-static bool UserModifyNodeGraphViaTerminal()
-{
-    std::cout << "Add a node (component, vsplitter, or hsplitter) (type 'exit' to quit):" << std::endl;
-    std::string command;
-    std::getline(std::cin, command);
-
-    if (command == "exit") return false;
-
-    NodeType type;
-    if (command == "component") {
-        type = NodeType::COMPONENT;
-    }
-    else if (command == "vsplitter") {
-        type = NodeType::VSPLITTER;
-    }
-    else if (command == "hsplitter") {
-        type = NodeType::HSPLITTER;
-    }
-    else {
-        std::cout << "Invalid type! Please enter 'component', 'vsplitter', or 'hsplitter'." << std::endl;
-        return true;
-    }
-
-    std::cout << "Enter node name: ";
-    std::string nodeName;
-    std::getline(std::cin, nodeName);
-
-    std::cout << "Enter parent node name: ";
-    std::string parentName;
-    std::getline(std::cin, parentName);
-
-    SableUI_node* parentNode = SableUI::FindNodeByName(parentName);
-
-    if (parentNode) {
-        SableUI::AddNodeToParent(type, nodeName, parentNode->name);
-        std::cout << "Node added!" << std::endl;
-    }
-    else {
-        std::cout << "Parent node not found!" << std::endl;
-    }
-}
 
 int main()
 {
 	SableUI::SBCreateWindow("SableUI", 800, 600);
 
-    SableUI::OpenUIFile("template.SableUI");
-    BaseElement element = BaseElement();
+	SableUI::OpenUIFile("template.SableUI");
 
-    SableUI::AddElementToComponent("component 3", std::make_unique<BaseElement>(element));
+	BaseElement element = BaseElement(SableUI::rect(0.0f, 0.0f, 0.0f, 12.0f, SableUI::RectType::FILL, SableUI::RectType::FIXED),
+		SableUI::colour(255, 0, 0));
+	SableUI::AddElementToComponent("component 3", std::make_unique<BaseElement>(element));
 
-    SableUI::PrintNodeTree();
+	SableUI::PrintNodeTree();
 
 	while (SableUI::PollEvents())
 	{

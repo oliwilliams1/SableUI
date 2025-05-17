@@ -191,6 +191,14 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 	}
 
 	SableUI::vec2 deltaPos = pos - oldPos;
+	
+	// Prevent continuing if delta pos since last call is negligible
+	{
+		static SableUI::vec2 prevPos = { 0, 0 };
+		SableUI::vec2 dPos = prevPos - pos;
+		if (dPos.x == 0 && dPos.y == 0) return;
+		prevPos = pos;
+	}
 
 	if (currentEdgeType == SableUI::EW_EDGE)
 	{
@@ -372,9 +380,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 
 	cursorPointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	cursorNS      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-	cursorEW = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-
-	// Renderer::Get().Clear({32, 32, 32});
+	cursorEW      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
 	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
@@ -442,7 +448,10 @@ void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr
 
 	if (node->type == NodeType::COMPONENT)
 	{
-		node->component->AddElement(element);
+		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
+		{
+			defaultComponent->AddElement(element);
+		}
 	}
 	else
 	{

@@ -14,10 +14,8 @@ public:
 	virtual void UpdateDrawable() = 0;
 	SableUI_node* GetParent() { return parent; }
 	void SetParent(SableUI_node* n) { parent = n; }
-	void AddElement(std::unique_ptr<BaseElement>& e);
 
 protected:
-	std::vector<std::unique_ptr<BaseElement>> elements;
 	SableUI_node* parent = nullptr;
 };
 
@@ -26,11 +24,16 @@ class DefaultComponent : public BaseComponent
 public:
 	DefaultComponent(SableUI::colour colour = SableUI::colour(255, 32, 32, 32), 
 		SableUI_node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
-
+	
+	void AddElement(std::unique_ptr<BaseElement>& e);
+	void UpdateElements();
 	void Render() override;
 	void UpdateDrawable() override;
+	void RenderElements();
+
 
 private:
+	std::vector<std::unique_ptr<BaseElement>> elements;
 	SableUI::colour colour;
 	Drawable::Rect drawable;
 };
