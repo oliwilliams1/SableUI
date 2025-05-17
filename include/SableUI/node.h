@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <memory>
 
-#include "SBUI_Component.h"
-#include "SBUI_Utils.h"
-#include "SBUI_Renderer.h"
+#include "SableUI/component.h"
+#include "SableUI/utils.h"
+#include "SableUI/renderer.h"
 
 constexpr uint16_t UNDEF = 0xFFFF;
 

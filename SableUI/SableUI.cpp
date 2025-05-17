@@ -1,5 +1,7 @@
 #define SDL_MAIN_HANDLED
-#include "SableUI.h"
+#include "SableUI/SableUI.h"
+#include "SableUI/renderer.h"
+#include "SableUI/node.h"
 
 #include <SDL2/SDL.h>
 #include <tinyxml2.h>
@@ -8,9 +10,6 @@
 #include <functional>
 #include <algorithm>
 #include <stack>
-
-#include "SBUI_Renderer.h"
-#include "SBUI_Node.h"
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
@@ -276,7 +275,7 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 
 	if (spacesNeeded < 0) spacesNeeded = 0;
 
-	printf("%s name: %s, w: %.2f, h: %.2f, x: %.2f, y: %.2f, htype: %i, wtype: %i\n",
+	SableUI_Log("%s name: %s, w: %.2f, h: %.2f, x: %.2f, y: %.2f, htype: %i, wtype: %i",
 		indent.c_str(), node->name.c_str(), node->rect.w,
 		node->rect.h, node->rect.x, node->rect.y,
 		node->rect.hType, node->rect.wType);
@@ -311,13 +310,13 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 {
 	if (window != nullptr || surface != nullptr)
 	{
-		printf("Window already created!\n");
+		SableUI_Log("Window already created!");
 		return;
 	}
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
-		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		SableUI_Error("SDL could not initialize! SDL_Error: %s", SDL_GetError());
 		return;
 	}
 
@@ -327,7 +326,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	window = SDL_CreateWindow(title.c_str(), windowX, windowY, width, height, SDL_WINDOW_RESIZABLE);
 	if (!window)
 	{
-		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+		SableUI_Error("Window could not be created! SDL_Error: %s", SDL_GetError());
 	}
 
 #ifdef _WIN32
@@ -350,13 +349,13 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 
 	if (!surface)
 	{
-		printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
+		SableUI_Error("Surface could not be created! SDL_Error: %s", SDL_GetError());
 	}
 	
 	SDL_DisplayMode displayMode;
 	if (SDL_GetCurrentDisplayMode(0, &displayMode) != 0)
 	{
-		printf("Failed to get display mode! SDL_Error: %s\n", SDL_GetError());
+		SableUI_Error("Failed to get display mode! SDL_Error: %s", SDL_GetError());
 	}
 	else
 	{
@@ -367,7 +366,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 
 	if (root != nullptr)
 	{
-		printf("Root node already created!\n");
+		SableUI_Error("Root node already created!");
 		return;
 	}
 
@@ -390,19 +389,19 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 
 	if (parent == nullptr)
 	{
-		printf("Parent node is null!\n");
+		SableUI_Error("Parent node is null!");
 		return;
 	}
 
 	if (parent->type == NodeType::COMPONENT)
 	{
-		printf("Cannot create a child node on a component node\n");
+		SableUI_Error("Cannot create a child node on a component node");
 		return;
 	}
 
 	if (parent->type == NodeType::ROOTNODE && root->children.size() > 0)
 	{
-		printf("Root node can only have one child node\n");
+		SableUI_Error("Root node can only have one child node");
 		return;
 	}
 
@@ -417,18 +416,38 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr
 
 	if (node == nullptr)
 	{
-		printf("Cannot find node: %s!\n", nodeName.c_str());
+		SableUI_Warn("Cannot find node: %s!", nodeName.c_str());
 		return;
 	}
 
 	if (node->component != nullptr)
 	{
-		printf("Node: %s already has a component attached!\n", nodeName.c_str());
+		SableUI_Error("Node: %s already has a component attached!", nodeName.c_str());
 		return;
 	}
 
 	node->component = std::move(component);
 	node->component->SetParent(node);
+}
+
+void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr<BaseElement> element)
+{
+	SableUI_node* node = FindNodeByName(nodeName);
+
+	if (node == nullptr)
+	{
+		SableUI_Warn("Cannot find node: %s!", nodeName.c_str());
+		return;
+	}
+
+	if (node->type == NodeType::COMPONENT)
+	{
+		node->component->AddElement(element);
+	}
+	else
+	{
+		SableUI_Error("Adding element to non-component node: %s", nodeName.c_str());
+	}
 }
 
 bool SableUI::PollEvents()
@@ -462,7 +481,7 @@ bool SableUI::PollEvents()
 
 				if (!surface)
 				{
-					printf("Surface could not be created! SDL_Error: %s\n", SDL_GetError());
+					SableUI_Runtime_Error("Surface could not be created! SDL_Error: %s", SDL_GetError());
 				}
 				break;
 			}
@@ -652,7 +671,7 @@ void SableUI::Destroy()
 {
 	if (window == nullptr || surface == nullptr)
 	{
-		printf("Destroying when window or surface not created!\n");
+		SableUI_Error("Destroying when window or surface not created!");
 		return;
 	}
 
@@ -690,7 +709,7 @@ void SableUI::OpenUIFile(const std::string& path)
 		}
 		nodes.clear();
 		root = nullptr;
-		printf("Reloading UI\n");
+		SableUI_Log("Reloading UI");
 	}
 
 	using namespace tinyxml2;
@@ -698,13 +717,13 @@ void SableUI::OpenUIFile(const std::string& path)
 	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != XML_SUCCESS)
 	{
-		std::cerr << "Failed to load file: " << path << "\n";
+		SableUI_Error("Failed to load file: %s", path.c_str());
 		return;
 	}
 
 	XMLElement* rootElement = doc.FirstChildElement("root");
 	if (!rootElement) {
-		std::cerr << "Invalid XML structure: Missing <root> element\n";
+		SableUI_Error("Invalid XML structure: Missing <root> element");
 		return;
 	}
 

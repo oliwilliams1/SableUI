@@ -1,7 +1,7 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 #include <string>
-#include "SBUI_Node.h"
+#include "SableUI/node.h"
 
 namespace SableUI
 {
@@ -15,6 +15,7 @@ namespace SableUI
 	void SetupSplitter(const std::string& name, float bSize);
 	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
 	void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
+	void AddElementToComponent(const std::string& nodeName, std::unique_ptr<BaseElement> element);
 
 	SableUI_node* GetRoot();
 	SableUI_node* FindNodeByName(const std::string& name);

@@ -1,4 +1,4 @@
-#include "SBUI_Node.h"
+#include "SableUI/node.h"
 
 SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::string& name)
 	: type(type), parent(parent), name(name)
@@ -7,7 +7,7 @@ SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::strin
 	{
 		if (parent == nullptr)
 		{
-			printf("Parent node is null on a non-root node\n");
+			SableUI_Error("Parent node is null on a non-root node");
 			return;
 		}
 		parent->children.push_back(this);
@@ -23,7 +23,7 @@ void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx)
 {
 	if (root->type != NodeType::ROOTNODE)
 	{
-		printf("Setting up a non-root node\n");
+		SableUI_Error("Setting up a non-root node");
 		return;
 	}
 

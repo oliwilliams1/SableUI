@@ -1,4 +1,4 @@
-#include "SableUI.h"
+#include "SableUI/SableUI.h"
 #include <iostream>
 
 static bool UserModifyNodeGraphViaTerminal()
@@ -48,6 +48,9 @@ int main()
 	SableUI::SBCreateWindow("SableUI", 800, 600);
 
     SableUI::OpenUIFile("template.SableUI");
+    BaseElement element = BaseElement();
+
+    SableUI::AddElementToComponent("component 3", std::make_unique<BaseElement>(element));
 
     SableUI::PrintNodeTree();
 

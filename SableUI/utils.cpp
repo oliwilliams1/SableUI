@@ -1,5 +1,7 @@
-#include "SBUI_Utils.h"
+#include "SableUI/utils.h"
 #include <algorithm>
+#include <sstream>
+
 
 bool SableUI::RectBoundingBox(rect r, ivec2 p)
 {
@@ -13,8 +15,10 @@ SableUI::colour SableUI::StringTupleToColour(const char* str)
         return colour(r, g, b);
     }
 
-    if (sscanf(str, "(%d, %d, %d)", &r, &g, &b) != 3)
-    {
+    char discard;
+
+    std::istringstream iss(str);
+    if (!(iss >> discard >> r >> discard >> g >> discard >> b) || discard != ',') {
         return colour(255, 255, 255);
     }
 

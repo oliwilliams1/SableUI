@@ -1,21 +1,23 @@
 #pragma once
-#include "SBUI_Node.h"
-#include "SBUI_Utils.h"
-#include "SBUI_Renderer.h"
+#include "SableUI/node.h"
+#include "SableUI/renderer.h"
+#include "SableUI/element.h"
 
 struct SableUI_node;
 
 class BaseComponent
 {
 public:
-	BaseComponent(SableUI_node* parent) : parent(parent) {}
+	BaseComponent(SableUI_node* parent) : parent(parent) {};
 
-	virtual void Render() {}
-	virtual void UpdateDrawable() {}
+	virtual void Render() = 0;
+	virtual void UpdateDrawable() = 0;
 	SableUI_node* GetParent() { return parent; }
 	void SetParent(SableUI_node* n) { parent = n; }
+	void AddElement(std::unique_ptr<BaseElement>& e);
 
 protected:
+	std::vector<std::unique_ptr<BaseElement>> elements;
 	SableUI_node* parent = nullptr;
 };
 

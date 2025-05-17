@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <string>
 
-#include "SBUI_Renderer.h"
-#include "SBUI_Utils.h"
+#include "SableUI/renderer.h"
+#include "SableUI/utils.h"
 
 static SableUI::Renderer* s_renderer = nullptr;
 static SDL_Surface* s_surface = nullptr;
@@ -52,7 +52,7 @@ void SableUI::Renderer::Init(SDL_Surface* surface)
 	}
 	else
 	{
-		printf("Renderer already initialized!\n");
+		SableUI_Warn("Renderer already initialized!");
 	}
 }
 
@@ -65,7 +65,7 @@ void SableUI::Renderer::Shutdown()
 	}
 	else
 	{
-		printf("Renderer not initialized!\n");
+		SableUI_Warn("Renderer not initialized!");
 	}
 }
 
@@ -205,13 +205,13 @@ void SableUI::Renderer::Draw()
 {
     if (s_renderer == nullptr)
     {
-        printf("Renderer not initialized!\n");
+        SableUI_Error("Renderer not initialized!");
         return;
     }
 
     if (SDL_LockSurface(s_surface) < 0)
     {
-        printf("Unable to lock surface! SDL_Error: %s\n", SDL_GetError());
+        SableUI_Error("Unable to lock surface! SDL_Error: %s", SDL_GetError());
         return;
     }
 

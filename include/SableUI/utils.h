@@ -1,4 +1,6 @@
 #pragma once
+#include "SableUI/console.h"
+
 #include <stdio.h>
 #include <cstdint>
 #include <cmath>

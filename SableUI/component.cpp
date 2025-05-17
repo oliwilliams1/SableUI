@@ -1,6 +1,7 @@
+#include "SableUI/component.h"
+
 #include <SDL.h>
-#include "SBUI_Component.h"
-#include "SBUI_Renderer.h"
+#include "SableUI/renderer.h"
 
 static SableUI::Renderer* renderer = nullptr;
 
@@ -52,4 +53,9 @@ void SplitterComponent::Render()
 	if (renderer == nullptr) renderer = &SableUI::Renderer::Get();
 
 	renderer->Draw(std::make_unique<Drawable::bSplitter>(drawable));
+}
+
+void BaseComponent::AddElement(std::unique_ptr<BaseElement>& e)
+{
+	elements.push_back(std::move(e));
 }
