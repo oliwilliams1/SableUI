@@ -17,11 +17,13 @@ SableUI::colour SableUI::StringTupleToColour(const char* str)
 
     char discard;
 
+    /* parse string into r, g, b input = (r, g, b) */
     std::istringstream iss(str);
     if (!(iss >> discard >> r >> discard >> g >> discard >> b) || discard != ',') {
         return colour(255, 255, 255);
     }
 
+    /* prevent overflows */
     r = std::clamp(r, 0, 255);
     g = std::clamp(g, 0, 255);
     b = std::clamp(b, 0, 255);

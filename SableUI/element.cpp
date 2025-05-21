@@ -4,8 +4,8 @@ static SableUI::Renderer* renderer = nullptr;
 
 void BaseElement::SetRect(const SableUI::rect& rect)
 {
-	this->r = rect;
-	this->bgDrawable.Update(r, bgColour, 0.0f, true);
+	this->drawableRect = rect;
+	this->bgDrawable.Update(drawableRect, bgColour, 0.0f, true);
 }
 
 void BaseElement::Render()

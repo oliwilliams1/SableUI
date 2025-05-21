@@ -137,6 +137,11 @@ namespace SableUI
         bool operator !=(const rect& other) const {
 			return x != other.x || y != other.y || w != other.w || h != other.h;
 		}
+
+        void print() const
+        {
+            printf("x: %f, y: %f, w: %f, h: %f\n", x, y, w, h);
+        }
     };
 
     enum EdgeType

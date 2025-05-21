@@ -8,15 +8,15 @@ struct SableUI_node;
 class BaseComponent
 {
 public:
-	BaseComponent(SableUI_node* parent) : parent(parent) {};
+	BaseComponent(SableUI_node* parent) : parentNode(parent) {};
 
 	virtual void Render() = 0;
 	virtual void UpdateDrawable() = 0;
-	SableUI_node* GetParent() { return parent; }
-	void SetParent(SableUI_node* n) { parent = n; }
+	SableUI_node* GetParent() { return parentNode; }
+	void SetParent(SableUI_node* n) { parentNode = n; }
 
 protected:
-	SableUI_node* parent = nullptr;
+	SableUI_node* parentNode = nullptr;
 };
 
 class DefaultComponent : public BaseComponent

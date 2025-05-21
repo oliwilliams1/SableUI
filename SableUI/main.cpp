@@ -6,9 +6,19 @@ int main()
 
 	SableUI::OpenUIFile("template.SableUI");
 
-	BaseElement element = BaseElement(SableUI::rect(0.0f, 0.0f, 0.0f, 12.0f, SableUI::RectType::FILL, SableUI::RectType::FIXED),
-		SableUI::colour(255, 0, 0));
+	BaseElement element = BaseElement(0, 20);
+	element.wType = SableUI::RectType::FILL;
+	element.hType = SableUI::RectType::FIXED;
 	SableUI::AddElementToComponent("component 3", std::make_unique<BaseElement>(element));
+
+	BaseElement element2 = BaseElement(0, 20);
+	element2.wType = SableUI::RectType::FILL;
+	element2.hType = SableUI::RectType::FIXED;
+	element2.bgColour = SableUI::colour(255, 0, 0);
+	element2.padding = 5.0f;
+	SableUI::AddElementToComponent("component 3", std::make_unique<BaseElement>(element2));
+
+	SableUI::RecalculateNodes();
 
 	SableUI::PrintNodeTree();
 

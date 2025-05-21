@@ -21,14 +21,14 @@ namespace Drawable
 	{
 	public:
 		virtual void Draw() = 0;
-		virtual ~Base() = default;
+		virtual ~Base() {};
 	};
 
 	class Rect : public Base
 	{
 	public:
 		Rect() {};
-		~Rect() { rowBuffer.clear(); };
+		~Rect() {};
 		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
 
 		void Update(SableUI::rect& rect, SableUI::colour colour,
@@ -38,14 +38,13 @@ namespace Drawable
 
 		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour c = { 255, 255, 255, 255 };
-		std::vector<uint32_t> rowBuffer;
 	};
 
 	class bSplitter : public Base
 	{
 	public:
 		bSplitter() {};
-		~bSplitter() { offsets.clear(); buffer.clear(); };
+		~bSplitter() { offsets.clear(); };
 		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
 
 		void Update(SableUI::rect& rect, SableUI::colour colour, NodeType type, float pBSize = 0.0f, 
@@ -58,8 +57,6 @@ namespace Drawable
 		int b = 0;
 		std::vector<int> offsets;
 		NodeType type = NodeType::UNDEF;
-		
-		std::vector<uint32_t> buffer;
 	};
 }
 

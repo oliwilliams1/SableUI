@@ -9,39 +9,27 @@ static SDL_Surface* s_surface = nullptr;
 
 static void DrawWindowBorder()
 {
-    static std::vector<uint32_t> TBRowBuffer(0);
-    static std::vector<uint32_t> LRRowBuffer(0);
-
     static int borderWidth = 1;
 
-
-    if (TBRowBuffer.size() != s_surface->w)
-    {
-        TBRowBuffer.resize(static_cast<size_t>(s_surface->w));
-        std::fill(TBRowBuffer.begin(), TBRowBuffer.end(), 0xFF333333);
-    }
-
-    if (LRRowBuffer.size() != borderWidth)
-    {
-        LRRowBuffer.resize(borderWidth);
-        std::fill(LRRowBuffer.begin(), LRRowBuffer.end(), 0xFF333333);
-    }
-
     uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-    uint32_t* TBRowPixels = TBRowBuffer.data();
-    uint32_t* LRRowPixels = LRRowBuffer.data();
 
+    /* use std::fill to efficiently draw the border */
+    uint32_t* topStart = surfacePixels;
+    std::fill(topStart, topStart + s_surface->w, 0xFF333333);
 
-    std::memcpy(surfacePixels, TBRowPixels, TBRowBuffer.size() * sizeof(uint32_t));
-    std::memcpy(surfacePixels + (s_surface->h - borderWidth) * s_surface->w, TBRowPixels, TBRowBuffer.size() * sizeof(uint32_t));
+    uint32_t* bottomStart = surfacePixels + (s_surface->h - borderWidth) * s_surface->w;
+    std::fill(bottomStart, bottomStart + s_surface->w, 0xFF333333);
 
+    /* draw left and right borders */
     for (int i = 0; i < s_surface->h; i++)
     {
-        std::memcpy(surfacePixels + i * s_surface->w, LRRowPixels, borderWidth * sizeof(uint32_t));
-        std::memcpy(surfacePixels + i * s_surface->w + s_surface->w - borderWidth, LRRowPixels, borderWidth * sizeof(uint32_t));
+        uint32_t* startL = surfacePixels + i * s_surface->w;
+		std::fill(startL, startL + borderWidth, 0xFF333333);
+
+        uint32_t* startR = surfacePixels + i * s_surface->w + s_surface->w - borderWidth;
+		std::fill(startR, startR + borderWidth, 0xFF333333);
     }
 }
-
 
 void SableUI::Renderer::Init(SDL_Surface* surface)
 {
@@ -81,16 +69,9 @@ SableUI::Renderer& SableUI::Renderer::Get()
 
 void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float pBSize, bool draw)
 {
-    this->rowBuffer.clear();
 
     this->r = rect;
     this->c = colour;
-
-    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->w - 1);
-    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->w - x);
-
-    this->rowBuffer.resize(width);
-    std::fill(this->rowBuffer.begin(), this->rowBuffer.end(), colour.value);
 
     if (draw)
     {
@@ -100,20 +81,23 @@ void Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float p
 
 void Drawable::Rect::Draw()
 {
+    /* get raw pointer data */
     uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-    uint32_t* rowPixels = rowBuffer.data();
 
-    if (rowPixels == nullptr || surfacePixels == nullptr) return;
+    if (surfacePixels == nullptr) return;
 
     int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->w - 1);
     int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->h - 1);
     int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->h - y);
+    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->w - x);
 
+    /* use std::fill to efficiently draw the rect */
     for (int i = 0; i < height; i++)
     {
         if (y + i < s_surface->h)
         {
-            std::memcpy(surfacePixels + ((y + i) * s_surface->w) + x, rowPixels, rowBuffer.size() * sizeof(uint32_t));
+            uint32_t* start = surfacePixels + ((y + i) * s_surface->w) + x;
+            std::fill(start, start + width, c.value);
         }
     }
 }
@@ -126,18 +110,6 @@ void Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, No
     this->b = SableUI::f2i(pBSize);
     this->offsets = segments;
 
-    if (type == NodeType::HSPLITTER)
-    {
-        this->buffer.resize(static_cast<size_t>(b * 2));
-        std::fill(this->buffer.begin(), this->buffer.end(), colour.value);
-    }
-
-    if (type == NodeType::VSPLITTER)
-    {
-        this->buffer.resize(static_cast<size_t>(r.w));
-        std::fill(this->buffer.begin(), this->buffer.end(), colour.value);
-    }
-
     if (draw)
     {
         SableUI::Renderer::Get().Draw(std::make_unique<Drawable::bSplitter>(*this));
@@ -146,16 +118,17 @@ void Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, No
 
 void Drawable::bSplitter::Draw()
 {
+    /* get raw pointer data */
     uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-    uint32_t* bufferPixels = buffer.data();
 
-    if (bufferPixels == nullptr || surfacePixels == nullptr) return;
+    if (surfacePixels == nullptr) return;
 
     int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->w - 1);
     int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->h - 1);
     int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->w - x);
     int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->h - y);
 
+    /* use std::fill to efficiently draw the splitter */
     switch (type)
     {
     case NodeType::HSPLITTER:
@@ -168,8 +141,8 @@ void Drawable::bSplitter::Draw()
             {
                 if (y + i < s_surface->h && drawX >= 0 && drawX < s_surface->w)
                 {
-                    std::memcpy(surfacePixels + (y + i) * s_surface->w + drawX, bufferPixels,
-                        static_cast<size_t>(buffer.size() * sizeof(uint32_t)));
+                    uint32_t* start = surfacePixels + (y + i) * s_surface->w + drawX;
+                    std::fill(start, start + b * 2, c.value);
                 }
             }
         }
@@ -186,8 +159,8 @@ void Drawable::bSplitter::Draw()
             {
                 if (drawY + i >= 0 && drawY + i < s_surface->h && x < s_surface->w)
 				{
-					std::memcpy(surfacePixels + (drawY + i) * s_surface->w + x, bufferPixels,
-						static_cast<size_t>(buffer.size() * sizeof(uint32_t)));
+                    uint32_t* start = surfacePixels + (drawY + i) * s_surface->w + x;
+                    std::fill(start, start + width, c.value);
 				}
             }
         }
@@ -215,6 +188,7 @@ void SableUI::Renderer::Draw()
         return;
     }
 
+    /* iterate through queue and draw all types of drawables */
     for (const auto& drawable : drawStack)
     {
         if (drawable)
@@ -223,8 +197,10 @@ void SableUI::Renderer::Draw()
         }
     }
 
+    /* draw window border after queue is drawn */
     DrawWindowBorder();
 
     SDL_UnlockSurface(s_surface);
+    SDL_FreeSurface(s_surface);
     drawStack.clear();
 }

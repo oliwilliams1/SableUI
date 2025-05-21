@@ -11,12 +11,12 @@ void DefaultComponent::UpdateDrawable()
 {
 	float bSize = 0.0f;
 
-	if (parent->parent != nullptr)
+	if (parentNode->parent != nullptr)
 	{
-		bSize = parent->parent->bSize;
+		bSize = parentNode->parent->bSize;
 	}
 
-	drawable.Update(parent->rect, colour, bSize, false);
+	drawable.Update(parentNode->rect, colour, bSize, false);
 
 	Render();
 
@@ -47,25 +47,56 @@ void DefaultComponent::AddElement(std::unique_ptr<BaseElement>& e)
 
 void DefaultComponent::UpdateElements()
 {
-	SableUI::vec2 cursor = { SableUI::f2i(parent->rect.x),
-							SableUI::f2i(parent->rect.y) };
+	/* use cursor to place elements */
+	SableUI::vec2 cursor = { SableUI::f2i(parentNode->rect.x),
+							SableUI::f2i(parentNode->rect.y) };
 
-	SableUI::vec2 bounds = { SableUI::f2i(parent->rect.x + parent->rect.w),
-							SableUI::f2i(parent->rect.y + parent->rect.h) };
+	SableUI::vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
+							SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
 
 	for (const auto& e : elements)
 	{
+		BaseElement& element = *e.get();
+		SableUI::rect tempElRect = { 0, 0, 0, 0 };
+		tempElRect.y = cursor.y + element.yOffset;
+		tempElRect.x = cursor.x + element.xOffset;
+		tempElRect.w = element.width;
+		tempElRect.h = element.height;
 
-		SableUI::rect elementRect = e.get()->r;
+		/* apply border */
+		float bSize = 0.0f;
+		if (parentNode != nullptr && parentNode->parent != nullptr)
+		{
+			bSize = parentNode->parent->bSize;
+		}
 
-		elementRect.y = cursor.y;
-		elementRect.x = parent->rect.x;
+		tempElRect.x += bSize;
+		tempElRect.y += bSize;
 
-		cursor.y += elementRect.h;
+		/* calc fill type */
+		if (parentNode != nullptr)
+		{
+			if (element.hType == SableUI::RectType::FILL) tempElRect.h = parentNode->rect.h - 2.0f * bSize;
+			if (element.wType == SableUI::RectType::FILL) tempElRect.w = parentNode->rect.w - 2.0f * bSize;
+		}
 
-		elementRect.h = 12;
+		/* max to bounds */
+		if (tempElRect.x + tempElRect.w > bounds.x) tempElRect.w = bounds.x - tempElRect.x;
+		if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
 
-		e.get()->SetRect(elementRect);
+		/* upd cursor */
+		cursor.y += tempElRect.h + element.yOffset;
+
+		/* calc padding */
+		if (element.padding > 0.0f)
+		{
+			tempElRect.x += element.padding;
+			tempElRect.y += element.padding;
+			tempElRect.w -= 2.0f * element.padding;
+			tempElRect.h -= 2.0f * element.padding;
+		}
+
+		e.get()->SetRect(tempElRect);
 	}
 };
 
@@ -75,20 +106,21 @@ void SplitterComponent::UpdateDrawable()
 {
 	std::vector<int> segments;
 
-	for (SableUI_node* child : parent->children)
+	/* calc segment nodes */
+	for (SableUI_node* child : parentNode->children)
 	{
-		if (parent->type == NodeType::HSPLITTER)
+		if (parentNode->type == NodeType::HSPLITTER)
 		{
-			segments.push_back(SableUI::f2i(child->rect.x - parent->rect.x));
+			segments.push_back(SableUI::f2i(child->rect.x - parentNode->rect.x));
 		}
 
-		if (parent->type == NodeType::VSPLITTER)
+		if (parentNode->type == NodeType::VSPLITTER)
 		{
-			segments.push_back(SableUI::f2i(child->rect.y - parent->rect.y));
+			segments.push_back(SableUI::f2i(child->rect.y - parentNode->rect.y));
 		}
 	}
 
-	drawable.Update(parent->rect, bColour, parent->type, parent->bSize, segments, true);
+	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments, true);
 }
 
 void SplitterComponent::Render()

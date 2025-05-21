@@ -35,6 +35,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 {
 	if (nodes.empty()) return;
 
+	/* if first call, run for children of root node */
 	if (node == nullptr)
 	{
 		for (SableUI_node* child : root->children)
@@ -46,6 +47,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 	if (node->parent == nullptr) return;
 
+	/* calculate rect using freaky logic */
 	switch (node->parent->type)
 	{
 	case NodeType::ROOTNODE:
@@ -84,6 +86,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 		if (wLeft <= minComponentSize * node->parent->children.size())
 		{
+			/* resize last child to min size */
 			node->parent->children[node->parent->children.size() - 1]->rect.wType = SableUI::RectType::FIXED;
 			node->parent->children[node->parent->children.size() - 1]->rect.w = minComponentSize;
 
@@ -125,6 +128,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 		if (hLeft <= minComponentSize)
 		{
+			/* resize last child to min size */
 			node->parent->children[node->parent->children.size() - 1]->rect.hType = SableUI::RectType::FIXED;
 			node->parent->children[node->parent->children.size() - 1]->rect.h = minComponentSize;
 
@@ -135,6 +139,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 	}
 	}
 
+	/* recursively run for children */
 	for (SableUI_node* child : node->children)
 	{
 		CalculateNodeScales(child);
@@ -143,6 +148,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 
 static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 {
+	/* static for multiple calls (lifetime of static is until mouse up) */
 	static SableUI_node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
 
@@ -316,11 +322,13 @@ void SableUI::SetupSplitter(const std::string& name, float bSize)
 
 void SableUI::SBCreateWindow(const std::string& title, int width, int height, int x, int y)
 {
+	/* prevent func from being called twice */
 	if (window != nullptr || surface != nullptr)
 	{
 		SableUI_Log("Window already created!");
 		return;
 	}
+
 
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
@@ -338,6 +346,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	}
 
 #ifdef _WIN32
+	/* enable immersive darkmode on windows via api */
 	SDL_SysWMinfo sysInfo{};
 
 	SDL_VERSION(&sysInfo.version);
@@ -367,6 +376,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	}
 	else
 	{
+		/* set internal max hz to display refresh rate */
 		SetMaxFPS(displayMode.refresh_rate);
 	}
 
@@ -378,10 +388,12 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 		return;
 	}
 
+	/* init cursors for resizing */
 	cursorPointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	cursorNS      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
 	cursorEW      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
+	/* make root node */
 	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
@@ -486,7 +498,6 @@ bool SableUI::PollEvents()
 
 				Draw();
 				RerenderAllNodes();
-				Draw();
 
 				if (!surface)
 				{
@@ -517,15 +528,17 @@ void SableUI::Draw()
 
 	Renderer& renderer = Renderer::Get();
 
-	// Components
+	/* mouse state for resizing logic */
 	ivec2 cursorPos = { 0, 0 };
 	uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
 
+	/* static for multiple calls on one resize event (lifetime of static is until mouse up) */
 	static SDL_Cursor* currentCursor = cursorPointer;
 	static bool resCalled = false;
 
 	SDL_Cursor* cursorToSet = cursorPointer;
 
+	/* check if need to resize */
 	for (SableUI_node* node : nodes)
 	{
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
@@ -583,7 +596,7 @@ void SableUI::Draw()
 		}
 	}
 
-	// Splitters
+	/* render splitters */
 	for (const SableUI_node* node : nodes)
 	{
 		if (node->component != nullptr)
@@ -595,9 +608,11 @@ void SableUI::Draw()
 		}
 	}
 
+	/* flush drawable stack & render to screen */
 	renderer.Draw();
 	SDL_UpdateWindowSurface(window);
 
+	/* ensure application doesnt run faster than desired fps */
 	uint32_t frameTime = SDL_GetTicks() - frameStart;
 	if (frameTime < static_cast<uint32_t>(frameDelay))
 	{
@@ -626,6 +641,20 @@ SableUI_node* SableUI::FindNodeByName(const std::string& name)
 	}
 
 	return nullptr;
+}
+
+void SableUI::RecalculateNodes()
+{
+	CalculateNodeScales();
+	SableUI::CalculateNodePositions();
+
+	for (SableUI_node* node : nodes)
+	{
+		if (node->component != nullptr && node->type != NodeType::COMPONENT)
+		{
+			node->component.get()->UpdateDrawable();
+		}
+	}
 }
 
 void SableUI::CalculateNodePositions(SableUI_node* node)
@@ -797,15 +826,4 @@ void SableUI::OpenUIFile(const std::string& path)
 	};
 
 	parseNode(rootElement->FirstChildElement(), parentStack.top());
-
-	CalculateNodeScales();
-	SableUI::CalculateNodePositions();
-
-	for (SableUI_node* node : nodes)
-	{
-		if (node->component != nullptr && node->type != NodeType::COMPONENT)
-		{
-			node->component.get()->UpdateDrawable();
-		}
-	}
 }

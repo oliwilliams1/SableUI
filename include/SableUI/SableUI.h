@@ -23,6 +23,7 @@ namespace SableUI
 	void Destroy();
 
 	void OpenUIFile(const std::string& path);
+	void RecalculateNodes();
 
 	void CalculateNodePositions(SableUI_node* node = nullptr);
 }
