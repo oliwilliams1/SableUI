@@ -23,22 +23,22 @@ constexpr float minComponentSize = 20.0f;
 static SDL_Window* window = nullptr;
 static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
-static SableUI_node* root = nullptr;
+static SableUI::Node* root = nullptr;
 static SDL_Cursor* cursorPointer = nullptr;
 static SDL_Cursor* cursorNS = nullptr;
 static SDL_Cursor* cursorEW = nullptr;
 static bool resizing = false;
 
-static std::vector<SableUI_node*> nodes;
+static std::vector<SableUI::Node*> nodes;
 
-static void CalculateNodeScales(SableUI_node* node = nullptr)
+static void CalculateNodeScales(SableUI::Node* node = nullptr)
 {
 	if (nodes.empty()) return;
 
 	/* if first call, run for children of root node */
 	if (node == nullptr)
 	{
-		for (SableUI_node* child : root->children)
+		for (SableUI::Node* child : root->children)
 		{
 			CalculateNodeScales(child);
 		}
@@ -50,11 +50,11 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 	/* calculate rect using freaky logic */
 	switch (node->parent->type)
 	{
-	case NodeType::ROOTNODE:
+	case SableUI::NodeType::ROOTNODE:
 		node->rect = node->parent->rect;
 		break;
 
-	case NodeType::HSPLITTER:
+	case SableUI::NodeType::HSPLITTER:
 	{
 		node->rect.h = node->parent->rect.h;
 
@@ -63,7 +63,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 		float wLeft = node->parent->rect.w;
 		int amntOfFillSiblingsW = 0;
 
-		for (SableUI_node* sibling : node->parent->children)
+		for (SableUI::Node* sibling : node->parent->children)
 		{
 			if (sibling->rect.wType == SableUI::RectType::FILL)
 			{
@@ -96,7 +96,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 		break;
 	}
 
-	case NodeType::VSPLITTER:
+	case SableUI::NodeType::VSPLITTER:
 	{
 		node->rect.w = node->parent->rect.w;
 
@@ -105,7 +105,7 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 		float hLeft = node->parent->rect.h;
 		int amntOfFillSiblingsH = 0;
 
-		for (SableUI_node* sibling : node->parent->children)
+		for (SableUI::Node* sibling : node->parent->children)
 		{
 			if (sibling->rect.hType == SableUI::RectType::FILL)
 			{
@@ -140,23 +140,23 @@ static void CalculateNodeScales(SableUI_node* node = nullptr)
 	}
 
 	/* recursively run for children */
-	for (SableUI_node* child : node->children)
+	for (SableUI::Node* child : node->children)
 	{
 		CalculateNodeScales(child);
 	}
 }
 
-static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
+static void Resize(SableUI::vec2 pos, SableUI::Node* node = nullptr)
 {
 	/* static for multiple calls (lifetime of static is until mouse up) */
-	static SableUI_node* selectedNode = nullptr;
+	static SableUI::Node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
 
 	static SableUI::vec2 oldPos = { 0, 0 };
 	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
 	static float nParentsChildren = 1.0f; // prev div 0
 
-	static SableUI_node* olderSiblingNode = nullptr;
+	static SableUI::Node* olderSiblingNode = nullptr;
 	static SableUI::rect olderSiblingOldRect = { 0, 0, 0, 0 };
 
 	// First resize call fills data
@@ -184,11 +184,11 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 
 		switch (node->parent->type)
 		{
-		case NodeType::HSPLITTER:
+		case SableUI::NodeType::HSPLITTER:
 			currentEdgeType = SableUI::EdgeType::EW_EDGE;
 			break;
 
-		case NodeType::VSPLITTER:
+		case SableUI::NodeType::VSPLITTER:
 			currentEdgeType = SableUI::EdgeType::NS_EDGE;
 			break;
 		}
@@ -217,7 +217,7 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 
 		selectedNode->rect.wType = SableUI::RectType::FIXED;
 
-		for (SableUI_node* sibling : selectedNode->parent->children)
+		for (SableUI::Node* sibling : selectedNode->parent->children)
 		{
 			if (sibling->index != selectedNode->index)
 			{
@@ -239,7 +239,7 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 
 		selectedNode->rect.hType = SableUI::RectType::FIXED;
 
-		for (SableUI_node* sibling : selectedNode->parent->children)
+		for (SableUI::Node* sibling : selectedNode->parent->children)
 		{
 			if (sibling->index != selectedNode->index)
 			{
@@ -254,22 +254,22 @@ static void Resize(SableUI::vec2 pos, SableUI_node* node = nullptr)
 	SableUI::CalculateNodePositions();
 }
 
-static float DistToEdge(SableUI_node* node, SableUI::ivec2 p)
+static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
 	SableUI::rect r = node->rect;
-	NodeType parentType = NodeType::ROOTNODE;
+	SableUI::NodeType parentType = SableUI::NodeType::ROOTNODE;
 
 	if (node->parent != nullptr)
 	{
 		parentType = node->parent->type;
 	}
 
-	if (parentType == NodeType::HSPLITTER) {
+	if (parentType == SableUI::NodeType::HSPLITTER) {
 		float distRight = (r.x + r.w) - p.x;
 		return (distRight < 0) ? 0 : distRight;
 	}
 
-	if (parentType == NodeType::VSPLITTER)
+	if (parentType == SableUI::NodeType::VSPLITTER)
 	{
 		float distBottom = (r.y + r.h) - p.y;
 		return (distBottom < 0) ? 0 : distBottom;
@@ -278,7 +278,7 @@ static float DistToEdge(SableUI_node* node, SableUI::ivec2 p)
 	return 0;
 }
 
-static void PrintNode(SableUI_node* node, int depth = 0)
+static void PrintNode(SableUI::Node* node, int depth = 0)
 {
 	if (node == nullptr) return;
 
@@ -294,7 +294,7 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 		node->rect.h, node->rect.x, node->rect.y,
 		node->rect.hType, node->rect.wType);
 
-	for (SableUI_node* child : node->children)
+	for (SableUI::Node* child : node->children)
 	{
 		PrintNode(child, depth + 1);
 	}
@@ -302,7 +302,7 @@ static void PrintNode(SableUI_node* node, int depth = 0)
 
 static void RerenderAllNodes()
 {
-	for (SableUI_node* node : nodes)
+	for (SableUI::Node* node : nodes)
 	{
 		if (node->component)
 		{
@@ -313,7 +313,7 @@ static void RerenderAllNodes()
 
 void SableUI::SetupSplitter(const std::string& name, float bSize)
 {
-	SableUI_node* node = SableUI::FindNodeByName(name);
+	SableUI::Node* node = SableUI::FindNodeByName(name);
 
 	if (node == nullptr) return;
 
@@ -394,7 +394,7 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	cursorEW      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
 	/* make root node */
-	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
+	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
 }
@@ -403,7 +403,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 {
 	CalculateNodePositions();
 
-	SableUI_node* parent = FindNodeByName(parentName);
+	SableUI::Node* parent = FindNodeByName(parentName);
 
 	if (parent == nullptr)
 	{
@@ -423,14 +423,14 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 		return;
 	}
 
-	SableUI_node* node = new SableUI_node(type, parent, name);
+	SableUI::Node* node = new SableUI::Node(type, parent, name);
 
 	nodes.push_back(node);
 }
 
-void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component)
+void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<SableUI::BaseComponent> component)
 {
-	SableUI_node* node = FindNodeByName(nodeName);
+	SableUI::Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -450,7 +450,7 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr
 
 void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr<BaseElement> element)
 {
-	SableUI_node* node = FindNodeByName(nodeName);
+	SableUI::Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -539,7 +539,7 @@ void SableUI::Draw()
 	SDL_Cursor* cursorToSet = cursorPointer;
 
 	/* check if need to resize */
-	for (SableUI_node* node : nodes)
+	for (SableUI::Node* node : nodes)
 	{
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
@@ -596,18 +596,6 @@ void SableUI::Draw()
 		}
 	}
 
-	/* render splitters */
-	for (const SableUI_node* node : nodes)
-	{
-		if (node->component != nullptr)
-		{
-			if (auto* splitterComponent = dynamic_cast<SplitterComponent*>(node->component.get()))
-			{
-				splitterComponent->Render();
-			}
-		}
-	}
-
 	/* flush drawable stack & render to screen */
 	renderer.Draw();
 	SDL_UpdateWindowSurface(window);
@@ -625,14 +613,14 @@ void SableUI::PrintNodeTree()
 	PrintNode(root);
 }
 
-SableUI_node* SableUI::GetRoot()
+SableUI::Node* SableUI::GetRoot()
 {
 	return root;
 }
 
-SableUI_node* SableUI::FindNodeByName(const std::string& name)
+SableUI::Node* SableUI::FindNodeByName(const std::string& name)
 {
-	for (SableUI_node* node : nodes)
+	for (SableUI::Node* node : nodes)
 	{
 		if (node->name == name)
 		{
@@ -648,7 +636,7 @@ void SableUI::RecalculateNodes()
 	CalculateNodeScales();
 	SableUI::CalculateNodePositions();
 
-	for (SableUI_node* node : nodes)
+	for (SableUI::Node* node : nodes)
 	{
 		if (node->component != nullptr && node->type != NodeType::COMPONENT)
 		{
@@ -657,13 +645,13 @@ void SableUI::RecalculateNodes()
 	}
 }
 
-void SableUI::CalculateNodePositions(SableUI_node* node)
+void SableUI::CalculateNodePositions(SableUI::Node* node)
 {
 	if (nodes.size() == 0) return;
 
 	if (node == nullptr)
 	{
-		for (SableUI_node* child : root->children)
+		for (SableUI::Node* child : root->children)
 		{
 			CalculateNodePositions(child);
 		}
@@ -675,7 +663,7 @@ void SableUI::CalculateNodePositions(SableUI_node* node)
 	cursor.x += node->parent->rect.x;
 	cursor.y += node->parent->rect.y;
 
-	for (SableUI_node* sibling : node->parent->children)
+	for (SableUI::Node* sibling : node->parent->children)
 	{
 		if (sibling->index < node->index)
 		{
@@ -699,7 +687,18 @@ void SableUI::CalculateNodePositions(SableUI_node* node)
 		node->component.get()->UpdateDrawable();
 	}
 
-	for (SableUI_node* child : node->children)
+	if (node->parent)
+	{
+		if (node->parent->component != nullptr)
+		{
+			if (auto* splitterComponent = dynamic_cast<SplitterComponent*>(node->component.get()))
+			{
+				splitterComponent->Render();
+			}
+		}
+	}
+
+	for (SableUI::Node* child : node->children)
 	{
 		CalculateNodePositions(child);
 	}
@@ -713,7 +712,7 @@ void SableUI::Destroy()
 		return;
 	}
 
-	for (SableUI_node* node : nodes)
+	for (SableUI::Node* node : nodes)
 	{
 		delete node;
 	}
@@ -741,7 +740,7 @@ void SableUI::OpenUIFile(const std::string& path)
 {
 	if (nodes.size() > 0)
 	{
-		for (SableUI_node* node : nodes)
+		for (SableUI::Node* node : nodes)
 		{
 			delete node;
 		}
@@ -765,7 +764,7 @@ void SableUI::OpenUIFile(const std::string& path)
 		return;
 	}
 
-	root = new SableUI_node(NodeType::ROOTNODE, nullptr, "Root Node");
+	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 	SetupRootNode(root, w, h);

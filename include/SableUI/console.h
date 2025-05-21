@@ -5,15 +5,23 @@
 #include <cstdarg>
 #include <cstdio>
 
-enum class LogType
-{
-    SBUI_LOG = 0,
-    SBUI_WARNING = 1,
-    SBUI_ERROR = 2
-};
-
 namespace SableUI
 {
+    enum LogColourANSI
+    {
+        RESET = 0,
+        RED = 31,
+        GREEN = 32,
+        YELLOW = 33
+    };
+
+    enum class LogType
+    {
+        SBUI_LOG = 0,
+        SBUI_WARNING = 1,
+        SBUI_ERROR = 2
+    };
+
     struct LogData
     {
         LogType type;

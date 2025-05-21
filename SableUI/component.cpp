@@ -7,7 +7,7 @@ static SableUI::Renderer* renderer = nullptr;
 
 /* - Default solid component - */
 
-void DefaultComponent::UpdateDrawable()
+void SableUI::DefaultComponent::UpdateDrawable()
 {
 	float bSize = 0.0f;
 
@@ -23,16 +23,16 @@ void DefaultComponent::UpdateDrawable()
 	UpdateElements();
 }
 
-void DefaultComponent::Render()
+void SableUI::DefaultComponent::Render()
 {
     if (renderer == nullptr) renderer = &SableUI::Renderer::Get();
 
-    renderer->Draw(std::make_unique<Drawable::Rect>(drawable));
+    renderer->Draw(std::make_unique<SableUI_Drawable::Rect>(drawable));
 
 	RenderElements();
 }
 
-void DefaultComponent::RenderElements()
+void SableUI::DefaultComponent::RenderElements()
 {
 	for (const auto& e : elements)
 	{
@@ -40,12 +40,12 @@ void DefaultComponent::RenderElements()
 	}
 }
 
-void DefaultComponent::AddElement(std::unique_ptr<BaseElement>& e)
+void SableUI::DefaultComponent::AddElement(std::unique_ptr<BaseElement>& e)
 {
 	elements.push_back(std::move(e));
 }
 
-void DefaultComponent::UpdateElements()
+void SableUI::DefaultComponent::UpdateElements()
 {
 	/* use cursor to place elements */
 	SableUI::vec2 cursor = { SableUI::f2i(parentNode->rect.x),
@@ -102,19 +102,19 @@ void DefaultComponent::UpdateElements()
 
 /* - Splitter - */
 
-void SplitterComponent::UpdateDrawable()
+void SableUI::SplitterComponent::UpdateDrawable()
 {
 	std::vector<int> segments;
 
 	/* calc segment nodes */
-	for (SableUI_node* child : parentNode->children)
+	for (SableUI::Node* child : parentNode->children)
 	{
-		if (parentNode->type == NodeType::HSPLITTER)
+		if (parentNode->type == SableUI::NodeType::HSPLITTER)
 		{
 			segments.push_back(SableUI::f2i(child->rect.x - parentNode->rect.x));
 		}
 
-		if (parentNode->type == NodeType::VSPLITTER)
+		if (parentNode->type == SableUI::NodeType::VSPLITTER)
 		{
 			segments.push_back(SableUI::f2i(child->rect.y - parentNode->rect.y));
 		}
@@ -123,9 +123,9 @@ void SplitterComponent::UpdateDrawable()
 	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments, true);
 }
 
-void SplitterComponent::Render()
+void SableUI::SplitterComponent::Render()
 {
 	if (renderer == nullptr) renderer = &SableUI::Renderer::Get();
 
-	renderer->Draw(std::make_unique<Drawable::bSplitter>(drawable));
+	renderer->Draw(std::make_unique<SableUI_Drawable::bSplitter>(drawable));
 }

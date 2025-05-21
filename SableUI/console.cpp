@@ -9,15 +9,6 @@
 
 using namespace SableUI;
 
-enum LogColourANSI
-{
-	RESET = 0,
-	RED = 31,
-	GREEN = 32,
-	YELLOW = 33
-};
-
-
 static void SetConsoleColour(LogColourANSI colour)
 {
 	std::cout << "\033[" << colour << "m";

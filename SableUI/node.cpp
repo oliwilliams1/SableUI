@@ -1,9 +1,9 @@
 #include "SableUI/node.h"
 
-SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::string& name)
+SableUI::Node::Node(SableUI::NodeType type, SableUI::Node* parent, const std::string& name)
 	: type(type), parent(parent), name(name)
 {
-	if (type != NodeType::ROOTNODE)
+	if (type != SableUI::NodeType::ROOTNODE)
 	{
 		if (parent == nullptr)
 		{
@@ -19,9 +19,9 @@ SableUI_node::SableUI_node(NodeType type, SableUI_node* parent, const std::strin
 	}
 }
 
-void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx)
+void SableUI::SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx)
 {
-	if (root->type != NodeType::ROOTNODE)
+	if (root->type != SableUI::NodeType::ROOTNODE)
 	{
 		SableUI_Error("Setting up a non-root node");
 		return;

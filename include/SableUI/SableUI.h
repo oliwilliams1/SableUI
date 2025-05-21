@@ -14,16 +14,16 @@ namespace SableUI
 	void PrintNodeTree();
 	void SetupSplitter(const std::string& name, float bSize);
 	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
-	void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
+	void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<SableUI::BaseComponent> component);
 	void AddElementToComponent(const std::string& nodeName, std::unique_ptr<BaseElement> element);
 
-	SableUI_node* GetRoot();
-	SableUI_node* FindNodeByName(const std::string& name);
+	SableUI::Node* GetRoot();
+	SableUI::Node* FindNodeByName(const std::string& name);
 
 	void Destroy();
 
 	void OpenUIFile(const std::string& path);
 	void RecalculateNodes();
 
-	void CalculateNodePositions(SableUI_node* node = nullptr);
+	void CalculateNodePositions(SableUI::Node* node = nullptr);
 }

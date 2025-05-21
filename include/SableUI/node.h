@@ -12,23 +12,26 @@
 
 constexpr uint16_t UNDEF = 0xFFFF;
 
-class BaseComponent;
-
-struct SableUI_node
+namespace SableUI
 {
-    std::string name = "";
-    NodeType type = NodeType::COMPONENT;
+    class BaseComponent;
 
-    uint16_t index = UNDEF;
-    SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
+    struct Node
+    {
+        std::string name = "";
+        SableUI::NodeType type = SableUI::NodeType::COMPONENT;
 
-    SableUI_node* parent  = nullptr;
-    std::vector<SableUI_node*> children;
-    std::unique_ptr<BaseComponent> component;
+        uint16_t index = UNDEF;
+        SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
 
-    float bSize = 0.0f;
+        Node* parent = nullptr;
+        std::vector<Node*> children;
+        std::unique_ptr<SableUI::BaseComponent> component;
+
+        float bSize = 0.0f;
+
+        Node(SableUI::NodeType type, Node* parent, const std::string& name);
+    };
     
-    SableUI_node(NodeType type, SableUI_node* parent, const std::string& name);
-};
-
-void SetupRootNode(SableUI_node* root, uint16_t wPx, uint16_t hPx);
+    void SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx);
+}

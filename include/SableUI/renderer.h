@@ -6,30 +6,35 @@
 
 #include "SableUI/utils.h"
 
-enum class NodeType
+namespace SableUI
 {
-	ROOTNODE = 0x00,
-	COMPONENT = 0x01,
-	VSPLITTER = 0x02,
-	HSPLITTER = 0x03,
-	UNDEF = 0xFF
-};
+	enum class NodeType
+	{
+		ROOTNODE = 0x00,
+		COMPONENT = 0x01,
+		VSPLITTER = 0x02,
+		HSPLITTER = 0x03,
+		UNDEF = 0xFF
+	};
+}
 
-namespace Drawable
+namespace SableUI_Drawable
 {
 	class Base
 	{
 	public:
 		virtual void Draw() = 0;
 		virtual ~Base() {};
+
+		int z = 0;
 	};
 
 	class Rect : public Base
 	{
 	public:
-		Rect() {};
-		~Rect() {};
-		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
+		Rect() { this->z = 0; };
+		~Rect() { this->z = 0; };
+		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 0; }
 
 		void Update(SableUI::rect& rect, SableUI::colour colour,
 			float pBSize = 0.0f, bool draw = true);
@@ -43,11 +48,11 @@ namespace Drawable
 	class bSplitter : public Base
 	{
 	public:
-		bSplitter() {};
-		~bSplitter() { offsets.clear(); };
-		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) {}
+		bSplitter() { this->z = 1; };
+		~bSplitter() { offsets.clear(); this->z = 1; };
+		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 1;}
 
-		void Update(SableUI::rect& rect, SableUI::colour colour, NodeType type, float pBSize = 0.0f, 
+		void Update(SableUI::rect& rect, SableUI::colour colour, SableUI::NodeType type, float pBSize = 0.0f, 
 			const std::vector<int>& segments = { 0 }, bool draw = true);
 
 		void Draw() override;
@@ -56,7 +61,7 @@ namespace Drawable
 		SableUI::colour c = { 255, 255, 255, 255 };
 		int b = 0;
 		std::vector<int> offsets;
-		NodeType type = NodeType::UNDEF;
+		SableUI::NodeType type = SableUI::NodeType::UNDEF;
 	};
 }
 
@@ -74,13 +79,13 @@ namespace SableUI
 
 		static Renderer& Get();
 
-		void Draw(std::unique_ptr<Drawable::Base> drawable);
+		void Draw(std::unique_ptr<SableUI_Drawable::Base> drawable);
 
 		void Draw();
 
 	private:
 		Renderer() {}
 
-		std::vector<std::shared_ptr<Drawable::Base>> drawStack;
+		std::vector<std::unique_ptr<SableUI_Drawable::Base>> drawStack;
 	};
 }
