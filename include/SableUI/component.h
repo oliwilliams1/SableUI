@@ -2,7 +2,7 @@
 #include "SableUI/node.h"
 #include "SableUI/renderer.h"
 #include "SableUI/element.h"
-
+#include <unordered_map>
 
 namespace SableUI
 {
@@ -34,9 +34,8 @@ namespace SableUI
 		void UpdateDrawable() override;
 		void RenderElements();
 
-
+		std::unordered_map<std::string, std::unique_ptr<BaseElement>> elementMap;
 	private:
-		std::vector<std::unique_ptr<BaseElement>> elements;
 		SableUI::colour colour;
 		SableUI_Drawable::Rect drawable;
 	};

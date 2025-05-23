@@ -471,8 +471,15 @@ void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr
 	}
 }
 
+static bool init = false;
+
 bool SableUI::PollEvents()
 {
+	if (!init)
+	{
+		RecalculateNodes(); RerenderAllNodes(); init = true;
+	}
+
 	SDL_Event e;
 	if (SDL_PollEvent(&e) != 0)
 	{
@@ -634,7 +641,7 @@ SableUI::Node* SableUI::FindNodeByName(const std::string& name)
 void SableUI::RecalculateNodes()
 {
 	CalculateNodeScales();
-	SableUI::CalculateNodePositions();
+	CalculateNodePositions();
 
 	for (SableUI::Node* node : nodes)
 	{
@@ -643,6 +650,8 @@ void SableUI::RecalculateNodes()
 			node->component.get()->UpdateDrawable();
 		}
 	}
+
+	RerenderAllNodes();
 }
 
 void SableUI::CalculateNodePositions(SableUI::Node* node)

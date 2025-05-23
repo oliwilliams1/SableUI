@@ -1,33 +1,33 @@
 #pragma once
 #include <memory>
+#include <unordered_map>
 
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
-
 namespace SableUI
 {
     class BaseElement
     {
     public:
-        BaseElement() : bgColour({ 255, 0, 0, 0 }) {};
+        BaseElement(const std::string& name) : name(name), bgColour({ 255, 0, 0, 0 }) {};
 
-        BaseElement(SableUI::colour col) : bgColour(col) {};
+        BaseElement(const std::string& name, SableUI::colour col) : name(name), bgColour(col) {};
 
-        BaseElement(float w, float h, 
+        BaseElement(const std::string& name, float w, float h, 
             SableUI::colour col = SableUI::colour(128, 128, 128))
-            : width(w), height(h), bgColour(col) {};
+            : name(name), width(w), height(h), bgColour(col) {};
 
-        BaseElement(float xOffset, float yOffset, float w, float h, 
+        BaseElement(const std::string& name, float xOffset, float yOffset, float w, float h, 
             SableUI::colour col = SableUI::colour(128, 128, 128))
-            : xOffset(xOffset), yOffset(yOffset), width(w), height(h), bgColour(col) {};
+            : name(name), xOffset(xOffset), yOffset(yOffset), width(w), height(h), bgColour(col) {};
 
-        BaseElement(float w, float h, 
+        BaseElement(const std::string& name, float w, float h, 
             SableUI::RectType wType, SableUI::RectType hType, SableUI::colour col = SableUI::colour(128, 128, 128))
-            : width(w), height(h), wType(wType), hType(hType), bgColour(col) {};
+            : name(name), width(w), height(h), wType(wType), hType(hType), bgColour(col) {};
 
-        BaseElement(float xOffset, float yOffset, float w, float h, 
+        BaseElement(const std::string& name, float xOffset, float yOffset, float w, float h, 
             SableUI::RectType wType, SableUI::RectType hType, SableUI::colour col = SableUI::colour(128, 128, 128))
-            : xOffset(xOffset), yOffset(yOffset), width(w), height(h), wType(wType), hType(hType), bgColour(col) {};
+            : name(name), xOffset(xOffset), yOffset(yOffset), width(w), height(h), wType(wType), hType(hType), bgColour(col) {};
 
         /* Base render (background) */
         void Render();
@@ -46,18 +46,11 @@ namespace SableUI
         SableUI::RectType hType = SableUI::RectType::FILL;
 
         SableUI::colour bgColour;
+        std::string name;
 
     private:
         /* private settings for rendering */
         SableUI::rect drawableRect = { 0, 0, 0, 0 };
         SableUI_Drawable::Rect bgDrawable;
-    };
-
-    class Listbox : public BaseElement
-    {
-    public:
-        Listbox() : BaseElement() {};
-
-        void AdditionalRender() override {};
     };
 }
