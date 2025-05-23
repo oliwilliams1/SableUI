@@ -16,6 +16,7 @@ namespace SableUI
 	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
 	void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
 	void AddElementToComponent(const std::string& nodeName, const ElementInfo& info);
+	void AddElementToElement(const std::string& elementName, const ElementInfo& info);
 
 	Node* GetRoot();
 	Node* FindNodeByName(const std::string& name);

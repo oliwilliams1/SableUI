@@ -15,6 +15,8 @@ namespace SableUI
         float width = 0;
         float height = 0;
         float padding = 0;
+        bool centerX = false;
+        bool centerY = false;
         SableUI::RectType wType = SableUI::RectType::FILL;
         SableUI::RectType hType = SableUI::RectType::FILL;
     };
@@ -27,11 +29,15 @@ namespace SableUI
         void SetInfo(const ElementInfo& info);
 
         /* Base render (background) */
-        void Render();
+        void Render(int z = 1);
+
         /* Virtual render to add additional, custom elements */
         virtual void AdditionalRender() {};
 
         void SetRect(const SableUI::rect& rect);
+
+        void UpdateChildren();
+        void AddChild(BaseElement* child);
 
         /* user-level settings for rect */
         float xOffset = 0;
@@ -39,6 +45,9 @@ namespace SableUI
         float width = 0;
         float height = 0;
         float padding = 0;
+        bool centerX = false;
+        bool centerY = false;
+
         SableUI::RectType wType = SableUI::RectType::FILL;
         SableUI::RectType hType = SableUI::RectType::FILL;
 
@@ -49,6 +58,7 @@ namespace SableUI
         /* private settings for rendering */
         SableUI::rect drawableRect = { 0, 0, 0, 0 };
         SableUI_Drawable::Rect bgDrawable;
+        std::vector<BaseElement*> children;
     };
 
     /* Central element manager */

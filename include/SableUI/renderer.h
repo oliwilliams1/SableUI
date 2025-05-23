@@ -26,6 +26,8 @@ namespace SableUI_Drawable
 		virtual void Draw() = 0;
 		virtual ~Base() {};
 
+		void setZ(int z) { this->z = z; }
+
 		int z = 0;
 	};
 
@@ -50,7 +52,7 @@ namespace SableUI_Drawable
 	public:
 		bSplitter() { this->z = 1; };
 		~bSplitter() { offsets.clear(); this->z = 1; };
-		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 1;}
+		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 999;}
 
 		void Update(SableUI::rect& rect, SableUI::colour colour, SableUI::NodeType type, float pBSize = 0.0f, 
 			const std::vector<int>& segments = { 0 }, bool draw = true);

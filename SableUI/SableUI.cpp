@@ -309,11 +309,12 @@ static void RerenderAllNodes()
 			node->component.get()->UpdateDrawable();
 		}
 	}
+	SableUI::Draw();
 }
 
 void SableUI::SetupSplitter(const std::string& name, float bSize)
 {
-	SableUI::Node* node = SableUI::FindNodeByName(name);
+	Node* node = SableUI::FindNodeByName(name);
 
 	if (node == nullptr) return;
 
@@ -430,7 +431,7 @@ void SableUI::AddNodeToParent(NodeType type, const std::string& name, const std:
 
 void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<SableUI::BaseComponent> component)
 {
-	SableUI::Node* node = FindNodeByName(nodeName);
+	Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -450,9 +451,9 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr
 
 void SableUI::AddElementToComponent(const std::string& nodeName, const ElementInfo& info)
 {
-	if (info.name.length() == 0) SableUI_Error("Element name cannot be empty!"); return;
+	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
-	SableUI::Node* node = FindNodeByName(nodeName);
+	Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
@@ -476,7 +477,25 @@ void SableUI::AddElementToComponent(const std::string& nodeName, const ElementIn
 		SableUI_Error("Adding element to non-component node: %s", nodeName.c_str());
 	}
 
-	RerenderAllNodes();
+	RecalculateNodes();
+}
+
+void SableUI::AddElementToElement(const std::string& elementName, const ElementInfo& info)
+{
+	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
+
+	BaseElement* parent = ElementArena::GetElement(elementName);
+
+	if (parent == nullptr)
+	{
+		SableUI_Warn("Cannot find element: %s!", elementName.c_str());
+		return;
+	}
+
+	BaseElement* child = ElementArena::CreateElement(info.name);
+	parent->AddChild(child);
+
+	RecalculateNodes();
 }
 
 static bool init = false;
@@ -485,7 +504,10 @@ bool SableUI::PollEvents()
 {
 	if (!init)
 	{
-		RecalculateNodes(); RerenderAllNodes(); init = true;
+		RecalculateNodes();
+		RerenderAllNodes();
+		SableUI::PrintNodeTree();
+		init = true;
 	}
 
 	SDL_Event e;
@@ -511,7 +533,6 @@ bool SableUI::PollEvents()
 				CalculateNodeScales();
 				CalculateNodePositions();
 
-				Draw();
 				RerenderAllNodes();
 
 				if (!surface)
@@ -541,7 +562,7 @@ void SableUI::Draw()
 {
 	uint32_t frameStart = SDL_GetTicks();
 
-	Renderer& renderer = Renderer::Get();
+	static Renderer& renderer = Renderer::Get();
 
 	/* mouse state for resizing logic */
 	ivec2 cursorPos = { 0, 0 };
@@ -554,7 +575,7 @@ void SableUI::Draw()
 	SDL_Cursor* cursorToSet = cursorPointer;
 
 	/* check if need to resize */
-	for (SableUI::Node* node : nodes)
+	for (Node* node : nodes)
 	{
 		if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
@@ -651,7 +672,7 @@ void SableUI::RecalculateNodes()
 	CalculateNodeScales();
 	CalculateNodePositions();
 
-	for (SableUI::Node* node : nodes)
+	for (Node* node : nodes)
 	{
 		if (node->component != nullptr && node->type != NodeType::COMPONENT)
 		{
@@ -662,13 +683,13 @@ void SableUI::RecalculateNodes()
 	RerenderAllNodes();
 }
 
-void SableUI::CalculateNodePositions(SableUI::Node* node)
+void SableUI::CalculateNodePositions(Node* node)
 {
 	if (nodes.size() == 0) return;
 
 	if (node == nullptr)
 	{
-		for (SableUI::Node* child : root->children)
+		for (Node* child : root->children)
 		{
 			CalculateNodePositions(child);
 		}
@@ -680,7 +701,7 @@ void SableUI::CalculateNodePositions(SableUI::Node* node)
 	cursor.x += node->parent->rect.x;
 	cursor.y += node->parent->rect.y;
 
-	for (SableUI::Node* sibling : node->parent->children)
+	for (Node* sibling : node->parent->children)
 	{
 		if (sibling->index < node->index)
 		{
@@ -725,7 +746,7 @@ void SableUI::OpenUIFile(const std::string& path)
 {
 	if (nodes.size() > 0)
 	{
-		for (SableUI::Node* node : nodes)
+		for (Node* node : nodes)
 		{
 			delete node;
 		}
@@ -749,7 +770,7 @@ void SableUI::OpenUIFile(const std::string& path)
 		return;
 	}
 
-	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
+	root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
 	SetupRootNode(root, w, h);
@@ -768,14 +789,14 @@ void SableUI::OpenUIFile(const std::string& path)
 
 			const char* colourAttr = element->Attribute("colour");
 			SableUI::colour colour = SableUI::colour(51, 51, 51);
-			if (colourAttr) colour = SableUI::StringTupleToColour(colourAttr);
+			if (colourAttr) colour = StringTupleToColour(colourAttr);
 
 			const char* borderAttr = element->Attribute("border");
 			float border = 1.0f;
 			if (borderAttr) border = std::stof(borderAttr);
 
 			const char* borderColourAttr = element->Attribute("borderColour");
-			SableUI::colour borderColour = SableUI::StringTupleToColour(borderColourAttr);
+			SableUI::colour borderColour = StringTupleToColour(borderColourAttr);
 
 			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(nodes.size());
 
