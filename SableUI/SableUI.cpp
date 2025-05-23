@@ -448,8 +448,10 @@ void SableUI::AttachComponentToNode(const std::string& nodeName, std::unique_ptr
 	node->component->SetParent(node);
 }
 
-void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr<BaseElement> element)
+void SableUI::AddElementToComponent(const std::string& nodeName, const ElementInfo& info)
 {
+	if (info.name.length() == 0) SableUI_Error("Element name cannot be empty!"); return;
+
 	SableUI::Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
@@ -462,6 +464,10 @@ void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr
 	{
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
+			BaseElement* element = ElementArena::CreateElement(info.name);
+			if (element == nullptr) return;
+
+			element->SetInfo(info);
 			defaultComponent->AddElement(element);
 		}
 	}
@@ -469,6 +475,8 @@ void SableUI::AddElementToComponent(const std::string& nodeName, std::unique_ptr
 	{
 		SableUI_Error("Adding element to non-component node: %s", nodeName.c_str());
 	}
+
+	RerenderAllNodes();
 }
 
 static bool init = false;
@@ -713,38 +721,6 @@ void SableUI::CalculateNodePositions(SableUI::Node* node)
 	}
 }
 
-void SableUI::Destroy()
-{
-	if (window == nullptr || surface == nullptr)
-	{
-		SableUI_Error("Destroying when window or surface not created!");
-		return;
-	}
-
-	for (SableUI::Node* node : nodes)
-	{
-		delete node;
-	}
-	nodes.clear();
-
-	Renderer::Shutdown();
-
-	SDL_FreeCursor(cursorPointer);
-	SDL_FreeCursor(cursorNS);
-	SDL_FreeCursor(cursorEW);
-
-	if (surface != nullptr)
-	{
-		SDL_FreeSurface(surface);
-		surface = nullptr;
-	}
-
-	SDL_DestroyWindow(window);
-	window = nullptr;
-
-	SDL_Quit();
-}
-
 void SableUI::OpenUIFile(const std::string& path)
 {
 	if (nodes.size() > 0)
@@ -834,4 +810,36 @@ void SableUI::OpenUIFile(const std::string& path)
 	};
 
 	parseNode(rootElement->FirstChildElement(), parentStack.top());
+}
+
+void SableUI::Destroy()
+{
+	if (window == nullptr || surface == nullptr)
+	{
+		SableUI_Error("Destroying when window or surface not created!");
+		return;
+	}
+
+	for (SableUI::Node* node : nodes)
+	{
+		delete node;
+	}
+	nodes.clear();
+
+	Renderer::Shutdown();
+
+	SDL_FreeCursor(cursorPointer);
+	SDL_FreeCursor(cursorNS);
+	SDL_FreeCursor(cursorEW);
+
+	if (surface != nullptr)
+	{
+		SDL_FreeSurface(surface);
+		surface = nullptr;
+	}
+
+	SDL_DestroyWindow(window);
+	window = nullptr;
+
+	SDL_Quit();
 }

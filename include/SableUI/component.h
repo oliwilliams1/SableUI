@@ -28,13 +28,14 @@ namespace SableUI
 		DefaultComponent(SableUI::colour colour = SableUI::colour(255, 32, 32, 32), 
 			SableUI::Node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 	
-		void AddElement(std::unique_ptr<BaseElement>& e);
+		void AddElement(BaseElement* e);
 		void UpdateElements();
 		void Render() override;
 		void UpdateDrawable() override;
 		void RenderElements();
 
-		std::unordered_map<std::string, std::unique_ptr<BaseElement>> elementMap;
+		std::vector<BaseElement*> elements;
+
 	private:
 		SableUI::colour colour;
 		SableUI_Drawable::Rect drawable;

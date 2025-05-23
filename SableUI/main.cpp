@@ -6,24 +6,21 @@ int main()
 
 	SableUI::OpenUIFile("template.SableUI");
 
-	SableUI::BaseElement element = SableUI::BaseElement("element 1", 0, 20);
-	element.wType = SableUI::RectType::FILL;
-	element.hType = SableUI::RectType::FIXED;
-	SableUI::AddElementToComponent("component 3", std::make_unique<SableUI::BaseElement>(element));
+	SableUI::ElementInfo el2info{};
+	el2info.name = "element 2";
+	el2info.wType = SableUI::RectType::FILL;
+	el2info.hType = SableUI::RectType::FILL;
+	el2info.bgColour = SableUI::colour(255, 0, 0);
+	el2info.padding = 5.0f;
+	SableUI::AddElementToComponent("component 3", el2info);
 
-	SableUI::BaseElement element2 = SableUI::BaseElement("element 2", 0, 20);
-	element2.wType = SableUI::RectType::FILL;
-	element2.hType = SableUI::RectType::FILL;
-	element2.bgColour = SableUI::colour(255, 0, 0);
-	element2.padding = 5.0f;
-	SableUI::AddElementToComponent("component 3", std::make_unique<SableUI::BaseElement>(element2));
-
-	SableUI::BaseElement element3 = SableUI::BaseElement("element 3", 0, 20);
-	element3.wType = SableUI::RectType::FILL;
-	element3.hType = SableUI::RectType::FILL;
-	element3.bgColour = SableUI::colour(0, 255, 255);
-	element3.padding = 15.0f;
-	SableUI::AddElementToComponent("component 3", std::make_unique<SableUI::BaseElement>(element3));
+	SableUI::ElementInfo el3info{};
+	el3info.name = "element 3";
+	el3info.wType = SableUI::RectType::FILL;
+	el3info.hType = SableUI::RectType::FILL;
+	el3info.bgColour = SableUI::colour(0, 255, 255);
+	el3info.padding = 15.0f;
+	SableUI::AddElementToComponent("component 3", el3info);
 
 	SableUI::RecalculateNodes();
 

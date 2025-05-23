@@ -34,15 +34,15 @@ void SableUI::DefaultComponent::Render()
 
 void SableUI::DefaultComponent::RenderElements()
 {
-	for (const auto& pair : elementMap)
+	for (BaseElement* element : elements)
 	{
-		pair.second->Render();
+		element->Render();
 	}
 }
 
-void SableUI::DefaultComponent::AddElement(std::unique_ptr<BaseElement>& e)
+void SableUI::DefaultComponent::AddElement(BaseElement* e)
 {
-	elementMap[e.get()->name] = std::move(e);
+	elements.push_back(e);
 }
 
 void SableUI::DefaultComponent::UpdateElements()
@@ -54,14 +54,13 @@ void SableUI::DefaultComponent::UpdateElements()
 	SableUI::vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
 							SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
 
-	for (const auto& pair : elementMap)
+	for (BaseElement* element : elements)
 	{
-		BaseElement& element = *pair.second.get();
 		SableUI::rect tempElRect = { 0, 0, 0, 0 };
-		tempElRect.y = cursor.y + element.yOffset;
-		tempElRect.x = cursor.x + element.xOffset;
-		tempElRect.w = element.width;
-		tempElRect.h = element.height;
+		tempElRect.y = cursor.y + element->yOffset;
+		tempElRect.x = cursor.x + element->xOffset;
+		tempElRect.w = element->width;
+		tempElRect.h = element->height;
 
 		/* apply border */
 		float bSize = 0.0f;
@@ -76,17 +75,16 @@ void SableUI::DefaultComponent::UpdateElements()
 		/* calc fill type */
 		if (parentNode != nullptr)
 		{
-			if (element.wType == SableUI::RectType::FILL) tempElRect.w = parentNode->rect.w - 2.0f * bSize;
+			if (element->wType == SableUI::RectType::FILL) tempElRect.w = parentNode->rect.w - 2.0f * bSize;
 
-			if (element.hType == SableUI::RectType::FILL)
+			if (element->hType == SableUI::RectType::FILL)
 			{
 				float fillHeight = parentNode->rect.h - 2.0f * bSize;
 				float fillCtr = 0;
 
-				for (const auto& pair : elementMap)
+				for (BaseElement* el2 : elements)
 				{
-					BaseElement& el2 = *pair.second.get();
-					if (el2.hType == SableUI::RectType::FIXED) fillHeight -= el2.height;
+					if (el2->hType == SableUI::RectType::FIXED) fillHeight -= el2->height;
 					else fillCtr++;
 				}
 				tempElRect.h = fillHeight / fillCtr;
@@ -98,18 +96,18 @@ void SableUI::DefaultComponent::UpdateElements()
 		if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
 
 		/* upd cursor */
-		cursor.y += tempElRect.h + element.yOffset;
+		cursor.y += tempElRect.h + element->yOffset;
 
 		/* calc padding */
-		if (element.padding > 0.0f)
+		if (element->padding > 0.0f)
 		{
-			tempElRect.x += element.padding;
-			tempElRect.y += element.padding;
-			tempElRect.w -= 2.0f * element.padding;
-			tempElRect.h -= 2.0f * element.padding;
+			tempElRect.x += element->padding;
+			tempElRect.y += element->padding;
+			tempElRect.w -= 2.0f * element->padding;
+			tempElRect.h -= 2.0f * element->padding;
 		}
 		
-		element.SetRect(tempElRect);
+		element->SetRect(tempElRect);
 	}
 };
 
