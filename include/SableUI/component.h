@@ -14,7 +14,7 @@ namespace SableUI
 		BaseComponent(SableUI::Node* parent) : parentNode(parent) {};
 
 		virtual void Render() = 0;
-		virtual void UpdateDrawable() = 0;
+		virtual void UpdateDrawable(bool draw = true) = 0;
 		SableUI::Node* GetParent() { return parentNode; }
 		void SetParent(SableUI::Node* n) { parentNode = n; }
 
@@ -31,7 +31,7 @@ namespace SableUI
 		void AddElement(BaseElement* e);
 		void UpdateElements();
 		void Render() override;
-		void UpdateDrawable() override;
+		void UpdateDrawable(bool draw = true) override;
 		void RenderElements();
 
 		std::vector<BaseElement*> elements;
@@ -48,7 +48,7 @@ namespace SableUI
 			SableUI::Node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
 
 		void Render() override;
-		void UpdateDrawable() override;
+		void UpdateDrawable(bool draw = true) override;
 	
 	private:
 		SableUI::colour bColour;

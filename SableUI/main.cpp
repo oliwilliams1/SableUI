@@ -55,8 +55,18 @@ int main()
 	el6.wType = SableUI::RectType::FILL;
 	el6.hType = SableUI::RectType::FILL;
 	el6.bgColour = SableUI::colour(0, 255, 0);
-	el6.padding = 20.0f;
+	el6.padding = 5.0f;
 	SableUI::AddElementToElement("element 5", el6);
+
+	for (int i = 0; i < 10; i++)
+	{
+		SableUI::ElementInfo eltemp{};
+		eltemp.name = "element " + std::to_string(i + 7);
+		eltemp.wType = SableUI::RectType::FILL;
+		eltemp.hType = SableUI::RectType::FILL;
+		eltemp.padding = 2.0f;
+		SableUI::AddElementToElement("element 6", eltemp);
+	}
 
 	while (SableUI::PollEvents())
 	{

@@ -7,7 +7,7 @@ static SableUI::Renderer* renderer = nullptr;
 
 /* - Default solid component - */
 
-void SableUI::DefaultComponent::UpdateDrawable()
+void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 {
 	float bSize = 0.0f;
 
@@ -18,7 +18,7 @@ void SableUI::DefaultComponent::UpdateDrawable()
 
 	drawable.Update(parentNode->rect, colour, bSize, false);
 
-	Render();
+	if (draw) Render();
 
 	UpdateElements();
 }
@@ -123,7 +123,7 @@ void SableUI::DefaultComponent::UpdateElements()
 
 /* - Splitter - */
 
-void SableUI::SplitterComponent::UpdateDrawable()
+void SableUI::SplitterComponent::UpdateDrawable(bool draw)
 {
 	std::vector<int> segments;
 
@@ -141,7 +141,7 @@ void SableUI::SplitterComponent::UpdateDrawable()
 		}
 	}
 
-	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments, true);
+	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments, draw);
 }
 
 void SableUI::SplitterComponent::Render()

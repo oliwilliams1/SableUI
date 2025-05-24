@@ -41,7 +41,6 @@ void SableUI::BaseElement::Render(int z)
         element->Render(z + 1);
     }
 	if (children.size() == 0) return;
-
 }
 
 void SableUI::BaseElement::UpdateChildren()

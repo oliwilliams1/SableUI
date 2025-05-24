@@ -466,7 +466,7 @@ void SableUI::AddElementToComponent(const std::string& nodeName, const ElementIn
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
 			BaseElement* element = ElementArena::CreateElement(info.name);
-			if (element == nullptr) return;
+			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 			element->SetInfo(info);
 			defaultComponent->AddElement(element);
@@ -493,6 +493,9 @@ void SableUI::AddElementToElement(const std::string& elementName, const ElementI
 	}
 
 	BaseElement* child = ElementArena::CreateElement(info.name);
+	if (child == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
+
+	child->SetInfo(info);
 	parent->AddChild(child);
 
 	RecalculateNodes();
@@ -504,8 +507,6 @@ bool SableUI::PollEvents()
 {
 	if (!init)
 	{
-		RecalculateNodes();
-		RerenderAllNodes();
 		SableUI::PrintNodeTree();
 		init = true;
 	}
@@ -676,11 +677,9 @@ void SableUI::RecalculateNodes()
 	{
 		if (node->component != nullptr && node->type != NodeType::COMPONENT)
 		{
-			node->component.get()->UpdateDrawable();
+			node->component.get()->UpdateDrawable(false);
 		}
 	}
-
-	RerenderAllNodes();
 }
 
 void SableUI::CalculateNodePositions(Node* node)
