@@ -29,6 +29,7 @@ namespace SableUI_Drawable
 		void setZ(int z) { this->z = z; }
 
 		int z = 0;
+		SableUI::rect r = { 0, 0, 0, 0 };
 	};
 
 	class Rect : public Base
@@ -36,14 +37,13 @@ namespace SableUI_Drawable
 	public:
 		Rect() { this->z = 0; };
 		~Rect() { this->z = 0; };
-		Rect(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 0; }
+		Rect(SableUI::rect& r, SableUI::colour colour) : c(colour) { this->r = r; this->z = 0; }
 
 		void Update(SableUI::rect& rect, SableUI::colour colour,
 			float pBSize = 0.0f, bool draw = true);
 
 		void Draw() override;
 
-		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour c = { 255, 255, 255, 255 };
 	};
 
@@ -52,14 +52,13 @@ namespace SableUI_Drawable
 	public:
 		bSplitter() { this->z = 1; };
 		~bSplitter() { offsets.clear(); this->z = 1; };
-		bSplitter(SableUI::rect& r, SableUI::colour colour) : r(r), c(colour) { this->z = 999;}
+		bSplitter(SableUI::rect& r, SableUI::colour colour) : c(colour) { this->z = 999; this->r = r; }
 
 		void Update(SableUI::rect& rect, SableUI::colour colour, SableUI::NodeType type, float pBSize = 0.0f, 
 			const std::vector<int>& segments = { 0 }, bool draw = true);
 
 		void Draw() override;
 
-		SableUI::rect r = { 0, 0, 0, 0 };
 		SableUI::colour c = { 255, 255, 255, 255 };
 		int b = 0;
 		std::vector<int> offsets;
@@ -78,12 +77,13 @@ namespace SableUI
 		static void Init(SDL_Surface* surface);
 		static void Shutdown();
 		static void SetSurface(SDL_Surface* surface);
+		static void Flush();
 
 		static Renderer& Get();
 
 		void Draw(std::unique_ptr<SableUI_Drawable::Base> drawable);
 
-		void Draw();
+		void Draw(SDL_Window* window);
 
 	private:
 		Renderer() {}

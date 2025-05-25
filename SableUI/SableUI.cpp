@@ -508,6 +508,11 @@ bool SableUI::PollEvents()
 	if (!init)
 	{
 		SableUI::PrintNodeTree();
+
+		Renderer::Flush();  // Clear the draw stack from init draw commands
+		RecalculateNodes(); // Recalc everything after init
+		RerenderAllNodes();
+		Draw();             // Redraw from fresh stack
 		init = true;
 	}
 
@@ -602,7 +607,6 @@ void SableUI::Draw()
 			if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
 			{
 				resCalled = true;
-
 				Resize(cursorPos, node);
 
 				resizing = true;
@@ -634,8 +638,7 @@ void SableUI::Draw()
 	}
 
 	/* flush drawable stack & render to screen */
-	renderer.Draw();
-	SDL_UpdateWindowSurface(window);
+	renderer.Draw(window);
 
 	/* ensure application doesnt run faster than desired fps */
 	uint32_t frameTime = SDL_GetTicks() - frameStart;

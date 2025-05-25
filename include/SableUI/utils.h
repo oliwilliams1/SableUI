@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <cstdint>
 #include <cmath>
+#include <SDL2/SDL_rect.h>
 
 namespace SableUI
 {
+    inline int f2i(float f) { return static_cast<int>(std::round(f)); }
+
     struct ivec2
     {
         int x;
@@ -142,6 +145,11 @@ namespace SableUI
         {
             printf("x: %f, y: %f, w: %f, h: %f\n", x, y, w, h);
         }
+
+        SDL_Rect toSDLRect() const
+        {
+			return { f2i(x), f2i(y), f2i(w), f2i(h) };
+        }
     };
 
     enum EdgeType
@@ -156,6 +164,4 @@ namespace SableUI
     colour StringTupleToColour(const char* str);
 
     void ChangeWindowBackground(SableUI::colour c);
-
-    inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 }

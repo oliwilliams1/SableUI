@@ -58,13 +58,13 @@ int main()
 	el6.padding = 5.0f;
 	SableUI::AddElementToElement("element 5", el6);
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 50; i++)
 	{
 		SableUI::ElementInfo eltemp{};
 		eltemp.name = "element " + std::to_string(i + 7);
 		eltemp.wType = SableUI::RectType::FILL;
 		eltemp.hType = SableUI::RectType::FILL;
-		eltemp.padding = 2.0f;
+		eltemp.padding = 1.0f;
 		SableUI::AddElementToElement("element 6", eltemp);
 	}
 

@@ -62,6 +62,11 @@ void SableUI::Renderer::SetSurface(SDL_Surface* surface)
     s_surface = surface;
 }
 
+void SableUI::Renderer::Flush()
+{
+    s_renderer->drawStack.clear();
+}
+
 SableUI::Renderer& SableUI::Renderer::Get()
 {
 	return *s_renderer;
@@ -174,7 +179,7 @@ void SableUI::Renderer::Draw(std::unique_ptr<SableUI_Drawable::Base> drawable)
     drawStack.push_back(std::move(drawable));
 }
 
-void SableUI::Renderer::Draw()
+void SableUI::Renderer::Draw(SDL_Window* window)
 {
     if (s_renderer == nullptr)
     {
@@ -192,11 +197,15 @@ void SableUI::Renderer::Draw()
         return a->z < b->z;
     });
 
+    std::vector<SDL_Rect> rects;
+
     /* iterate through queue and draw all types of drawables */
     for (const auto& drawable : drawStack)
     {
         if (drawable)
         {
+            rects.push_back(drawable.get()->r.toSDLRect());
+
             drawable->Draw();
         }
     }
@@ -206,5 +215,18 @@ void SableUI::Renderer::Draw()
 
     SDL_UnlockSurface(s_surface);
     SDL_FreeSurface(s_surface);
+
+    SDL_Rect maxRect = { 0, 0, 0, 0 };
+    for (const auto& rect : rects)
+	{
+		if (rect.x < maxRect.x) maxRect.x = rect.x;
+		if (rect.y < maxRect.y) maxRect.y = rect.y;
+		if (rect.w + rect.x > maxRect.w) maxRect.w = rect.w + rect.x;
+		if (rect.h + rect.y > maxRect.h) maxRect.h = rect.h + rect.y;
+	}
+
+    /* update window surface */
+    SDL_UpdateWindowSurfaceRects(window, &maxRect, 1);
+
     drawStack.clear();
 }
