@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <cstdint>
 #include <cmath>
-#include <SDL2/SDL_rect.h>
 
 namespace SableUI
 {
@@ -145,11 +144,6 @@ namespace SableUI
         {
             printf("x: %f, y: %f, w: %f, h: %f\n", x, y, w, h);
         }
-
-        SDL_Rect toSDLRect() const
-        {
-			return { f2i(x), f2i(y), f2i(w), f2i(h) };
-        }
     };
 
     enum EdgeType
@@ -162,6 +156,4 @@ namespace SableUI
     bool RectBoundingBox(rect r, ivec2 p);
 
     colour StringTupleToColour(const char* str);
-
-    void ChangeWindowBackground(SableUI::colour c);
 }

@@ -1,8 +1,8 @@
 #include "SableUI/SableUI.h"
 
-int main()
+int main(int argc, char** argv)
 {
-	SableUI::SBCreateWindow("SableUI", 800, 600);
+	SableUI::SBCreateWindow(argc, argv "SableUI", 800, 600);
 
 	SableUI::OpenUIFile("template.SableUI");
 	

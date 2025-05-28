@@ -1,9 +1,9 @@
-#define SDL_MAIN_HANDLED
 #include "SableUI/SableUI.h"
 #include "SableUI/renderer.h"
 #include "SableUI/node.h"
 
-#include <SDL2/SDL.h>
+#include <GL/glew.h>
+#include <GL/freeglut.h>
 #include <tinyxml2.h>
 #include <cstdio>
 #include <iostream>
@@ -20,13 +20,8 @@
 
 constexpr float minComponentSize = 20.0f;
 
-static SDL_Window* window = nullptr;
-static SDL_Surface* surface = nullptr;
 static int frameDelay = 0;
 static SableUI::Node* root = nullptr;
-static SDL_Cursor* cursorPointer = nullptr;
-static SDL_Cursor* cursorNS = nullptr;
-static SDL_Cursor* cursorEW = nullptr;
 static bool resizing = false;
 
 static std::vector<SableUI::Node*> nodes;
@@ -321,39 +316,23 @@ void SableUI::SetupSplitter(const std::string& name, float bSize)
 	node->bSize = bSize;
 }
 
-void SableUI::SBCreateWindow(const std::string& title, int width, int height, int x, int y)
+void SableUI::SBCreateWindow(int argc, char** argv, const std::string& title, int width, int height, int x, int y)
 {
-	/* prevent func from being called twice */
-	if (window != nullptr || surface != nullptr)
-	{
-		SableUI_Log("Window already created!");
-		return;
-	}
+	///* prevent func from being called twice */
+	//if (window != nullptr || surface != nullptr)
+	//{
+	//	SableUI_Log("Window already created!");
+	//	return;
+	//}
 
-
-	if (SDL_Init(SDL_INIT_VIDEO) != 0)
-	{
-		SableUI_Error("SDL could not initialize! SDL_Error: %s", SDL_GetError());
-		return;
-	}
-
-	int windowX = (x == -1) ? SDL_WINDOWPOS_CENTERED : x;
-	int windowY = (y == -1) ? SDL_WINDOWPOS_CENTERED : y;
-
-	window = SDL_CreateWindow(title.c_str(), windowX, windowY, width, height, SDL_WINDOW_RESIZABLE);
-	if (!window)
-	{
-		SableUI_Error("Window could not be created! SDL_Error: %s", SDL_GetError());
-	}
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE);
+	glutInitWindowSize(800, 600);
+	glutCreateWindow(title.c_str());
 
 #ifdef _WIN32
 	/* enable immersive darkmode on windows via api */
-	SDL_SysWMinfo sysInfo{};
-
-	SDL_VERSION(&sysInfo.version);
-	SDL_GetWindowWMInfo(window, &sysInfo);
-
-	HWND hwnd = sysInfo.info.win.window;
+	HWND hwnd = FindWindowA(NULL, title.c_str());
 
 	BOOL dark_mode = true;
 	DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
@@ -363,25 +342,10 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
-	surface = SDL_GetWindowSurface(window);
-
-	if (!surface)
-	{
-		SableUI_Error("Surface could not be created! SDL_Error: %s", SDL_GetError());
-	}
-	
-	SDL_DisplayMode displayMode;
-	if (SDL_GetCurrentDisplayMode(0, &displayMode) != 0)
-	{
-		SableUI_Error("Failed to get display mode! SDL_Error: %s", SDL_GetError());
-	}
-	else
-	{
 		/* set internal max hz to display refresh rate */
-		SetMaxFPS(displayMode.refresh_rate);
-	}
+	SetMaxFPS(60);
 
-	Renderer::Init(surface);
+	// Renderer::Init(surface);
 
 	if (root != nullptr)
 	{
@@ -390,9 +354,6 @@ void SableUI::SBCreateWindow(const std::string& title, int width, int height, in
 	}
 
 	/* init cursors for resizing */
-	cursorPointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	cursorNS      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-	cursorEW      = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
 
 	/* make root node */
 	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
@@ -516,7 +477,7 @@ bool SableUI::PollEvents()
 		init = true;
 	}
 
-	SDL_Event e;
+	/*SDL_Event e;
 	if (SDL_PollEvent(&e) != 0)
 	{
 		switch (e.type)
@@ -554,7 +515,7 @@ bool SableUI::PollEvents()
 			RerenderAllNodes();
 			break;
 		}
-	}
+	}*/
 
 	return true;
 }
@@ -566,86 +527,90 @@ void SableUI::SetMaxFPS(int fps)
 
 void SableUI::Draw()
 {
-	uint32_t frameStart = SDL_GetTicks();
+	//uint32_t frameStart = SDL_GetTicks();
 
-	static Renderer& renderer = Renderer::Get();
+	//static Renderer& renderer = Renderer::Get();
 
-	/* mouse state for resizing logic */
-	ivec2 cursorPos = { 0, 0 };
-	uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
+	///* mouse state for resizing logic */
+	//ivec2 cursorPos = { 0, 0 };
+	//uint32_t mouseState = SDL_GetMouseState(&cursorPos.x, &cursorPos.y);
 
-	/* static for multiple calls on one resize event (lifetime of static is until mouse up) */
-	static SDL_Cursor* currentCursor = cursorPointer;
-	static bool resCalled = false;
+	///* static for multiple calls on one resize event (lifetime of static is until mouse up) */
+	//static SDL_Cursor* currentCursor = cursorPointer;
+	//static bool resCalled = false;
 
-	SDL_Cursor* cursorToSet = cursorPointer;
+	//SDL_Cursor* cursorToSet = cursorPointer;
 
-	/* check if need to resize */
-	for (Node* node : nodes)
-	{
-		if (!RectBoundingBox(node->rect, cursorPos)) continue;
+	///* check if need to resize */
+	//for (Node* node : nodes)
+	//{
+	//	if (!RectBoundingBox(node->rect, cursorPos)) continue;
 
-		if (cursorPos.x == 0 && cursorPos.y == 0) continue;
-	
-		float d1 = DistToEdge(node, cursorPos);
+	//	if (cursorPos.x == 0 && cursorPos.y == 0) continue;
+	//
+	//	float d1 = DistToEdge(node, cursorPos);
 
-		if (node->parent == nullptr) continue;
+	//	if (node->parent == nullptr) continue;
 
-		if (d1 < 5.0f)
-		{
-			switch (node->parent->type)
-			{
-			case NodeType::VSPLITTER:
-				cursorToSet = cursorNS;
-				break;
+	//	if (d1 < 5.0f)
+	//	{
+	//		switch (node->parent->type)
+	//		{
+	//		case NodeType::VSPLITTER:
+	//			cursorToSet = cursorNS;
+	//			break;
 
-			case NodeType::HSPLITTER:
-				cursorToSet = cursorEW;
-				break;
-			}
+	//		case NodeType::HSPLITTER:
+	//			cursorToSet = cursorEW;
+	//			break;
+	//		}
 
-			if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
-			{
-				resCalled = true;
-				Resize(cursorPos, node);
+	//		if (!resizing && (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) && cursorToSet != cursorPointer)
+	//		{
+	//			resCalled = true;
+	//			Resize(cursorPos, node);
 
-				resizing = true;
-				continue;
-			}
-		}
-	}
+	//			resizing = true;
+	//			continue;
+	//		}
+	//	}
+	//}
 
-	if (currentCursor != cursorToSet && !resizing)
-	{
-		SDL_SetCursor(cursorToSet);
-		currentCursor = cursorToSet;
-	}
+	//if (currentCursor != cursorToSet && !resizing)
+	//{
+	//	SDL_SetCursor(cursorToSet);
+	//	currentCursor = cursorToSet;
+	//}
 
-	if (resizing)
-	{
-		if (!resCalled)
-		{
-			Resize(cursorPos);
-			if (!(mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)))
-			{
-				resizing = false;
-			}
-		}
-		else
-		{
-			resCalled = false;
-		}
-	}
+	//if (resizing)
+	//{
+	//	if (!resCalled)
+	//	{
+	//		Resize(cursorPos);
+	//		if (!(mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)))
+	//		{
+	//			resizing = false;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		resCalled = false;
+	//	}
+	//}
 
 	/* flush drawable stack & render to screen */
-	renderer.Draw(window);
+	// renderer.Draw();
 
 	/* ensure application doesnt run faster than desired fps */
-	uint32_t frameTime = SDL_GetTicks() - frameStart;
+	/*uint32_t frameTime = SDL_GetTicks() - frameStart;
 	if (frameTime < static_cast<uint32_t>(frameDelay))
 	{
 		SDL_Delay(frameDelay - frameTime);
-	}
+	}*/
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	glFlush();
+	Sleep(16);
 }
 
 void SableUI::PrintNodeTree()
@@ -774,7 +739,8 @@ void SableUI::OpenUIFile(const std::string& path)
 
 	root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	int w, h;
-	SDL_GetWindowSize(window, &w, &h);
+	w = 800; h = 600;
+
 	SetupRootNode(root, w, h);
 	nodes.push_back(root);
 
@@ -837,12 +803,6 @@ void SableUI::OpenUIFile(const std::string& path)
 
 void SableUI::Destroy()
 {
-	if (window == nullptr || surface == nullptr)
-	{
-		SableUI_Error("Destroying when window or surface not created!");
-		return;
-	}
-
 	for (SableUI::Node* node : nodes)
 	{
 		delete node;
@@ -850,19 +810,4 @@ void SableUI::Destroy()
 	nodes.clear();
 
 	Renderer::Shutdown();
-
-	SDL_FreeCursor(cursorPointer);
-	SDL_FreeCursor(cursorNS);
-	SDL_FreeCursor(cursorEW);
-
-	if (surface != nullptr)
-	{
-		SDL_FreeSurface(surface);
-		surface = nullptr;
-	}
-
-	SDL_DestroyWindow(window);
-	window = nullptr;
-
-	SDL_Quit();
 }
