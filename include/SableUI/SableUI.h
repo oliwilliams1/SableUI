@@ -1,30 +1,67 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 #include <string>
+#include <chrono>
 #include "SableUI/node.h"
 
 namespace SableUI
 {
-	void SBCreateWindow(int argc, char** argv, const std::string& title, int width, int height, int x = -1, int y = -1);
+	enum class MouseState
+	{
+		DOWN = 0x0000,
+		UP   = 0x0001
+	};
 
-	bool PollEvents();
-	void Draw();
-	void SetMaxFPS(int fps);
+	struct MouseButtonState
+	{
+		MouseState LMB = MouseState::UP;
+		MouseState RMB = MouseState::UP;
+	};
 
-	void PrintNodeTree();
-	void SetupSplitter(const std::string& name, float bSize);
-	void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
-	void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
-	void AddElementToComponent(const std::string& nodeName, const ElementInfo& info);
-	void AddElementToElement(const std::string& elementName, const ElementInfo& info);
+	class Window
+	{
+	public:
+		Window(int argc, char** argv, const std::string& title, int width, int height, int x = -1, int y = -1);
 
-	Node* GetRoot();
-	Node* FindNodeByName(const std::string& name);
+		bool PollEvents();
+		void Draw();
+		void SetMaxFPS(int fps);
 
-	void Destroy();
+		void PrintNodeTree();
+		void SetupSplitter(const std::string& name, float bSize);
+		void AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
+		void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
+		void AddElementToComponent(const std::string& nodeName, const ElementInfo& info);
+		void AddElementToElement(const std::string& elementName, const ElementInfo& info);
 
-	void OpenUIFile(const std::string& path);
-	void RecalculateNodes();
+		Node* GetRoot();
+		Node* FindNodeByName(const std::string& name);
 
-	void CalculateNodePositions(Node* node = nullptr);
+		void OpenUIFile(const std::string& path);
+		
+		void RerenderAllNodes();
+		void RecalculateNodes();
+
+		~Window();
+
+	private:
+		void CalculateNodePositions(Node* node = nullptr);
+		void CalculateNodeScales(Node* node = nullptr);
+		void Resize(vec2 pos, Node* node = nullptr);
+
+		std::chrono::milliseconds frameDelay;
+		Node* root = nullptr;
+		bool resizing = false;
+		Texture surface;
+		std::vector<Node*> nodes;
+
+		static void MotionCallback(int x, int y);
+		ivec2 mousePos = ivec2(0, 0);
+
+		static void MouseButtonCallback(int button, int state, int x, int y);
+		MouseButtonState mouseButtonStates;
+
+		static Window* currentInstance;
+		int windowID = -1;
+	};
 }

@@ -1,10 +1,10 @@
 #pragma once
-#include <SDL2/SDL.h>
 #include <vector>
 #include <cstdint>
 #include <memory>
 
 #include "SableUI/utils.h"
+#include "SableUI/texture.h"
 
 namespace SableUI
 {
@@ -74,16 +74,16 @@ namespace SableUI
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		static void Init(SDL_Surface* surface);
+		static void Init(Texture* surface);
 		static void Shutdown();
-		static void SetSurface(SDL_Surface* surface);
+		static void SetSurface(Texture* surface);
 		static void Flush();
 
 		static Renderer& Get();
 
 		void Draw(std::unique_ptr<SableUI_Drawable::Base> drawable);
 
-		void Draw(SDL_Window* window);
+		void Draw();
 
 	private:
 		Renderer() {}

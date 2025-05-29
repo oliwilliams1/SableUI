@@ -5,7 +5,7 @@
 #include "SableUI/utils.h"
 
 static SableUI::Renderer* s_renderer = nullptr;
-static SDL_Surface* s_surface = nullptr;
+static SableUI::Texture* s_surface = nullptr;
 
 static void DrawWindowBorder()
 {
@@ -15,23 +15,23 @@ static void DrawWindowBorder()
 
     /* use std::fill to efficiently draw the border */
     uint32_t* topStart = surfacePixels;
-    std::fill(topStart, topStart + s_surface->w, 0xFF333333);
+    std::fill(topStart, topStart + s_surface->width, 0xFF333333);
 
-    uint32_t* bottomStart = surfacePixels + (s_surface->h - borderWidth) * s_surface->w;
-    std::fill(bottomStart, bottomStart + s_surface->w, 0xFF333333);
+    uint32_t* bottomStart = surfacePixels + (s_surface->height - borderWidth) * s_surface->width;
+    std::fill(bottomStart, bottomStart + s_surface->width, 0xFF333333);
 
     /* draw left and right borders */
-    for (int i = 0; i < s_surface->h; i++)
+    for (int i = 0; i < s_surface->height; i++)
     {
-        uint32_t* startL = surfacePixels + i * s_surface->w;
+        uint32_t* startL = surfacePixels + i * s_surface->width;
 		std::fill(startL, startL + borderWidth, 0xFF333333);
 
-        uint32_t* startR = surfacePixels + i * s_surface->w + s_surface->w - borderWidth;
+        uint32_t* startR = surfacePixels + i * s_surface->width + s_surface->width - borderWidth;
 		std::fill(startR, startR + borderWidth, 0xFF333333);
     }
 }
 
-void SableUI::Renderer::Init(SDL_Surface* surface)
+void SableUI::Renderer::Init(Texture* surface)
 {
 	if (s_renderer == nullptr)
 	{
@@ -57,7 +57,7 @@ void SableUI::Renderer::Shutdown()
 	}
 }
 
-void SableUI::Renderer::SetSurface(SDL_Surface* surface)
+void SableUI::Renderer::SetSurface(Texture* surface)
 {
     s_surface = surface;
 }
@@ -91,17 +91,17 @@ void SableUI_Drawable::Rect::Draw()
 
     if (surfacePixels == nullptr) return;
 
-    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->w - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->h - 1);
-    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->h - y);
-    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->w - x);
+    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->width - 1);
+    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->height - 1);
+    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->height - y);
+    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->width - x);
 
     /* use std::fill to efficiently draw the rect */
     for (int i = 0; i < height; i++)
     {
-        if (y + i < s_surface->h)
+        if (y + i < s_surface->height)
         {
-            uint32_t* start = surfacePixels + ((y + i) * s_surface->w) + x;
+            uint32_t* start = surfacePixels + ((y + i) * s_surface->width) + x;
             std::fill(start, start + width, c.value);
         }
     }
@@ -128,10 +128,10 @@ void SableUI_Drawable::bSplitter::Draw()
 
     if (surfacePixels == nullptr) return;
 
-    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->w - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->h - 1);
-    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->w - x);
-    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->h - y);
+    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->width - 1);
+    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->height - 1);
+    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->width - x);
+    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->height - y);
 
     /* use std::fill to efficiently draw the splitter */
     switch (type)
@@ -144,9 +144,9 @@ void SableUI_Drawable::bSplitter::Draw()
 
             for (int i = b; i < height; i++)
             {
-                if (y + i < s_surface->h && drawX >= 0 && drawX < s_surface->w)
+                if (y + i < s_surface->height && drawX >= 0 && drawX < s_surface->width)
                 {
-                    uint32_t* start = surfacePixels + (y + i) * s_surface->w + drawX;
+                    uint32_t* start = surfacePixels + (y + i) * s_surface->width + drawX;
                     std::fill(start, start + b * 2, c.value);
                 }
             }
@@ -162,9 +162,9 @@ void SableUI_Drawable::bSplitter::Draw()
 
             for (int i = 0; i < b * 2; i++)
             {
-                if (drawY + i >= 0 && drawY + i < s_surface->h && x < s_surface->w)
+                if (drawY + i >= 0 && drawY + i < s_surface->height && x < s_surface->width)
 				{
-                    uint32_t* start = surfacePixels + (drawY + i) * s_surface->w + x;
+                    uint32_t* start = surfacePixels + (drawY + i) * s_surface->width + x;
                     std::fill(start, start + width, c.value);
 				}
             }
@@ -179,7 +179,7 @@ void SableUI::Renderer::Draw(std::unique_ptr<SableUI_Drawable::Base> drawable)
     drawStack.push_back(std::move(drawable));
 }
 
-void SableUI::Renderer::Draw(SDL_Window* window)
+void SableUI::Renderer::Draw()
 {
     if (s_renderer == nullptr)
     {
@@ -187,46 +187,22 @@ void SableUI::Renderer::Draw(SDL_Window* window)
         return;
     }
 
-    if (SDL_LockSurface(s_surface) < 0)
-    {
-        SableUI_Error("Unable to lock surface! SDL_Error: %s", SDL_GetError());
-        return;
-    }
-
     std::sort(drawStack.begin(), drawStack.end(), [](const std::unique_ptr<SableUI_Drawable::Base>& a, const std::unique_ptr<SableUI_Drawable::Base>& b) {
         return a->z < b->z;
     });
 
-    std::vector<SDL_Rect> rects;
 
     /* iterate through queue and draw all types of drawables */
     for (const auto& drawable : drawStack)
     {
         if (drawable)
         {
-            rects.push_back(drawable.get()->r.toSDLRect());
-
             drawable->Draw();
         }
     }
 
     /* draw window border after queue is drawn */
     DrawWindowBorder();
-
-    SDL_UnlockSurface(s_surface);
-    SDL_FreeSurface(s_surface);
-
-    SDL_Rect maxRect = { 0, 0, 0, 0 };
-    for (const auto& rect : rects)
-	{
-		if (rect.x < maxRect.x) maxRect.x = rect.x;
-		if (rect.y < maxRect.y) maxRect.y = rect.y;
-		if (rect.w + rect.x > maxRect.w) maxRect.w = rect.w + rect.x;
-		if (rect.h + rect.y > maxRect.h) maxRect.h = rect.h + rect.y;
-	}
-
-    /* update window surface */
-    SDL_UpdateWindowSurfaceRects(window, &maxRect, 1);
 
     drawStack.clear();
 }
