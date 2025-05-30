@@ -25,6 +25,7 @@ namespace SableUI
 
 		bool PollEvents();
 		void Draw();
+		bool needsStaticRedraw = false;
 		void SetMaxFPS(int fps);
 
 		void PrintNodeTree();
@@ -61,6 +62,9 @@ namespace SableUI
 		static void MouseButtonCallback(int button, int state, int x, int y);
 		MouseButtonState mouseButtonStates;
 
+		static void ReshapeCallback(int width, int height);
+		ivec2 windowSize = ivec2(0, 0);
+		
 		static Window* currentInstance;
 		int windowID = -1;
 	};

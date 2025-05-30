@@ -108,11 +108,11 @@ namespace SableUI
 
     struct colour
     {
-                        /* A R G B */
+                        /* R G B A */
         uint32_t value = 0xFFFFFFFF;
 
         colour(int r, int g, int b, int a = 255) {
-            value = (a << 24) | (r << 16) | (g << 8) | b;
+            value = (a << 24) | (b << 16) | (g << 8) | r; //ogl spec
         }
     };
 

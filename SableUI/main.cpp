@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	SableUI::Window mainWindow(argc, argv, "SableUI", 800, 600);
+	SableUI::Window mainWindow(argc, argv, "SableUI", 1000, 1000);
 
 	mainWindow.OpenUIFile("template.SableUI");
 
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 		eltemp.name = "element " + std::to_string(i + 7);
 		eltemp.wType = SableUI::RectType::FILL;
 		eltemp.hType = SableUI::RectType::FILL;
-		eltemp.padding = 1.0f;
+		eltemp.padding = 2.0f;
 		mainWindow.AddElementToElement("element 6", eltemp);
 	}
 

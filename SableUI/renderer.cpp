@@ -191,6 +191,7 @@ void SableUI::Renderer::Draw()
         return a->z < b->z;
     });
 
+    if (drawStack.size() == 0) return;
 
     /* iterate through queue and draw all types of drawables */
     for (const auto& drawable : drawStack)
@@ -205,4 +206,6 @@ void SableUI::Renderer::Draw()
     DrawWindowBorder();
 
     drawStack.clear();
+
+    s_surface->Update();
 }

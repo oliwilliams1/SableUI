@@ -3,7 +3,6 @@
 #include "SableUI/node.h"
 #include "SableUI/texture.h"
 
-#include <GL/glew.h>
 #include <GL/freeglut.h>
 
 #include <cstdio>
@@ -80,9 +79,11 @@ SableUI::Window::Window(int argc, char** argv, const std::string& title, int wid
 		SableUI_Runtime_Error("Surface already created!");
 	}
 
+	windowSize = ivec2(width, height);
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE);
-	glutInitWindowSize(800, 600);
+	glutInitWindowSize(windowSize.x, windowSize.y);
 	windowID = glutCreateWindow(title.c_str());
 	currentInstance = this;
 
@@ -100,6 +101,10 @@ SableUI::Window::Window(int argc, char** argv, const std::string& title, int wid
 
 	/* set internal max hz to display refresh rate */
 	SetMaxFPS(60);
+	
+	surface.Resize(windowSize.x, windowSize.y);
+	surface.SetColour(SableUI::colour(128, 0, 64).value);
+	surface.initGPUTexture();
 
 	Renderer::Init(&surface);
 
@@ -110,9 +115,10 @@ SableUI::Window::Window(int argc, char** argv, const std::string& title, int wid
 	}
 
 	/* event callbacks */
+	glutReshapeFunc(ReshapeCallback);
+	glutMotionFunc(MotionCallback);
 	glutPassiveMotionFunc(MotionCallback);
 	glutMouseFunc(MouseButtonCallback);
-	/* init cursors for resizing */
 
 	/* make root node */
 	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
@@ -127,60 +133,12 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		PrintNodeTree();
-
 		Renderer::Flush();  // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
 		init = true;
 	}
-
-	/*SDL_Event e;
-	if (SDL_PollEvent(&e) != 0)
-	{
-		switch (e.type)
-		{
-		case SDL_QUIT:
-			return false;
-			break;
-
-		case SDL_WINDOWEVENT:
-			if (e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED
-				|| e.window.event == SDL_WINDOW_MINIMIZED || e.window.event == SDL_WINDOW_MAXIMIZED)
-			{
-				int w, h;
-				SDL_GetWindowSize(window, &w, &h);
-
-				surface = SDL_GetWindowSurface(window);
-				Renderer::SetSurface(surface);
-
-				SetupRootNode(root, w, h);
-				CalculateNodeScales();
-				CalculateNodePositions();
-
-				RerenderAllNodes();
-
-				if (!surface)
-				{
-					SableUI_Runtime_Error("Surface could not be created! SDL_Error: %s", SDL_GetError());
-				}
-				break;
-			}
-			break;
-
-		case SDL_MOUSEBUTTONUP:
-			resizing = false;
-			RerenderAllNodes();
-			break;
-		}
-	}*/
-
-	return true;
-}
-
-void SableUI::Window::Draw()
-{
-	auto frameStart = std::chrono::system_clock::now();
 
 	/* static for multiple calls on one resize event (lifetime of static is until mouse up) */
 	static int currentCursor = GLUT_CURSOR_RIGHT_ARROW;
@@ -194,18 +152,17 @@ void SableUI::Window::Draw()
 		if (!RectBoundingBox(node->rect, mousePos)) continue;
 
 		if (mousePos.x == 0 && mousePos.y == 0) continue;
-		
+
 		float d1 = DistToEdge(node, mousePos);
 
 		if (node->parent == nullptr) continue;
-		
+
 		if (d1 < 5.0f)
 		{
-
 			switch (node->parent->type)
 			{
 			case NodeType::VSPLITTER:
-				cursorToSet = GLUT_CURSOR_BOTTOM_SIDE;
+				cursorToSet = GLUT_CURSOR_UP_DOWN;
 				break;
 
 			case NodeType::HSPLITTER:
@@ -246,6 +203,19 @@ void SableUI::Window::Draw()
 		}
 	}
 
+	if (mouseButtonStates.LMB == MouseState::UP && resizing)
+	{
+		resizing = false;
+		RerenderAllNodes();
+	}
+
+	return true;
+}
+
+void SableUI::Window::Draw()
+{
+	auto frameStart = std::chrono::system_clock::now();
+
 	/* flush drawable stack & render to screen */
 	static Renderer& renderer = Renderer::Get();
 	renderer.Draw();
@@ -264,8 +234,26 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	glClear(GL_COLOR_BUFFER_BIT);
-	glFlush();
+	if (needsStaticRedraw)
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, surface.texID);
+
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, -1.0f, 0.0f);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
+		glEnd();
+
+		glDisable(GL_TEXTURE_2D);
+
+		glFlush();
+
+		needsStaticRedraw = false;
+	}
 
 	/* ensure application doesnt run faster than desired fps */
 	auto frameTime = std::chrono::system_clock::now() - frameStart;
@@ -276,7 +264,7 @@ void SableUI::Window::Draw()
 	}
 }
 
-void SableUI::Window::SetMaxFPS(int fps)
+inline void SableUI::Window::SetMaxFPS(int fps)
 {
 	frameDelay = std::chrono::milliseconds(1000 / fps);
 }
@@ -443,10 +431,8 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 	}
 
 	root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
-	int w, h;
-	w = 800; h = 600;
 
-	SetupRootNode(root, w, h);
+	SetupRootNode(root, windowSize.x, windowSize.y);
 	nodes.push_back(root);
 
 	std::stack<std::string> parentStack;
@@ -534,6 +520,8 @@ void SableUI::Window::RecalculateNodes()
 
 void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 {
+	needsStaticRedraw = true;
+
 	/* static for multiple calls (lifetime of static is until mouse up) */
 	static SableUI::Node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
@@ -644,6 +632,8 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 {
 	if (nodes.size() == 0) return;
 
+	needsStaticRedraw = true;
+
 	if (node == nullptr)
 	{
 		for (Node* child : root->children)
@@ -702,6 +692,8 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 {
 	if (nodes.empty()) return;
+
+	needsStaticRedraw = true;
 
 	/* if first call, run for children of root node */
 	if (node == nullptr)
@@ -831,6 +823,25 @@ void SableUI::Window::MouseButtonCallback(int button, int state, int x, int y)
 		currentInstance->mouseButtonStates.RMB = static_cast<MouseState>(state); // dir translation
 		break;
 	}
+}
+
+void SableUI::Window::ReshapeCallback(int w, int h)
+{
+	currentInstance->windowSize = ivec2(w, h);
+	glViewport(0, 0, w, h);
+
+	currentInstance->surface.Resize(w, h);
+
+	SetupRootNode(currentInstance->root, w, h);
+	currentInstance->RecalculateNodes();
+
+	currentInstance->RerenderAllNodes();
+
+	currentInstance->RecalculateNodes();
+
+	currentInstance->RerenderAllNodes();
+
+	currentInstance->needsStaticRedraw = true;
 }
 
 SableUI::Window::~Window()
