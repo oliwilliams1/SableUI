@@ -195,18 +195,15 @@ bool SableUI::Window::PollEvents()
 			if (mouseButtonStates.LMB == MouseState::UP)
 			{
 				resizing = false;
+				Renderer::Get().Flush();
+				RecalculateNodes();
+				RerenderAllNodes();
 			}
 		}
 		else
 		{
 			resCalled = false;
 		}
-	}
-
-	if (mouseButtonStates.LMB == MouseState::UP && resizing)
-	{
-		resizing = false;
-		RerenderAllNodes();
 	}
 
 	return true;

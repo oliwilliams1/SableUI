@@ -8,7 +8,9 @@ using namespace SableUI;
 void SableUI::BaseElement::SetRect(const rect& rect)
 {
 	this->drawableRect = rect;
-	this->bgDrawable.Update(drawableRect, bgColour, 0.0f, true);
+	this->bgDrawable.Update(drawableRect, bgColour, 0.0f);
+
+	Renderer::Get().Draw(std::make_unique<SableUI::DrawableRect>(bgDrawable));
 }
 
 void SableUI::BaseElement::SetInfo(const ElementInfo& info)
@@ -31,7 +33,7 @@ void SableUI::BaseElement::Render(int z)
 	if (renderer == nullptr) renderer = &Renderer::Get();
 
 	bgDrawable.setZ(z);
-	renderer->Draw(std::make_unique<SableUI_Drawable::Rect>(bgDrawable));
+	renderer->Draw(std::make_unique<SableUI::DrawableRect>(bgDrawable));
 
 	AdditionalRender();
 

@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	SableUI::Window mainWindow(argc, argv, "SableUI", 1000, 1000);
+	SableUI::Window mainWindow(argc, argv, "SableUI", 800, 600);
 
 	mainWindow.OpenUIFile("template.SableUI");
 
@@ -40,33 +40,6 @@ int main(int argc, char** argv)
 	el4.padding = 5.0f;
 	el4.centerX = true;
 	mainWindow.AddElementToComponent("component 3", el4);
-
-	SableUI::ElementInfo el5{};
-	el5.name = "element 5";
-	el5.wType = SableUI::RectType::FILL;
-	el5.hType = SableUI::RectType::FILL;
-	el5.bgColour = SableUI::colour(255, 0, 0);
-	el5.padding = 5.0f;
-	el5.centerY = true;
-	mainWindow.AddElementToComponent("component 9", el5);
-
-	SableUI::ElementInfo el6{};
-	el6.name = "element 6";
-	el6.wType = SableUI::RectType::FILL;
-	el6.hType = SableUI::RectType::FILL;
-	el6.bgColour = SableUI::colour(0, 255, 0);
-	el6.padding = 5.0f;
-	mainWindow.AddElementToElement("element 5", el6);
-
-	for (int i = 0; i < 50; i++)
-	{
-		SableUI::ElementInfo eltemp{};
-		eltemp.name = "element " + std::to_string(i + 7);
-		eltemp.wType = SableUI::RectType::FILL;
-		eltemp.hType = SableUI::RectType::FILL;
-		eltemp.padding = 2.0f;
-		mainWindow.AddElementToElement("element 6", eltemp);
-	}
 
 	while (mainWindow.PollEvents())
 	{

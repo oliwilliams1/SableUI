@@ -72,109 +72,7 @@ SableUI::Renderer& SableUI::Renderer::Get()
 	return *s_renderer;
 }
 
-void SableUI_Drawable::Rect::Update(SableUI::rect& rect, SableUI::colour colour, float pBSize, bool draw)
-{
-
-    this->r = rect;
-    this->c = colour;
-
-    if (draw)
-    {
-        SableUI::Renderer::Get().Draw(std::make_unique<SableUI_Drawable::Rect>(*this));
-    }
-}
-
-void SableUI_Drawable::Rect::Draw()
-{
-    /* get raw pointer data */
-    uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-
-    if (surfacePixels == nullptr) return;
-
-    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->width - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->height - 1);
-    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->height - y);
-    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->width - x);
-
-    /* use std::fill to efficiently draw the rect */
-    for (int i = 0; i < height; i++)
-    {
-        if (y + i < s_surface->height)
-        {
-            uint32_t* start = surfacePixels + ((y + i) * s_surface->width) + x;
-            std::fill(start, start + width, c.value);
-        }
-    }
-}
-
-void SableUI_Drawable::bSplitter::Update(SableUI::rect& rect, SableUI::colour colour, SableUI::NodeType type, float pBSize, const std::vector<int>& segments, bool draw)
-{
-    this->r = rect;
-    this->c = colour;
-    this->type = type;
-    this->b = SableUI::f2i(pBSize);
-    this->offsets = segments;
-
-    if (draw)
-    {
-        SableUI::Renderer::Get().Draw(std::make_unique<SableUI_Drawable::bSplitter>(*this));
-    }
-}
-
-void SableUI_Drawable::bSplitter::Draw()
-{
-    /* get raw pointer data */
-    uint32_t* surfacePixels = static_cast<uint32_t*>(s_surface->pixels);
-
-    if (surfacePixels == nullptr) return;
-
-    int x = std::clamp(SableUI::f2i(r.x), 0, s_surface->width - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, s_surface->height - 1);
-    int width = std::clamp(SableUI::f2i(r.w), 0, s_surface->width - x);
-    int height = std::clamp(SableUI::f2i(r.h), 0, s_surface->height - y);
-
-    /* use std::fill to efficiently draw the splitter */
-    switch (type)
-    {
-    case SableUI::NodeType::HSPLITTER:
-    {
-        for (int offset : offsets)
-        {
-            int drawX = x + offset - b;
-
-            for (int i = b; i < height; i++)
-            {
-                if (y + i < s_surface->height && drawX >= 0 && drawX < s_surface->width)
-                {
-                    uint32_t* start = surfacePixels + (y + i) * s_surface->width + drawX;
-                    std::fill(start, start + b * 2, c.value);
-                }
-            }
-        }
-        break;
-    }
-
-    case SableUI::NodeType::VSPLITTER:
-    {
-        for (int offset : offsets)
-        {
-            int drawY = y + offset - b;
-
-            for (int i = 0; i < b * 2; i++)
-            {
-                if (drawY + i >= 0 && drawY + i < s_surface->height && x < s_surface->width)
-				{
-                    uint32_t* start = surfacePixels + (drawY + i) * s_surface->width + x;
-                    std::fill(start, start + width, c.value);
-				}
-            }
-        }
-        break;
-    }
-    }
-}
-
-void SableUI::Renderer::Draw(std::unique_ptr<SableUI_Drawable::Base> drawable)
+void SableUI::Renderer::Draw(std::unique_ptr<SableUI::DrawableBase> drawable)
 {
     drawStack.push_back(std::move(drawable));
 }
@@ -187,7 +85,7 @@ void SableUI::Renderer::Draw()
         return;
     }
 
-    std::sort(drawStack.begin(), drawStack.end(), [](const std::unique_ptr<SableUI_Drawable::Base>& a, const std::unique_ptr<SableUI_Drawable::Base>& b) {
+    std::sort(drawStack.begin(), drawStack.end(), [](const std::unique_ptr<SableUI::DrawableBase>& a, const std::unique_ptr<SableUI::DrawableBase>& b) {
         return a->z < b->z;
     });
 
@@ -198,7 +96,7 @@ void SableUI::Renderer::Draw()
     {
         if (drawable)
         {
-            drawable->Draw();
+            drawable->Draw(s_surface);
         }
     }
 

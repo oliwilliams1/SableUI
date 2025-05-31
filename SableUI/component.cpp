@@ -16,7 +16,7 @@ void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 		bSize = parentNode->parent->bSize;
 	}
 
-	drawable.Update(parentNode->rect, colour, bSize, false);
+	drawable.Update(parentNode->rect, colour, bSize);
 
 	if (draw) Render();
 
@@ -27,7 +27,7 @@ void SableUI::DefaultComponent::Render()
 {
     if (renderer == nullptr) renderer = &Renderer::Get();
 
-    renderer->Draw(std::make_unique<SableUI_Drawable::Rect>(drawable));
+    renderer->Draw(std::make_unique<SableUI::DrawableRect>(drawable));
 
 	RenderElements();
 }
@@ -141,12 +141,14 @@ void SableUI::SplitterComponent::UpdateDrawable(bool draw)
 		}
 	}
 
-	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments, draw);
+	drawable.Update(parentNode->rect, bColour, parentNode->type, parentNode->bSize, segments);
+
+	if (draw) Render();
 }
 
 void SableUI::SplitterComponent::Render()
 {
 	if (renderer == nullptr) renderer = &Renderer::Get();
 
-	renderer->Draw(std::make_unique<SableUI_Drawable::bSplitter>(drawable));
+	renderer->Draw(std::make_unique<SableUI::DrawableSplitter>(drawable));
 }

@@ -57,7 +57,7 @@ namespace SableUI
     private:
         /* private settings for rendering */
         SableUI::rect drawableRect = { 0, 0, 0, 0 };
-        SableUI_Drawable::Rect bgDrawable;
+        SableUI::DrawableRect bgDrawable;
         std::vector<BaseElement*> children;
     };
 

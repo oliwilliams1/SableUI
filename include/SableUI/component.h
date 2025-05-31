@@ -38,7 +38,7 @@ namespace SableUI
 
 	private:
 		SableUI::colour colour;
-		SableUI_Drawable::Rect drawable;
+		SableUI::DrawableRect drawable;
 	};
 
 	class SplitterComponent : public BaseComponent
@@ -52,6 +52,6 @@ namespace SableUI
 	
 	private:
 		SableUI::colour bColour;
-		SableUI_Drawable::bSplitter drawable;
+		SableUI::DrawableSplitter drawable;
 	};
 }
