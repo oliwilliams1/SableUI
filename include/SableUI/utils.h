@@ -106,12 +106,12 @@ namespace SableUI
         }
     };
 
-    struct colour
+    struct Colour
     {
                         /* R G B A */
         uint32_t value = 0xFFFFFFFF;
 
-        colour(int r, int g, int b, int a = 255) {
+        Colour(int r, int g, int b, int a = 255) {
             value = (a << 24) | (b << 16) | (g << 8) | r; //ogl spec
         }
     };
@@ -155,5 +155,5 @@ namespace SableUI
 
     bool RectBoundingBox(rect r, ivec2 p);
 
-    colour StringTupleToColour(const char* str);
+    Colour StringTupleToColour(const char* str);
 }

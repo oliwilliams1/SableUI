@@ -4,12 +4,15 @@
 
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
+
 namespace SableUI
 {
+    class Renderer;
+
     struct ElementInfo
     {
         std::string name;
-        SableUI::colour bgColour = SableUI::colour(128, 128, 128);
+        Colour bgColour = Colour(128, 128, 128);
         float xOffset = 0;
         float yOffset = 0;
         float width = 0;
@@ -17,14 +20,15 @@ namespace SableUI
         float padding = 0;
         bool centerX = false;
         bool centerY = false;
-        SableUI::RectType wType = SableUI::RectType::FILL;
-        SableUI::RectType hType = SableUI::RectType::FILL;
+        RectType wType = RectType::FILL;
+        RectType hType = RectType::FILL;
     };
 
     class BaseElement
     {
     public:
-        BaseElement(const std::string name) : name(name) {}
+        BaseElement(const std::string name, Renderer* renderer)
+            : name(name), renderer(renderer) {}
 
         void SetInfo(const ElementInfo& info);
 
@@ -34,12 +38,12 @@ namespace SableUI
         /* Virtual render to add additional, custom elements */
         virtual void AdditionalRender() {};
 
-        void SetRect(const SableUI::rect& rect);
+        void SetRect(const rect& rect);
 
         void UpdateChildren();
         void AddChild(BaseElement* child);
 
-        /* user-level settings for rect */
+        /* User-level settings for rect */
         float xOffset = 0;
         float yOffset = 0;
         float width = 0;
@@ -48,28 +52,17 @@ namespace SableUI
         bool centerX = false;
         bool centerY = false;
 
-        SableUI::RectType wType = SableUI::RectType::FILL;
-        SableUI::RectType hType = SableUI::RectType::FILL;
+        RectType wType = RectType::FILL;
+        RectType hType = RectType::FILL;
 
-        SableUI::colour bgColour = SableUI::colour(128, 128, 128);
+        Colour bgColour = Colour(128, 128, 128);
         std::string name = "undefined element";
 
     private:
-        /* private settings for rendering */
-        SableUI::rect drawableRect = { 0, 0, 0, 0 };
-        SableUI::DrawableRect bgDrawable;
+        /* Private settings for rendering */
+        rect drawableRect = { 0, 0, 0, 0 };
+        DrawableRect bgDrawable;
         std::vector<BaseElement*> children;
-    };
-
-    /* Central element manager */
-    class ElementArena
-    {
-    public:
-        static BaseElement* CreateElement(const std::string& name);
-        static BaseElement* GetElement(const std::string& name);
-        static void ShutdownArena();
-
-    private:
-        static std::vector<BaseElement*> elements;
+        Renderer* renderer = nullptr;
     };
 }

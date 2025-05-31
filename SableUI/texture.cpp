@@ -31,6 +31,7 @@ void SableUI::Texture::initGPUTexture()
 
     Update();
 }
+
 void SableUI::Texture::Resize(int newWidth, int newHeight)
 {
     delete[] pixels;

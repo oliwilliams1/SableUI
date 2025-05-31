@@ -18,10 +18,12 @@ namespace SableUI
 		MouseState RMB = MouseState::UP;
 	};
 
+	void Initialize(int argc, char** argv);
+
 	class Window
 	{
 	public:
-		Window(int argc, char** argv, const std::string& title, int width, int height, int x = -1, int y = -1);
+		Window(const std::string& title, int width, int height, int x = -1, int y = -1);
 
 		bool PollEvents();
 		void Draw();
@@ -46,6 +48,8 @@ namespace SableUI
 		~Window();
 
 	private:
+		Renderer renderer;
+
 		void CalculateNodePositions(Node* node = nullptr);
 		void CalculateNodeScales(Node* node = nullptr);
 		void Resize(vec2 pos, Node* node = nullptr);
@@ -53,7 +57,6 @@ namespace SableUI
 		std::chrono::milliseconds frameDelay;
 		Node* root = nullptr;
 		bool resizing = false;
-		Texture surface;
 		std::vector<Node*> nodes;
 
 		static void MotionCallback(int x, int y);

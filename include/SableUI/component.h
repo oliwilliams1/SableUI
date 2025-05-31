@@ -11,22 +11,24 @@ namespace SableUI
 	class BaseComponent
 	{
 	public:
-		BaseComponent(SableUI::Node* parent) : parentNode(parent) {};
+		BaseComponent(Node* parent) : parentNode(parent) {};
 
 		virtual void Render() = 0;
 		virtual void UpdateDrawable(bool draw = true) = 0;
-		SableUI::Node* GetParent() { return parentNode; }
+		Node* GetParent() { return parentNode; }
 		void SetParent(SableUI::Node* n) { parentNode = n; }
+		void SetRenderer(SableUI::Renderer* r) { renderer = r; }
 
 	protected:
-		SableUI::Node* parentNode = nullptr;
+		Node* parentNode = nullptr;
+		Renderer* renderer = nullptr;
 	};
 
 	class DefaultComponent : public BaseComponent
 	{
 	public:
-		DefaultComponent(SableUI::colour colour = SableUI::colour(255, 32, 32, 32), 
-			SableUI::Node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
+		DefaultComponent(Colour colour = Colour(255, 32, 32, 32), 
+			Node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 	
 		void AddElement(BaseElement* e);
 		void UpdateElements();
@@ -37,21 +39,21 @@ namespace SableUI
 		std::vector<BaseElement*> elements;
 
 	private:
-		SableUI::colour colour;
-		SableUI::DrawableRect drawable;
+		Colour colour;
+		DrawableRect drawable;
 	};
 
 	class SplitterComponent : public BaseComponent
 	{
 	public:
-		SplitterComponent(SableUI::colour bColour = SableUI::colour(255, 51, 51, 51),
-			SableUI::Node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
+		SplitterComponent(Colour bColour = Colour(255, 51, 51, 51),
+			Node* parent = nullptr) : BaseComponent(parent), bColour(bColour) {}
 
 		void Render() override;
 		void UpdateDrawable(bool draw = true) override;
 	
 	private:
-		SableUI::colour bColour;
-		SableUI::DrawableSplitter drawable;
+		Colour bColour;
+		DrawableSplitter drawable;
 	};
 }

@@ -4,7 +4,7 @@
 #include "SableUI/renderer.h"
 #include "SableUI/texture.h"
 
-void SableUI::DrawableRect::Update(SableUI::rect& rect, SableUI::colour colour, float pBSize)
+void SableUI::DrawableRect::Update(SableUI::rect& rect, SableUI::Colour colour, float pBSize)
 {
     this->r = rect;
     this->c = colour;
@@ -33,7 +33,7 @@ void SableUI::DrawableRect::Draw(SableUI::Texture* texture)
     }
 }
 
-void SableUI::DrawableSplitter::Update(SableUI::rect& rect, SableUI::colour colour, SableUI::NodeType type, 
+void SableUI::DrawableSplitter::Update(SableUI::rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
                                        float pBSize, const std::vector<int>& segments)
 {
     this->r = rect;

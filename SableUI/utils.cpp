@@ -7,11 +7,11 @@ bool SableUI::RectBoundingBox(rect r, ivec2 p)
 	return r.x <= p.x && r.x + r.w >= p.x && r.y <= p.y && r.y + r.h >= p.y;
 }
 
-SableUI::colour SableUI::StringTupleToColour(const char* str)
+SableUI::Colour SableUI::StringTupleToColour(const char* str)
 {
     int r = 255, g = 255, b = 255;
     if (str == nullptr || strlen(str) == 0) {
-        return colour(r, g, b);
+        return Colour(r, g, b);
     }
 
     char discard;
@@ -19,7 +19,7 @@ SableUI::colour SableUI::StringTupleToColour(const char* str)
     /* parse string into r, g, b input = (r, g, b) */
     std::istringstream iss(str);
     if (!(iss >> discard >> r >> discard >> g >> discard >> b) || discard != ',') {
-        return colour(255, 255, 255);
+        return Colour(255, 255, 255);
     }
 
     /* prevent overflows */
@@ -27,5 +27,5 @@ SableUI::colour SableUI::StringTupleToColour(const char* str)
     g = std::clamp(g, 0, 255);
     b = std::clamp(b, 0, 255);
 
-    return colour(r, g, b);
+    return Colour(r, g, b);
 }

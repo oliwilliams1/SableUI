@@ -1,6 +1,4 @@
 #include "SableUI/component.h"
-
-#include <SDL.h>
 #include "SableUI/renderer.h"
 
 static SableUI::Renderer* renderer = nullptr;
@@ -25,8 +23,6 @@ void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 
 void SableUI::DefaultComponent::Render()
 {
-    if (renderer == nullptr) renderer = &Renderer::Get();
-
     renderer->Draw(std::make_unique<SableUI::DrawableRect>(drawable));
 
 	RenderElements();
@@ -148,7 +144,5 @@ void SableUI::SplitterComponent::UpdateDrawable(bool draw)
 
 void SableUI::SplitterComponent::Render()
 {
-	if (renderer == nullptr) renderer = &Renderer::Get();
-
 	renderer->Draw(std::make_unique<SableUI::DrawableSplitter>(drawable));
 }

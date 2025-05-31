@@ -17,7 +17,6 @@
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
-#include <SDL_syswm.h>
 #include <windows.h>
 #include <dwmapi.h>
 #endif
@@ -25,6 +24,13 @@
 constexpr float minComponentSize = 20.0f;
 
 SableUI::Window* SableUI::Window::currentInstance = nullptr;
+
+static bool initialized = false;
+void SableUI::Initialize(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	initialized = true;
+}
 
 static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
@@ -72,16 +78,21 @@ static void PrintNode(SableUI::Node* node, int depth = 0)
 	}
 }
 
-SableUI::Window::Window(int argc, char** argv, const std::string& title, int width, int height, int x, int y)
+SableUI::Window::Window(const std::string& title, int width, int height, int x, int y)
 {
-	if (surface.pixels != nullptr)
+	if (!initialized)
+	{
+		int argc = 0;
+		char** argv = nullptr;
+		Initialize(argc, argv);
+	}
+	if (renderer.texture.pixels != nullptr)
 	{
 		SableUI_Runtime_Error("Surface already created!");
 	}
 
 	windowSize = ivec2(width, height);
 
-	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE);
 	glutInitWindowSize(windowSize.x, windowSize.y);
 	windowID = glutCreateWindow(title.c_str());
@@ -102,11 +113,9 @@ SableUI::Window::Window(int argc, char** argv, const std::string& title, int wid
 	/* set internal max hz to display refresh rate */
 	SetMaxFPS(60);
 	
-	surface.Resize(windowSize.x, windowSize.y);
-	surface.SetColour(SableUI::colour(128, 0, 64).value);
-	surface.initGPUTexture();
-
-	Renderer::Init(&surface);
+	renderer.texture.Resize(windowSize.x, windowSize.y);
+	renderer.texture.SetColour(SableUI::Colour(128, 0, 64).value);
+	renderer.texture.initGPUTexture();
 
 	if (root != nullptr)
 	{
@@ -133,7 +142,7 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		PrintNodeTree();
-		Renderer::Flush();  // Clear the draw stack from init draw commands
+		renderer.Flush();  // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
@@ -195,7 +204,7 @@ bool SableUI::Window::PollEvents()
 			if (mouseButtonStates.LMB == MouseState::UP)
 			{
 				resizing = false;
-				Renderer::Get().Flush();
+				renderer.Flush();
 				RecalculateNodes();
 				RerenderAllNodes();
 			}
@@ -214,7 +223,6 @@ void SableUI::Window::Draw()
 	auto frameStart = std::chrono::system_clock::now();
 
 	/* flush drawable stack & render to screen */
-	static Renderer& renderer = Renderer::Get();
 	renderer.Draw();
 
 
@@ -236,7 +244,7 @@ void SableUI::Window::Draw()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, surface.texID);
+		glBindTexture(GL_TEXTURE_2D, renderer.texture.texID);
 
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
@@ -327,6 +335,7 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 
 	node->component = std::move(component);
 	node->component->SetParent(node);
+	node->component->SetRenderer(&renderer);
 }
 
 void SableUI::Window::AddElementToComponent(const std::string& nodeName, const ElementInfo& info)
@@ -345,7 +354,7 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, const E
 	{
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
-			BaseElement* element = ElementArena::CreateElement(info.name);
+			BaseElement* element = renderer.CreateElement(info.name);
 			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 			element->SetInfo(info);
@@ -364,7 +373,7 @@ void SableUI::Window::AddElementToElement(const std::string& elementName, const 
 {
 	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
-	BaseElement* parent = ElementArena::GetElement(elementName);
+	BaseElement* parent = renderer.GetElement(elementName);
 
 	if (parent == nullptr)
 	{
@@ -372,7 +381,7 @@ void SableUI::Window::AddElementToElement(const std::string& elementName, const 
 		return;
 	}
 
-	BaseElement* child = ElementArena::CreateElement(info.name);
+	BaseElement* child = renderer.CreateElement(info.name);
 	if (child == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 	child->SetInfo(info);
@@ -444,7 +453,7 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 			const char* nameAttr = element->Attribute("name");
 
 			const char* colourAttr = element->Attribute("colour");
-			SableUI::colour colour = SableUI::colour(51, 51, 51);
+			SableUI::Colour colour = SableUI::Colour(51, 51, 51);
 			if (colourAttr) colour = StringTupleToColour(colourAttr);
 
 			const char* borderAttr = element->Attribute("border");
@@ -452,7 +461,7 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 			if (borderAttr) border = std::stof(borderAttr);
 
 			const char* borderColourAttr = element->Attribute("borderColour");
-			SableUI::colour borderColour = StringTupleToColour(borderColourAttr);
+			SableUI::Colour borderColour = StringTupleToColour(borderColourAttr);
 
 			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(nodes.size());
 
@@ -827,7 +836,7 @@ void SableUI::Window::ReshapeCallback(int w, int h)
 	currentInstance->windowSize = ivec2(w, h);
 	glViewport(0, 0, w, h);
 
-	currentInstance->surface.Resize(w, h);
+	currentInstance->renderer.texture.Resize(w, h);
 
 	SetupRootNode(currentInstance->root, w, h);
 	currentInstance->RecalculateNodes();
@@ -848,8 +857,6 @@ SableUI::Window::~Window()
 		delete node;
 	}
 	nodes.clear();
-
-	Renderer::Shutdown();
 
 	glutDestroyWindow(windowID);
 

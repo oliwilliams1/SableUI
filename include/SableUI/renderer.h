@@ -6,29 +6,32 @@
 #include "SableUI/utils.h"
 #include "SableUI/texture.h"
 #include "SableUI/drawable.h"
+#include "SableUI/element.h"
 
 namespace SableUI
 {
+	class BaseElement;
+
 	class Renderer
 	{
 	public:
-		Renderer(const Renderer&) = delete;
-		Renderer& operator=(const Renderer&) = delete;
+		Renderer() {};
+		~Renderer();
 
-		static void Init(Texture* surface);
-		static void Shutdown();
-		static void SetSurface(Texture* surface);
-		static void Flush();
-
-		static Renderer& Get();
+		void Flush();
 
 		void Draw(std::unique_ptr<SableUI::DrawableBase> drawable);
-
 		void Draw();
 
+		BaseElement* CreateElement(const std::string& name);
+		BaseElement* GetElement(const std::string& name);
+
+		Texture texture;
+
 	private:
-		Renderer() {}
+		void DrawWindowBorder();
 
 		std::vector<std::unique_ptr<SableUI::DrawableBase>> drawStack;
+		std::vector<BaseElement*> elements;
 	};
 }

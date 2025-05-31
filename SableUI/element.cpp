@@ -1,7 +1,5 @@
 #include "SableUI/element.h"
 
-static SableUI::Renderer* renderer = nullptr;
-
 using namespace SableUI;
 
 /* Base Element */
@@ -10,7 +8,7 @@ void SableUI::BaseElement::SetRect(const rect& rect)
 	this->drawableRect = rect;
 	this->bgDrawable.Update(drawableRect, bgColour, 0.0f);
 
-	Renderer::Get().Draw(std::make_unique<SableUI::DrawableRect>(bgDrawable));
+	renderer->Draw(std::make_unique<SableUI::DrawableRect>(bgDrawable));
 }
 
 void SableUI::BaseElement::SetInfo(const ElementInfo& info)
@@ -30,8 +28,6 @@ void SableUI::BaseElement::SetInfo(const ElementInfo& info)
 
 void SableUI::BaseElement::Render(int z)
 {
-	if (renderer == nullptr) renderer = &Renderer::Get();
-
 	bgDrawable.setZ(z);
 	renderer->Draw(std::make_unique<SableUI::DrawableRect>(bgDrawable));
 
@@ -111,47 +107,4 @@ void SableUI::BaseElement::UpdateChildren()
 void SableUI::BaseElement::AddChild(BaseElement* child)
 {
 	children.push_back(child);
-}
-
-/* Element arena */
-std::vector<BaseElement*> ElementArena::elements;
-
-BaseElement* ElementArena::CreateElement(const std::string& name)
-{
-    for (BaseElement* element : elements)
-    {
-        if (element->name == name)
-        {
-            SableUI_Error("Element already exists: %s", name.c_str());
-            return nullptr;
-        }
-    }
-
-    BaseElement* element = new BaseElement(name);
-    elements.push_back(element);
-
-    return element;
-}
-
-BaseElement* ElementArena::GetElement(const std::string& name)
-{
-    for (BaseElement* element : elements)
-    {
-        if (element->name == name)
-        {
-            return element;
-        }
-    }
-
-    return nullptr;
-}
-
-void ElementArena::ShutdownArena()
-{
-    for (BaseElement* element : elements)
-    {
-        delete element;
-    }
-
-    elements.clear();
 }

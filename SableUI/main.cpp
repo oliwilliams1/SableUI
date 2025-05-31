@@ -2,7 +2,8 @@
 
 int main(int argc, char** argv)
 {
-	SableUI::Window mainWindow(argc, argv, "SableUI", 800, 600);
+
+	SableUI::Window mainWindow("SableUI", 800, 600);
 
 	mainWindow.OpenUIFile("template.SableUI");
 
@@ -11,14 +12,14 @@ int main(int argc, char** argv)
 	el1.wType = SableUI::RectType::FILL;
 	el1.hType = SableUI::RectType::FIXED;
 	el1.height = 20.0f;
-	el1.bgColour = SableUI::colour(255, 0, 0);
+	el1.bgColour = SableUI::Colour(255, 0, 0);
 	mainWindow.AddElementToComponent("component 3", el1);
 
 	SableUI::ElementInfo el2{};
 	el2.name = "element 2";
 	el2.wType = SableUI::RectType::FILL;
 	el2.hType = SableUI::RectType::FILL;
-	el2.bgColour = SableUI::colour(255, 0, 0);
+	el2.bgColour = SableUI::Colour(255, 0, 0);
 	el2.padding = 5.0f;
 	mainWindow.AddElementToComponent("component 3", el2);
 
@@ -26,7 +27,7 @@ int main(int argc, char** argv)
 	el3.name = "element 3";
 	el3.wType = SableUI::RectType::FILL;
 	el3.hType = SableUI::RectType::FILL;
-	el3.bgColour = SableUI::colour(0, 255, 255);
+	el3.bgColour = SableUI::Colour(0, 255, 255);
 	el3.padding = 15.0f;
 	mainWindow.AddElementToComponent("component 3", el3);
 
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
 	el4.name = "element 4";
 	el4.wType = SableUI::RectType::FIXED;
 	el4.hType = SableUI::RectType::FIXED;
-	el4.bgColour = SableUI::colour(255, 0, 255);
+	el4.bgColour = SableUI::Colour(255, 0, 255);
 	el4.height = 20.0f;
 	el4.width = 20.0f;
 	el4.padding = 5.0f;
