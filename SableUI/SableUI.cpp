@@ -86,10 +86,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 		char** argv = nullptr;
 		Initialize(argc, argv);
 	}
-	if (renderer.texture.pixels != nullptr)
-	{
-		SableUI_Runtime_Error("Surface already created!");
-	}
 
 	windowSize = ivec2(width, height);
 
@@ -133,6 +129,9 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
+
+	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 bool SableUI::Window::PollEvents()
@@ -222,10 +221,6 @@ void SableUI::Window::Draw()
 {
 	auto frameStart = std::chrono::system_clock::now();
 
-	/* flush drawable stack & render to screen */
-	renderer.Draw();
-
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -241,19 +236,8 @@ void SableUI::Window::Draw()
 
 	if (needsStaticRedraw)
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, renderer.texture.texID);
-
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f, 0.0f);
-		glTexCoord2f(1.0f, 1.0f); glVertex3f(1.0f, -1.0f, 0.0f);
-		glTexCoord2f(1.0f, 0.0f); glVertex3f(1.0f, 1.0f, 0.0f);
-		glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f, 1.0f, 0.0f);
-		glEnd();
-
-		glDisable(GL_TEXTURE_2D);
+		/* flush drawable stack & render to screen */
+		renderer.Draw();
 
 		glFlush();
 

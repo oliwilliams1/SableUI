@@ -8,24 +8,35 @@ void SableUI::Renderer::DrawWindowBorder()
 {
     static int borderWidth = 1;
 
-    uint32_t* surfacePixels = static_cast<uint32_t*>(texture.pixels);
+    glColor4ub(51, 51, 51, 255);
 
-    /* use std::fill to efficiently draw the border */
-    uint32_t* topStart = surfacePixels;
-    std::fill(topStart, topStart + texture.width, 0xFF333333);
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, 1.0f);
+    glVertex2f(1.0f, 1.0f);
+    glVertex2f(1.0f, 1.0f - (borderWidth * 2.0f / texture.height));
+    glVertex2f(-1.0f, 1.0f - (borderWidth * 2.0f / texture.height));
+    glEnd();
 
-    uint32_t* bottomStart = surfacePixels + (texture.height - borderWidth) * texture.width;
-    std::fill(bottomStart, bottomStart + texture.width, 0xFF333333);
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, -1.0f + (borderWidth * 2.0f / texture.height));
+    glVertex2f(1.0f, -1.0f + (borderWidth * 2.0f / texture.height));
+    glVertex2f(1.0f, -1.0f);
+    glVertex2f(-1.0f, -1.0f);
+    glEnd();
 
-    /* draw left and right borders */
-    for (int i = 0; i < texture.height; i++)
-    {
-        uint32_t* startL = surfacePixels + i * texture.width;
-		std::fill(startL, startL + borderWidth, 0xFF333333);
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, 1.0f);
+    glVertex2f(-1.0f + (borderWidth * 2.0f / texture.width), 1.0f);
+    glVertex2f(-1.0f + (borderWidth * 2.0f / texture.width), -1.0f);
+    glVertex2f(-1.0f, -1.0f);
+    glEnd();
 
-        uint32_t* startR = surfacePixels + i * texture.width + texture.width - borderWidth;
-		std::fill(startR, startR + borderWidth, 0xFF333333);
-    }
+    glBegin(GL_QUADS);
+    glVertex2f(1.0f - (borderWidth * 2.0f / texture.width), 1.0f);
+    glVertex2f(1.0f, 1.0f);
+    glVertex2f(1.0f, -1.0f);
+    glVertex2f(1.0f - (borderWidth * 2.0f / texture.width), -1.0f);
+    glEnd();
 }
 
 void SableUI::Renderer::Flush()
@@ -40,12 +51,6 @@ void SableUI::Renderer::Draw(std::unique_ptr<SableUI::DrawableBase> drawable)
 
 void SableUI::Renderer::Draw()
 {
-    if (texture.pixels == nullptr)
-    {
-		SableUI_Error("Renderer surface not set!");
-		return;
-    }
-
     std::sort(drawStack.begin(), drawStack.end(), [](const std::unique_ptr<SableUI::DrawableBase>& a, const std::unique_ptr<SableUI::DrawableBase>& b) {
         return a->z < b->z;
     });

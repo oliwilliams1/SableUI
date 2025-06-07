@@ -110,9 +110,14 @@ namespace SableUI
     {
                         /* R G B A */
         uint32_t value = 0xFFFFFFFF;
+        char r, g, b, a;
 
         Colour(int r, int g, int b, int a = 255) {
             value = (a << 24) | (b << 16) | (g << 8) | r; //ogl spec
+			this->r = r;
+			this->g = g;
+			this->b = b;
+			this->a = a;
         }
     };
 

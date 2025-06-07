@@ -12,25 +12,34 @@ void SableUI::DrawableRect::Update(SableUI::rect& rect, SableUI::Colour colour, 
 
 void SableUI::DrawableRect::Draw(SableUI::Texture* texture)
 {
-    /* get raw pointer data */
-    uint32_t* surfacePixels = static_cast<uint32_t*>(texture->pixels);
+    /* normalise from texture bounds to [0, 1] */
+    float x = (r.x / static_cast<float>(texture->width));
+    float y = (r.y / static_cast<float>(texture->height));
+    float w = (r.w / static_cast<float>(texture->width));
+    float h = (r.h / static_cast<float>(texture->height));
 
-    if (surfacePixels == nullptr) return;
+    /* normalise to opengl NDC [0, 1] ->[-1, 1] */
+    x = x * 2.0f - 1.0f;
+    y = y * 2.0f - 1.0f;
+    w *= 2.0f;
+    h *= 2.0f;
 
-    int x = std::clamp(SableUI::f2i(r.x), 0, texture->width - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, texture->height - 1);
-    int height = std::clamp(SableUI::f2i(r.h), 0, texture->height - y);
-    int width = std::clamp(SableUI::f2i(r.w), 0, texture->width - x);
+    /* revent negative scale */
+    w = std::max(0.0f, w);
+    h = std::max(0.0f, h);
 
-    /* use std::fill to efficiently draw the rect */
-    for (int i = 0; i < height; i++)
-    {
-        if (y + i < texture->height)
-        {
-            uint32_t* start = surfacePixels + ((y + i) * texture->width) + x;
-            std::fill(start, start + width, c.value);
-        }
-    }
+    /* invert y axis */
+    y *= -1.0f;
+    h *= -1.0f;
+
+    glColor3ub(c.r, c.g, c.b);
+
+    glBegin(GL_QUADS);
+    glVertex2f(x,     y);
+    glVertex2f(x + w, y);
+    glVertex2f(x + w, y + h);
+    glVertex2f(x,     y + h);
+    glEnd();
 }
 
 void SableUI::DrawableSplitter::Update(SableUI::rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
@@ -45,53 +54,54 @@ void SableUI::DrawableSplitter::Update(SableUI::rect& rect, SableUI::Colour colo
 
 void SableUI::DrawableSplitter::Draw(SableUI::Texture* texture)
 {
-    /* get raw pointer data */
-    uint32_t* surfacePixels = static_cast<uint32_t*>(texture->pixels);
-
-    if (surfacePixels == nullptr) return;
+    glColor3f(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f);
 
     int x = std::clamp(SableUI::f2i(r.x), 0, texture->width - 1);
     int y = std::clamp(SableUI::f2i(r.y), 0, texture->height - 1);
     int width = std::clamp(SableUI::f2i(r.w), 0, texture->width - x);
     int height = std::clamp(SableUI::f2i(r.h), 0, texture->height - y);
 
-    /* use std::fill to efficiently draw the splitter */
+    glBegin(GL_QUADS);
+
     switch (type)
     {
     case SableUI::NodeType::HSPLITTER:
-    {
         for (int offset : offsets)
         {
-            int drawX = x + offset - b;
-
-            for (int i = b; i < height; i++)
+            float drawX = x + static_cast<float>(offset) - b;
+            if (drawX >= 0 && drawX < texture->width)
             {
-                if (y + i < texture->height && drawX >= 0 && drawX < texture->width)
-                {
-                    uint32_t* start = surfacePixels + (y + i) * texture->width + drawX;
-                    std::fill(start, start + b * 2, c.value);
-                }
+                /* freaky never again */
+                glVertex2f((drawX / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (y / static_cast<float>(texture->height)) * 2.0f);
+                glVertex2f(((drawX + b * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (y / static_cast<float>(texture->height)) * 2.0f);
+                glVertex2f(((drawX + b * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - ((y + height) / static_cast<float>(texture->height)) * 2.0f);
+                glVertex2f((drawX / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - ((y + height) / static_cast<float>(texture->height)) * 2.0f);
             }
         }
         break;
-    }
 
     case SableUI::NodeType::VSPLITTER:
-    {
         for (int offset : offsets)
         {
-            int drawY = y + offset - b;
-
-            for (int i = 0; i < b * 2; i++)
+            float drawY = y + static_cast<float>(offset) - b;
+            if (drawY >= 0 && drawY < texture->height)
             {
-                if (drawY + i >= 0 && drawY + i < texture->height && x < texture->width)
-                {
-                    uint32_t* start = surfacePixels + (drawY + i) * texture->width + x;
-                    std::fill(start, start + width, c.value);
-                }
+                glVertex2f((x / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (drawY / static_cast<float>(texture->height)) * 2.0f);
+                glVertex2f(((x + width) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (drawY / static_cast<float>(texture->height)) * 2.0f);
+                glVertex2f(((x + width) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (drawY + b * 2) / static_cast<float>(texture->height) * 2.0f);
+                glVertex2f((x / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                    1.0f - (drawY + b * 2) / static_cast<float>(texture->height) * 2.0f);
             }
         }
         break;
     }
-    }
+
+    glEnd();
 }
