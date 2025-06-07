@@ -72,21 +72,12 @@ namespace SableUI
 		DrawableImage() { this->z = 0; };
 		~DrawableImage() {};
 
-		DrawableImage(SableUI::Rect& r, SableUI::Texture* texture) 
-			: t(texture) { this->r = r; this->z = 0; }
-
 		void Update(SableUI::Rect& rect) { 
 			this->r = rect;
 		}
-		void Update(SableUI::Rect& rect, SableUI::Texture* texture) {
-			this->r = rect; this->t = texture;
-		}
-		void Update(SableUI::Texture* texture) {
-			this->t = texture;
-		}
-
+		
 		void Draw(SableUI::Texture* texture) override;
 
-		Texture* t = nullptr;
+		Texture t;
 	};
 }

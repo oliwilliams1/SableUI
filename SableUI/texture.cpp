@@ -1,21 +1,22 @@
 #include "SableUI/texture.h"
 #include "SableUI/console.h"
+#include "SableUI/utils.h"
 #include <memory>
 
-SableUI::Texture::Texture(int width, int height, bool gpuTexture)
-    : width(width), height(height), gpuTexture(gpuTexture)
+SableUI::Texture::Texture(int width, int height)
+    : width(width), height(height)
 {
-    if (gpuTexture) initGPUTexture();
+    initGPUTexture();
 }
 
 SableUI::Texture::~Texture()
 {
-    if (gpuTexture) glDeleteTextures(1, &texID);
+    glDeleteTextures(1, &texID);
 }
 
 void SableUI::Texture::initGPUTexture()
 {
-    if (texID == -1)
+    if (texID == 0)
     {
         glGenTextures(1, &texID);
     }
@@ -24,21 +25,25 @@ void SableUI::Texture::initGPUTexture()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    Update();
 }
 
-void SableUI::Texture::Resize(int newWidth, int newHeight)
+void SableUI::Texture::Resize(int w, int h)
 {
-    width = newWidth;
-    height = newHeight;
+    bool u = false;
 
-    if (gpuTexture) Update();
+    if (w != width || h != height)
+	{
+		u = true;
+	}
+    width = f2i(w);
+    height = f2i(h);
+
+    if (u) Update();
 }
 
-void SableUI::Texture::SetColour(uint32_t v) const
+void SableUI::Texture::Resize(float w, float h)
 {
-    Update();
+    Resize(SableUI::f2i(w), SableUI::f2i(h));
 }
 
 void SableUI::Texture::Update() const

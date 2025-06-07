@@ -34,12 +34,11 @@ int main(int argc, char** argv)
 	el4.name = "element 4";
 	el4.wType = SableUI::RectType::FIXED;
 	el4.hType = SableUI::RectType::FIXED;
-	el4.bgColour = SableUI::Colour(255, 0, 255);
-	el4.height = 20.0f;
-	el4.width = 20.0f;
+	el4.height = 128.0f;
+	el4.width = 128.0f;
 	el4.padding = 5.0f;
 	el4.centerX = true;
-	mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::RECT);
+	mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
 
 	while (mainWindow.PollEvents())
 	{

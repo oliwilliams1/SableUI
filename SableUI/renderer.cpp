@@ -4,7 +4,7 @@
 #include "SableUI/renderer.h"
 #include "SableUI/utils.h"
 
-void SableUI::Renderer::DrawWindowBorder()
+void SableUI::Renderer::DrawWindowBorder() const
 {
     static int borderWidth = 1;
 
@@ -70,8 +70,6 @@ void SableUI::Renderer::Draw()
     DrawWindowBorder();
 
     drawStack.clear();
-
-    texture.Update();
 }
 
 SableUI::Element* SableUI::Renderer::CreateElement(const std::string& name, ElementType type)

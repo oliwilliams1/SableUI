@@ -110,7 +110,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	SetMaxFPS(60);
 	
 	renderer.texture.Resize(windowSize.x, windowSize.y);
-	renderer.texture.SetColour(SableUI::Colour(128, 0, 64).value);
 	renderer.texture.initGPUTexture();
 
 	if (root != nullptr)
@@ -322,7 +321,7 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 	node->component->SetRenderer(&renderer);
 }
 
-void SableUI::Window::AddElementToComponent(const std::string& nodeName, const ElementInfo& info, ElementType type)
+void SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type)
 {
 	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
@@ -341,6 +340,7 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, const E
 			Element* element = renderer.CreateElement(info.name, type);
 			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
+			info.type = type;
 			element->SetInfo(info);
 			defaultComponent->AddElement(element);
 		}
@@ -353,7 +353,7 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, const E
 	RecalculateNodes();
 }
 
-void SableUI::Window::AddElementToElement(const std::string& elementName, const ElementInfo& info, ElementType type)
+void SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type)
 {
 	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
@@ -368,6 +368,7 @@ void SableUI::Window::AddElementToElement(const std::string& elementName, const 
 	Element* child = renderer.CreateElement(info.name, type);
 	if (child == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
+	info.type = type;
 	child->SetInfo(info);
 	parent->AddChild(child);
 

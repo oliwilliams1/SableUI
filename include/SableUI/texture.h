@@ -7,7 +7,7 @@ namespace SableUI
     struct Texture
     {
         Texture() = default;
-        Texture(int width, int height, bool gpuTexture = false);
+        Texture(int width, int height);
         ~Texture();
 
         Texture(const Texture& other) = delete;
@@ -15,16 +15,16 @@ namespace SableUI
 
         void initGPUTexture();
         void Resize(int width, int height);
-        void SetColour(uint32_t v) const;
-
-        void Update() const;
+        void Resize(float width, float height);
 
         void Bind() const;
 
         int width = 0;
         int height = 0;
 
-        bool gpuTexture = false;
-        GLuint texID = -1;
+        GLuint texID = 0;
+
+    private:
+        void Update() const;
     };
 }

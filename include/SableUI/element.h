@@ -11,6 +11,7 @@ namespace SableUI
 
     enum class ElementType
     {
+        UNDEF,
         RECT,
         IMAGE
     };
@@ -28,7 +29,7 @@ namespace SableUI
         bool centerY = false;
         RectType wType = RectType::FILL;
         RectType hType = RectType::FILL;
-        ElementType type = ElementType::RECT;
+        ElementType type = ElementType::UNDEF;
     };
 
     class Element
@@ -41,9 +42,6 @@ namespace SableUI
 
         /* Base render (background) */
         void Render(int z = 1);
-
-        /* Virtual render to add additional, custom elements */
-        virtual void AdditionalRender() {};
 
         void SetRect(const Rect& rect);
 
@@ -72,6 +70,6 @@ namespace SableUI
         DrawableBase* drawable;
         std::vector<Element*> children;
         Renderer* renderer = nullptr;
-        ElementType type = ElementType::RECT;
+        ElementType type = ElementType::UNDEF;
     };
 }

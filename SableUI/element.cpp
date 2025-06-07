@@ -2,9 +2,29 @@
 
 using namespace SableUI;
 
-SableUI::Element::Element(const std::string name, Renderer* renderer, ElementType type) : name(name), renderer(renderer)
+SableUI::Element::Element(const std::string name, Renderer* renderer, ElementType type)
+	: name(name), renderer(renderer), type(type)
 {
-	drawable = new DrawableRect();
+	switch (type)
+	{
+	case ElementType::RECT:
+		drawable = new DrawableRect();
+		break;
+
+	case ElementType::IMAGE:
+		drawable = new DrawableImage();
+		
+		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
+		{
+			drImage->t.Resize(rect.w, rect.h);
+		}
+		break;
+
+	default:
+		SableUI_Runtime_Error("Unknown ElementType");
+		drawable = nullptr;
+		break;
+	}
 }
 
 void SableUI::Element::SetRect(const Rect& r)
@@ -30,6 +50,14 @@ void SableUI::Element::SetRect(const Rect& r)
 		{
 			renderer->Draw(drImage);
 			drImage->Update(rect);
+
+			if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
+			{
+				if (drImage->t.width != f2i(rect.w) || drImage->t.height != f2i(rect.h))
+				{
+					drImage->t.Resize(rect.w, rect.h);
+				}
+			}
 		}
 		else
 		{
@@ -70,8 +98,6 @@ void SableUI::Element::Render(int z)
 			drawable->setZ(z);
 			renderer->Draw(drawable);
 
-			AdditionalRender();
-
 			UpdateChildren();
 			for (Element* element : children)
 			{
@@ -89,7 +115,8 @@ void SableUI::Element::Render(int z)
 	{
 		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
 		{
-			SableUI_Warn("Image element not implemented yet!");
+			drawable->setZ(z);
+			renderer->Draw(drawable);
 		}
 		else
 		{

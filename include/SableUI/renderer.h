@@ -31,7 +31,7 @@ namespace SableUI
 		Texture texture;
 
 	private:
-		void DrawWindowBorder();
+		void DrawWindowBorder() const;
 
 		std::vector<DrawableBase*> drawStack;
 		std::vector<Element*> elements;
