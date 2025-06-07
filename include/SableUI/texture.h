@@ -19,6 +19,8 @@ namespace SableUI
 
         void Update() const;
 
+        void Bind() const;
+
         int width = 0;
         int height = 0;
 

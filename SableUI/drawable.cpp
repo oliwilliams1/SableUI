@@ -4,7 +4,7 @@
 #include "SableUI/renderer.h"
 #include "SableUI/texture.h"
 
-void SableUI::DrawableRect::Update(SableUI::rect& rect, SableUI::Colour colour, float pBSize)
+void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
 {
     this->r = rect;
     this->c = colour;
@@ -42,7 +42,7 @@ void SableUI::DrawableRect::Draw(SableUI::Texture* texture)
     glEnd();
 }
 
-void SableUI::DrawableSplitter::Update(SableUI::rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
+void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
                                        float pBSize, const std::vector<int>& segments)
 {
     this->r = rect;
@@ -104,4 +104,21 @@ void SableUI::DrawableSplitter::Draw(SableUI::Texture* texture)
     }
 
     glEnd();
+}
+
+void SableUI::DrawableImage::Draw(SableUI::Texture* texture)
+{
+    int x = std::clamp(SableUI::f2i(r.x), 0, texture->width - 1);
+    int y = std::clamp(SableUI::f2i(r.y), 0, texture->height - 1);
+    int width = std::clamp(SableUI::f2i(r.w), 0, texture->width - x);
+    int height = std::clamp(SableUI::f2i(r.h), 0, texture->height - y);
+
+    glEnable(GL_TEXTURE_2D);
+    t->Bind();
+
+    glBegin(GL_QUADS);
+    
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
 }

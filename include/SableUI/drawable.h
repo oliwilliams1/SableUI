@@ -26,7 +26,7 @@ namespace SableUI
 		void setZ(int z) { this->z = z; }
 
 		int z = 0;
-		SableUI::rect r = { 0, 0, 0, 0 };
+		SableUI::Rect r = { 0, 0, 0, 0 };
 	};
 
 	class DrawableRect : public DrawableBase
@@ -34,10 +34,11 @@ namespace SableUI
 	public:
 		DrawableRect() { this->z = 0; };
 		~DrawableRect() {};
-		DrawableRect(SableUI::rect& r, SableUI::Colour colour) 
+
+		DrawableRect(SableUI::Rect& r, SableUI::Colour colour) 
 			: c(colour) { this->r = r; this->z = 0; }
 
-		void Update(SableUI::rect& rect, SableUI::Colour colour,
+		void Update(SableUI::Rect& rect, SableUI::Colour colour,
 			float pBSize = 0.0f);
 
 		void Draw(SableUI::Texture* texture) override;
@@ -50,10 +51,11 @@ namespace SableUI
 	public:
 		DrawableSplitter() { this->z = 1; };
 		~DrawableSplitter() { offsets.clear(); };
-		DrawableSplitter(SableUI::rect& r, SableUI::Colour colour) 
+
+		DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour) 
 			: c(colour) { this->z = 999; this->r = r; }
 
-		void Update(SableUI::rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
+		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 
 		void Draw(SableUI::Texture* texture) override;
@@ -62,5 +64,29 @@ namespace SableUI
 		int b = 0;
 		std::vector<int> offsets;
 		SableUI::NodeType type = SableUI::NodeType::UNDEF;
+	};
+
+	class DrawableImage : public DrawableBase
+	{
+	public:
+		DrawableImage() { this->z = 0; };
+		~DrawableImage() {};
+
+		DrawableImage(SableUI::Rect& r, SableUI::Texture* texture) 
+			: t(texture) { this->r = r; this->z = 0; }
+
+		void Update(SableUI::Rect& rect) { 
+			this->r = rect;
+		}
+		void Update(SableUI::Rect& rect, SableUI::Texture* texture) {
+			this->r = rect; this->t = texture;
+		}
+		void Update(SableUI::Texture* texture) {
+			this->t = texture;
+		}
+
+		void Draw(SableUI::Texture* texture) override;
+
+		Texture* t = nullptr;
 	};
 }

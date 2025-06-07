@@ -44,14 +44,14 @@ void SableUI::Renderer::Flush()
     drawStack.clear();
 }
 
-void SableUI::Renderer::Draw(std::unique_ptr<SableUI::DrawableBase> drawable)
+void SableUI::Renderer::Draw(DrawableBase* drawable)
 {
-    drawStack.push_back(std::move(drawable));
+    drawStack.push_back(drawable);
 }
 
 void SableUI::Renderer::Draw()
 {
-    std::sort(drawStack.begin(), drawStack.end(), [](const std::unique_ptr<SableUI::DrawableBase>& a, const std::unique_ptr<SableUI::DrawableBase>& b) {
+    std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
         return a->z < b->z;
     });
 
@@ -74,9 +74,9 @@ void SableUI::Renderer::Draw()
     texture.Update();
 }
 
-SableUI::BaseElement* SableUI::Renderer::CreateElement(const std::string& name)
+SableUI::Element* SableUI::Renderer::CreateElement(const std::string& name, ElementType type)
 {
-    for (BaseElement* element : elements)
+    for (Element* element : elements)
     {
         if (element->name == name)
         {
@@ -85,15 +85,15 @@ SableUI::BaseElement* SableUI::Renderer::CreateElement(const std::string& name)
         }
     }
 
-    BaseElement* element = new BaseElement(name, this);
+    Element* element = new Element(name, this, type);
     elements.push_back(element);
 
     return element;
 }
 
-SableUI::BaseElement* SableUI::Renderer::GetElement(const std::string& name)
+SableUI::Element* SableUI::Renderer::GetElement(const std::string& name)
 {
-    for (BaseElement* element : elements)
+    for (Element* element : elements)
     {
         if (element->name == name)
         {
@@ -106,7 +106,7 @@ SableUI::BaseElement* SableUI::Renderer::GetElement(const std::string& name)
 
 SableUI::Renderer::~Renderer()
 {
-    for (BaseElement* element : elements)
+    for (Element* element : elements)
 	{
 		delete element;
 	}

@@ -9,6 +9,12 @@ namespace SableUI
 {
     class Renderer;
 
+    enum class ElementType
+    {
+        RECT,
+        IMAGE
+    };
+
     struct ElementInfo
     {
         std::string name;
@@ -22,13 +28,14 @@ namespace SableUI
         bool centerY = false;
         RectType wType = RectType::FILL;
         RectType hType = RectType::FILL;
+        ElementType type = ElementType::RECT;
     };
 
-    class BaseElement
+    class Element
     {
     public:
-        BaseElement(const std::string name, Renderer* renderer)
-            : name(name), renderer(renderer) {}
+        Element(const std::string name, Renderer* renderer, ElementType type);
+        ~Element();
 
         void SetInfo(const ElementInfo& info);
 
@@ -38,10 +45,10 @@ namespace SableUI
         /* Virtual render to add additional, custom elements */
         virtual void AdditionalRender() {};
 
-        void SetRect(const rect& rect);
+        void SetRect(const Rect& rect);
 
         void UpdateChildren();
-        void AddChild(BaseElement* child);
+        void AddChild(Element* child);
 
         /* User-level settings for rect */
         float xOffset = 0;
@@ -56,13 +63,15 @@ namespace SableUI
         RectType hType = RectType::FILL;
 
         Colour bgColour = Colour(128, 128, 128);
+
         std::string name = "undefined element";
 
     private:
         /* Private settings for rendering */
-        rect drawableRect = { 0, 0, 0, 0 };
-        DrawableRect bgDrawable;
-        std::vector<BaseElement*> children;
+        Rect rect = { 0, 0, 0, 0 };
+        DrawableBase* drawable;
+        std::vector<Element*> children;
         Renderer* renderer = nullptr;
+        ElementType type = ElementType::RECT;
     };
 }

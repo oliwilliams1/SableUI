@@ -22,7 +22,7 @@ namespace SableUI
         SableUI::NodeType type = SableUI::NodeType::COMPONENT;
 
         uint16_t index = UNDEF;
-        SableUI::rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
+        SableUI::Rect rect = { UNDEF, UNDEF, UNDEF, UNDEF };
 
         Node* parent = nullptr;
         std::vector<Node*> children;

@@ -30,13 +30,13 @@ namespace SableUI
 		DefaultComponent(Colour colour = Colour(255, 32, 32, 32), 
 			Node* parent = nullptr) : BaseComponent(parent), colour(colour) {}
 	
-		void AddElement(BaseElement* e);
+		void AddElement(Element* e);
 		void UpdateElements();
 		void Render() override;
 		void UpdateDrawable(bool draw = true) override;
 		void RenderElements();
 
-		std::vector<BaseElement*> elements;
+		std::vector<Element*> elements;
 
 	private:
 		Colour colour;

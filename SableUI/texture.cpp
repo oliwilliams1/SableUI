@@ -46,3 +46,8 @@ void SableUI::Texture::Update() const
     glBindTexture(GL_TEXTURE_2D, texID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 }
+
+void SableUI::Texture::Bind() const
+{
+    glBindTexture(GL_TEXTURE_2D, texID);
+}

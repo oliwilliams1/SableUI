@@ -34,7 +34,7 @@ void SableUI::Initialize(int argc, char** argv)
 
 static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
-	SableUI::rect r = node->rect;
+	SableUI::Rect r = node->rect;
 	SableUI::NodeType parentType = SableUI::NodeType::ROOTNODE;
 
 	if (node->parent != nullptr)
@@ -322,7 +322,7 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 	node->component->SetRenderer(&renderer);
 }
 
-void SableUI::Window::AddElementToComponent(const std::string& nodeName, const ElementInfo& info)
+void SableUI::Window::AddElementToComponent(const std::string& nodeName, const ElementInfo& info, ElementType type)
 {
 	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
@@ -338,7 +338,7 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, const E
 	{
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
-			BaseElement* element = renderer.CreateElement(info.name);
+			Element* element = renderer.CreateElement(info.name, type);
 			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 			element->SetInfo(info);
@@ -353,11 +353,11 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, const E
 	RecalculateNodes();
 }
 
-void SableUI::Window::AddElementToElement(const std::string& elementName, const ElementInfo& info)
+void SableUI::Window::AddElementToElement(const std::string& elementName, const ElementInfo& info, ElementType type)
 {
 	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
 
-	BaseElement* parent = renderer.GetElement(elementName);
+	Element* parent = renderer.GetElement(elementName);
 
 	if (parent == nullptr)
 	{
@@ -365,7 +365,7 @@ void SableUI::Window::AddElementToElement(const std::string& elementName, const 
 		return;
 	}
 
-	BaseElement* child = renderer.CreateElement(info.name);
+	Element* child = renderer.CreateElement(info.name, type);
 	if (child == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 	child->SetInfo(info);
@@ -517,11 +517,11 @@ void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
 
 	static SableUI::vec2 oldPos = { 0, 0 };
-	static SableUI::rect oldNodeRect = { 0, 0, 0, 0 };
+	static SableUI::Rect oldNodeRect = { 0, 0, 0, 0 };
 	static float nParentsChildren = 1.0f; // prev div 0
 
 	static SableUI::Node* olderSiblingNode = nullptr;
-	static SableUI::rect olderSiblingOldRect = { 0, 0, 0, 0 };
+	static SableUI::Rect olderSiblingOldRect = { 0, 0, 0, 0 };
 
 	// First resize call fills data
 	if (node != nullptr)

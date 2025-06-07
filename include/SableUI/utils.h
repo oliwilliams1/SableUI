@@ -127,10 +127,10 @@ namespace SableUI
         FIXED = 0x1
     };
 
-    struct rect
+    struct Rect
     {
-        rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
-        rect(float x, float y, float w, float h, RectType wType, RectType hType)
+        Rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+        Rect(float x, float y, float w, float h, RectType wType, RectType hType)
             : x(x), y(y), w(w), h(h), wType(wType), hType(hType) {}
 
         float x = 0;
@@ -141,7 +141,7 @@ namespace SableUI
         RectType wType = FILL;
         RectType hType = FILL;
 
-        bool operator !=(const rect& other) const {
+        bool operator !=(const Rect& other) const {
 			return x != other.x || y != other.y || w != other.w || h != other.h;
 		}
 
@@ -158,7 +158,7 @@ namespace SableUI
         NONE
     };
 
-    bool RectBoundingBox(rect r, ivec2 p);
+    bool RectBoundingBox(Rect r, ivec2 p);
 
     Colour StringTupleToColour(const char* str);
 }

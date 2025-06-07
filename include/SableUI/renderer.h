@@ -10,7 +10,9 @@
 
 namespace SableUI
 {
-	class BaseElement;
+	class Element;
+
+	enum class ElementType;
 
 	class Renderer
 	{
@@ -20,18 +22,18 @@ namespace SableUI
 
 		void Flush();
 
-		void Draw(std::unique_ptr<SableUI::DrawableBase> drawable);
+		void Draw(DrawableBase* drawable);
 		void Draw();
 
-		BaseElement* CreateElement(const std::string& name);
-		BaseElement* GetElement(const std::string& name);
+		Element* CreateElement(const std::string& name, ElementType type);
+		Element* GetElement(const std::string& name);
 
 		Texture texture;
 
 	private:
 		void DrawWindowBorder();
 
-		std::vector<std::unique_ptr<SableUI::DrawableBase>> drawStack;
-		std::vector<BaseElement*> elements;
+		std::vector<DrawableBase*> drawStack;
+		std::vector<Element*> elements;
 	};
 }

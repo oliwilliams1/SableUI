@@ -23,20 +23,20 @@ void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 
 void SableUI::DefaultComponent::Render()
 {
-    renderer->Draw(std::make_unique<SableUI::DrawableRect>(drawable));
+    renderer->Draw(&drawable);
 
 	RenderElements();
 }
 
 void SableUI::DefaultComponent::RenderElements()
 {
-	for (BaseElement* element : elements)
+	for (Element* element : elements)
 	{
 		element->Render();
 	}
 }
 
-void SableUI::DefaultComponent::AddElement(BaseElement* e)
+void SableUI::DefaultComponent::AddElement(Element* e)
 {
 	elements.push_back(e);
 }
@@ -50,7 +50,7 @@ void SableUI::DefaultComponent::UpdateElements()
 	vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
 							 SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
 
-	for (BaseElement* element : elements)
+	for (Element* element : elements)
 	{
 		if (parentNode != nullptr && element->wType == RectType::FIXED && element->centerX)
 		{
@@ -62,7 +62,7 @@ void SableUI::DefaultComponent::UpdateElements()
 			element->yOffset = (parentNode->rect.h - element->height) / 2.0f;
 		}
 
-		SableUI::rect tempElRect = { 0, 0, 0, 0 };
+		SableUI::Rect tempElRect = { 0, 0, 0, 0 };
 		tempElRect.y = cursor.y + element->yOffset;
 		tempElRect.x = cursor.x + element->xOffset;
 		tempElRect.w = element->width;
@@ -88,7 +88,7 @@ void SableUI::DefaultComponent::UpdateElements()
 				float fillHeight = parentNode->rect.h - 2.0f * bSize;
 				float fillCtr = 0;
 
-				for (BaseElement* el2 : elements)
+				for (Element* el2 : elements)
 				{
 					if (el2->hType == RectType::FIXED) fillHeight -= el2->height;
 					else fillCtr++;
@@ -144,5 +144,5 @@ void SableUI::SplitterComponent::UpdateDrawable(bool draw)
 
 void SableUI::SplitterComponent::Render()
 {
-	renderer->Draw(std::make_unique<SableUI::DrawableSplitter>(drawable));
+	renderer->Draw(&drawable);
 }
