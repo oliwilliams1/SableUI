@@ -57,7 +57,7 @@ namespace SableUI
     };
 }
 
-#define SableUI_Log(format, ...) SableUI::Console::Log(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Warn(format, ...) SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Error(format, ...) SableUI::Console::Error(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define SableUI_Log(format, ...)           SableUI::Console::Log(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define SableUI_Error(format, ...)         SableUI::Console::Error(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)

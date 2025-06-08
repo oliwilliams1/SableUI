@@ -1,7 +1,4 @@
 #include "SableUI/SableUI.h"
-#include "SableUI/renderer.h"
-#include "SableUI/node.h"
-#include "SableUI/texture.h"
 
 #include <GL/freeglut.h>
 
@@ -89,7 +86,7 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 
 	windowSize = ivec2(width, height);
 
-	glutInitDisplayMode(GLUT_SINGLE);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(windowSize.x, windowSize.y);
 	windowID = glutCreateWindow(title.c_str());
 	currentInstance = this;
@@ -109,8 +106,8 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	/* set internal max hz to display refresh rate */
 	SetMaxFPS(60);
 	
+	renderer.texture.SetTarget(TargetType::WINDOW);
 	renderer.texture.Resize(windowSize.x, windowSize.y);
-	renderer.texture.initGPUTexture();
 
 	if (root != nullptr)
 	{
@@ -271,7 +268,7 @@ void SableUI::Window::SetupSplitter(const std::string& name, float bSize)
 	node->bSize = bSize;
 }
 
-void SableUI::Window::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
+SableUI::Node* SableUI::Window::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
 {
 	CalculateNodePositions();
 
@@ -280,24 +277,26 @@ void SableUI::Window::AddNodeToParent(NodeType type, const std::string& name, co
 	if (parent == nullptr)
 	{
 		SableUI_Error("Parent node is null!");
-		return;
+		return nullptr;
 	}
 
 	if (parent->type == NodeType::COMPONENT)
 	{
 		SableUI_Error("Cannot create a child node on a component node");
-		return;
+		return nullptr;
 	}
 
 	if (parent->type == NodeType::ROOTNODE && root->children.size() > 0)
 	{
 		SableUI_Error("Root node can only have one child node");
-		return;
+		return nullptr;
 	}
 
 	SableUI::Node* node = new SableUI::Node(type, parent, name);
 
 	nodes.push_back(node);
+
+	return node;
 }
 
 void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<SableUI::BaseComponent> component)
@@ -321,16 +320,16 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 	node->component->SetRenderer(&renderer);
 }
 
-void SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type)
+SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type)
 {
-	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
+	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return nullptr; }
 
 	Node* node = FindNodeByName(nodeName);
 
 	if (node == nullptr)
 	{
 		SableUI_Warn("Cannot find node: %s!", nodeName.c_str());
-		return;
+		return nullptr;
 	}
 
 	if (node->type == NodeType::COMPONENT)
@@ -343,6 +342,8 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, Element
 			info.type = type;
 			element->SetInfo(info);
 			defaultComponent->AddElement(element);
+			RecalculateNodes();
+			return element;
 		}
 	}
 	else
@@ -350,19 +351,19 @@ void SableUI::Window::AddElementToComponent(const std::string& nodeName, Element
 		SableUI_Error("Adding element to non-component node: %s", nodeName.c_str());
 	}
 
-	RecalculateNodes();
+	return nullptr;
 }
 
-void SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type)
+SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type)
 {
-	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return; }
+	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return nullptr; }
 
 	Element* parent = renderer.GetElement(elementName);
 
 	if (parent == nullptr)
 	{
 		SableUI_Warn("Cannot find element: %s!", elementName.c_str());
-		return;
+		return nullptr;
 	}
 
 	Element* child = renderer.CreateElement(info.name, type);
@@ -373,6 +374,8 @@ void SableUI::Window::AddElementToElement(const std::string& elementName, Elemen
 	parent->AddChild(child);
 
 	RecalculateNodes();
+
+	return child;
 }
 
 SableUI::Node* SableUI::Window::GetRoot()

@@ -13,11 +13,6 @@ SableUI::Element::Element(const std::string name, Renderer* renderer, ElementTyp
 
 	case ElementType::IMAGE:
 		drawable = new DrawableImage();
-		
-		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-		{
-			drImage->t.Resize(rect.w, rect.h);
-		}
 		break;
 
 	default:
@@ -50,14 +45,6 @@ void SableUI::Element::SetRect(const Rect& r)
 		{
 			renderer->Draw(drImage);
 			drImage->Update(rect);
-
-			if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-			{
-				if (drImage->t.width != f2i(rect.w) || drImage->t.height != f2i(rect.h))
-				{
-					drImage->t.Resize(rect.w, rect.h);
-				}
-			}
 		}
 		else
 		{
@@ -196,6 +183,22 @@ void SableUI::Element::AddChild(Element* child)
 {
 	if (type == ElementType::IMAGE) SableUI_Error("Cannot add children to element of type image");
 	children.push_back(child);
+}
+
+void SableUI::Element::SetImage(const std::string& path)
+{
+	if (type == ElementType::RECT) SableUI_Error("Cannot set image on element of type rect");
+	if (type == ElementType::IMAGE)
+	{
+		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
+		{
+			drImage->t.LoadTexture(path);
+		}
+		else
+		{
+			SableUI_Error("Dynamic cast failed");
+		}
+	}
 }
 
 SableUI::Element::~Element()

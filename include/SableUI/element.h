@@ -47,6 +47,7 @@ namespace SableUI
 
         void UpdateChildren();
         void AddChild(Element* child);
+        void SetImage(const std::string& path);
 
         /* User-level settings for rect */
         float xOffset = 0;
@@ -62,7 +63,7 @@ namespace SableUI
 
         Colour bgColour = Colour(128, 128, 128);
 
-        std::string name = "undefined element";
+        std::string name = "unnamed element";
 
     private:
         /* Private settings for rendering */

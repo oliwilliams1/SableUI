@@ -51,6 +51,8 @@ void SableUI::Renderer::Draw(DrawableBase* drawable)
 
 void SableUI::Renderer::Draw()
 {
+    if (texture.target == TargetType::TEXTURE) texture.Bind();
+
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
         return a->z < b->z;
     });

@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "SableUI/utils.h"
+#include "SableUI/renderTarget.h"
 #include "SableUI/texture.h"
 
 namespace SableUI
@@ -20,7 +21,7 @@ namespace SableUI
 	class DrawableBase
 	{
 	public:
-		virtual void Draw(SableUI::Texture* texture) = 0;
+		virtual void Draw(SableUI::RenderTarget* texture) = 0;
 		virtual ~DrawableBase() {};
 
 		void setZ(int z) { this->z = z; }
@@ -41,7 +42,7 @@ namespace SableUI
 		void Update(SableUI::Rect& rect, SableUI::Colour colour,
 			float pBSize = 0.0f);
 
-		void Draw(SableUI::Texture* texture) override;
+		void Draw(SableUI::RenderTarget* texture) override;
 
 		SableUI::Colour c = { 255, 255, 255, 255 };
 	};
@@ -58,7 +59,7 @@ namespace SableUI
 		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 
-		void Draw(SableUI::Texture* texture) override;
+		void Draw(SableUI::RenderTarget* texture) override;
 
 		SableUI::Colour c = { 255, 255, 255, 255 };
 		int b = 0;
@@ -76,7 +77,7 @@ namespace SableUI
 			this->r = rect;
 		}
 		
-		void Draw(SableUI::Texture* texture) override;
+		void Draw(SableUI::RenderTarget* texture) override;
 
 		Texture t;
 	};

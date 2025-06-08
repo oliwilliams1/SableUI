@@ -34,12 +34,13 @@ int main(int argc, char** argv)
 	el4.name = "element 4";
 	el4.wType = SableUI::RectType::FIXED;
 	el4.hType = SableUI::RectType::FIXED;
-	el4.height = 128.0f;
-	el4.width = 128.0f;
 	el4.padding = 5.0f;
 	el4.centerX = true;
-	mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-
+	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
+	imageElement->width = 128.0f;
+	imageElement->height = 128.0f;
+	imageElement->SetImage("test.jpg");
+	
 	while (mainWindow.PollEvents())
 	{
 		mainWindow.Draw();

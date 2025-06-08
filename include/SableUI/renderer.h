@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "SableUI/utils.h"
-#include "SableUI/texture.h"
+#include "SableUI/renderTarget.h"
 #include "SableUI/drawable.h"
 #include "SableUI/element.h"
 
@@ -28,7 +27,7 @@ namespace SableUI
 		Element* CreateElement(const std::string& name, ElementType type);
 		Element* GetElement(const std::string& name);
 
-		Texture texture;
+		RenderTarget texture;
 
 	private:
 		void DrawWindowBorder() const;

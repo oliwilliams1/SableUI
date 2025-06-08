@@ -1,58 +1,93 @@
 #include "SableUI/texture.h"
 #include "SableUI/console.h"
-#include "SableUI/utils.h"
-#include <memory>
 
-SableUI::Texture::Texture(int width, int height)
-    : width(width), height(height)
-{
-    initGPUTexture();
-}
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
-SableUI::Texture::~Texture()
+void SableUI::Texture::LoadTexture(const std::string& path)
 {
-    glDeleteTextures(1, &texID);
-}
+    int width, height, channels;
+    uint8_t* pixels = stbi_load(path.c_str(), &width, &height, &channels, 3);
 
-void SableUI::Texture::initGPUTexture()
-{
-    if (texID == 0)
+    if (pixels)
     {
-        glGenTextures(1, &texID);
+        SetTexture(pixels, width, height);
+        stbi_image_free(pixels);
+    }
+    else
+    {
+        SableUI_Warn("Failed to load texture: %s", path.c_str());
+        m_width = 512;
+        m_height = 512;
+        uint8_t* defaultPixels = GenerateDefaultTexture(m_width, m_height);
+        if (defaultPixels != nullptr)
+        {
+            SetTexture(defaultPixels, m_width, m_height);
+            delete[] defaultPixels;
+        }
+    }
+}
+
+uint8_t* SableUI::Texture::GenerateDefaultTexture(int width, int height)
+{
+    if (m_defaultTexID != 0)
+    {
+        m_texID = m_defaultTexID;
+        return nullptr;
     }
 
-    glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    uint8_t* pixels = new uint8_t[width * height * 3];
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            int index = (y * width + x) * 3;
+            if ((x / 128) % 2 == (y / 128) % 2)
+            {
+                pixels[index]     = 0xFF;
+                pixels[index + 1] = 0x00;
+                pixels[index + 2] = 0xFF;
+            }
+            else
+            {
+                pixels[index]     = 0x00;
+                pixels[index + 1] = 0x00;
+                pixels[index + 2] = 0x00;
+            }
+        }
+    }
+    return pixels;
 }
 
-void SableUI::Texture::Resize(int w, int h)
+void SableUI::Texture::SetDefaultTexture(GLuint texID)
 {
-    bool u = false;
-
-    if (w != width || h != height)
-	{
-		u = true;
-	}
-    width = f2i(w);
-    height = f2i(h);
-
-    if (u) Update();
-}
-
-void SableUI::Texture::Resize(float w, float h)
-{
-    Resize(SableUI::f2i(w), SableUI::f2i(h));
-}
-
-void SableUI::Texture::Update() const
-{
-    glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    m_defaultTexID = texID;
 }
 
 void SableUI::Texture::Bind() const
 {
-    glBindTexture(GL_TEXTURE_2D, texID);
+    glBindTexture(GL_TEXTURE_2D, m_texID);
+}
+
+void SableUI::Texture::SetTexture(uint8_t* pixels, int width, int height)
+{
+    glEnable(GL_TEXTURE_2D);
+
+    if (m_texID == 0) glGenTextures(1, &m_texID);
+
+    glBindTexture(GL_TEXTURE_2D, m_texID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+SableUI::Texture::~Texture()
+{
+    if (m_texID != 0)
+    {
+        glDeleteTextures(1, &m_texID);
+    }
 }

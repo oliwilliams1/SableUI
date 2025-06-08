@@ -2,7 +2,6 @@
 #include <algorithm>
 #include "SableUI/drawable.h"
 #include "SableUI/renderer.h"
-#include "SableUI/texture.h"
 
 void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
 {
@@ -10,7 +9,7 @@ void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, 
     this->c = colour;
 }
 
-void SableUI::DrawableRect::Draw(SableUI::Texture* texture)
+void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (r.x / static_cast<float>(texture->width));
@@ -52,7 +51,7 @@ void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colo
     this->offsets = segments;
 }
 
-void SableUI::DrawableSplitter::Draw(SableUI::Texture* texture)
+void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 {
     glColor3f(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f);
 
@@ -107,7 +106,7 @@ void SableUI::DrawableSplitter::Draw(SableUI::Texture* texture)
 }
 
 /* image */
-void SableUI::DrawableImage::Draw(SableUI::Texture* texture)
+void SableUI::DrawableImage::Draw(SableUI::RenderTarget* texture)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (r.x / static_cast<float>(texture->width));
@@ -130,19 +129,20 @@ void SableUI::DrawableImage::Draw(SableUI::Texture* texture)
     h *= -1.0f;
 
     glEnable(GL_TEXTURE_2D);
-    t.Bind();
+
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 1.0f); 
+    glTexCoord2f(0.0f, 0.0f); 
     glVertex2f(x, y);
     
-    glTexCoord2f(1.0f, 1.0f); 
+    glTexCoord2f(1.0f, 0.0f); 
     glVertex2f(x + w, y);
     
-    glTexCoord2f(1.0f, 0.0f); 
+    glTexCoord2f(1.0f, 1.0f); 
     glVertex2f(x + w, y + h);
     
-    glTexCoord2f(0.0f, 0.0f); 
+    glTexCoord2f(0.0f, 1.0f); 
     glVertex2f(x, y + h);
 
     glEnd();

@@ -1,30 +1,30 @@
 #pragma once
-#include <cstdint>
+
 #include <GL/glew.h>
+#include <string>
 
 namespace SableUI
 {
-    struct Texture
-    {
-        Texture() = default;
-        Texture(int width, int height);
-        ~Texture();
+	struct Texture
+	{
+		Texture() = default;
+		~Texture();
 
-        Texture(const Texture& other) = delete;
-        Texture& operator=(const Texture& other) = delete;
+		Texture(const Texture&) = delete;
+		Texture& operator=(const Texture&) = delete;
 
-        void initGPUTexture();
-        void Resize(int width, int height);
-        void Resize(float width, float height);
+		void LoadTexture(const std::string& path);
+		void SetDefaultTexture(GLuint texID);
+		void Bind() const;
+		
+		int m_width = -1;
+		int m_height = -1;
 
-        void Bind() const;
+	private:
+		void SetTexture(uint8_t* pixels, int width, int height);
+		GLuint m_texID = 0;
 
-        int width = 0;
-        int height = 0;
-
-        GLuint texID = 0;
-
-    private:
-        void Update() const;
-    };
-}
+		uint8_t* GenerateDefaultTexture(int width, int height);
+		GLuint m_defaultTexID = 0;
+	};
+};
