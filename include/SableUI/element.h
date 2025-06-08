@@ -13,7 +13,8 @@ namespace SableUI
     {
         UNDEF,
         RECT,
-        IMAGE
+        IMAGE,
+        TEXT
     };
 
     struct ElementInfo
@@ -48,6 +49,7 @@ namespace SableUI
         void UpdateChildren();
         void AddChild(Element* child);
         void SetImage(const std::string& path);
+        void SetText(const std::u32string& text);
 
         /* User-level settings for rect */
         float xOffset = 0;

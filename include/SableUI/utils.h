@@ -14,6 +14,7 @@ namespace SableUI
         int x;
         int y;
 
+        ivec2() = default;
         ivec2(int x, int y) : x(x), y(y) {}
         ivec2(int x) : x(x), y(x) {}
 
@@ -40,12 +41,80 @@ namespace SableUI
         }
     };
 
+    struct uvec2
+    {
+        unsigned x;
+        unsigned y;
+
+        uvec2() = default;
+        uvec2(unsigned x, unsigned y) : x(x), y(y) {}
+        uvec2(unsigned x) : x(x), y(x) {}
+
+        uvec2 operator+(const uvec2& other) const {
+            return { x + other.x, y + other.y };
+        }
+
+        uvec2 operator-(const uvec2& other) const {
+            return { x - other.x, y - other.y };
+        }
+
+        uvec2 operator*(unsigned scalar) const {
+            return { x * scalar, y * scalar };
+        }
+
+        uvec2 operator/(unsigned scalar) const {
+            if (scalar != 0) {
+                return { x / scalar, y / scalar };
+            }
+            else {
+                printf("Error: Division by zero error\n");
+                return { 0, 0 };
+            }
+        }
+    };
+
+    struct vec2
+    {
+        float x;
+        float y;
+
+        vec2() = default;
+        vec2(float x, float y) : x(x), y(y) {}
+        vec2(float x)          : x(x), y(x) {}
+        vec2(int x, int y)     : x(static_cast<float>(x)),   y(static_cast<float>(y)) {}
+		vec2(int x)            : x(static_cast<float>(x)),   y(static_cast<float>(x)) {}
+        vec2(ivec2 v)          : x(static_cast<float>(v.x)), y(static_cast<float>(v.y)) {}
+
+        vec2 operator+(const vec2& other) const {
+            return { x + other.x, y + other.y };
+        }
+
+        vec2 operator-(const vec2& other) const {
+            return { x - other.x, y - other.y };
+        }
+
+        vec2 operator*(float scalar) const {
+            return { x * scalar, y * scalar };
+        }
+
+        vec2 operator/(float scalar) const {
+            if (scalar != 0) {
+                return { x / scalar, y / scalar };
+            }
+            else {
+                printf("Error: Division by zero error\n");
+                return { 0, 0 };
+            }
+        }
+    };
+
     struct vec3
     {
         float x;
         float y;
         float z;
 
+        vec3() = default;
         vec3(float x, float y, float z) : x(x), y(y), z(z) {}
         vec3(float x) : x(x), y(x), z(x) {}
 
@@ -72,36 +141,36 @@ namespace SableUI
         }
     };
 
-    struct vec2
+    struct vec4
     {
         float x;
         float y;
+        float z;
+        float w;
 
-        vec2(float x, float y) : x(x), y(y) {}
-        vec2(float x)          : x(x), y(x) {}
-        vec2(int x, int y)     : x(static_cast<float>(x)),   y(static_cast<float>(y)) {}
-		vec2(int x)            : x(static_cast<float>(x)),   y(static_cast<float>(x)) {}
-        vec2(ivec2 v)          : x(static_cast<float>(v.x)), y(static_cast<float>(v.y)) {}
+        vec4() = default;
+        vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+        vec4(float value) : x(value), y(value), z(value), w(value) {}
 
-        vec2 operator+(const vec2& other) const {
-            return { x + other.x, y + other.y };
+        vec4 operator+(const vec4& other) const {
+            return { x + other.x, y + other.y, z + other.z, w + other.w };
         }
 
-        vec2 operator-(const vec2& other) const {
-            return { x - other.x, y - other.y };
+        vec4 operator-(const vec4& other) const {
+            return { x - other.x, y - other.y, z - other.z, w - other.w };
         }
 
-        vec2 operator*(float scalar) const {
-            return { x * scalar, y * scalar };
+        vec4 operator*(float scalar) const {
+            return { x * scalar, y * scalar, z * scalar, w * scalar };
         }
 
-        vec2 operator/(float scalar) const {
+        vec4 operator/(float scalar) const {
             if (scalar != 0) {
-                return { x / scalar, y / scalar };
+                return { x / scalar, y / scalar, z / scalar, w / scalar };
             }
             else {
-                printf("Error: Division by zero error\n");
-                return { 0, 0 };
+                printf("Error: Division by zero\n");
+                return { 0, 0, 0, 0 };
             }
         }
     };

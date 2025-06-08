@@ -1,4 +1,4 @@
-#include "SableUI/SableUI.h"
+﻿#include "SableUI/SableUI.h"
 
 int main(int argc, char** argv)
 {
@@ -37,12 +37,21 @@ int main(int argc, char** argv)
 	el4.padding = 5.0f;
 	el4.centerX = true;
 	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement->width = 128.0f;
-	imageElement->height = 128.0f;
+	imageElement->width = 256.0f;
+	imageElement->height = 256.0f;
 	imageElement->SetImage("test.jpg");
-	
+
+	SableUI::ElementInfo el5{};
+	el5.name = "text element";
+	el4.wType = SableUI::RectType::FILL;
+	el4.hType = SableUI::RectType::FILL;
+	SableUI::Element* textElement = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
+	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar");
+
 	while (mainWindow.PollEvents())
 	{
 		mainWindow.Draw();
 	}
+
+	return 0;
 }

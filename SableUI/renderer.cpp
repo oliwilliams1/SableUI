@@ -54,7 +54,7 @@ void SableUI::Renderer::Draw()
     if (texture.target == TargetType::TEXTURE) texture.Bind();
 
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
-        return a->z < b->z;
+        return a->m_zIndex < b->m_zIndex;
     });
 
     if (drawStack.size() == 0) return;

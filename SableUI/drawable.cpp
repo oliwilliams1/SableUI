@@ -5,17 +5,17 @@
 
 void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
 {
-    this->r = rect;
-    this->c = colour;
+    this->m_rect = rect;
+    this->m_colour = colour;
 }
 
 void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
 {
     /* normalise from texture bounds to [0, 1] */
-    float x = (r.x / static_cast<float>(texture->width));
-    float y = (r.y / static_cast<float>(texture->height));
-    float w = (r.w / static_cast<float>(texture->width));
-    float h = (r.h / static_cast<float>(texture->height));
+    float x = (m_rect.x / static_cast<float>(texture->width));
+    float y = (m_rect.y / static_cast<float>(texture->height));
+    float w = (m_rect.w / static_cast<float>(texture->width));
+    float h = (m_rect.h / static_cast<float>(texture->height));
 
     /* normalise to opengl NDC [0, 1] ->[-1, 1] */
     x = x * 2.0f - 1.0f;
@@ -31,7 +31,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
     y *= -1.0f;
     h *= -1.0f;
 
-    glColor3ub(c.r, c.g, c.b);
+    glColor3ub(m_colour.r, m_colour.g, m_colour.b);
 
     glBegin(GL_QUADS);
     glVertex2f(x,     y);
@@ -44,38 +44,38 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
 void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
                                        float pBSize, const std::vector<int>& segments)
 {
-    this->r = rect;
-    this->c = colour;
-    this->type = type;
-    this->b = SableUI::f2i(pBSize);
-    this->offsets = segments;
+    this->m_rect = rect;
+    this->m_colour = colour;
+    this->m_type = type;
+    this->m_bSize = SableUI::f2i(pBSize);
+    this->m_offsets = segments;
 }
 
 void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 {
-    glColor3f(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f);
+    glColor3f(m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f);
 
-    int x = std::clamp(SableUI::f2i(r.x), 0, texture->width - 1);
-    int y = std::clamp(SableUI::f2i(r.y), 0, texture->height - 1);
-    int width = std::clamp(SableUI::f2i(r.w), 0, texture->width - x);
-    int height = std::clamp(SableUI::f2i(r.h), 0, texture->height - y);
+    int x = std::clamp(SableUI::f2i(m_rect.x), 0, texture->width - 1);
+    int y = std::clamp(SableUI::f2i(m_rect.y), 0, texture->height - 1);
+    int width = std::clamp(SableUI::f2i(m_rect.w), 0, texture->width - x);
+    int height = std::clamp(SableUI::f2i(m_rect.h), 0, texture->height - y);
 
     glBegin(GL_QUADS);
 
-    switch (type)
+    switch (m_type)
     {
     case SableUI::NodeType::HSPLITTER:
-        for (int offset : offsets)
+        for (int offset : m_offsets)
         {
-            float drawX = x + static_cast<float>(offset) - b;
+            float drawX = x + static_cast<float>(offset) - m_bSize;
             if (drawX >= 0 && drawX < texture->width)
             {
                 /* freaky never again */
                 glVertex2f((drawX / static_cast<float>(texture->width)) * 2.0f - 1.0f,
                     1.0f - (y / static_cast<float>(texture->height)) * 2.0f);
-                glVertex2f(((drawX + b * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                glVertex2f(((drawX + m_bSize * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
                     1.0f - (y / static_cast<float>(texture->height)) * 2.0f);
-                glVertex2f(((drawX + b * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
+                glVertex2f(((drawX + m_bSize * 2) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
                     1.0f - ((y + height) / static_cast<float>(texture->height)) * 2.0f);
                 glVertex2f((drawX / static_cast<float>(texture->width)) * 2.0f - 1.0f,
                     1.0f - ((y + height) / static_cast<float>(texture->height)) * 2.0f);
@@ -84,9 +84,9 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
         break;
 
     case SableUI::NodeType::VSPLITTER:
-        for (int offset : offsets)
+        for (int offset : m_offsets)
         {
-            float drawY = y + static_cast<float>(offset) - b;
+            float drawY = y + static_cast<float>(offset) - m_bSize;
             if (drawY >= 0 && drawY < texture->height)
             {
                 glVertex2f((x / static_cast<float>(texture->width)) * 2.0f - 1.0f,
@@ -94,9 +94,9 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
                 glVertex2f(((x + width) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
                     1.0f - (drawY / static_cast<float>(texture->height)) * 2.0f);
                 glVertex2f(((x + width) / static_cast<float>(texture->width)) * 2.0f - 1.0f,
-                    1.0f - (drawY + b * 2) / static_cast<float>(texture->height) * 2.0f);
+                    1.0f - (drawY + m_bSize * 2) / static_cast<float>(texture->height) * 2.0f);
                 glVertex2f((x / static_cast<float>(texture->width)) * 2.0f - 1.0f,
-                    1.0f - (drawY + b * 2) / static_cast<float>(texture->height) * 2.0f);
+                    1.0f - (drawY + m_bSize * 2) / static_cast<float>(texture->height) * 2.0f);
             }
         }
         break;
@@ -109,10 +109,10 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 void SableUI::DrawableImage::Draw(SableUI::RenderTarget* texture)
 {
     /* normalise from texture bounds to [0, 1] */
-    float x = (r.x / static_cast<float>(texture->width));
-    float y = (r.y / static_cast<float>(texture->height));
-    float w = (r.w / static_cast<float>(texture->width));
-    float h = (r.h / static_cast<float>(texture->height));
+    float x = (m_rect.x / static_cast<float>(texture->width));
+    float y = (m_rect.y / static_cast<float>(texture->height));
+    float w = (m_rect.w / static_cast<float>(texture->width));
+    float h = (m_rect.h / static_cast<float>(texture->height));
 
     /* normalise to opengl NDC [0, 1] ->[-1, 1] */
     x = x * 2.0f - 1.0f;

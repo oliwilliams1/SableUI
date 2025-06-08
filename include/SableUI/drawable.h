@@ -4,6 +4,7 @@
 #include "SableUI/utils.h"
 #include "SableUI/renderTarget.h"
 #include "SableUI/texture.h"
+#include "SableUI/text.h"
 
 namespace SableUI
 {
@@ -24,61 +25,74 @@ namespace SableUI
 		virtual void Draw(SableUI::RenderTarget* texture) = 0;
 		virtual ~DrawableBase() {};
 
-		void setZ(int z) { this->z = z; }
+		void setZ(int z) { this->m_zIndex = z; }
 
-		int z = 0;
-		SableUI::Rect r = { 0, 0, 0, 0 };
+		int m_zIndex = 0;
+		SableUI::Rect m_rect = { 0, 0, 0, 0 };
 	};
 
 	class DrawableRect : public DrawableBase
 	{
 	public:
-		DrawableRect() { this->z = 0; };
+		DrawableRect() { this->m_zIndex = 0; };
 		~DrawableRect() {};
 
 		DrawableRect(SableUI::Rect& r, SableUI::Colour colour) 
-			: c(colour) { this->r = r; this->z = 0; }
+			: m_colour(colour) { this->m_rect = r; this->m_zIndex = 0; }
 
 		void Update(SableUI::Rect& rect, SableUI::Colour colour,
 			float pBSize = 0.0f);
 
 		void Draw(SableUI::RenderTarget* texture) override;
 
-		SableUI::Colour c = { 255, 255, 255, 255 };
+		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 	};
 
 	class DrawableSplitter : public DrawableBase
 	{
 	public:
-		DrawableSplitter() { this->z = 1; };
-		~DrawableSplitter() { offsets.clear(); };
+		DrawableSplitter() { this->m_zIndex = 1; };
+		~DrawableSplitter() { m_offsets.clear(); };
 
 		DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour) 
-			: c(colour) { this->z = 999; this->r = r; }
+			: m_colour(colour) { this->m_zIndex = 999; this->m_rect = r; }
 
 		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 
 		void Draw(SableUI::RenderTarget* texture) override;
 
-		SableUI::Colour c = { 255, 255, 255, 255 };
-		int b = 0;
-		std::vector<int> offsets;
-		SableUI::NodeType type = SableUI::NodeType::UNDEF;
+		SableUI::Colour m_colour = { 255, 255, 255, 255 };
+		int m_bSize = 0;
+		std::vector<int> m_offsets;
+		SableUI::NodeType m_type = SableUI::NodeType::UNDEF;
 	};
 
 	class DrawableImage : public DrawableBase
 	{
 	public:
-		DrawableImage() { this->z = 0; };
+		DrawableImage() { this->m_zIndex = 0; };
 		~DrawableImage() {};
 
 		void Update(SableUI::Rect& rect) { 
-			this->r = rect;
+			this->m_rect = rect;
 		}
 		
 		void Draw(SableUI::RenderTarget* texture) override;
 
-		Texture t;
+		Texture m_texture;
+	};
+
+	class DrawableText : public DrawableBase
+	{
+	public:
+		DrawableText() { this->m_zIndex = 0; };
+		~DrawableText() {};
+
+		void Update(SableUI::Rect& rect) { this->m_rect = rect; };
+
+		void Draw(SableUI::RenderTarget* texture) override {};
+
+		Text m_text;
 	};
 }

@@ -15,6 +15,10 @@ SableUI::Element::Element(const std::string name, Renderer* renderer, ElementTyp
 		drawable = new DrawableImage();
 		break;
 
+	case ElementType::TEXT:
+		drawable = new DrawableText();
+		break;
+
 	default:
 		SableUI_Runtime_Error("Unknown ElementType");
 		drawable = nullptr;
@@ -45,6 +49,18 @@ void SableUI::Element::SetRect(const Rect& r)
 		{
 			renderer->Draw(drImage);
 			drImage->Update(rect);
+		}
+		else
+		{
+			SableUI_Error("Dynamic cast failed");
+		}
+		break;
+
+	case ElementType::TEXT:
+		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+		{
+			renderer->Draw(drText);
+			drText->Update(rect);
 		}
 		else
 		{
@@ -187,17 +203,29 @@ void SableUI::Element::AddChild(Element* child)
 
 void SableUI::Element::SetImage(const std::string& path)
 {
-	if (type == ElementType::RECT) SableUI_Error("Cannot set image on element of type rect");
-	if (type == ElementType::IMAGE)
+	if (type != ElementType::IMAGE) SableUI_Error("Cannot set image on element not of type image");
+
+	if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
 	{
-		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-		{
-			drImage->t.LoadTexture(path);
-		}
-		else
-		{
-			SableUI_Error("Dynamic cast failed");
-		}
+		drImage->m_texture.LoadTexture(path);
+	}
+	else
+	{
+		SableUI_Error("Dynamic cast failed");
+	}
+}
+
+void SableUI::Element::SetText(const std::u32string& text)
+{
+	if (type != ElementType::TEXT) SableUI_Error("Cannot set text on element not of type text");
+	
+	if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+	{
+		drText->m_text.SetContent(text);
+	}
+	else
+	{
+		SableUI_Error("Dynamic cast failed");
 	}
 }
 
