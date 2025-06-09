@@ -8,51 +8,25 @@
 #include <map>
 #include <vector>
 #include <algorithm>
-#include <set>
-
-static FT_Library ft;
-static std::map<std::string, FT_Face> loadedFaces;
-
-const int ATLAS_WIDTH = 6144;
-const int ATLAS_HEIGHT = 6144;
-const int ATLAS_PADDING = 2;
-const int FONT_SIZE = 24;
+#include <fstream>
+#include <array>
 
 struct FontRange {
-    char32_t start;
-    char32_t end;
-    std::string fontPath;
+    char32_t start = 0;
+    char32_t end = 0;
+    std::string fontPath = "";
 };
 
-std::vector<FontRange> fontRanges = {
-    {0x0000,  0x00FF,  "fonts/NotoSans-Regular.ttf"},   // ASCII, Latin-1
-    {0x0100,  0x017F,  "fonts/NotoSans-Regular.ttf"},   // Latin Extended
-    {0x0370,  0x03FF,  "fonts/NotoSans-Regular.ttf"},   // Greek and Coptic
-    {0x0400,  0x04FF,  "fonts/NotoSans-Regular.ttf"},   // Cyrillic
-    {0x0600,  0x06FF,  "fonts/NotoSans-Regular.ttf"},   // Arabic
-    {0x0900,  0x097F,  "fonts/NotoSans-Regular.ttf"},   // Devanagari
-    {0x0E00,  0x0E7F,  "fonts/NotoSans-Regular.ttf"},   // Thai
-    {0xAC00,  0xD7A3,  "fonts/NotoSansKR-Regular.ttf"}, // Hangul (Korean)
-    {0x3040,  0x309F,  "fonts/NotoSansJP-Regular.ttf"}, // Hiragana (Japanese)
-    {0x30A0,  0x30FF,  "fonts/NotoSansJP-Regular.ttf"}, // Katakana (Japanese)
-    {0x4E00,  0x9FFF,  "fonts/NotoSansSC-Regular.ttf"}, // CJK (Simplified Chinese)
-    {0x1F600, 0x1F64F, "fonts/NotoEmoji-Regular.ttf"},  // Basic Emojis
-    {0x2600,  0x26FF,  "fonts/NotoSansKR-Regular.ttf"}, // Miscellaneous Symbols
-    {0x20A0,  0x20CF,  "fonts/NotoSans-Regular.ttf"},   // Currency Symbols
-    {0x1F300, 0x1F5FF, "fonts/NotoEmoji-Regular.ttf"},  // Miscellaneous Emoji
-    {0x1F680, 0x1F6FF, "fonts/NotoEmoji-Regular.ttf"},  // Transport and Map Symbols
-    {0x1F900, 0x1F9FF, "fonts/NotoEmoji-Regular.ttf"},  // Symbols and Pictographs
-    {0x1FA00, 0x1FAFF, "fonts/NotoEmoji-Regular.ttf"},  // Supplemental Symbols and Pictographs
-    {0x1F700, 0x1F77F, "fonts/NotoEmoji-Regular.ttf"},  // Alchemical Symbols
-    {0x1F780, 0x1F7FF, "fonts/NotoEmoji-Regular.ttf"},  // Geometric Shapes Extended
+struct FontRangeHash {
+    char data[16] = { 0 };
+
+    std::string ToString() const
+    {
+        return std::string(reinterpret_cast<const char*>(data));
+    }
 };
 
 struct Character {
-    Character() = default;
-    Character(GLuint tid, SableUI::ivec2 s, SableUI::ivec2 b, unsigned int a, SableUI::vec4 tc)
-        : textureID(tid), size(s), bearing(b), advance(a), texCoords(tc) {
-    }
-
     GLuint textureID;
     SableUI::ivec2 size;
     SableUI::ivec2 bearing;
@@ -60,51 +34,104 @@ struct Character {
     SableUI::vec4 texCoords;
 };
 
-std::map<char32_t, Character> characters;
-std::vector<GLuint> atlasTextureIDs;
+struct Atlas {
+    FontRange range;
+    std::map<char32_t, Character> characters;
+    GLuint textureID = 0;
+};
 
-static void InitFreeType()
+static std::vector<FontRange> fontRanges = {
+    {0x0000,    0x2FFF,    "fonts/NotoSans-Regular.ttf"},   /* Basic Latin->Ideographic Description Characters
+                                                               (just before CJK) */
+    {0x2600,    0xD7A3,    "fonts/NotoSansKR-Regular.ttf"}, // Korean (INNACURATE - FIX)
+    {0x3040,    0x30FF,    "fonts/NotoSansJP-Regular.ttf"}, // Hiragana and Katakana
+    {0x4E00,    0x9FFF,    "fonts/NotoSansSC-Regular.ttf"}, // CJK Unified Ideographs
+    {0x1F300,   0x1FAFF,   "fonts/NotoEmoji-Regular.ttf"}   // Monochrome Emojis and Symbols
+};
+
+static FT_Library ft;
+static std::map<std::string, FT_Face> loadedFaces;
+static std::vector<Atlas> atlases;
+
+const int ATLAS_WIDTH = 4096;
+const int ATLAS_HEIGHT = 4096;
+const int ATLAS_PADDING = 2;
+const int FONT_SIZE = 24;
+
+static FontRangeHash GetAtlasHash(const FontRange& range)
 {
-    if (FT_Init_FreeType(&ft))
+    FontRangeHash h;
+
+    unsigned long long hashValue = 5381;
+
+    hashValue = ((hashValue << 5) + hashValue) + range.start;
+    hashValue = ((hashValue << 5) + hashValue) + range.end;
+
+    for (char c : range.fontPath)
     {
-        SableUI_Runtime_Error("FREETYPE: Could not init FreeType library.");
+        hashValue = ((hashValue << 5) + hashValue) + c;
+    }
+
+    std::stringstream ss;
+    ss << std::hex << hashValue;
+    std::string hexHash = ss.str();
+
+    size_t len = std::min(hexHash.length(), sizeof(h.data) - 1);
+    memcpy(h.data, hexHash.c_str(), len);
+    h.data[len] = '\0';
+
+    return h;
+}
+
+static void SerializeAtlas(Atlas& atlas, uint8_t* pixels, int width, int height)
+{
+    FontRangeHash atlasHash = GetAtlasHash(atlas.range);
+    std::string directory = "fonts/cache/";
+    std::string filename = directory + atlasHash.ToString() + ".sbatlas";
+
+    std::filesystem::create_directories(directory);
+
+    std::ofstream file(filename, std::ios::binary);
+
+    if (!file)
+    {
+        SableUI_Error("Could not open file for writint cache: %s", filename.c_str());
         return;
     }
 
-    std::set<std::string> attemptedFontPaths;
-    for (const auto& range : fontRanges)
-    {
-        if (attemptedFontPaths.find(range.fontPath) == attemptedFontPaths.end())
-        {
-            if (loadedFaces.count(range.fontPath)) {
-                attemptedFontPaths.insert(range.fontPath);
-                continue;
-            }
+    // Header
+    file.write(reinterpret_cast<const char*>(&atlas.range.start), sizeof(char32_t));
+    file.write(reinterpret_cast<const char*>(&atlas.range.end), sizeof(char32_t));
+    file.write(reinterpret_cast<const char*>(&width), sizeof(int));
+    file.write(reinterpret_cast<const char*>(&height), sizeof(int));
 
-            FT_Face face;
-            if (FT_New_Face(ft, range.fontPath.c_str(), 0, &face))
-            {
-                SableUI_Error("FREETYPE: Could not load font: %s", range.fontPath.c_str());
-                attemptedFontPaths.insert(range.fontPath);
-                continue;
-            }
-            FT_Set_Pixel_Sizes(face, 0, FONT_SIZE);
-            loadedFaces[range.fontPath] = face;
-            attemptedFontPaths.insert(range.fontPath);
-        }
-    }
+    // Main content
+    size_t pxArraySize = static_cast<size_t>(width * height);
+    file.write(reinterpret_cast<const char*>(pixels), pxArraySize * sizeof(uint8_t));
 
-    if (loadedFaces.empty())
-    {
-        SableUI_Error("FREETYPE: No font faces were successfully loaded.");
-    }
+    file.close();
 }
 
-static FT_Face GetFontForChar(char32_t c) {
-    for (const auto& range : fontRanges) {
-        if (c >= range.start && c <= range.end) {
+static bool DeserializeAtlas(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+
+	if (!file)
+	{
+		SableUI_Error("Could not open file for reading atlas cache: %s", filename.c_str());
+		return false;
+	}
+}
+
+static FT_Face GetFontForChar(char32_t c)
+{
+    for (const auto& range : fontRanges)
+    {
+        if (c >= range.start && c <= range.end)
+        {
             auto it = loadedFaces.find(range.fontPath);
-            if (it != loadedFaces.end()) {
+            if (it != loadedFaces.end())
+            {
                 return it->second;
             }
         }
@@ -112,38 +139,19 @@ static FT_Face GetFontForChar(char32_t c) {
     return nullptr;
 }
 
-static void RenderGlyphs()
+static void RenderGlyphs(Atlas& atlas)
 {
-    characters.clear();
-    for (GLuint id : atlasTextureIDs)
-    {
-        glDeleteTextures(1, &id);
-    }
-    atlasTextureIDs.clear();
+    atlas.characters.clear();
 
-    if (loadedFaces.empty())
-    {
-        SableUI_Error("FREETYPE: No font faces available to render glyphs. Call InitFreeType first.");
-        return;
-    }
-
-    GLuint atlasID;
-    glGenTextures(1, &atlasID);
-    glBindTexture(GL_TEXTURE_2D, atlasID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ATLAS_WIDTH, ATLAS_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    atlasTextureIDs.push_back(atlasID);
+    int currentTempHeight = FONT_SIZE;
+    uint8_t* tempPixels = new uint8_t[ATLAS_WIDTH * currentTempHeight];
+    std::memset(tempPixels, 0, ATLAS_WIDTH * currentTempHeight * sizeof(uint8_t));
 
     int currentX = ATLAS_PADDING;
     int currentY = ATLAS_PADDING;
     int currentRowHeight = 0;
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    for (char32_t c = 32; c < 0x20000; c++)
+    for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
     {
         FT_Face face = GetFontForChar(c);
         if (!face) continue;
@@ -155,10 +163,10 @@ static void RenderGlyphs()
         int glyph_width = glyph->bitmap.width;
         int glyph_height = glyph->bitmap.rows;
 
-        if (glyph_width == 0 || glyph_height == 0) {
-            // store empty glypth for advance
-            characters[c] = Character(
-                atlasTextureIDs.back(),
+        if (glyph_width == 0 || glyph_height == 0)
+        {
+            atlas.characters[c] = Character(
+                atlas.textureID,
                 SableUI::ivec2(glyph_width, glyph_height),
                 SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
                 static_cast<unsigned int>(glyph->advance.x >> 6),
@@ -174,41 +182,127 @@ static void RenderGlyphs()
             currentRowHeight = 0;
         }
 
-        if (currentY + glyph_height + ATLAS_PADDING > ATLAS_HEIGHT)
+        if (currentY + glyph_height + ATLAS_PADDING > currentTempHeight)
         {
-            SableUI_Error("FREETYPE: Texture atlas is full");
-            break;
+            int newTempHeight = std::min(ATLAS_HEIGHT, std::max(currentTempHeight * 2, currentY + glyph_height + ATLAS_PADDING));
+
+            if (newTempHeight <= currentTempHeight)
+            {
+                SableUI_Error("FREETYPE: Texture atlas max height reached, or cannot allocate enough vertical space.");
+                delete[] tempPixels;
+                continue;
+            }
+
+            uint8_t* newPixels = new uint8_t[ATLAS_WIDTH * newTempHeight];
+            std::memcpy(newPixels, tempPixels, ATLAS_WIDTH * currentTempHeight * sizeof(uint8_t));
+            std::memset(newPixels + (ATLAS_WIDTH * currentTempHeight), 0, ATLAS_WIDTH * (newTempHeight - currentTempHeight) * sizeof(uint8_t));
+
+            delete[] tempPixels;
+            tempPixels = newPixels;
+            currentTempHeight = newTempHeight;
         }
 
         currentRowHeight = std::max(currentRowHeight, glyph_height);
 
-        glBindTexture(GL_TEXTURE_2D, atlasTextureIDs.back());
-        glTexSubImage2D(GL_TEXTURE_2D, 0, currentX, currentY, glyph_width, glyph_height, GL_RED, GL_UNSIGNED_BYTE, glyph->bitmap.buffer);
+        for (int y = 0; y < glyph_height; ++y)
+        {
+            if (currentY + y < currentTempHeight)
+            {
+                for (int x = 0; x < glyph_width; ++x)
+                {
+                    if (currentX + x < ATLAS_WIDTH)
+                    {
+                        tempPixels[(currentY + y) * ATLAS_WIDTH + (currentX + x)] = glyph->bitmap.buffer[y * glyph_width + x];
+                    }
+                }
+            }
+        }
 
         float uv_x = (float)currentX / ATLAS_WIDTH;
-        float uv_y = (float)currentY / ATLAS_HEIGHT;
+        float uv_y = (float)currentY / currentTempHeight;
         float uv_w = (float)glyph_width / ATLAS_WIDTH;
-        float uv_h = (float)glyph_height / ATLAS_HEIGHT;
+        float uv_h = (float)glyph_height / currentTempHeight;
 
         Character character = {
-            atlasTextureIDs.back(),
+            atlas.textureID,
             SableUI::ivec2(glyph_width, glyph_height),
             SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
-            static_cast<unsigned int>(glyph->advance.x >> 6), // advance is 1/64 pixel
+            static_cast<unsigned int>(glyph->advance.x >> 6), // 1/64th of a pixel
             SableUI::vec4(uv_x, uv_y, uv_w, uv_h)
         };
 
-        characters[c] = character;
+        atlas.characters[c] = character;
         currentX += glyph_width + ATLAS_PADDING;
     }
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glGenTextures(1, &atlas.textureID);
+    glBindTexture(GL_TEXTURE_2D, atlas.textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ATLAS_WIDTH, currentTempHeight, 0, GL_RED, GL_UNSIGNED_BYTE, tempPixels);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    SerializeAtlas(atlas, tempPixels, ATLAS_WIDTH, currentTempHeight);
+
+    delete[] tempPixels;
+}
+
+static void InitFreeType()
+{
+    if (FT_Init_FreeType(&ft))
+    {
+        SableUI_Runtime_Error("FREETYPE: Could not init FreeType library.");
+        return;
+    }
+
+    std::vector<std::string> attemptedFontPaths;
+    for (const auto& range : fontRanges)
+    {
+        if (std::find(attemptedFontPaths.begin(), attemptedFontPaths.end(),
+            range.fontPath) != attemptedFontPaths.end()) continue;
+
+        {
+            FontRangeHash hash = GetAtlasHash(range);
+			std::string directory = "fonts/cache/";
+			std::string filename = directory + hash.ToString() + ".sbatlas";
+			std::ifstream file(filename, std::ios::binary);
+			if (file.is_open())
+			{
+                bool res = DeserializeAtlas(filename);
+				file.close();
+				if (res == true) continue;
+			}
+        }
+
+        FT_Face face;
+        if (FT_New_Face(ft, range.fontPath.c_str(), 0, &face))
+        {
+            SableUI_Error("FREETYPE: Could not load font: %s", range.fontPath.c_str());
+            attemptedFontPaths.push_back(range.fontPath);
+            continue;
+        }
+        FT_Set_Pixel_Sizes(face, 0, FONT_SIZE);
+        loadedFaces[range.fontPath] = face;
+
+        Atlas atlas;
+        atlas.range = range;
+        atlas.textureID = 0;
+        atlases.push_back(atlas);
+
+        RenderGlyphs(atlas);
+    }
+
+    if (loadedFaces.empty())
+    {
+        SableUI_Error("FREETYPE: No font faces were successfully loaded.");
+    }
 }
 
 static void DestroyFreeType()
 {
-    for (auto& [_, face] : loadedFaces)
-    {
+    for (auto& [_, face] : loadedFaces) {
         FT_Done_Face(face);
     }
     loadedFaces.clear();
@@ -222,7 +316,6 @@ void SableUI::Text::SetContent(const std::u32string& str)
     if (!isInitialized)
     {
         InitFreeType();
-        RenderGlyphs();
         isInitialized = true;
         DestroyFreeType();
     }
