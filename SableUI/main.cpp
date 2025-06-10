@@ -37,8 +37,8 @@ int main(int argc, char** argv)
 	el4.padding = 5.0f;
 	el4.centerX = true;
 	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement->width = 256.0f;
-	imageElement->height = 256.0f;
+	imageElement->width = 128.0f;
+	imageElement->height = 128.0f;
 	imageElement->SetImage("test.jpg");
 
 	SableUI::ElementInfo el5{};

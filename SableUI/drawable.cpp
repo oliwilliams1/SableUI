@@ -106,13 +106,13 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 }
 
 /* image */
-void SableUI::DrawableImage::Draw(SableUI::RenderTarget* texture)
+void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
 {
     /* normalise from texture bounds to [0, 1] */
-    float x = (m_rect.x / static_cast<float>(texture->width));
-    float y = (m_rect.y / static_cast<float>(texture->height));
-    float w = (m_rect.w / static_cast<float>(texture->width));
-    float h = (m_rect.h / static_cast<float>(texture->height));
+    float x = (m_rect.x / static_cast<float>(renderTarget->width));
+    float y = (m_rect.y / static_cast<float>(renderTarget->height));
+    float w = (m_rect.w / static_cast<float>(renderTarget->width));
+    float h = (m_rect.h / static_cast<float>(renderTarget->height));
 
     /* normalise to opengl NDC [0, 1] ->[-1, 1] */
     x = x * 2.0f - 1.0f;
@@ -129,6 +129,7 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* texture)
     h *= -1.0f;
 
     glEnable(GL_TEXTURE_2D);
+    m_texture.Bind();
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
