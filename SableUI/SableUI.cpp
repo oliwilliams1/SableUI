@@ -106,6 +106,8 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	/* set internal max hz to display refresh rate */
 	SetMaxFPS(60);
 	
+	InitFontManager();
+
 	renderer.texture.SetTarget(TargetType::WINDOW);
 	renderer.texture.Resize(windowSize.x, windowSize.y);
 
@@ -845,6 +847,8 @@ SableUI::Window::~Window()
 		delete node;
 	}
 	nodes.clear();
+
+	DestroyFontManager();
 
 	glutDestroyWindow(windowID);
 

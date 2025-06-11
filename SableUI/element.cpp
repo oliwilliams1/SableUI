@@ -127,6 +127,17 @@ void SableUI::Element::Render(int z)
 		}
 		break;
 	}
+	case ElementType::TEXT:
+		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+		{
+			drawable->setZ(z);
+			renderer->Draw(drawable);
+		}
+		else
+		{
+			SableUI_Error("Dynamic cast failed");
+		}
+		break;
 	}
 }
 
@@ -232,4 +243,4 @@ void SableUI::Element::SetText(const std::u32string& text)
 SableUI::Element::~Element()
 {
 	delete drawable;
-}
+}  

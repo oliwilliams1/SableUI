@@ -91,7 +91,7 @@ namespace SableUI
 
 		void Update(SableUI::Rect& rect) { this->m_rect = rect; };
 
-		void Draw(SableUI::RenderTarget* texture) override {};
+		void Draw(SableUI::RenderTarget* texture) override;
 
 		Text m_text;
 	};

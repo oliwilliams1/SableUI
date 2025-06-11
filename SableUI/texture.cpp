@@ -72,16 +72,12 @@ void SableUI::Texture::Bind() const
 
 void SableUI::Texture::SetTexture(uint8_t* pixels, int width, int height)
 {
-    glEnable(GL_TEXTURE_2D);
-
     if (m_texID == 0) glGenTextures(1, &m_texID);
 
     glBindTexture(GL_TEXTURE_2D, m_texID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glDisable(GL_TEXTURE_2D);
 }
 
 SableUI::Texture::~Texture()

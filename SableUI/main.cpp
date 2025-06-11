@@ -24,11 +24,14 @@ int main(int argc, char** argv)
 
 	SableUI::ElementInfo el3{};
 	el3.name = "element 3";
-	el3.wType = SableUI::RectType::FILL;
-	el3.hType = SableUI::RectType::FILL;
-	el3.bgColour = SableUI::Colour(0, 255, 255);
-	el3.padding = 15.0f;
-	mainWindow.AddElementToComponent("component 3", el3, SableUI::ElementType::RECT);
+	el3.wType = SableUI::RectType::FIXED;
+	el3.hType = SableUI::RectType::FIXED;
+	el3.padding = 5.0f;
+	el3.centerX = true;
+	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el3, SableUI::ElementType::IMAGE);
+	imageElement->width = 128.0f;
+	imageElement->height = 128.0f;
+	imageElement->SetImage("background.png");
 
 	SableUI::ElementInfo el4{};
 	el4.name = "element 4";
@@ -36,15 +39,16 @@ int main(int argc, char** argv)
 	el4.hType = SableUI::RectType::FIXED;
 	el4.padding = 5.0f;
 	el4.centerX = true;
-	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement->width = 128.0f;
-	imageElement->height = 128.0f;
-	imageElement->SetImage("test.jpg");
+	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
+	imageElement1->width = 128.0f;
+	imageElement1->height = 128.0f;
+	imageElement1->SetImage("test.jpg");
 
 	SableUI::ElementInfo el5{};
 	el5.name = "text element";
-	el4.wType = SableUI::RectType::FILL;
-	el4.hType = SableUI::RectType::FILL;
+	el5.wType = SableUI::RectType::FILL;
+	el5.hType = SableUI::RectType::FIXED;
+	el5.height = 12.0f;
 	SableUI::Element* textElement = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
 	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar");
 

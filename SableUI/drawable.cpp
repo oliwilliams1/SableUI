@@ -147,6 +147,47 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
     glVertex2f(x, y + h);
 
     glEnd();
-
     glDisable(GL_TEXTURE_2D);
+}
+
+void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
+{
+    GLuint currentTexture = 0;
+
+    float baseX = (m_rect.x / static_cast<float>(renderTarget->width));
+    float baseY = (m_rect.y / static_cast<float>(renderTarget->height));
+
+    baseX = baseX * 2.0f - 1.0f;
+    baseY = baseY * 2.0f - 1.0f;
+
+    baseY = -baseY;
+
+    for (const CharDrawInfo& drInfo : m_text.m_drawInfo)
+    {
+        float characterX = baseX + (drInfo.relPos.x / static_cast<float>(renderTarget->width)) * 2.0f;
+        float characterY = baseY + (drInfo.relPos.y / static_cast<float>(renderTarget->height)) * 2.0f;
+
+        glEnable(GL_TEXTURE_2D);
+        
+        if (currentTexture != drInfo.atlasTextureID)
+        {
+            currentTexture = drInfo.atlasTextureID;
+            glBindTexture(GL_TEXTURE_2D, currentTexture);
+        }
+
+        glBegin(GL_QUADS);
+        glTexCoord2f(drInfo.uv.x, drInfo.uv.y);
+        glVertex2f(characterX, characterY);
+
+        glTexCoord2f(drInfo.uv.x + drInfo.uv.z, drInfo.uv.y);
+        glVertex2f(characterX + (drInfo.size.x / static_cast<float>(renderTarget->width)) * 2.0f, characterY);
+
+        glTexCoord2f(drInfo.uv.x + drInfo.uv.z, drInfo.uv.y + drInfo.uv.w);
+        glVertex2f(characterX + (drInfo.size.x / static_cast<float>(renderTarget->width)) * 2.0f, characterY + (drInfo.size.y / static_cast<float>(renderTarget->height)) * 2.0f);
+
+        glTexCoord2f(drInfo.uv.x, drInfo.uv.y + drInfo.uv.w);
+        glVertex2f(characterX, characterY + (drInfo.size.y / static_cast<float>(renderTarget->height)) * 2.0f);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
 }
