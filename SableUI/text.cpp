@@ -42,7 +42,6 @@ struct Atlas {
     bool isLoadedFromCache = false;
     int fontSize = 0;
 
-    ~Atlas() { if (textureID != 0) glDeleteTextures(1, &textureID); };
     Atlas() = default;
 };
 
@@ -58,7 +57,7 @@ public:
     bool Initialize();
     void Shutdown();
     bool isInitialized = false;
-    static std::vector<SableUI::CharDrawInfo> GetDrawInfo(const std::u32string& str);
+    static std::vector<SableUI::CharDrawInfo> GetDrawInfo(const std::u32string& str, float fontSize);
     static const Atlas* GetAtlasForChar(char32_t c);
 
 private:
@@ -67,13 +66,15 @@ private:
     FT_Library ft_library = nullptr;
     std::map<std::string, FT_Face> loadedFacesFT;
     static std::vector<Atlas> atlases;
+    static std::vector<GLuint> atlasGLTextures;
 
     const std::vector<FontRange> font_ranges = {
-        {0x0000,    0x2FFF,    "fonts/NotoSans-Regular.ttf"},
-        {0x2600,    0xD7A3,    "fonts/NotoSansKR-Regular.ttf"},
-        {0x3040,    0x30FF,    "fonts/NotoSansJP-Regular.ttf"},
-        {0x4E00,    0x9FFF,    "fonts/NotoSansSC-Regular.ttf"},
-        {0x1F300,   0x1FAFF,   "fonts/NotoEmoji-Regular.ttf"}
+        {0x0000,  0x2FFF,  "fonts/NotoSans-Regular.ttf"},
+        {0xFB00,  0xFFFF,  "fonts/NotoSansJP-Regular.ttf"},
+        {0x2600,  0xD7A3,  "fonts/NotoSansKR-Regular.ttf"},
+        {0x3040,  0x30FF,  "fonts/NotoSansJP-Regular.ttf"},
+        {0x4E00,  0x9FFF,  "fonts/NotoSansSC-Regular.ttf"},
+        {0x1F300, 0x1FAFF, "fonts/NotoEmoji-Regular.ttf"}
     };
 
     FontRangeHash GetAtlasHash(const FontRange& range, int fontSize);
@@ -334,8 +335,43 @@ void FontManager::RenderGlyphs(Atlas& atlas)
     }
 
     int currentTempHeight = atlas.fontSize;
-    uint8_t* tempPixels = new uint8_t[ATLAS_WIDTH * currentTempHeight];
-    std::memset(tempPixels, 0, ATLAS_WIDTH * currentTempHeight * sizeof(uint8_t));
+
+    int max_current_y = ATLAS_PADDING;
+    int current_x_calc = ATLAS_PADDING;
+    int current_y_calc = ATLAS_PADDING;
+    int current_row_height_calc = 0;
+
+    for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
+    {
+        FT_Face face = GetFontForChar(c, atlas.fontSize);
+        if (!face) continue;
+
+        FT_UInt glyph_index = FT_Get_Char_Index(face, c);
+        if (glyph_index == 0 || FT_Load_Glyph(face, glyph_index, FT_LOAD_BITMAP_METRICS_ONLY)) continue;
+
+        FT_GlyphSlot glyph = face->glyph;
+        int glyph_width = glyph->bitmap.width;
+        int glyph_height = glyph->bitmap.rows;
+
+        if (glyph_width == 0 || glyph_height == 0) continue;
+
+        if (current_x_calc + glyph_width + ATLAS_PADDING > ATLAS_WIDTH)
+        {
+            current_x_calc = ATLAS_PADDING;
+            current_y_calc += current_row_height_calc + ATLAS_PADDING;
+            current_row_height_calc = 0;
+        }
+
+        current_row_height_calc = std::max(current_row_height_calc, glyph_height);
+        current_x_calc += glyph_width + ATLAS_PADDING;
+        max_current_y = std::max(max_current_y, current_y_calc + current_row_height_calc + ATLAS_PADDING);
+    }
+
+    int final_atlas_height = std::min(ATLAS_HEIGHT, max_current_y);
+    if (final_atlas_height < ATLAS_PADDING * 2) final_atlas_height = ATLAS_PADDING * 2;
+
+    uint8_t* tempPixels = new uint8_t[ATLAS_WIDTH * final_atlas_height];
+    std::memset(tempPixels, 0, ATLAS_WIDTH * final_atlas_height * sizeof(uint8_t));
 
     int currentX = ATLAS_PADDING;
     int currentY = ATLAS_PADDING;
@@ -372,45 +408,29 @@ void FontManager::RenderGlyphs(Atlas& atlas)
             currentRowHeight = 0;
         }
 
-        if (currentY + glyph_height + ATLAS_PADDING > currentTempHeight)
+        currentRowHeight = std::max(currentRowHeight, glyph_height);
+
+        if (currentY + glyph_height > final_atlas_height)
         {
-            int newTempHeight = std::min(ATLAS_HEIGHT, std::max(currentTempHeight * 2, currentY + glyph_height + ATLAS_PADDING));
-
-            if (newTempHeight <= currentTempHeight)
-            {
-                SableUI_Error("Texture atlas max height reached. Cannot allocate enough vertical space.");
-                delete[] tempPixels;
-                return;
-            }
-
-            uint8_t* newPixels = new uint8_t[ATLAS_WIDTH * newTempHeight];
-            std::memcpy(newPixels, tempPixels, ATLAS_WIDTH * currentTempHeight * sizeof(uint8_t));
-            std::memset(newPixels + (ATLAS_WIDTH * currentTempHeight), 0, ATLAS_WIDTH * (newTempHeight - currentTempHeight) * sizeof(uint8_t));
-            delete[] tempPixels;
-            tempPixels = newPixels;
-            currentTempHeight = newTempHeight;
+            SableUI_Error("sums wrong");
+            break;
         }
 
-        currentRowHeight = std::max(currentRowHeight, glyph_height);
 
         for (int y = 0; y < glyph_height; y++)
         {
-            if (currentY + y < currentTempHeight)
+            for (int x = 0; x < glyph_width; x++)
             {
-                for (int x = 0; x < glyph_width; x++)
-                {
-                    if (currentX + x < ATLAS_WIDTH)
-                    {
-                        tempPixels[(currentY + y) * ATLAS_WIDTH + (currentX + x)] = glyph->bitmap.buffer[y * glyph_width + x];
-                    }
+                if ((currentY + y) * ATLAS_WIDTH + (currentX + x) < ATLAS_WIDTH * final_atlas_height) {
+                    tempPixels[(currentY + y) * ATLAS_WIDTH + (currentX + x)] = glyph->bitmap.buffer[y * glyph_width + x];
                 }
             }
         }
 
         float uv_x = (float)currentX / ATLAS_WIDTH;
-        float uv_y = (float)currentY / currentTempHeight;
+        float uv_y = (float)currentY / final_atlas_height;
         float uv_w = (float)glyph_width / ATLAS_WIDTH;
-        float uv_h = (float)glyph_height / currentTempHeight;
+        float uv_h = (float)glyph_height / final_atlas_height;
 
         atlas.characters[c] = Character{
             atlas.textureID,
@@ -425,7 +445,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
     glGenTextures(1, &atlas.textureID);
     glBindTexture(GL_TEXTURE_2D, atlas.textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ATLAS_WIDTH, currentTempHeight, 0, GL_RED, GL_UNSIGNED_BYTE, tempPixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ATLAS_WIDTH, final_atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, tempPixels);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -437,7 +457,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
         pair.second.textureID = atlas.textureID;
     }
 
-    SerializeAtlas(atlas, tempPixels, ATLAS_WIDTH, currentTempHeight);
+    SerializeAtlas(atlas, tempPixels, ATLAS_WIDTH, final_atlas_height);
     delete[] tempPixels;
 }
 
@@ -447,7 +467,7 @@ void FontManager::LoadAllFontRanges()
     {
         Atlas currentAtlas{};
         bool loaded_from_cache = false;
-        currentAtlas.fontSize = 12;
+        currentAtlas.fontSize = 24;
         
         FontRangeHash hash = GetAtlasHash(range, currentAtlas.fontSize);
         std::string directory = "fonts/cache/";
@@ -476,7 +496,7 @@ void FontManager::LoadAllFontRanges()
     SableUI_Log("Loaded %zu font atlases.", atlases.size());
 }
 
-std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string& str)
+std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string& str, float fontSize)
 {
     std::vector<Character> chars;
 
@@ -498,8 +518,11 @@ std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string
     std::vector<SableUI::CharDrawInfo> drawInfo(chars.size());
 
     SableUI::vec2 cursor = SableUI::vec2(0.0f, 0.0f);
-    for (size_t i = 0; i < chars.size(); i++) {
+    for (size_t i = 0; i < chars.size(); i++)
+    {
         drawInfo[i].relPos = cursor;
+        drawInfo[i].relPos.x += chars[i].bearing.x;
+        drawInfo[i].relPos.y -= (chars[i].size.y - chars[i].bearing.y) + fontSize;
         drawInfo[i].size = chars[i].size;
         drawInfo[i].uv = chars[i].texCoords;
         drawInfo[i].atlasTextureID = chars[i].textureID; 
@@ -510,7 +533,7 @@ std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string
 }
 
 /* ------------- TEXT BACKEND ------------- */
-void SableUI::Text::SetContent(const std::u32string& str)
+void SableUI::Text::SetContent(const std::u32string& str, int fontSize)
 {
     if (!FontManager::GetInstance().isInitialized)
     {
@@ -518,9 +541,10 @@ void SableUI::Text::SetContent(const std::u32string& str)
     }
 
     m_drawInfo.clear();
-    m_content = str;
+    m_content  = str;
+    m_fontSize = fontSize;
 
-    m_drawInfo = FontManager::GetDrawInfo(str);
+    m_drawInfo = FontManager::GetDrawInfo(str, m_fontSize);
 }
 
 void SableUI::InitFontManager()

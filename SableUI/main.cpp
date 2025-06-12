@@ -42,15 +42,15 @@ int main(int argc, char** argv)
 	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
 	imageElement1->width = 128.0f;
 	imageElement1->height = 128.0f;
-	imageElement1->SetImage("test.jpg");
+	imageElement1->SetImage("test.png");
 
 	SableUI::ElementInfo el5{};
 	el5.name = "text element";
 	el5.wType = SableUI::RectType::FILL;
 	el5.hType = SableUI::RectType::FIXED;
-	el5.height = 12.0f;
+	el5.height = 24.0f;
 	SableUI::Element* textElement = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
-	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar");
+	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar", 24);
 
 	while (mainWindow.PollEvents())
 	{

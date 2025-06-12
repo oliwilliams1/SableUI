@@ -22,11 +22,12 @@ namespace SableUI
 		Text(const Text&) = delete;
 		Text& operator=(const Text&) = delete;
 
-		void SetContent(const std::u32string& str);
+		void SetContent(const std::u32string& str, int fontSize = 12);
 		std::vector<CharDrawInfo> m_drawInfo;
 
 	private:
 		std::u32string m_content = U"";
+		int m_fontSize = 0;
 	};
 
 	void InitFontManager();

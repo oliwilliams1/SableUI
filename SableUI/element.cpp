@@ -226,13 +226,13 @@ void SableUI::Element::SetImage(const std::string& path)
 	}
 }
 
-void SableUI::Element::SetText(const std::u32string& text)
+void SableUI::Element::SetText(const std::u32string& text, int fontSize)
 {
 	if (type != ElementType::TEXT) SableUI_Error("Cannot set text on element not of type text");
 	
 	if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 	{
-		drText->m_text.SetContent(text);
+		drText->m_text.SetContent(text, fontSize);
 	}
 	else
 	{
