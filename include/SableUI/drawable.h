@@ -19,9 +19,14 @@ namespace SableUI
 		UNDEF = 0xFF
 	};
 
+	void InitDrawables();
+	void DestroyDrawables();
+	void DrawWindowBorder(RenderTarget* target);
+
 	class DrawableBase
 	{
 	public:
+		DrawableBase() { this->uuid = GetUUID(); };
 		virtual void Draw(SableUI::RenderTarget* texture) = 0;
 		virtual ~DrawableBase() {};
 
@@ -29,6 +34,10 @@ namespace SableUI
 
 		int m_zIndex = 0;
 		SableUI::Rect m_rect = { 0, 0, 0, 0 };
+		unsigned int uuid = 0;
+
+	private:
+		unsigned int GetUUID();
 	};
 
 	class DrawableRect : public DrawableBase

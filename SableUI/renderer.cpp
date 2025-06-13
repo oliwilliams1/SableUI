@@ -1,43 +1,9 @@
 #include <algorithm>
 #include <string>
+#include <set>
 
 #include "SableUI/renderer.h"
 #include "SableUI/utils.h"
-
-void SableUI::Renderer::DrawWindowBorder() const
-{
-    static int borderWidth = 1;
-
-    glColor4ub(51, 51, 51, 255);
-
-    glBegin(GL_QUADS);
-    glVertex2f(-1.0f, 1.0f);
-    glVertex2f(1.0f, 1.0f);
-    glVertex2f(1.0f, 1.0f - (borderWidth * 2.0f / texture.height));
-    glVertex2f(-1.0f, 1.0f - (borderWidth * 2.0f / texture.height));
-    glEnd();
-
-    glBegin(GL_QUADS);
-    glVertex2f(-1.0f, -1.0f + (borderWidth * 2.0f / texture.height));
-    glVertex2f(1.0f, -1.0f + (borderWidth * 2.0f / texture.height));
-    glVertex2f(1.0f, -1.0f);
-    glVertex2f(-1.0f, -1.0f);
-    glEnd();
-
-    glBegin(GL_QUADS);
-    glVertex2f(-1.0f, 1.0f);
-    glVertex2f(-1.0f + (borderWidth * 2.0f / texture.width), 1.0f);
-    glVertex2f(-1.0f + (borderWidth * 2.0f / texture.width), -1.0f);
-    glVertex2f(-1.0f, -1.0f);
-    glEnd();
-
-    glBegin(GL_QUADS);
-    glVertex2f(1.0f - (borderWidth * 2.0f / texture.width), 1.0f);
-    glVertex2f(1.0f, 1.0f);
-    glVertex2f(1.0f, -1.0f);
-    glVertex2f(1.0f - (borderWidth * 2.0f / texture.width), -1.0f);
-    glEnd();
-}
 
 void SableUI::Renderer::Flush()
 {
@@ -51,7 +17,7 @@ void SableUI::Renderer::Draw(DrawableBase* drawable)
 
 void SableUI::Renderer::Draw()
 {
-    if (texture.target == TargetType::TEXTURE) texture.Bind();
+    if (renderTarget.target == TargetType::TEXTURE) renderTarget.Bind();
 
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
         return a->m_zIndex < b->m_zIndex;
@@ -59,17 +25,21 @@ void SableUI::Renderer::Draw()
 
     if (drawStack.size() == 0) return;
 
+    std::set<unsigned int> drawnUUIDs;
+
     /* iterate through queue and draw all types of drawables */
     for (const auto& drawable : drawStack)
     {
         if (drawable)
         {
-            drawable->Draw(&texture);
+            if (drawnUUIDs.find(drawable->uuid) != drawnUUIDs.end()) continue;
+            drawnUUIDs.insert(drawable->uuid);
+            drawable->Draw(&renderTarget);
         }
     }
 
     /* draw window border after queue is drawn */
-    DrawWindowBorder();
+    DrawWindowBorder(&renderTarget);
 
     drawStack.clear();
 }

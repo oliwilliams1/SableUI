@@ -1,5 +1,6 @@
 #include "SableUI/SableUI.h"
 
+#include <GL/glew.h>
 #include <GL/freeglut.h>
 
 #include <cstdio>
@@ -21,13 +22,6 @@
 constexpr float minComponentSize = 20.0f;
 
 SableUI::Window* SableUI::Window::currentInstance = nullptr;
-
-static bool initialized = false;
-void SableUI::Initialize(int argc, char** argv)
-{
-	glutInit(&argc, argv);
-	initialized = true;
-}
 
 static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
@@ -75,6 +69,17 @@ static void PrintNode(SableUI::Node* node, int depth = 0)
 	}
 }
 
+static bool initialized = false;
+void SableUI::Initialize(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	initialized = true;
+
+	glutInitContextVersion(3, 3);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+}
+
 SableUI::Window::Window(const std::string& title, int width, int height, int x, int y)
 {
 	if (!initialized)
@@ -85,8 +90,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	}
 
 	windowSize = ivec2(width, height);
-
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(windowSize.x, windowSize.y);
 	windowID = glutCreateWindow(title.c_str());
 	currentInstance = this;
@@ -103,13 +106,25 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
+	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glFlush();
+
+	// init after window is cleared
+	GLenum res = glewInit();
+	if (GLEW_OK != res)
+	{
+		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
+	}
+
 	/* set internal max hz to display refresh rate */
 	SetMaxFPS(60);
 	
 	InitFontManager();
+	InitDrawables();
 
-	renderer.texture.SetTarget(TargetType::WINDOW);
-	renderer.texture.Resize(windowSize.x, windowSize.y);
+	renderer.renderTarget.SetTarget(TargetType::WINDOW);
+	renderer.renderTarget.Resize(windowSize.x, windowSize.y);
 
 	if (root != nullptr)
 	{
@@ -127,9 +142,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(root, width, height);
 	nodes.push_back(root);
-
-	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 bool SableUI::Window::PollEvents()
@@ -139,7 +151,7 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		PrintNodeTree();
-		renderer.Flush();  // Clear the draw stack from init draw commands
+		renderer.Flush();   // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
@@ -155,6 +167,7 @@ bool SableUI::Window::PollEvents()
 	/* check if need to resize */
 	for (Node* node : nodes)
 	{
+		if (DistToEdge(root, mousePos) > 5.0f) continue;
 		if (!RectBoundingBox(node->rect, mousePos)) continue;
 
 		if (mousePos.x == 0 && mousePos.y == 0) continue;
@@ -195,20 +208,20 @@ bool SableUI::Window::PollEvents()
 
 	if (resizing)
 	{
-		if (!resCalled)
+		if (!resCalled && currentCursor != GLUT_CURSOR_RIGHT_ARROW)
 		{
 			Resize(mousePos);
-			if (mouseButtonStates.LMB == MouseState::UP)
-			{
-				resizing = false;
-				renderer.Flush();
-				RecalculateNodes();
-				RerenderAllNodes();
-			}
 		}
 		else
 		{
 			resCalled = false;
+		}
+		if (mouseButtonStates.LMB == MouseState::UP)
+		{
+			resizing = false;
+			renderer.Flush();
+			RecalculateNodes();
+			RerenderAllNodes();
 		}
 	}
 
@@ -490,6 +503,7 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 
 void SableUI::Window::RerenderAllNodes()
 {
+	glClear(GL_COLOR_BUFFER_BIT);
 	for (SableUI::Node* node : nodes)
 	{
 		if (node->component)
@@ -497,6 +511,7 @@ void SableUI::Window::RerenderAllNodes()
 			node->component.get()->UpdateDrawable();
 		}
 	}
+	needsStaticRedraw = true;
 	Draw();
 }
 
@@ -826,7 +841,7 @@ void SableUI::Window::ReshapeCallback(int w, int h)
 	currentInstance->windowSize = ivec2(w, h);
 	glViewport(0, 0, w, h);
 
-	currentInstance->renderer.texture.Resize(w, h);
+	currentInstance->renderer.renderTarget.Resize(w, h);
 
 	SetupRootNode(currentInstance->root, w, h);
 	currentInstance->RecalculateNodes();
@@ -849,6 +864,7 @@ SableUI::Window::~Window()
 	nodes.clear();
 
 	DestroyFontManager();
+	DestroyDrawables();
 
 	glutDestroyWindow(windowID);
 

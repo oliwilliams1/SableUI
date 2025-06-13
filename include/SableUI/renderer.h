@@ -27,11 +27,9 @@ namespace SableUI
 		Element* CreateElement(const std::string& name, ElementType type);
 		Element* GetElement(const std::string& name);
 
-		RenderTarget texture;
+		RenderTarget renderTarget;
 
 	private:
-		void DrawWindowBorder() const;
-
 		std::vector<DrawableBase*> drawStack;
 		std::vector<Element*> elements;
 	};

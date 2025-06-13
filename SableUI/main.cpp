@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	SableUI::Window mainWindow("SableUI", 800, 600);
+	SableUI::Window mainWindow("SableUI", 1000, 800);
 
 	mainWindow.OpenUIFile("template.SableUI");
 
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	el2.name = "element 2";
 	el2.wType = SableUI::RectType::FILL;
 	el2.hType = SableUI::RectType::FILL;
-	el2.bgColour = SableUI::Colour(255, 0, 0);
+	el2.bgColour = SableUI::Colour(255, 0, 255);
 	el2.padding = 5.0f;
 	mainWindow.AddElementToComponent("component 3", el2, SableUI::ElementType::RECT);
 
