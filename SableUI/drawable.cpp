@@ -4,14 +4,21 @@
 #include "SableUI/renderer.h"
 #include "SableUI/shader.h"
 
+/* rect globals */
 static GLuint g_rectVAO = 0;
 static GLuint g_rectVBO = 0;
 static GLuint g_rectEBO = 0;
 static GLuint g_shaderProgram = 0;
-static Shader g_rShader;
+static SableUI::Shader g_rShader;
 static GLuint g_rUColourLoc = 0;
 static GLuint g_rURectLoc = 0;
 static GLuint g_rUTexBoolLoc = 0;
+
+/* text globals */
+static SableUI::Shader g_tShader;
+static GLuint g_tTargetSizeLoc = 0;
+static GLuint g_tPosLoc = 0;
+static GLuint g_tAtlasLoc = 0;
 
 struct Vertex {
     SableUI::vec2 uv;
@@ -26,9 +33,10 @@ Vertex rectVertices[] = {
 
 unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
-static GLuint GetUniformLocation(Shader shader, const char* uniformName)
+static GLuint GetUniformLocation(SableUI::Shader shader, const char* uniformName)
 {
-    GLuint location = glGetUniformLocation(shader.shaderProgram, uniformName);
+    shader.Use();
+    GLuint location = glGetUniformLocation(shader.m_shaderProgram, uniformName);
     if (location == -1)
     {
         SableUI_Error("Warning: %s uniform not found!", uniformName);
@@ -38,6 +46,7 @@ static GLuint GetUniformLocation(Shader shader, const char* uniformName)
 
 void SableUI::InitDrawables()
 {
+    /* rect init */
     g_rShader.LoadBasicShaders("shaders/rect.vert", "shaders/rect.frag");
     g_rShader.Use();
     g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
@@ -45,7 +54,7 @@ void SableUI::InitDrawables()
     g_rUTexBoolLoc = GetUniformLocation(g_rShader, "uUseTexture");
     glUniform3f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f);
 
-    glUniform1i(glGetUniformLocation(g_rShader.shaderProgram, "uTexture"), 0);
+    glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
 
     glGenVertexArrays(1, &g_rectVAO);
     glGenBuffers(1, &g_rectVBO);
@@ -61,6 +70,14 @@ void SableUI::InitDrawables()
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
     glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    /* text init */
+    g_tShader.LoadBasicShaders("shaders/text.vert", "shaders/text.frag");
+    g_tTargetSizeLoc = GetUniformLocation(g_tShader, "uTargetSize");
+    g_tPosLoc = GetUniformLocation(g_tShader, "uPos");
+    g_tAtlasLoc = GetUniformLocation(g_tShader, "uAtlas");
 }
 
 void SableUI::DestroyDrawables()
@@ -102,6 +119,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform3f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
+    glBindVertexArray(g_rectVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -154,6 +172,7 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
                 normalizedH *= -1.0f;
 
                 glUniform4f(g_rURectLoc, normalizedX, normalizedY, normalizedW, normalizedH);
+                glBindVertexArray(g_rectVAO);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             }
         }
@@ -186,6 +205,7 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
                 normalizedH *= -1.0f;
 
                 glUniform4f(g_rURectLoc, normalizedX, normalizedY, normalizedW, normalizedH);
+                glBindVertexArray(g_rectVAO);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             }
         }
@@ -222,51 +242,25 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform1i(g_rUTexBoolLoc, 1);
+    glBindVertexArray(g_rectVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
+/* text */
 void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
 {
     GLuint currentTexture = 0;
 
-    float baseX = (m_rect.x / static_cast<float>(renderTarget->width));
-    float baseY = (m_rect.y / static_cast<float>(renderTarget->height));
+    g_tShader.Use();
+    glBindVertexArray(m_text.m_VAO);
+    glUniform2f(g_tTargetSizeLoc, static_cast<float>(renderTarget->width), static_cast<float>(renderTarget->height));
+    glUniform2f(g_tPosLoc, m_rect.x, m_rect.y + m_rect.h);
+    glUniform1i(g_tAtlasLoc, 0);
 
-    baseX = baseX * 2.0f - 1.0f;
-    baseY = baseY * 2.0f - 1.0f;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 1);
 
-    baseY = -baseY;
-
-    /*glEnable(GL_TEXTURE_2D);
-
-    for (const CharDrawInfo& drInfo : m_text.m_drawInfo)
-    {
-        float characterX = baseX + (drInfo.relPos.x / static_cast<float>(renderTarget->width)) * 2.0f;
-        float characterY = baseY + (drInfo.relPos.y / static_cast<float>(renderTarget->height)) * 2.0f;
-
-        
-        if (currentTexture != drInfo.atlasTextureID)
-        {
-            currentTexture = drInfo.atlasTextureID;
-            glBindTexture(GL_TEXTURE_2D, currentTexture);
-        }
-
-        glBegin(GL_QUADS);
-        glTexCoord2f(drInfo.uv.x, drInfo.uv.y + drInfo.uv.w);
-        glVertex2f(characterX, characterY);
-
-        glTexCoord2f(drInfo.uv.x + drInfo.uv.z, drInfo.uv.y + drInfo.uv.w);
-        glVertex2f(characterX + (drInfo.size.x / static_cast<float>(renderTarget->width)) * 2.0f, characterY);
-
-        glTexCoord2f(drInfo.uv.x + drInfo.uv.z, drInfo.uv.y);
-        glVertex2f(characterX + (drInfo.size.x / static_cast<float>(renderTarget->width)) * 2.0f,
-                   characterY + (drInfo.size.y / static_cast<float>(renderTarget->height)) * 2.0f);
-
-        glTexCoord2f(drInfo.uv.x, drInfo.uv.y);
-        glVertex2f(characterX, characterY + (drInfo.size.y / static_cast<float>(renderTarget->height)) * 2.0f);
-        glEnd();
-    }
-    glDisable(GL_TEXTURE_2D);*/
+    glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
 }
 
 static unsigned int s_nextUUID = 0;
@@ -281,6 +275,7 @@ void SableUI::DrawWindowBorder(RenderTarget* target)
     static int borderWidth = 1;
 
     g_rShader.Use();
+    glBindVertexArray(g_rectVAO);
     glUniform3f(g_rUColourLoc, 51.0f / 255.0f, 51.0f / 255.0f, 51.0f / 255.0f);
 
     // Top
@@ -337,12 +332,12 @@ void SableUI::DrawWindowBorder(RenderTarget* target)
     {
         float pixelX = 0.0f;
         float pixelY = 0.0f;
-        float pixelWidth  = static_cast<float>(borderWidth);
+        float pixelWidth = static_cast<float>(borderWidth);
         float pixelHeight = static_cast<float>(target->height);
 
-        float ndcX = (pixelX     / static_cast<float>(target->width))   * 2.0f - 1.0f;
-        float ndcY = (pixelY     / static_cast<float>(target->height))  * 2.0f - 1.0f;
-        float ndcW = (pixelWidth / static_cast<float>(target->width))   * 2.0f;
+        float ndcX = (pixelX / static_cast<float>(target->width)) * 2.0f - 1.0f;
+        float ndcY = (pixelY / static_cast<float>(target->height)) * 2.0f - 1.0f;
+        float ndcW = (pixelWidth / static_cast<float>(target->width)) * 2.0f;
         float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
 
         ndcW = std::max(0.0f, ndcW);
@@ -362,9 +357,9 @@ void SableUI::DrawWindowBorder(RenderTarget* target)
         float pixelWidth = static_cast<float>(borderWidth);
         float pixelHeight = static_cast<float>(target->height);
 
-        float ndcX = (pixelX      / static_cast<float>(target->width))  * 2.0f - 1.0f;
-        float ndcY = (pixelY      / static_cast<float>(target->height)) * 2.0f - 1.0f;
-        float ndcW = (pixelWidth  / static_cast<float>(target->width))  * 2.0f;
+        float ndcX = (pixelX / static_cast<float>(target->width)) * 2.0f - 1.0f;
+        float ndcY = (pixelY / static_cast<float>(target->height)) * 2.0f - 1.0f;
+        float ndcW = (pixelWidth / static_cast<float>(target->width)) * 2.0f;
         float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
 
         ndcW = std::max(0.0f, ndcW);

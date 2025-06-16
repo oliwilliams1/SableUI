@@ -1,4 +1,5 @@
 #include "SableUI/SableUI.h"
+#include "SableUI/shader.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -106,6 +107,8 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glFlush();
@@ -150,7 +153,7 @@ bool SableUI::Window::PollEvents()
 
 	if (!init)
 	{
-		PrintNodeTree();
+		//PrintNodeTree();
 		renderer.Flush();   // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
@@ -230,6 +233,11 @@ bool SableUI::Window::PollEvents()
 
 void SableUI::Window::Draw()
 {
+	GLenum err;
+	while ((err = glGetError()) != GL_NO_ERROR)
+	{
+		SableUI_Error("OpenGL error: %s", gluErrorString(err));
+	}
 	auto frameStart = std::chrono::system_clock::now();
 
 #ifdef _WIN32
@@ -845,11 +853,9 @@ void SableUI::Window::ReshapeCallback(int w, int h)
 
 	SetupRootNode(currentInstance->root, w, h);
 	currentInstance->RecalculateNodes();
-
 	currentInstance->RerenderAllNodes();
 
 	currentInstance->RecalculateNodes();
-
 	currentInstance->RerenderAllNodes();
 
 	currentInstance->needsStaticRedraw = true;
@@ -865,6 +871,7 @@ SableUI::Window::~Window()
 
 	DestroyFontManager();
 	DestroyDrawables();
+	DestroyShaders();
 
 	glutDestroyWindow(windowID);
 

@@ -7,27 +7,24 @@
 
 namespace SableUI
 {
-	struct CharDrawInfo {
-		SableUI::vec2 relPos = { 0, 0 };
-		SableUI::vec2 size = { 0, 0 };
-		SableUI::vec4 uv = { 0, 0, 0, 0 };
-		GLuint atlasTextureID = 0;
-	};
-
 	struct Text
 	{
-		Text() = default;
-		~Text() {};
+		Text();
+		~Text();
 
 		Text(const Text&) = delete;
 		Text& operator=(const Text&) = delete;
 
 		void SetContent(const std::u32string& str, int fontSize = 12);
-		std::vector<CharDrawInfo> m_drawInfo;
-
-	private:
 		std::u32string m_content = U"";
 		int m_fontSize = 0;
+		
+		GLuint m_fontTextureID = 0;
+		GLuint m_VAO = 0;
+		GLuint m_VBO = 0;
+		GLuint m_EBO = 0;
+
+		uint32_t indiciesSize = 0;
 	};
 
 	void InitFontManager();

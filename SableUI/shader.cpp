@@ -3,6 +3,8 @@
 #include "SableUI/shader.h"
 #include "SableUI/console.h"
 
+static std::vector<GLuint> shaderPrograms;
+
 static bool ReadFile(const char* pFileName, std::string& outFile)
 {
 	std::ifstream f(pFileName);
@@ -29,7 +31,7 @@ static bool ReadFile(const char* pFileName, std::string& outFile)
 	return ret;
 }
 
-void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
+static void AddShader(GLuint shaderProgram, const char* pShaderText, GLenum ShaderType)
 {
 	GLuint ShaderObj = glCreateShader(ShaderType);
 
@@ -41,7 +43,7 @@ void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 	const GLchar* p[1];
 	p[0] = pShaderText;
 
-	GLint Lengths[1];
+	GLint Lengths[1]{};
 	Lengths[0] = (GLint)strlen(pShaderText);
 
 	glShaderSource(ShaderObj, 1, p, Lengths);
@@ -57,19 +59,19 @@ void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)
 		SableUI_Runtime_Error("Error compiling shader type %d: '%s'", ShaderType, InfoLog);
 	}
 
-	glAttachShader(ShaderProgram, ShaderObj);
+	glAttachShader(shaderProgram, ShaderObj);
 }
 
-void Shader::LoadBasicShaders(const char* p_vsSource, const char* p_fsSource)
+void SableUI::Shader::LoadBasicShaders(const char* p_vsSource, const char* p_fsSource)
 {
 	std::string vsSource = p_vsSource;
 	std::string fsSource = p_fsSource;
 
-    shaderProgram = glCreateProgram();
+	m_shaderProgram = glCreateProgram();
 
 	std::string vs, fs;
 
-    if (shaderProgram == 0)
+    if (m_shaderProgram == 0)
     {
         SableUI_Runtime_Error("Error creating shader program!");
     }
@@ -77,13 +79,13 @@ void Shader::LoadBasicShaders(const char* p_vsSource, const char* p_fsSource)
     if (vsSource.size() > 0)
     {
         if (!ReadFile(vsSource.c_str(), vs)) SableUI_Runtime_Error("Failed to read vertex shader file: %s", vsSource.c_str());
-        AddShader(shaderProgram, vs.c_str(), GL_VERTEX_SHADER);
+        AddShader(m_shaderProgram, vs.c_str(), GL_VERTEX_SHADER);
     }
 
     if (fsSource.size() > 0)
     {
         if (!ReadFile(fsSource.c_str(), fs)) SableUI_Runtime_Error("Failed to read fragment shader file: %s", fsSource.c_str());
-        AddShader(shaderProgram, fs.c_str(), GL_FRAGMENT_SHADER);
+        AddShader(m_shaderProgram, fs.c_str(), GL_FRAGMENT_SHADER);
     }
 
     if (vs.size() == 0 && fs.size() == 0) return;
@@ -91,24 +93,28 @@ void Shader::LoadBasicShaders(const char* p_vsSource, const char* p_fsSource)
     GLint success = 0;
     GLchar errorLog[1024] = { 0 };
 
-    glLinkProgram(shaderProgram);
+    glLinkProgram(m_shaderProgram);
 
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &success);
     if (success == 0)
     {
-        glGetProgramInfoLog(shaderProgram, sizeof(errorLog), nullptr, errorLog);
+        glGetProgramInfoLog(m_shaderProgram, sizeof(errorLog), nullptr, errorLog);
         SableUI_Runtime_Error("Error linking shader program: %s shader name: %s", errorLog);
     }
 
-    glUseProgram(shaderProgram);
+    glUseProgram(m_shaderProgram);
+	shaderPrograms.push_back(m_shaderProgram);
 }
 
-Shader::~Shader()
+void SableUI::Shader::Use() const
 {
-    glDeleteProgram(shaderProgram);
+	glUseProgram(m_shaderProgram);
 }
 
-void Shader::Use() const
+void SableUI::DestroyShaders()
 {
-	glUseProgram(shaderProgram);
+	for (GLuint shaderProgram : shaderPrograms)
+	{
+		glDeleteProgram(shaderProgram);
+	}
 }

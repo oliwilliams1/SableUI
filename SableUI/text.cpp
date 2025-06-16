@@ -57,7 +57,7 @@ public:
     bool Initialize();
     void Shutdown();
     bool isInitialized = false;
-    static std::vector<SableUI::CharDrawInfo> GetDrawInfo(const std::u32string& str, float fontSize);
+    static void GetDrawInfo(SableUI::Text* text);
     static const Atlas* GetAtlasForChar(char32_t c);
 
 private:
@@ -496,11 +496,17 @@ void FontManager::LoadAllFontRanges()
     SableUI_Log("Loaded %zu font atlases.", atlases.size());
 }
 
-std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string& str, float fontSize)
+struct Vertex
+{
+    SableUI::vec2 pos;
+    SableUI::vec2 uv;
+};
+
+void FontManager::GetDrawInfo(SableUI::Text* text)
 {
     std::vector<Character> chars;
 
-    for (const char32_t& c : str)
+    for (const char32_t& c : text->m_content)
     {
         const Atlas* atlas = GetAtlasForChar(c);
         if (atlas != nullptr) {
@@ -515,21 +521,49 @@ std::vector<SableUI::CharDrawInfo> FontManager::GetDrawInfo(const std::u32string
         }
     }
 
-    std::vector<SableUI::CharDrawInfo> drawInfo(chars.size());
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
 
     SableUI::vec2 cursor = SableUI::vec2(0.0f, 0.0f);
     for (size_t i = 0; i < chars.size(); i++)
     {
-        drawInfo[i].relPos = cursor;
-        drawInfo[i].relPos.x += chars[i].bearing.x;
-        drawInfo[i].relPos.y -= (chars[i].size.y - chars[i].bearing.y) + fontSize;
-        drawInfo[i].size = chars[i].size;
-        drawInfo[i].uv = chars[i].texCoords;
-        drawInfo[i].atlasTextureID = chars[i].textureID; 
+        float x = cursor.x + chars[i].bearing.x;
+        float y = cursor.y - chars[i].bearing.y;
+
+        float w = chars[i].size.x;
+        float h = chars[i].size.y;
+
+        float uBottomLeft = chars[i].texCoords.x;
+        float vBottomLeft = chars[i].texCoords.y;
+        float uTopRight = uBottomLeft + chars[i].texCoords.z;
+        float vTopRight = vBottomLeft + chars[i].texCoords.w;
+
+        vertices.push_back(Vertex{ {x,     y},     {uBottomLeft, vBottomLeft} });
+        vertices.push_back(Vertex{ {x + w, y},     {uTopRight,   vBottomLeft} });
+        vertices.push_back(Vertex{ {x + w, y + h}, {uTopRight,   vTopRight}   });
+        vertices.push_back(Vertex{ {x,     y + h}, {uBottomLeft, vTopRight}   });
+
+        unsigned int offset = static_cast<unsigned int>(i) * 4;
+        indices.push_back(offset);
+        indices.push_back(offset + 1);
+        indices.push_back(offset + 2);
+        indices.push_back(offset);
+        indices.push_back(offset + 2);
+        indices.push_back(offset + 3);
+
         cursor.x += chars[i].advance;
     }
 
-    return drawInfo;
+    glBindVertexArray(text->m_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, text->m_VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text->m_EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    text->indiciesSize = indices.size();
+
+    glBindVertexArray(0);
 }
 
 /* ------------- TEXT BACKEND ------------- */
@@ -540,11 +574,10 @@ void SableUI::Text::SetContent(const std::u32string& str, int fontSize)
         FontManager::GetInstance().Initialize();
     }
 
-    m_drawInfo.clear();
     m_content  = str;
     m_fontSize = fontSize;
 
-    m_drawInfo = FontManager::GetDrawInfo(str, m_fontSize);
+    FontManager::GetDrawInfo(this);
 }
 
 void SableUI::InitFontManager()
@@ -558,4 +591,29 @@ void SableUI::InitFontManager()
 void SableUI::DestroyFontManager()
 {
     FontManager::GetInstance().Shutdown();
+}
+
+SableUI::Text::Text()
+{
+    glGenVertexArrays(1, &m_VAO);
+    glBindVertexArray(m_VAO);
+
+    glGenBuffers(1, &m_VBO);
+    glGenBuffers(1, &m_EBO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(SableUI::vec2)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+}
+
+SableUI::Text::~Text()
+{
+	glDeleteVertexArrays(1, &m_VAO);
+    glDeleteBuffers(1, &m_VBO);
+	glDeleteBuffers(1, &m_EBO);
 }

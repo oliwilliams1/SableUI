@@ -3,15 +3,20 @@
 #include <GL/glew.h>
 #include <string>
 
-struct Shader {
-public:
-    Shader() = default;
-    ~Shader();
-    void LoadBasicShaders(const char* vsSource, const char* fsSource);
-    void Use() const;
+namespace SableUI
+{
+    void DestroyShaders();
 
-    GLuint shaderProgram;
+    struct Shader {
+    public:
+        Shader() = default;
+        ~Shader() = default;
+        void LoadBasicShaders(const char* vsSource, const char* fsSource);
+        void Use() const;
 
-private:
-    std::string vsSource, fsSource;
-};
+        GLuint m_shaderProgram = 0;
+
+    private:
+        std::string vsSource, fsSource;
+    };
+}
