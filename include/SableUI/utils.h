@@ -9,42 +9,10 @@ namespace SableUI
 {
     inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 
-    struct ivec2
-    {
-        int x;
-        int y;
-
-        ivec2() = default;
-        ivec2(int x, int y) : x(x), y(y) {}
-        ivec2(int x) : x(x), y(x) {}
-
-        ivec2 operator+(const ivec2& other) const {
-            return { x + other.x, y + other.y };
-        }
-
-        ivec2 operator-(const ivec2& other) const {
-            return { x - other.x, y - other.y };
-        }
-
-        ivec2 operator*(int scalar) const {
-            return { x * scalar, y * scalar };
-        }
-
-        ivec2 operator/(int scalar) const {
-            if (scalar != 0) {
-                return { x / scalar, y / scalar };
-            }
-            else {
-                printf("Error: Division by zero error\n");
-                return { 0, 0 };
-            }
-        }
-    };
-
     struct uvec2
     {
-        unsigned x;
-        unsigned y;
+        unsigned int x;
+        unsigned int y;
 
         uvec2() = default;
         uvec2(unsigned x, unsigned y) : x(x), y(y) {}
@@ -63,6 +31,39 @@ namespace SableUI
         }
 
         uvec2 operator/(unsigned scalar) const {
+            if (scalar != 0) {
+                return { x / scalar, y / scalar };
+            }
+            else {
+                printf("Error: Division by zero error\n");
+                return { 0, 0 };
+            }
+        }
+    };
+
+    struct ivec2
+    {
+        int x;
+        int y;
+
+        ivec2() = default;
+        ivec2(int x, int y) : x(x), y(y) {}
+        ivec2(int x) : x(x), y(x) {}
+        ivec2(uvec2 v) : x(v.x), y(v.y) {}
+
+        ivec2 operator+(const ivec2& other) const {
+            return { x + other.x, y + other.y };
+        }
+
+        ivec2 operator-(const ivec2& other) const {
+            return { x - other.x, y - other.y };
+        }
+
+        ivec2 operator*(int scalar) const {
+            return { x * scalar, y * scalar };
+        }
+
+        ivec2 operator/(int scalar) const {
             if (scalar != 0) {
                 return { x / scalar, y / scalar };
             }
