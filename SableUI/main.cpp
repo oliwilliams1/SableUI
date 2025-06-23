@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	el5.hType = SableUI::RectType::FIXED;
 	el5.height = 24.0f;
 	SableUI::Element* textElement = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
-	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar", 24);
+	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar 😔", 24);
 
 	while (mainWindow.PollEvents())
 	{

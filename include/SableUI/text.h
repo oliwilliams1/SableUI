@@ -7,6 +7,7 @@
 
 namespace SableUI
 {
+	GLuint GetAtlasTexture();
 	struct Text
 	{
 		Text();

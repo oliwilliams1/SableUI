@@ -249,18 +249,19 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
 /* text */
 void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
 {
-    GLuint currentTexture = 0;
-
     g_tShader.Use();
     glBindVertexArray(m_text.m_VAO);
     glUniform2f(g_tTargetSizeLoc, static_cast<float>(renderTarget->width), static_cast<float>(renderTarget->height));
     glUniform2f(g_tPosLoc, m_rect.x, m_rect.y + m_rect.h);
-    glUniform1i(g_tAtlasLoc, 0);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, GetAtlasTexture());
+
+    glUniform1i(g_tAtlasLoc, GetAtlasTexture());
 
     glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 static unsigned int s_nextUUID = 0;
