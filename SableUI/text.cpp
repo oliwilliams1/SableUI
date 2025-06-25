@@ -14,7 +14,7 @@
 
 constexpr int ATLAS_WIDTH = 4096;
 constexpr int ATLAS_HEIGHT = 4096;
-constexpr int ATLAS_PADDING = 2;
+constexpr int ATLAS_PADDING = 1;
 constexpr int MIN_ATLAS_DEPTH = 2;
 constexpr const char* FONT_PREFIX = "f-";
 
@@ -90,7 +90,7 @@ private:
 	GLuint atlasTextureArray = 0;
 	int atlasDepth = MIN_ATLAS_DEPTH;
 	SableUI::uvec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
-	int currentDepth = 0;
+	int currentDepth = 1;
 
 	const std::vector<FontRange> font_ranges = {
 		{ 0x0000,  0x2FFF,  "fonts/NotoSans-Regular.ttf"   },
@@ -137,8 +137,8 @@ bool FontManager::Initialize()
 
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -225,6 +225,7 @@ FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 	hashValue = ((hashValue << 5) + hashValue) + fontSize;
 	hashValue = ((hashValue << 5) + hashValue) + range.start;
 	hashValue = ((hashValue << 5) + hashValue) + range.end;
+	hashValue = ((hashValue << 5) + hashValue) + ATLAS_PADDING;
 
 	for (char c : range.fontPath)
 	{
@@ -287,8 +288,10 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 	int initialAtlasYForRenderPass = atlasCursor.y;
 
 	/* first pass, get bounds of all glyphs to calculate height of atlas */
-	SableUI::uvec2 tempCursor = { atlasCursor.x, atlasCursor.y };
+	SableUI::uvec2 tempCursor = { ATLAS_PADDING, atlasCursor.y };
 	unsigned int currentRowHeight = 0;
+	int maxGlobalYReached = atlasCursor.y;
+
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
 		FT_Face face = GetFontForChar(c, atlas.fontSize, facesForCurrentRender);
@@ -302,7 +305,16 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		if (size.x == 0 || size.y == 0) continue;
 
-		if (tempCursor.x + size.x + ATLAS_PADDING > ATLAS_WIDTH)
+		int potentialEndGlobalY = tempCursor.y + size.y;
+		int currentLayerEndGlobalY = (tempCursor.y / ATLAS_HEIGHT + 1) * ATLAS_HEIGHT;
+
+		if (potentialEndGlobalY > currentLayerEndGlobalY)
+		{
+			tempCursor.x = ATLAS_PADDING;
+			tempCursor.y = (tempCursor.y / ATLAS_HEIGHT + 1) * ATLAS_HEIGHT + ATLAS_PADDING;
+			currentRowHeight = 0;
+		}
+		else if (tempCursor.x + size.x + ATLAS_PADDING > ATLAS_WIDTH)
 		{
 			tempCursor.x = ATLAS_PADDING;
 			tempCursor.y += currentRowHeight + ATLAS_PADDING;
@@ -311,16 +323,30 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		currentRowHeight = std::max(currentRowHeight, size.y);
 		tempCursor.x += size.x + ATLAS_PADDING;
+
+		maxGlobalYReached = std::max(maxGlobalYReached, (int)tempCursor.y);
 	}
 
-	/* newline */
-	tempCursor.y += currentRowHeight + ATLAS_PADDING;
-
-	int requiredHeightForPass = tempCursor.y - initialAtlasYForRenderPass;
-
-	if (initialAtlasYForRenderPass + requiredHeightForPass > atlasDepth * ATLAS_HEIGHT)
+	/* newline - final adjustment for the height calculation */
+	if (currentRowHeight > 0 || tempCursor.x > ATLAS_PADDING)
 	{
-		int newDepth = static_cast<int>(std::ceil(static_cast<float>(initialAtlasYForRenderPass + requiredHeightForPass) / ATLAS_HEIGHT));
+		maxGlobalYReached = std::max(maxGlobalYReached, static_cast<int>(tempCursor.y + currentRowHeight + ATLAS_PADDING));
+	}
+
+	int requiredHeightForPass = maxGlobalYReached - initialAtlasYForRenderPass;
+
+	if (requiredHeightForPass < 0) requiredHeightForPass = 0;
+	if (requiredHeightForPass == 0 && (atlas.range.start <= atlas.range.end))
+	{
+		requiredHeightForPass = ATLAS_PADDING;
+	}
+
+
+	int proposedEndGlobalY = initialAtlasYForRenderPass + requiredHeightForPass;
+	int newDepth = static_cast<int>(std::ceil(static_cast<float>(proposedEndGlobalY) / ATLAS_HEIGHT));
+
+	if (newDepth > atlasDepth)
+	{
 		ResizeTextureArray(newDepth);
 	}
 
@@ -329,10 +355,11 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	currentRowHeight = 0;
 	atlasCursor.x = ATLAS_PADDING;
+	atlasCursor.y = initialAtlasYForRenderPass;
 
 	std::map<char32_t, Character> chars_for_serialization;
 
-	/* second pass, Render glyphs and fill the cpu-side buffer */
+	/* second pass, render glyphs and fill the cpu-side buffer */
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
 		FT_Face face = GetFontForChar(c, atlas.fontSize, facesForCurrentRender);
@@ -357,7 +384,16 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			continue;
 		}
 
-		if (atlasCursor.x + size.x + ATLAS_PADDING > ATLAS_WIDTH)
+		int potentialEndGlobalY = atlasCursor.y + size.y;
+		int currentLayerEndGlobalY = (atlasCursor.y / ATLAS_HEIGHT + 1) * ATLAS_HEIGHT;
+
+		if (potentialEndGlobalY > currentLayerEndGlobalY)
+		{
+			atlasCursor.x = ATLAS_PADDING;
+			atlasCursor.y = (atlasCursor.y / ATLAS_HEIGHT + 1) * ATLAS_HEIGHT + ATLAS_PADDING;
+			currentRowHeight = 0;
+		}
+		else if (atlasCursor.x + size.x + ATLAS_PADDING > ATLAS_WIDTH)
 		{
 			atlasCursor.x = ATLAS_PADDING;
 			atlasCursor.y += currentRowHeight + ATLAS_PADDING;
@@ -369,7 +405,6 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if ((atlasCursor.y - initialAtlasYForRenderPass + size.y) > requiredHeightForPass)
 		{
 			SableUI_Error("Atlas overflow during glyph rendering after resize attempt (glyph too tall for remaining space in pass)! Char: U+%04X", static_cast<unsigned int>(c));
-			break;
 		}
 
 		int yOffsetInAtlasPixels = (atlasCursor.y - initialAtlasYForRenderPass);
@@ -382,7 +417,9 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 				if (pixelIndexInAtlasPixels >= 0 && pixelIndexInAtlasPixels < ATLAS_WIDTH * requiredHeightForPass)
 				{
-					atlasPixels[pixelIndexInAtlasPixels] = glyph->bitmap.buffer[y * size.x + x];
+					if (glyph->bitmap.buffer) {
+						atlasPixels[pixelIndexInAtlasPixels] = glyph->bitmap.buffer[y * size.x + x];
+					}
 				}
 			}
 		}
@@ -410,7 +447,9 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		FT_Done_Face(pair.second);
 	}
 
-	currentDepth = (atlasCursor.y + ATLAS_HEIGHT - 1) / ATLAS_HEIGHT;
+	atlasCursor.y = initialAtlasYForRenderPass + requiredHeightForPass + ATLAS_PADDING;
+
+	currentDepth = static_cast<int>(std::ceil(static_cast<float>(atlasCursor.y) / ATLAS_HEIGHT));
 }
 
 void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels) const
@@ -426,6 +465,8 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels) co
 		int yOffsetInTargetLayer = globalYForChunk % ATLAS_HEIGHT;
 
 		int heightToUpload = std::min(ATLAS_HEIGHT - yOffsetInTargetLayer, height - currentUploadY);
+
+		if (heightToUpload <= 0) break;
 
 		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) * ATLAS_WIDTH);
 
@@ -528,20 +569,20 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 		out_atlas.range.fontPath.resize(path_len);
 		file.read(out_atlas.range.fontPath.data(), path_len);
 
-		int cached_width{}, cached_height{};
-		file.read(reinterpret_cast<char*>(&cached_width), sizeof(int));
-		file.read(reinterpret_cast<char*>(&cached_height), sizeof(int));
+		int cachedWidth{}, cachedHeight{};
+		file.read(reinterpret_cast<char*>(&cachedWidth), sizeof(int));
+		file.read(reinterpret_cast<char*>(&cachedHeight), sizeof(int));
 
-		if (cached_width != ATLAS_WIDTH)
+		if (cachedWidth != ATLAS_WIDTH)
 		{
 			SableUI_Error("Cached atlas width mismatch for %s. Expected %i, got %i. Regenerating.",
-				filename.c_str(), ATLAS_WIDTH, cached_width);
+				filename.c_str(), ATLAS_WIDTH, cachedWidth);
 			file.close();
 			return false;
 		}
 
 		/* main content */
-		size_t pxArraySize = static_cast<size_t>(cached_width * cached_height);
+		size_t pxArraySize = static_cast<size_t>(cachedWidth * cachedHeight);
 		std::unique_ptr<uint8_t[]> pixels_buffer = std::make_unique<uint8_t[]>(pxArraySize);
 		file.read(reinterpret_cast<char*>(pixels_buffer.get()), pxArraySize * sizeof(uint8_t));
 
@@ -554,15 +595,18 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 
 		int initialAtlasYForDeserializedPass = atlasCursor.y;
 
-		if (initialAtlasYForDeserializedPass + cached_height > atlasDepth * ATLAS_HEIGHT)
+		int proposedEndGlobalY = initialAtlasYForDeserializedPass + cachedHeight;
+		int requiredDepthForDeserialization = static_cast<int>(std::ceil(static_cast<float>(proposedEndGlobalY) / ATLAS_HEIGHT));
+
+		if (requiredDepthForDeserialization > atlasDepth)
 		{
-			int newDepth = static_cast<int>(std::ceil(static_cast<float>(initialAtlasYForDeserializedPass + cached_height) / ATLAS_HEIGHT));
-			ResizeTextureArray(newDepth);
+			ResizeTextureArray(requiredDepthForDeserialization);
 		}
 
-		UploadAtlasToGPU(cached_height, initialAtlasYForDeserializedPass, pixels_buffer.get());
 
-		atlasCursor.y += cached_height + ATLAS_PADDING;
+		UploadAtlasToGPU(cachedHeight, initialAtlasYForDeserializedPass, pixels_buffer.get());
+
+		atlasCursor.y += cachedHeight + ATLAS_PADDING;
 
 		size_t num_chars{};
 		file.read(reinterpret_cast<char*>(&num_chars), sizeof(size_t));
@@ -688,10 +732,10 @@ void FontManager::GetDrawInfo(SableUI::Text* text)
 
 		float layerIndex = char_data.layer;
 
-		vertices.push_back(Vertex{ {x,     y},     { uBottomLeft, vBottomLeft, layerIndex} });
-		vertices.push_back(Vertex{ {x + w, y},     { uTopRight,   vBottomLeft, layerIndex} });
-		vertices.push_back(Vertex{ {x + w, y + h}, { uTopRight,   vTopRight,   layerIndex} });
-		vertices.push_back(Vertex{ {x,     y + h}, { uBottomLeft, vTopRight,   layerIndex} });
+		vertices.push_back(Vertex{ {x,     y},     { uBottomLeft, vBottomLeft, layerIndex } });
+		vertices.push_back(Vertex{ {x + w, y},     { uTopRight,   vBottomLeft, layerIndex } });
+		vertices.push_back(Vertex{ {x + w, y + h}, { uTopRight,   vTopRight,   layerIndex } });
+		vertices.push_back(Vertex{ {x,     y + h}, { uBottomLeft, vTopRight,   layerIndex } });
 
 		unsigned int offset = static_cast<unsigned int>(i) * 4;
 		indices.push_back(offset);
