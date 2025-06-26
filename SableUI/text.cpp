@@ -135,7 +135,7 @@ bool FontManager::Initialize()
 	glGenTextures(1, &atlasTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, atlasTextureArray);
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -198,7 +198,7 @@ void FontManager::ResizeTextureArray(int newDepth)
 	glGenTextures(1, &newTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, ATLAS_WIDTH, ATLAS_HEIGHT, newDepth, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, ATLAS_WIDTH, ATLAS_HEIGHT, newDepth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -206,13 +206,19 @@ void FontManager::ResizeTextureArray(int newDepth)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	/* copy old texture to new, with new depth */
-	glCopyImageSubData(atlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+	GLuint oldAtlasTextureArray = atlasTextureArray;
+	glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
 		newTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
 		ATLAS_WIDTH, ATLAS_HEIGHT, atlasDepth);
 
-	glDeleteTextures(1, &atlasTextureArray); // delete old texture
+	glDeleteTextures(1, &oldAtlasTextureArray);
 	atlasTextureArray = newTextureArray;
 	atlasDepth = newDepth;
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, atlasTextureArray);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
@@ -376,7 +382,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			characters[c] = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+				SableUI::ivec2(glyph->bitmapLeft, glyph->bitmapTop),
 				static_cast<unsigned int>(glyph->advance.x >> 6),
 				static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -427,7 +433,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		characters[c] = Character{
 			atlasCursor,
 			size,
-			SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+			SableUI::ivec2(glyph->bitmapLeft, glyph->bitmapTop),
 			static_cast<unsigned int>(glyph->advance.x >> 6),
 			static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 		};
