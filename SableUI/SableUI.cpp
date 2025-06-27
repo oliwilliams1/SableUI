@@ -1,9 +1,6 @@
 #include "SableUI/SableUI.h"
 #include "SableUI/shader.h"
 
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-
 #include <cstdio>
 #include <iostream>
 #include <functional>
@@ -21,8 +18,6 @@
 #endif
 
 constexpr float minComponentSize = 20.0f;
-
-SableUI::Window* SableUI::Window::currentInstance = nullptr;
 
 static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
@@ -70,30 +65,22 @@ static void PrintNode(SableUI::Node* node, int depth = 0)
 	}
 }
 
-static bool initialized = false;
-void SableUI::Initialize(int argc, char** argv)
-{
-	glutInit(&argc, argv);
-	initialized = true;
-
-	glutInitContextVersion(3, 3);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-}
-
 SableUI::Window::Window(const std::string& title, int width, int height, int x, int y)
 {
-	if (!initialized)
+	if (!m_initialized)
 	{
-		int argc = 0;
-		char** argv = nullptr;
-		Initialize(argc, argv);
+		if (!glfwInit())
+		{
+			SableUI_Runtime_Error("Could not initialize GLFW");
+		}
 	}
 
-	windowSize = ivec2(width, height);
-	glutInitWindowSize(windowSize.x, windowSize.y);
-	windowID = glutCreateWindow(title.c_str());
-	currentInstance = this;
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_VERSION_MINOR, 3);
+	m_windowSize = ivec2(width, height);
+	m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+	glfwMakeContextCurrent(m_window);
 
 #ifdef _WIN32
 	/* enable immersive darkmode on windows via api */
@@ -111,6 +98,7 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+
 	glFlush();
 
 	// init after window is cleared
@@ -127,29 +115,34 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	InitDrawables();
 
 	renderer.renderTarget.SetTarget(TargetType::WINDOW);
-	renderer.renderTarget.Resize(windowSize.x, windowSize.y);
+	renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
 
-	if (root != nullptr)
+	if (m_root != nullptr)
 	{
 		SableUI_Error("Root node already created!");
 		return;
 	}
 
+	m_arrowCursor   = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+	m_hResizeCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+	m_vResizeCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+
 	/* event callbacks */
-	glutReshapeFunc(ReshapeCallback);
+	/*glutReshapeFunc(ReshapeCallback);
 	glutMotionFunc(MotionCallback);
 	glutPassiveMotionFunc(MotionCallback);
-	glutMouseFunc(MouseButtonCallback);
+	glutMouseFunc(MouseButtonCallback);*/
 
 	/* make root node */
-	root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
-	SetupRootNode(root, width, height);
-	nodes.push_back(root);
+	m_root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
+	SetupRootNode(m_root, width, height);
+	m_nodes.push_back(m_root);
 }
 
 bool SableUI::Window::PollEvents()
 {
 	static bool init = false;
+	glfwPollEvents(); // This is the heart of event handling
 
 	if (!init)
 	{
@@ -161,21 +154,20 @@ bool SableUI::Window::PollEvents()
 		init = true;
 	}
 
-	/* static for multiple calls on one resize event (lifetime of static is until mouse up) */
-	static int currentCursor = GLUT_CURSOR_RIGHT_ARROW;
+	// static for multiple calls on one resize event (lifetime of static is until mouse up)
 	static bool resCalled = false;
 
-	int cursorToSet = GLUT_CURSOR_RIGHT_ARROW;
+	GLFWcursor* cursorToSet = m_arrowCursor;
 
 	/* check if need to resize */
-	for (Node* node : nodes)
+	for (Node* node : m_nodes)
 	{
-		if (DistToEdge(root, mousePos) > 5.0f) continue;
-		if (!RectBoundingBox(node->rect, mousePos)) continue;
+		if (DistToEdge(m_root, m_mousePos) > 5.0f) continue;
+		if (!RectBoundingBox(node->rect, m_mousePos)) continue;
 
-		if (mousePos.x == 0 && mousePos.y == 0) continue;
+		if (m_mousePos.x == 0 && m_mousePos.y == 0) continue;
 
-		float d1 = DistToEdge(node, mousePos);
+		float d1 = DistToEdge(node, m_mousePos);
 
 		if (node->parent == nullptr) continue;
 
@@ -184,51 +176,52 @@ bool SableUI::Window::PollEvents()
 			switch (node->parent->type)
 			{
 			case NodeType::VSPLITTER:
-				cursorToSet = GLUT_CURSOR_UP_DOWN;
+				cursorToSet = m_vResizeCursor;
 				break;
 
 			case NodeType::HSPLITTER:
-				cursorToSet = GLUT_CURSOR_LEFT_RIGHT;
+				cursorToSet = m_hResizeCursor;
 				break;
 			}
 
-			if (!resizing && mouseButtonStates.LMB == MouseState::DOWN && cursorToSet != GLUT_CURSOR_RIGHT_ARROW)
+			if (!m_resizing && m_mouseButtonStates.LMB == MouseState::DOWN && cursorToSet != m_arrowCursor)
 			{
 				resCalled = true;
-				Resize(mousePos, node);
+				Resize(m_mousePos, node);
 
-				resizing = true;
+				m_resizing = true;
 				continue;
 			}
 		}
 	}
 
-	if (currentCursor != cursorToSet && !resizing)
+	if (m_currentCursor != cursorToSet && !m_resizing)
 	{
-		glutSetCursor(cursorToSet);
-		currentCursor = cursorToSet;
+		glfwSetCursor(m_window, cursorToSet);
+		m_currentCursor = cursorToSet;
 	}
 
-	if (resizing)
+
+	if (m_resizing)
 	{
-		if (!resCalled && currentCursor != GLUT_CURSOR_RIGHT_ARROW)
+		if (!resCalled && m_currentCursor != m_arrowCursor)
 		{
-			Resize(mousePos);
+			Resize(m_mousePos);
 		}
 		else
 		{
 			resCalled = false;
 		}
-		if (mouseButtonStates.LMB == MouseState::UP)
+		if (m_mouseButtonStates.LMB == MouseState::UP)
 		{
-			resizing = false;
+			m_resizing = false;
 			renderer.Flush();
 			RecalculateNodes();
 			RerenderAllNodes();
 		}
 	}
 
-	return true;
+	return !glfwWindowShouldClose(m_window);
 }
 
 void SableUI::Window::Draw()
@@ -253,33 +246,33 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	if (needsStaticRedraw)
+	if (m_needsStaticRedraw)
 	{
 		/* flush drawable stack & render to screen */
 		renderer.Draw();
 
 		glFlush();
 
-		needsStaticRedraw = false;
+		m_needsStaticRedraw = false;
 	}
 
 	/* ensure application doesnt run faster than desired fps */
 	auto frameTime = std::chrono::system_clock::now() - frameStart;
 
-	if (frameTime < frameDelay)
+	if (frameTime < m_frameDelay)
 	{
-		std::this_thread::sleep_for(frameDelay - frameTime);
+		std::this_thread::sleep_for(m_frameDelay - frameTime);
 	}
 }
 
 inline void SableUI::Window::SetMaxFPS(int fps)
 {
-	frameDelay = std::chrono::milliseconds(1000 / fps);
+	m_frameDelay = std::chrono::milliseconds(1000 / fps);
 }
 
 void SableUI::Window::PrintNodeTree()
 {
-	PrintNode(root);
+	PrintNode(m_root);
 }
 
 void SableUI::Window::SetupSplitter(const std::string& name, float bSize)
@@ -309,7 +302,7 @@ SableUI::Node* SableUI::Window::AddNodeToParent(NodeType type, const std::string
 		return nullptr;
 	}
 
-	if (parent->type == NodeType::ROOTNODE && root->children.size() > 0)
+	if (parent->type == NodeType::ROOTNODE && m_root->children.size() > 0)
 	{
 		SableUI_Error("Root node can only have one child node");
 		return nullptr;
@@ -317,7 +310,7 @@ SableUI::Node* SableUI::Window::AddNodeToParent(NodeType type, const std::string
 
 	SableUI::Node* node = new SableUI::Node(type, parent, name);
 
-	nodes.push_back(node);
+	m_nodes.push_back(node);
 
 	return node;
 }
@@ -403,12 +396,12 @@ SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elemen
 
 SableUI::Node* SableUI::Window::GetRoot()
 {
-	return root;
+	return m_root;
 }
 
 SableUI::Node* SableUI::Window::FindNodeByName(const std::string& name)
 {
-	for (SableUI::Node* node : nodes)
+	for (SableUI::Node* node : m_nodes)
 	{
 		if (node->name == name)
 		{
@@ -421,14 +414,14 @@ SableUI::Node* SableUI::Window::FindNodeByName(const std::string& name)
 
 void SableUI::Window::OpenUIFile(const std::string& path)
 {
-	if (nodes.size() > 0)
+	if (m_nodes.size() > 0)
 	{
-		for (Node* node : nodes)
+		for (Node* node : m_nodes)
 		{
 			delete node;
 		}
-		nodes.clear();
-		root = nullptr;
+		m_nodes.clear();
+		m_root = nullptr;
 		SableUI_Log("Reloading UI");
 	}
 
@@ -437,7 +430,7 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != XML_SUCCESS)
 	{
-		SableUI_Error("Failed to load file: %s", path.c_str());
+		SableUI_Notify_Error("Failed to load file: %s", path.c_str(), true);
 		return;
 	}
 
@@ -447,10 +440,10 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 		return;
 	}
 
-	root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
+	m_root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
 
-	SetupRootNode(root, windowSize.x, windowSize.y);
-	nodes.push_back(root);
+	SetupRootNode(m_root, m_windowSize.x, m_windowSize.y);
+	m_nodes.push_back(m_root);
 
 	std::stack<std::string> parentStack;
 	parentStack.push("Root Node");
@@ -474,7 +467,7 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 			const char* borderColourAttr = element->Attribute("borderColour");
 			SableUI::Colour borderColour = StringTupleToColour(borderColourAttr);
 
-			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(nodes.size());
+			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(m_nodes.size());
 
 			if (elementName == "hsplitter")
 			{
@@ -512,14 +505,14 @@ void SableUI::Window::OpenUIFile(const std::string& path)
 void SableUI::Window::RerenderAllNodes()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
-	for (SableUI::Node* node : nodes)
+	for (SableUI::Node* node : m_nodes)
 	{
 		if (node->component)
 		{
 			node->component.get()->UpdateDrawable();
 		}
 	}
-	needsStaticRedraw = true;
+	m_needsStaticRedraw = true;
 	Draw();
 }
 
@@ -528,7 +521,7 @@ void SableUI::Window::RecalculateNodes()
 	CalculateNodeScales();
 	CalculateNodePositions();
 
-	for (Node* node : nodes)
+	for (Node* node : m_nodes)
 	{
 		if (node->component != nullptr && node->type != NodeType::COMPONENT)
 		{
@@ -539,7 +532,7 @@ void SableUI::Window::RecalculateNodes()
 
 void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 {
-	needsStaticRedraw = true;
+	m_needsStaticRedraw = true;
 
 	/* static for multiple calls (lifetime of static is until mouse up) */
 	static SableUI::Node* selectedNode = nullptr;
@@ -649,13 +642,13 @@ void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 
 void SableUI::Window::CalculateNodePositions(Node* node)
 {
-	if (nodes.size() == 0) return;
+	if (m_nodes.size() == 0) return;
 
-	needsStaticRedraw = true;
+	m_needsStaticRedraw = true;
 
 	if (node == nullptr)
 	{
-		for (Node* child : root->children)
+		for (Node* child : m_root->children)
 		{
 			CalculateNodePositions(child);
 		}
@@ -710,14 +703,14 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 
 void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 {
-	if (nodes.empty()) return;
+	if (m_nodes.empty()) return;
 
-	needsStaticRedraw = true;
+	m_needsStaticRedraw = true;
 
 	/* if first call, run for children of root node */
 	if (node == nullptr)
 	{
-		for (SableUI::Node* child : root->children)
+		for (SableUI::Node* child : m_root->children)
 		{
 			CalculateNodeScales(child);
 		}
@@ -825,55 +818,56 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 	}
 }
 
-void SableUI::Window::MotionCallback(int x, int y)
-{
-	currentInstance->mousePos = ivec2(x, y);
-}
-
-void SableUI::Window::MouseButtonCallback(int button, int state, int x, int y)
-{
-	switch (button)
-	{
-	case GLUT_LEFT_BUTTON:
-		currentInstance->mouseButtonStates.LMB = static_cast<MouseState>(state); // dir translation
-		break;
-
-	case GLUT_RIGHT_BUTTON:
-		currentInstance->mouseButtonStates.RMB = static_cast<MouseState>(state); // dir translation
-		break;
-	}
-}
-
-void SableUI::Window::ReshapeCallback(int w, int h)
-{
-	currentInstance->windowSize = ivec2(w, h);
-	glViewport(0, 0, w, h);
-
-	currentInstance->renderer.renderTarget.Resize(w, h);
-
-	SetupRootNode(currentInstance->root, w, h);
-	currentInstance->RecalculateNodes();
-	currentInstance->RerenderAllNodes();
-
-	currentInstance->RecalculateNodes();
-	currentInstance->RerenderAllNodes();
-
-	currentInstance->needsStaticRedraw = true;
-}
+//void SableUI::Window::MotionCallback(int x, int y)
+//{
+//	currentInstance->mousePos = ivec2(x, y);
+//}
+//
+//void SableUI::Window::MouseButtonCallback(int button, int state, int x, int y)
+//{
+//	switch (button)
+//	{
+//	case GLUT_LEFT_BUTTON:
+//		currentInstance->mouseButtonStates.LMB = static_cast<MouseState>(state); // dir translation
+//		break;
+//
+//	case GLUT_RIGHT_BUTTON:
+//		currentInstance->mouseButtonStates.RMB = static_cast<MouseState>(state); // dir translation
+//		break;
+//	}
+//}
+//
+//void SableUI::Window::ReshapeCallback(int w, int h)
+//{
+//	currentInstance->windowSize = ivec2(w, h);
+//	glViewport(0, 0, w, h);
+//
+//	currentInstance->renderer.renderTarget.Resize(w, h);
+//
+//	SetupRootNode(currentInstance->root, w, h);
+//	currentInstance->RecalculateNodes();
+//	currentInstance->RerenderAllNodes();
+//
+//	currentInstance->RecalculateNodes();
+//	currentInstance->RerenderAllNodes();
+//
+//	currentInstance->needsStaticRedraw = true;
+//}
 
 SableUI::Window::~Window()
 {
-	for (SableUI::Node* node : nodes)
+	for (SableUI::Node* node : m_nodes)
 	{
 		delete node;
 	}
-	nodes.clear();
+	m_nodes.clear();
 
 	DestroyFontManager();
 	DestroyDrawables();
 	DestroyShaders();
 
-	glutDestroyWindow(windowID);
+	glfwDestroyWindow(m_window);
+	glfwTerminate();
 
 	SableUI_Log("Shut down successfully");
 }

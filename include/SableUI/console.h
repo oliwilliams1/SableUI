@@ -47,6 +47,7 @@ namespace SableUI
         static void Log(const char* format, const char* file, int line, const char* func, ...);
         static void Warn(const char* format, const char* file, int line, const char* func, ...);
         static void Error(const char* format, const char* file, int line, const char* func, ...);
+        static void NotifyError(const char* format, const char* file, int line, const char* func, ...);
         static void RuntimeError(const char* format, const char* file, int line, const char* func, ...);
 
     private:
@@ -60,4 +61,5 @@ namespace SableUI
 #define SableUI_Log(format, ...)           SableUI::Console::Log(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define SableUI_Error(format, ...)         SableUI::Console::Error(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define SableUI_Notify_Error(format, ...)  SableUI::Console::NotifyError(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)

@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "SableUI/console.h"
 #include <iostream>
 #include <iomanip>
@@ -149,6 +153,29 @@ void Console::Error(const char* format, const char* file, int line, const char* 
 	ResetColour();
 }
 
+void SableUI::Console::NotifyError(const char* format, const char* file, int line, const char* func, ...)
+{
+	std::string time = GetTime();
+
+	char buffer[1024];
+	va_list args;
+	va_start(args, func);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+
+	std::string finalMessage = time + buffer + " | file: " + std::string(file)
+		+ " line: " + std::to_string(line) + " func: " + std::string(func);
+
+	SetConsoleColour(RED);
+	std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
+	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func });
+	ResetColour();
+
+#ifdef _WIN32
+	MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
+#endif
+}
+
 void Console::RuntimeError(const char* format, const char* file, int line, const char* func, ...)
 {
 	std::string time = GetTime();
@@ -167,7 +194,12 @@ void Console::RuntimeError(const char* format, const char* file, int line, const
 	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func });
 	ResetColour();
 
+#ifdef _WIN32
+	MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
+	exit(1);
+#else
 	throw std::runtime_error(finalMessage);
+#endif
 }
 
 void Console::Clear()

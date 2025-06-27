@@ -8,9 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
-# FreeGLUT
-add_subdirectory("vendor/freeglut" EXCLUDE_FROM_ALL)
-include_directories("vendor/freeglut/include")
+# glfw
+add_subdirectory("vendor/glfw")
 
 # Specify the path to GLEW
 set(GLEW_DIR "${CMAKE_SOURCE_DIR}/vendor/glew")  # Path to GLEW
@@ -50,7 +49,7 @@ add_executable(SableUI ${SABLE_UI_SOURCES})
 target_link_libraries(SableUI PRIVATE 
     ${OPENGL_LIBRARIES}
     glew
-    freeglut_static
+    glfw
     TinyXML2
     freetype
 )

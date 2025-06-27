@@ -2,6 +2,10 @@
 #define SDL_MAIN_HANDLED
 #include <string>
 #include <chrono>
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include "SableUI/node.h"
 #include "SableUI/renderer.h"
 
@@ -28,7 +32,7 @@ namespace SableUI
 
 		bool PollEvents();
 		void Draw();
-		bool needsStaticRedraw = false;
+		bool m_needsStaticRedraw = false;
 		void SetMaxFPS(int fps);
 
 		void PrintNodeTree();
@@ -55,21 +59,26 @@ namespace SableUI
 		void CalculateNodeScales(Node* node = nullptr);
 		void Resize(vec2 pos, Node* node = nullptr);
 
-		std::chrono::milliseconds frameDelay;
-		Node* root = nullptr;
-		bool resizing = false;
-		std::vector<Node*> nodes;
+		std::chrono::milliseconds m_frameDelay;
+		Node* m_root = nullptr;
+		bool m_resizing = false;
+		std::vector<Node*> m_nodes;
 
 		static void MotionCallback(int x, int y);
-		ivec2 mousePos = ivec2(0, 0);
+		ivec2 m_mousePos = ivec2(0, 0);
 
 		static void MouseButtonCallback(int button, int state, int x, int y);
-		MouseButtonState mouseButtonStates;
+		MouseButtonState m_mouseButtonStates;
 
 		static void ReshapeCallback(int width, int height);
-		ivec2 windowSize = ivec2(0, 0);
+		ivec2 m_windowSize = ivec2(0, 0);
 		
-		static Window* currentInstance;
-		int windowID = -1;
+		GLFWwindow* m_window = nullptr;
+		bool m_initialized = false;
+
+		GLFWcursor* m_currentCursor = nullptr;
+		GLFWcursor* m_arrowCursor   = nullptr;
+		GLFWcursor* m_hResizeCursor = nullptr;
+		GLFWcursor* m_vResizeCursor = nullptr;
 	};
 }

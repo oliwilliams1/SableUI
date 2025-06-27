@@ -132,6 +132,16 @@ bool FontManager::Initialize()
 	SableUI_Log("FontManager initialized");
 	isInitialized = true;
 
+	/* check if font files are available */
+	for (const auto& range : font_ranges)
+	{
+		if (!std::filesystem::exists(range.fontPath))
+		{
+			SableUI_Runtime_Error("FontManager: Font file not found: %s", range.fontPath.c_str());
+			return false;
+		}
+	}
+
 	glGenTextures(1, &atlasTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, atlasTextureArray);
 
@@ -382,7 +392,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			characters[c] = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->bitmapLeft, glyph->bitmapTop),
+				SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
 				static_cast<unsigned int>(glyph->advance.x >> 6),
 				static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -433,7 +443,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		characters[c] = Character{
 			atlasCursor,
 			size,
-			SableUI::ivec2(glyph->bitmapLeft, glyph->bitmapTop),
+			SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
 			static_cast<unsigned int>(glyph->advance.x >> 6),
 			static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 		};
