@@ -75,12 +75,14 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 		}
 	}
 
+
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
 	m_windowSize = ivec2(width, height);
 	m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 	glfwMakeContextCurrent(m_window);
+	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
 	/* enable immersive darkmode on windows via api */
@@ -108,8 +110,10 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
 	}
 
+	int refreshRate = GetRefreshRate();
+	if (refreshRate == -1) refreshRate = 60;
 	/* set internal max hz to display refresh rate */
-	SetMaxFPS(60);
+	SetMaxFPS(refreshRate);
 	
 	InitFontManager();
 	InitDrawables();
@@ -127,6 +131,9 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	m_hResizeCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
 	m_vResizeCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
 
+	glfwSetCursorPosCallback(m_window, MousePosCallback);
+	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
+	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 	/* event callbacks */
 	/*glutReshapeFunc(ReshapeCallback);
 	glutMotionFunc(MotionCallback);
@@ -137,6 +144,68 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	m_root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
 	SetupRootNode(m_root, width, height);
 	m_nodes.push_back(m_root);
+}
+
+/* callbacks */
+void SableUI::Window::MousePosCallback(GLFWwindow* window, double x, double y)
+{
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance) 
+	{
+		SableUI_Runtime_Error("Could not get window instance"); 
+		return;
+	}
+
+	instance->m_mousePos = { static_cast<int>(x), static_cast<int>(y) };
+}
+
+void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance)
+	{
+		SableUI_Runtime_Error("Could not get window instance");
+		return;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		instance->m_mouseButtonStates.LMB = MouseState::DOWN;
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		instance->m_mouseButtonStates.LMB = MouseState::UP;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	{
+		instance->m_mouseButtonStates.RMB = MouseState::DOWN;
+	} 
+	else if (action == GLFW_RELEASE)
+	{
+		instance->m_mouseButtonStates.RMB = MouseState::UP;
+	}
+}
+
+void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
+{
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance)
+	{
+		SableUI_Runtime_Error("Could not get window instance");
+		return;
+	}
+
+	instance->m_windowSize = ivec2(width, height);
+	glViewport(0, 0, width, height);
+
+	instance->renderer.renderTarget.Resize(width, height);
+
+	SetupRootNode(instance->m_root, width, height);
+	instance->RecalculateNodes();
+	instance->RerenderAllNodes();
+
+	instance->m_needsStaticRedraw = true;
 }
 
 bool SableUI::Window::PollEvents()
@@ -639,6 +708,36 @@ void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 	}
 
 	CalculateNodePositions();
+}
+
+int SableUI::Window::GetRefreshRate()
+{
+	GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
+	if (!monitor) {
+		int xpos, ypos;
+		glfwGetWindowPos(m_window, &xpos, &ypos);
+		monitor = glfwGetPrimaryMonitor();
+		int monitorCount;
+		GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+		for (int i = 0; i < monitorCount; ++i) {
+			const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+			if (xpos >= mode->width && xpos < mode->width + mode->width &&
+				ypos >= mode->height && ypos < mode->height + mode->height) {
+				monitor = monitors[i];
+				break;
+			}
+		}
+	}
+
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	if (mode)
+	{
+		return mode->refreshRate;
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 void SableUI::Window::CalculateNodePositions(Node* node)

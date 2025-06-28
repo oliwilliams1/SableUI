@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 
 	while (mainWindow.PollEvents())
 	{
-		mainWindow.RerenderAllNodes();
+		mainWindow.Draw();
 	}
 
 	return 0;

@@ -23,8 +23,6 @@ namespace SableUI
 		MouseState RMB = MouseState::UP;
 	};
 
-	void Initialize(int argc, char** argv);
-
 	class Window
 	{
 	public:
@@ -52,7 +50,12 @@ namespace SableUI
 
 		~Window();
 
+		ivec2 m_mousePos = ivec2(0, 0);
+		MouseButtonState m_mouseButtonStates;
+		ivec2 m_windowSize = ivec2(0, 0);
+
 	private:
+		int GetRefreshRate();
 		Renderer renderer;
 
 		void CalculateNodePositions(Node* node = nullptr);
@@ -64,14 +67,9 @@ namespace SableUI
 		bool m_resizing = false;
 		std::vector<Node*> m_nodes;
 
-		static void MotionCallback(int x, int y);
-		ivec2 m_mousePos = ivec2(0, 0);
-
-		static void MouseButtonCallback(int button, int state, int x, int y);
-		MouseButtonState m_mouseButtonStates;
-
-		static void ReshapeCallback(int width, int height);
-		ivec2 m_windowSize = ivec2(0, 0);
+		static void MousePosCallback(GLFWwindow* window, double x, double y);
+		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+		static void ResizeCallback(GLFWwindow* window, int width, int height);
 		
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;
