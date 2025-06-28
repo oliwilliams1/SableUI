@@ -172,7 +172,7 @@ This project uses the following libraries:
 - [glfw](https://github.com/glfw/glfw) For simple cross-platform window management for backends of OpenGL and Vulkan
 - [FreeType](https://www.freetype.org) A library that is litterally the backbone Android, Linux, Chrome, and many more 
   for its complex text rendering capabilities, which SableUI adopts
-- [stb_image](https://github.com/nothings/stb) Loading images of various types without hassle
+- [stb_image + stb_image_resize2](https://github.com/nothings/stb) Image handling (loading & resizing) without hassle
 - [TinyXML2](https://github.com/leethomason/tinyxml2) For handling the custom .smbl xml-based language
 - [glew](https://github.com/nigels-com/glew) GL extention wrangler for modern OpenGL features for the OpenGL backend
 - [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/) Interfacing with a much lower-level modern GPU API, this program uses

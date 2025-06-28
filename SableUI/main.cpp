@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el3, SableUI::ElementType::IMAGE);
 	imageElement->width = 128.0f;
 	imageElement->height = 128.0f;
-	imageElement->SetImage("background.jpg");
+	imageElement->SetImage("assemble25.jpeg");
 
 	SableUI::ElementInfo el4{};
 	el4.name = "element 4";
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 
 	while (mainWindow.PollEvents())
 	{
-		mainWindow.Draw();
+		mainWindow.RerenderAllNodes();
 	}
 
 	return 0;

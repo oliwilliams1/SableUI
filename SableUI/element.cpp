@@ -218,7 +218,7 @@ void SableUI::Element::SetImage(const std::string& path)
 
 	if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
 	{
-		drImage->m_texture.LoadTexture(path);
+		drImage->m_texture.LoadTextureOptimised(path, width - 2.0f * padding, height - 2.0f * padding);
 	}
 	else
 	{

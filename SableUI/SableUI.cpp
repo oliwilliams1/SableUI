@@ -75,9 +75,9 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 		}
 	}
 
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
 	m_windowSize = ivec2(width, height);
 	m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 	glfwMakeContextCurrent(m_window);
@@ -357,6 +357,7 @@ SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& node
 
 			info.type = type;
 			element->SetInfo(info);
+			
 			defaultComponent->AddElement(element);
 			RecalculateNodes();
 			return element;
