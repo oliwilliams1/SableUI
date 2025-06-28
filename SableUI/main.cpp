@@ -4,7 +4,7 @@ int main(int argc, char** argv)
 {
 	SableUI::Window mainWindow("SableUI", 1000, 800);
 
-	mainWindow.OpenUIFile("template.SableUI");
+	mainWindow.OpenUIFile("template.sbml");
 
 	SableUI::ElementInfo el1{};
 	el1.name = "element 1";
@@ -39,9 +39,9 @@ int main(int argc, char** argv)
 	el4.hType = SableUI::RectType::FIXED;
 	el4.padding = 5.0f;
 	el4.centerX = true;
+	el4.width = 128.0f;
+	el4.height = 128.0f;
 	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement1->width = 128.0f;
-	imageElement1->height = 128.0f;
 	imageElement1->SetImage("test.jpg");
 
 	SableUI::ElementInfo el5{};
