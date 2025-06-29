@@ -16,6 +16,7 @@ constexpr int ATLAS_WIDTH = 4096;
 constexpr int ATLAS_HEIGHT = 4096;
 constexpr int ATLAS_PADDING = 1;
 constexpr int MIN_ATLAS_DEPTH = 2;
+constexpr int MAX_ATLAS_GAP = 64;
 constexpr const char* FONT_PREFIX = "f-";
 
 constexpr uint32_t ATLAS_CACHE_FILE_VERSION = 1;
@@ -41,7 +42,8 @@ struct FontRangeHash {
 
 struct Character {
 	Character() = default;
-	Character(SableUI::uvec2 pos, SableUI::uvec2 size, SableUI::ivec2 bearing, unsigned int advance, unsigned int layer)
+	Character(SableUI::uvec2 pos, SableUI::uvec2 size, SableUI::ivec2 bearing,
+		unsigned int advance, unsigned int layer)
 		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
 
 	SableUI::uvec2 pos = SableUI::uvec2(0);
@@ -87,18 +89,16 @@ private:
 	std::vector<Atlas> atlases;
 	std::map<char32_t, Character> characters;
 
+	void FindFontRanges();
+	std::vector<FontRange> cachedFontRanges;
+
 	GLuint atlasTextureArray = 0;
 	int atlasDepth = MIN_ATLAS_DEPTH;
 	SableUI::uvec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 	int currentDepth = 1;
 
 	const std::vector<FontRange> font_ranges = {
-		{ 0x0000,  0x2FFF,  "fonts/NotoSans-Regular.ttf"   },
-		{ 0xFB00,  0xFFFF,  "fonts/NotoSansJP-Regular.ttf" },
-		{ 0x2600,  0xD7A3,  "fonts/NotoSansKR-Regular.ttf" },
-		{ 0x3040,  0x30FF,  "fonts/NotoSansJP-Regular.ttf" },
-		{ 0x4E00,  0x9FFF,  "fonts/NotoSansSC-Regular.ttf" },
-		{ 0x1F300, 0x1FAFF, "fonts/NotoEmoji-Regular.ttf"  }
+		{ 0x0000, 0x00FF, "fonts/NotoSans-Regular.ttf" },
 	};
 
 	FontRangeHash GetAtlasHash(const FontRange& range, int fontSize);
@@ -179,8 +179,10 @@ void FontManager::Shutdown()
 void FontManager::InitFreeType()
 {
 	SableUI_Log("Initializing FreeType");
-	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library.");
+	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library");
 	FreeTypeRunning = true;
+
+	FindFontRanges();
 }
 
 void FontManager::ShutdownFreeType()
@@ -194,11 +196,79 @@ void FontManager::ShutdownFreeType()
 	}
 }
 
+void FontManager::FindFontRanges()
+{
+	if (!FreeTypeRunning) SableUI_Runtime_Error("FreeType is not running");
+	if (cachedFontRanges.size() > 0) return;
+
+	// iterate font/ dir and find .ttf and .otf files
+	std::vector<std::filesystem::path> fontFiles;
+
+	for (const auto& entry : std::filesystem::directory_iterator("fonts/"))
+	{
+		if (entry.path().extension() == ".ttf" || entry.path().extension() == ".otf")
+		{
+			fontFiles.push_back(entry.path());
+		}
+	}
+
+	// iterate through every char to see if font file has it, collect ranges
+	for (const auto& fontFile : fontFiles)
+	{
+		FT_Face face;
+		if (FT_New_Face(ft_library, fontFile.string().c_str(), 0, &face))
+		{
+			SableUI_Warn("Could not load font file: %s", fontFile.string().c_str());
+			continue;
+		}
+
+		std::vector<FontRange> fontRanges;
+		FT_ULong charcode = 0;
+		FT_UInt glyphIndex = 0;
+
+		charcode = FT_Get_First_Char(face, &glyphIndex);
+		if (glyphIndex != 0)
+		{
+			FontRange currentRange = { charcode, charcode, fontFile.string() };
+			FT_ULong previousChar = charcode;
+
+			while (glyphIndex != 0)
+			{
+				charcode = FT_Get_Next_Char(face, charcode, &glyphIndex);
+
+				if (glyphIndex != 0)
+				{
+					if (charcode <= previousChar + MAX_ATLAS_GAP + 1)
+					{
+						currentRange.end = charcode;
+					}
+					else
+					{
+						fontRanges.push_back(currentRange);
+						currentRange = { charcode, charcode, fontFile.string() };
+					}
+					previousChar = charcode;
+				}
+			}
+			fontRanges.push_back(currentRange);
+		}
+
+		FT_Done_Face(face);
+
+		for (const auto& range : fontRanges)
+		{
+			if (range.end - range.start == 0) continue;
+			cachedFontRanges.push_back(range);
+		}
+	}
+}
+
 void FontManager::ResizeTextureArray(int newDepth)
 {
 	if (newDepth <= atlasDepth)
 	{
-		SableUI_Warn("Trying to resize texture array to a smaller or same depth (old: %i, new: %i)", atlasDepth, newDepth);
+		SableUI_Warn("Trying to resize texture array to a smaller or same depth (old: %i, new: %i)",
+			atlasDepth, newDepth);
 		return;
 	}
 
@@ -258,7 +328,8 @@ FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 	return h;
 }
 
-FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, std::map<std::string, FT_Face>& currentLoadedFaces)
+FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, std::map<std::string,
+									FT_Face>& currentLoadedFaces)
 {
 	std::string targetFontPath;
 	for (const auto& range : font_ranges)
@@ -346,7 +417,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 	/* newline - final adjustment for the height calculation */
 	if (currentRowHeight > 0 || tempCursor.x > ATLAS_PADDING)
 	{
-		maxGlobalYReached = std::max(maxGlobalYReached, static_cast<int>(tempCursor.y + currentRowHeight + ATLAS_PADDING));
+		maxGlobalYReached = std::max(maxGlobalYReached, 
+			static_cast<int>(tempCursor.y + currentRowHeight + ATLAS_PADDING));
 	}
 
 	int requiredHeightForPass = maxGlobalYReached - initialAtlasYForRenderPass;
@@ -420,7 +492,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		if ((atlasCursor.y - initialAtlasYForRenderPass + size.y) > requiredHeightForPass)
 		{
-			SableUI_Error("Atlas overflow during glyph rendering after resize attempt (glyph too tall for remaining space in pass)! Char: U+%04X", static_cast<unsigned int>(c));
+			SableUI_Error("Atlas overflow during glyph rendering after resize attempt (glyph too tall for remaining space in pass)! Char: U+%04X",
+				static_cast<unsigned int>(c));
 		}
 
 		int yOffsetInAtlasPixels = (atlasCursor.y - initialAtlasYForRenderPass);
@@ -651,7 +724,8 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 	}
 	catch (const std::exception& e)
 	{
-		SableUI_Error("Error during atlas deserialization from %s: %s", filename.c_str(), e.what());
+		SableUI_Error("Error during atlas deserialization from %s: %s",
+			filename.c_str(), e.what());
 		file.close();
 		return false;
 	}
@@ -684,7 +758,8 @@ void FontManager::LoadAllFontRanges()
 			}
 			else
 			{
-				SableUI_Error("Failed to deserialize atlas from %s. Regenerating...", filename.c_str());
+				SableUI_Error("Failed to deserialize atlas from %s. Regenerating...",
+					filename.c_str());
 				loaded_from_cache = false;
 			}
 		}

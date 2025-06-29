@@ -134,11 +134,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	glfwSetCursorPosCallback(m_window, MousePosCallback);
 	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
-	/* event callbacks */
-	/*glutReshapeFunc(ReshapeCallback);
-	glutMotionFunc(MotionCallback);
-	glutPassiveMotionFunc(MotionCallback);
-	glutMouseFunc(MouseButtonCallback);*/
 
 	/* make root node */
 	m_root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
@@ -917,42 +912,6 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 		CalculateNodeScales(child);
 	}
 }
-
-//void SableUI::Window::MotionCallback(int x, int y)
-//{
-//	currentInstance->mousePos = ivec2(x, y);
-//}
-//
-//void SableUI::Window::MouseButtonCallback(int button, int state, int x, int y)
-//{
-//	switch (button)
-//	{
-//	case GLUT_LEFT_BUTTON:
-//		currentInstance->mouseButtonStates.LMB = static_cast<MouseState>(state); // dir translation
-//		break;
-//
-//	case GLUT_RIGHT_BUTTON:
-//		currentInstance->mouseButtonStates.RMB = static_cast<MouseState>(state); // dir translation
-//		break;
-//	}
-//}
-//
-//void SableUI::Window::ReshapeCallback(int w, int h)
-//{
-//	currentInstance->windowSize = ivec2(w, h);
-//	glViewport(0, 0, w, h);
-//
-//	currentInstance->renderer.renderTarget.Resize(w, h);
-//
-//	SetupRootNode(currentInstance->root, w, h);
-//	currentInstance->RecalculateNodes();
-//	currentInstance->RerenderAllNodes();
-//
-//	currentInstance->RecalculateNodes();
-//	currentInstance->RerenderAllNodes();
-//
-//	currentInstance->needsStaticRedraw = true;
-//}
 
 SableUI::Window::~Window()
 {

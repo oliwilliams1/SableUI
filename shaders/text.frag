@@ -2,9 +2,9 @@
 
 out vec4 FragColor;
 
-in vec2 UV;
+in vec3 UV;
 
-uniform sampler2D uAtlas;
+uniform sampler2DArray uAtlas;
 
 void main()
 {

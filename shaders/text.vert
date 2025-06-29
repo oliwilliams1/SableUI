@@ -1,9 +1,9 @@
 #version 330 core
 
 layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aUV;
+layout (location = 1) in vec3 aUV;
 
-out vec2 UV;
+out vec3 UV;
 
 uniform vec2 uTargetSize;
 uniform vec2 uPos;
