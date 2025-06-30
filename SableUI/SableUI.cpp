@@ -400,9 +400,13 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 	node->component->SetRenderer(&renderer);
 }
 
+static int elementCtr = 0;
 SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type)
 {
-	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return nullptr; }
+	if (info.name.length() == 0)
+	{
+		info.name = std::to_string(elementCtr++);
+	}
 
 	Node* node = FindNodeByName(nodeName);
 
@@ -437,7 +441,10 @@ SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& node
 
 SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type)
 {
-	if (info.name.length() == 0) { SableUI_Error("Element name cannot be empty!"); return nullptr; }
+	if (info.name.length() == 0)
+	{
+		info.name = std::to_string(elementCtr++);
+	}
 
 	Element* parent = renderer.GetElement(elementName);
 

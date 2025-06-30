@@ -45,12 +45,18 @@ int main(int argc, char** argv)
 	imageElement1->SetImage("test.jpg");
 
 	SableUI::ElementInfo el5{};
-	el5.name = "text element";
 	el5.wType = SableUI::RectType::FILL;
 	el5.hType = SableUI::RectType::FIXED;
 	el5.height = 24.0f;
-	SableUI::Element* textElement = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
-	textElement->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar 😔", 24);
+	SableUI::Element* textElement1 = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
+	textElement1->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar 😔", 24);
+
+	SableUI::ElementInfo el6{};
+	el6.wType = SableUI::RectType::FILL;
+	el6.hType = SableUI::RectType::FIXED;
+	el6.height = 24.0f;
+	SableUI::Element* textElement2 = mainWindow.AddElementToComponent("component 3", el6, SableUI::ElementType::TEXT);
+	textElement2->SetText(U"연애소설", 24);
 
 	while (mainWindow.PollEvents())
 	{

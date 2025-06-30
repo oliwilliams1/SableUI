@@ -14,9 +14,9 @@
 
 constexpr int ATLAS_WIDTH = 4096;
 constexpr int ATLAS_HEIGHT = 4096;
-constexpr int ATLAS_PADDING = 1;
-constexpr int MIN_ATLAS_DEPTH = 2;
-constexpr int MAX_ATLAS_GAP = 64;
+constexpr int ATLAS_PADDING = 0;
+constexpr int MIN_ATLAS_DEPTH = 1;
+constexpr int MAX_ATLAS_GAP = 0;
 constexpr const char* FONT_PREFIX = "f-";
 
 constexpr uint32_t ATLAS_CACHE_FILE_VERSION = 1;
@@ -90,6 +90,7 @@ private:
 	std::map<char32_t, Character> characters;
 
 	void FindFontRanges();
+	bool FindFontRangeForChar(char32_t c, FontRange& outRange);
 	std::vector<FontRange> cachedFontRanges;
 
 	GLuint atlasTextureArray = 0;
@@ -97,14 +98,16 @@ private:
 	SableUI::uvec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 	int currentDepth = 1;
 
-	const std::vector<FontRange> font_ranges = {
+	const std::vector<FontRange> fontRanges = {
 		{ 0x0000, 0x00FF, "fonts/NotoSans-Regular.ttf" },
 	};
 
 	FontRangeHash GetAtlasHash(const FontRange& range, int fontSize);
-	FT_Face GetFontForChar(char32_t c, int fontSize, std::map<std::string, FT_Face>& currentLoadedFaces);
+	FT_Face GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
+		std::map<std::string, FT_Face>& currentLoadedFaces);
 	void RenderGlyphs(Atlas& atlas);
 	void LoadAllFontRanges();
+	void LoadFontRange(Atlas& atlas, const FontRange& range);
 
 	void SerializeAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
 		const std::map<char32_t, Character>& chars_to_serialize);
@@ -133,7 +136,7 @@ bool FontManager::Initialize()
 	isInitialized = true;
 
 	/* check if font files are available */
-	for (const auto& range : font_ranges)
+	for (const auto& range : fontRanges)
 	{
 		if (!std::filesystem::exists(range.fontPath))
 		{
@@ -147,8 +150,8 @@ bool FontManager::Initialize()
 
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH);
 
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -156,6 +159,8 @@ bool FontManager::Initialize()
 
 	fontManager = &GetInstance();
 
+	InitFreeType();
+	FindFontRanges();
 	LoadAllFontRanges();
 	return true;
 }
@@ -181,8 +186,6 @@ void FontManager::InitFreeType()
 	SableUI_Log("Initializing FreeType");
 	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library");
 	FreeTypeRunning = true;
-
-	FindFontRanges();
 }
 
 void FontManager::ShutdownFreeType()
@@ -263,6 +266,19 @@ void FontManager::FindFontRanges()
 	}
 }
 
+bool FontManager::FindFontRangeForChar(char32_t c, FontRange& outRange)
+{
+	for (const auto& range : cachedFontRanges)
+	{
+		if (c >= range.start && c <= range.end)
+		{
+			outRange = range;
+			return true;
+		}
+	}
+	return false;
+}
+
 void FontManager::ResizeTextureArray(int newDepth)
 {
 	if (newDepth <= atlasDepth)
@@ -328,37 +344,31 @@ FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 	return h;
 }
 
-FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, std::map<std::string,
-									FT_Face>& currentLoadedFaces)
+FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
+	std::map<std::string, FT_Face>& currentLoadedFaces)
 {
-	std::string targetFontPath;
-	for (const auto& range : font_ranges)
+	if (fontPathForAtlas.empty())
 	{
-		if (c >= range.start && c <= range.end)
-		{
-			targetFontPath = range.fontPath;
-			break;
-		}
+		SableUI_Error("GetFontForChar: Empty font path provided for char U+%04X", static_cast<unsigned int>(c));
+		return nullptr;
 	}
 
-	if (targetFontPath.empty()) return nullptr;
-
-	auto it = currentLoadedFaces.find(targetFontPath);
+	auto it = currentLoadedFaces.find(fontPathForAtlas);
 	if (it != currentLoadedFaces.end())
 	{
 		return it->second;
 	}
 
 	FT_Face face;
-	if (FT_New_Face(ft_library, targetFontPath.c_str(), 0, &face))
+	if (FT_New_Face(ft_library, fontPathForAtlas.c_str(), 0, &face))
 	{
-		SableUI_Error("Could not load font: %s", targetFontPath.c_str());
+		SableUI_Error("Could not load font: %s for char U+%04X", fontPathForAtlas.c_str(), static_cast<unsigned int>(c));
 		return nullptr;
 	}
-	
+
 	FT_Set_Pixel_Sizes(face, 0, fontSize);
-	currentLoadedFaces[targetFontPath] = face;
-	SableUI_Log("Loaded font: %s", targetFontPath.c_str());
+	currentLoadedFaces[fontPathForAtlas] = face;
+	SableUI_Log("Loaded font: %s for rendering atlas", fontPathForAtlas.c_str());
 	return face;
 }
 
@@ -381,7 +391,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
-		FT_Face face = GetFontForChar(c, atlas.fontSize, facesForCurrentRender);
+		FT_Face face = GetFontForChar(c, atlas.fontSize, atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
@@ -417,7 +427,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 	/* newline - final adjustment for the height calculation */
 	if (currentRowHeight > 0 || tempCursor.x > ATLAS_PADDING)
 	{
-		maxGlobalYReached = std::max(maxGlobalYReached, 
+		maxGlobalYReached = std::max(maxGlobalYReached,
 			static_cast<int>(tempCursor.y + currentRowHeight + ATLAS_PADDING));
 	}
 
@@ -445,12 +455,12 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 	atlasCursor.x = ATLAS_PADDING;
 	atlasCursor.y = initialAtlasYForRenderPass;
 
-	std::map<char32_t, Character> chars_for_serialization;
+	std::map<char32_t, Character> charsForSerialization;
 
 	/* second pass, render glyphs and fill the cpu-side buffer */
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
-		FT_Face face = GetFontForChar(c, atlas.fontSize, facesForCurrentRender);
+		FT_Face face = GetFontForChar(c, atlas.fontSize, atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
@@ -468,7 +478,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 				static_cast<unsigned int>(glyph->advance.x >> 6),
 				static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 			};
-			chars_for_serialization[c] = characters[c];
+			charsForSerialization[c] = characters[c];
 			continue;
 		}
 
@@ -506,7 +516,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 				if (pixelIndexInAtlasPixels >= 0 && pixelIndexInAtlasPixels < ATLAS_WIDTH * requiredHeightForPass)
 				{
-					if (glyph->bitmap.buffer) {
+					if (glyph->bitmap.buffer)
+					{
 						atlasPixels[pixelIndexInAtlasPixels] = glyph->bitmap.buffer[y * size.x + x];
 					}
 				}
@@ -520,14 +531,14 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			static_cast<unsigned int>(glyph->advance.x >> 6),
 			static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 		};
-		chars_for_serialization[c] = characters[c];
+		charsForSerialization[c] = characters[c];
 
 		atlasCursor.x += size.x + ATLAS_PADDING;
 	}
 
 	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels);
 
-	SerializeAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass, chars_for_serialization);
+	SerializeAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass, charsForSerialization);
 
 	delete[] atlasPixels;
 
@@ -641,11 +652,12 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 	try
 	{
 		/* header */
-		uint32_t file_version{};
-		file.read(reinterpret_cast<char*>(&file_version), sizeof(uint32_t));
-		if (file_version != ATLAS_CACHE_FILE_VERSION) {
+		uint32_t fileVersion{};
+		file.read(reinterpret_cast<char*>(&fileVersion), sizeof(uint32_t));
+		if (fileVersion != ATLAS_CACHE_FILE_VERSION)
+		{
 			SableUI_Error("Atlas cache file version mismatch! File: %s. Expected %u, got %u. Regenerating.",
-				filename.c_str(), ATLAS_CACHE_FILE_VERSION, file_version);
+				filename.c_str(), ATLAS_CACHE_FILE_VERSION, fileVersion);
 			file.close();
 			return false;
 		}
@@ -664,7 +676,7 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 
 		if (cachedWidth != ATLAS_WIDTH)
 		{
-			SableUI_Error("Cached atlas width mismatch for %s. Expected %i, got %i. Regenerating.",
+			SableUI_Warn("Cached atlas width mismatch for %s. Expected %i, got %i. Regenerating.",
 				filename.c_str(), ATLAS_WIDTH, cachedWidth);
 			file.close();
 			return false;
@@ -731,6 +743,36 @@ bool FontManager::DeserializeAtlas(const std::string& filename, Atlas& out_atlas
 	}
 }
 
+void FontManager::LoadFontRange(Atlas& atlas, const FontRange& range)
+{
+	bool loadedFromCache = false;
+	FontRangeHash hash = GetAtlasHash(range, atlas.fontSize);
+	std::string directory = "fonts/cache/";
+	std::string filename = directory + FONT_PREFIX + hash.ToString() + ".sbatlas";
+
+	if (std::filesystem::exists(filename))
+	{
+		if (DeserializeAtlas(filename, atlas))
+		{
+			loadedFromCache = true;
+		}
+		else
+		{
+			SableUI_Warn("Failed to deserialize atlas from %s. Regenerating...", 
+				filename.c_str());
+			loadedFromCache = false;
+		}
+	}
+
+	if (!loadedFromCache)
+	{
+		atlas.range = range;
+		RenderGlyphs(atlas);
+	}
+
+	atlases.emplace_back(atlas);
+}
+
 void FontManager::LoadAllFontRanges()
 {
 	InitFreeType();
@@ -739,43 +781,15 @@ void FontManager::LoadAllFontRanges()
 	currentDepth = 0;
 	characters.clear();
 
-
-	for (const auto& range : font_ranges)
+	for (const auto& range : fontRanges)
 	{
 		Atlas currentAtlas{};
-		bool loaded_from_cache = false;
 		currentAtlas.fontSize = 24;
 
-		FontRangeHash hash = GetAtlasHash(range, currentAtlas.fontSize);
-		std::string directory = "fonts/cache/";
-		std::string filename = directory + FONT_PREFIX + hash.ToString() + ".sbatlas";
-
-		if (std::filesystem::exists(filename))
-		{
-			if (DeserializeAtlas(filename, currentAtlas))
-			{
-				loaded_from_cache = true;
-			}
-			else
-			{
-				SableUI_Error("Failed to deserialize atlas from %s. Regenerating...",
-					filename.c_str());
-				loaded_from_cache = false;
-			}
-		}
-
-		if (!loaded_from_cache) {
-			currentAtlas.range = range;
-			RenderGlyphs(currentAtlas);
-		}
-
-		atlases.emplace_back(currentAtlas);
+		LoadFontRange(currentAtlas, range);
 	}
 
-	SableUI_Log("Loaded %zu font atlases.", atlases.size());
-
-	/* cleanup freetype resources */
-	ShutdownFreeType();
+	SableUI_Log("Loaded %zu atlases", atlases.size());
 }
 
 struct Vertex
@@ -786,28 +800,63 @@ struct Vertex
 
 void FontManager::GetDrawInfo(SableUI::Text* text)
 {
-	std::vector<Character> chars_to_draw;
-
-	for (const char32_t& c : text->m_content)
-	{
-		auto it = characters.find(c);
-		if (it != characters.end())
-		{
-			chars_to_draw.emplace_back(it->second);
-		}
-		else {
-			SableUI_Warn("Could not find character U+%04X in atlas. Using empty glyph.", c);
-			chars_to_draw.emplace_back(Character{});
-		}
-	}
-
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
 	SableUI::vec2 cursor = SableUI::vec2(0.0f, 0.0f);
-	for (size_t i = 0; i < chars_to_draw.size(); i++)
+	for (size_t i = 0; i < text->m_content.size(); i++)
 	{
-		const Character& char_data = chars_to_draw[i];
+		const char32_t& c = text->m_content[i];
+		Character char_data;
+
+		auto it = characters.find(c);
+		if (it != characters.end())
+		{
+			char_data = it->second;
+		}
+		else
+		{
+			FontRange targetRange;
+			if (FindFontRangeForChar(c, targetRange))
+			{
+				bool atlasAlreadyLoaded = false;
+				for (const auto& existingAtlas : atlases)
+				{
+					if (existingAtlas.range.start == targetRange.start &&
+						existingAtlas.range.end == targetRange.end &&
+						existingAtlas.range.fontPath == targetRange.fontPath &&
+						existingAtlas.fontSize == text->m_fontSize)
+					{
+						atlasAlreadyLoaded = true;
+						break;
+					}
+				}
+
+				if (!atlasAlreadyLoaded)
+				{
+					Atlas newAtlas{};
+					newAtlas.fontSize = text->m_fontSize;
+					newAtlas.range = targetRange;
+					LoadFontRange(newAtlas, targetRange);
+				}
+
+				it = characters.find(c);
+				if (it != characters.end())
+				{
+					char_data = it->second;
+				}
+				else
+				{
+					SableUI_Warn("Could not find character U+%04X even after attempting to load its range. Using empty glyph.", c);
+					char_data = Character{};
+				}
+			}
+			else
+			{
+				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph.", c);
+				char_data = Character{};
+			}
+		}
 
 		float x = cursor.x + char_data.bearing.x;
 		float y = cursor.y - char_data.bearing.y;
@@ -821,12 +870,12 @@ void FontManager::GetDrawInfo(SableUI::Text* text)
 		float uTopRight = uBottomLeft + (w / ATLAS_WIDTH);
 		float vTopRight = vBottomLeft + (h / ATLAS_HEIGHT);
 
-		float layerIndex = char_data.layer;
+		float layerIndex = static_cast<float>(char_data.layer);
 
-		vertices.push_back(Vertex{ {x,     y},     { uBottomLeft, vBottomLeft, layerIndex } });
-		vertices.push_back(Vertex{ {x + w, y},     { uTopRight,   vBottomLeft, layerIndex } });
-		vertices.push_back(Vertex{ {x + w, y + h}, { uTopRight,   vTopRight,   layerIndex } });
-		vertices.push_back(Vertex{ {x,     y + h}, { uBottomLeft, vTopRight,   layerIndex } });
+		vertices.push_back(Vertex{ {x, y}, {uBottomLeft, vBottomLeft, layerIndex} });
+		vertices.push_back(Vertex{ {x + w, y}, {uTopRight, vBottomLeft, layerIndex} });
+		vertices.push_back(Vertex{ {x + w, y + h}, {uTopRight, vTopRight, layerIndex} });
+		vertices.push_back(Vertex{ {x, y + h}, {uBottomLeft, vTopRight, layerIndex} });
 
 		unsigned int offset = static_cast<unsigned int>(i) * 4;
 		indices.push_back(offset);
@@ -839,6 +888,7 @@ void FontManager::GetDrawInfo(SableUI::Text* text)
 		cursor.x += char_data.advance;
 	}
 
+	// Bind and upload vertex/index data
 	glBindVertexArray(text->m_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, text->m_VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
