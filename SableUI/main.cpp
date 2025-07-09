@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el3, SableUI::ElementType::IMAGE);
 	imageElement->width = 128.0f;
 	imageElement->height = 128.0f;
-	imageElement->SetImage("assemble25.jpeg");
+	imageElement->SetImage("img.jpg");
 
 	SableUI::ElementInfo el4{};
 	el4.name = "element 4";
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	el4.width = 128.0f;
 	el4.height = 128.0f;
 	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement1->SetImage("test.jpg");
+	imageElement1->SetImage("bomb.png");
 
 	SableUI::ElementInfo el5{};
 	el5.wType = SableUI::RectType::FILL;
@@ -50,13 +50,6 @@ int main(int argc, char** argv)
 	el5.height = 24.0f;
 	SableUI::Element* textElement1 = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
 	textElement1->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar 😔", 24);
-
-	SableUI::ElementInfo el6{};
-	el6.wType = SableUI::RectType::FILL;
-	el6.hType = SableUI::RectType::FIXED;
-	el6.height = 24.0f;
-	SableUI::Element* textElement2 = mainWindow.AddElementToComponent("component 3", el6, SableUI::ElementType::TEXT);
-	textElement2->SetText(U"연애소설", 24);
 
 	while (mainWindow.PollEvents())
 	{

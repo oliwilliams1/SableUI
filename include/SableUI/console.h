@@ -5,6 +5,10 @@
 #include <cstdarg>
 #include <cstdio>
 
+#ifndef SABLEUI_SUBSYSTEM
+#define SABLEUI_SUBSYSTEM "SableUI"
+#endif
+
 namespace SableUI
 {
     enum LogColourANSI
@@ -29,6 +33,7 @@ namespace SableUI
         std::string file;
         int line;
         std::string func;
+        std::string subsystem;
     };
 
     class Console
@@ -44,11 +49,11 @@ namespace SableUI
 
         static void Clear();
 
-        static void Log(const char* format, const char* file, int line, const char* func, ...);
-        static void Warn(const char* format, const char* file, int line, const char* func, ...);
-        static void Error(const char* format, const char* file, int line, const char* func, ...);
-        static void NotifyError(const char* format, const char* file, int line, const char* func, ...);
-        static void RuntimeError(const char* format, const char* file, int line, const char* func, ...);
+        static void Log(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
+        static void Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
+        static void Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
+        static void NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
+        static void RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
 
     private:
         Console();
@@ -58,8 +63,8 @@ namespace SableUI
     };
 }
 
-#define SableUI_Log(format, ...)           SableUI::Console::Log(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Error(format, ...)         SableUI::Console::Error(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Notify_Error(format, ...)  SableUI::Console::NotifyError(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define SableUI_Log(format, ...)           SableUI::Console::Log(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Error(format, ...)         SableUI::Console::Error(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Notify_Error(format, ...)  SableUI::Console::NotifyError(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)

@@ -94,12 +94,16 @@ static std::string GetTime()
 
 static std::string GetFileLine(const char* file, int line)
 {
+#ifdef _DEBUG
 	std::filesystem::path p(file);
 	
 	return p.filename().string() + ':' + std::to_string(line) + ' ';
+#else
+	return "";
+#endif
 }
 
-void Console::Log(const char* format, const char* file, int line, const char* func, ...)
+void Console::Log(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
 	std::string time = GetTime();
 
@@ -109,15 +113,15 @@ void Console::Log(const char* format, const char* file, int line, const char* fu
 	vsnprintf(buffer, sizeof(buffer), format, args);
 	va_end(args);
 
-	std::string finalMessage = time + GetFileLine(file, line) + buffer;
+	std::string finalMessage = '[' + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
 	SetConsoleColour(GREEN);
 	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_LOG, finalMessage, file, line, func });
+	m_Logs.push_back({ LogType::SBUI_LOG, finalMessage, file, line, func, subsystem });
 	ResetColour();
 }
 
-void Console::Warn(const char* format, const char* file, int line, const char* func, ...)
+void Console::Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
 	std::string time = GetTime();
 
@@ -127,15 +131,15 @@ void Console::Warn(const char* format, const char* file, int line, const char* f
 	vsnprintf(buffer, sizeof(buffer), format, args);
 	va_end(args);
 
-	std::string finalMessage = time + GetFileLine(file, line) + buffer;
+	std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
 	SetConsoleColour(YELLOW);
 	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_WARNING, finalMessage, file, line, func });
+	m_Logs.push_back({ LogType::SBUI_WARNING, finalMessage, file, line, func, subsystem });
 	ResetColour();
 }
 
-void Console::Error(const char* format, const char* file, int line, const char* func, ...)
+void Console::Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
 	std::string time = GetTime();
 
@@ -145,15 +149,15 @@ void Console::Error(const char* format, const char* file, int line, const char* 
 	vsnprintf(buffer, sizeof(buffer), format, args);
 	va_end(args);
 
-	std::string finalMessage = time + GetFileLine(file, line) + buffer;
+	std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
 	SetConsoleColour(RED);
 	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func });
+	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
 	ResetColour();
 }
 
-void SableUI::Console::NotifyError(const char* format, const char* file, int line, const char* func, ...)
+void SableUI::Console::NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
 	std::string time = GetTime();
 
@@ -168,7 +172,7 @@ void SableUI::Console::NotifyError(const char* format, const char* file, int lin
 
 	SetConsoleColour(RED);
 	std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func });
+	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
 	ResetColour();
 
 #ifdef _WIN32
@@ -176,7 +180,7 @@ void SableUI::Console::NotifyError(const char* format, const char* file, int lin
 #endif
 }
 
-void Console::RuntimeError(const char* format, const char* file, int line, const char* func, ...)
+void Console::RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
 	std::string time = GetTime();
 
@@ -191,7 +195,7 @@ void Console::RuntimeError(const char* format, const char* file, int line, const
 
 	SetConsoleColour(RED);
 	std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func });
+	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
 	ResetColour();
 
 #ifdef _WIN32

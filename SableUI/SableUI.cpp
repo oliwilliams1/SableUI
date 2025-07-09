@@ -8,7 +8,6 @@
 #include <stack>
 #include <chrono>
 #include <thread>
-
 #include <tinyxml2.h>
 
 #ifdef _WIN32

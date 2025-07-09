@@ -38,6 +38,10 @@ file(GLOB_RECURSE TINYXML2_SOURCES "vendor/TinyXML2/*.cpp" "vendor/TinyXML2/*.h"
 add_library(TinyXML2 STATIC ${TINYXML2_SOURCES})
 target_include_directories(TinyXML2 PUBLIC "vendor/TinyXML2")
 
+# utf8proc
+add_subdirectory("vendor/utf8proc")
+
+
 # SableUI
 include_directories("include")
 include_directories("SableUI")
@@ -52,6 +56,7 @@ target_link_libraries(SableUI PRIVATE
     glfw
     TinyXML2
     freetype
+    utf8proc
 )
 
-target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS} "vendor/SDL/include")
+target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS})
