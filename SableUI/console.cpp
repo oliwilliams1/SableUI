@@ -105,104 +105,104 @@ static std::string GetFileLine(const char* file, int line)
 
 void Console::Log(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
-	std::string time = GetTime();
+    std::string time = GetTime();
 
-	char buffer[1024];
-	va_list args;
-	va_start(args, func);
-	vsnprintf(buffer, sizeof(buffer), format, args);
-	va_end(args);
+    char buffer[1024];
+    va_list args;
+    va_start(args, subsystem);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
 
-	std::string finalMessage = '[' + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
+    std::string finalMessage = '[' + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
-	SetConsoleColour(GREEN);
-	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_LOG, finalMessage, file, line, func, subsystem });
-	ResetColour();
+    SetConsoleColour(GREEN);
+    std::cout << finalMessage << std::endl;
+    m_Logs.push_back({ LogType::SBUI_LOG, finalMessage, file, line, func, subsystem });
+    ResetColour();
 }
 
 void Console::Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
-	std::string time = GetTime();
+    std::string time = GetTime();
 
-	char buffer[1024];
-	va_list args;
-	va_start(args, func);
-	vsnprintf(buffer, sizeof(buffer), format, args);
-	va_end(args);
+    char buffer[1024];
+    va_list args;
+    va_start(args, subsystem);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
 
-	std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
+    std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
-	SetConsoleColour(YELLOW);
-	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_WARNING, finalMessage, file, line, func, subsystem });
-	ResetColour();
+    SetConsoleColour(YELLOW);
+    std::cout << finalMessage << std::endl;
+    m_Logs.push_back({ LogType::SBUI_WARNING, finalMessage, file, line, func, subsystem });
+    ResetColour();
 }
 
 void Console::Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
-	std::string time = GetTime();
+    std::string time = GetTime();
 
-	char buffer[1024];
-	va_list args;
-	va_start(args, func);
-	vsnprintf(buffer, sizeof(buffer), format, args);
-	va_end(args);
+    char buffer[1024];
+    va_list args;
+    va_start(args, subsystem);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
 
-	std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
+    std::string finalMessage = "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
-	SetConsoleColour(RED);
-	std::cout << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
-	ResetColour();
+    SetConsoleColour(RED);
+    std::cout << finalMessage << std::endl;
+    m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
+    ResetColour();
 }
 
-void SableUI::Console::NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void Console::NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
-	std::string time = GetTime();
+    std::string time = GetTime();
 
-	char buffer[1024];
-	va_list args;
-	va_start(args, func);
-	vsnprintf(buffer, sizeof(buffer), format, args);
-	va_end(args);
+    char buffer[1024];
+    va_list args;
+    va_start(args, subsystem);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
 
-	std::string finalMessage = time + buffer + " | file: " + std::string(file)
-		+ " line: " + std::to_string(line) + " func: " + std::string(func);
+    std::string finalMessage = time + buffer + " | file: " + std::string(file)
+        + " line: " + std::to_string(line) + " func: " + std::string(func);
 
-	SetConsoleColour(RED);
-	std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
-	ResetColour();
+    SetConsoleColour(RED);
+    std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
+    m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
+    ResetColour();
 
 #ifdef _WIN32
-	MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
+    MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
 #endif
 }
 
 void Console::RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
-	std::string time = GetTime();
+    std::string time = GetTime();
 
-	char buffer[1024];
-	va_list args;
-	va_start(args, func);
-	vsnprintf(buffer, sizeof(buffer), format, args);
-	va_end(args);
+    char buffer[1024];
+    va_list args;
+    va_start(args, subsystem);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
 
-	std::string finalMessage = time + buffer + " | file: " + std::string(file)
-		+ " line: " + std::to_string(line) + " func: " + std::string(func);
+    std::string finalMessage = time + buffer + " | file: " + std::string(file)
+        + " line: " + std::to_string(line) + " func: " + std::string(func);
 
-	SetConsoleColour(RED);
-	std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
-	m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
-	ResetColour();
+    SetConsoleColour(RED);
+    std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
+    m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
+    ResetColour();
 
 #ifdef _WIN32
-	MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
-	exit(1);
+    MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
+    exit(1);
 #else
-	throw std::runtime_error(finalMessage);
+    throw std::runtime_error(finalMessage);
 #endif
 }
 

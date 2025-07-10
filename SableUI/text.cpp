@@ -53,15 +53,15 @@ struct FontRangeHash {
 
 struct Character {
 	Character() = default;
-	Character(SableUI::uvec2 pos, SableUI::uvec2 size, SableUI::ivec2 bearing,
+	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::u16vec2 bearing,
 		unsigned int advance, unsigned int layer)
 		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
 
-	SableUI::uvec2 pos = SableUI::uvec2(0);
-	SableUI::uvec2 size = SableUI::uvec2(0);
-	SableUI::ivec2 bearing = SableUI::ivec2(0);
-	unsigned int advance = 0;
-	unsigned int layer = 0;
+	SableUI::u16vec2 pos = SableUI::u16vec2(0);
+	SableUI::u16vec2 size = SableUI::u16vec2(0);
+	SableUI::u16vec2 bearing = SableUI::u16vec2(0);
+	uint16_t advance = 0;
+	uint16_t layer = 0;
 };
 
 struct Atlas {
@@ -88,6 +88,8 @@ public:
 	void ResizeTextureArray(int newDepth);
 	GLuint GetAtlasTexture() const { return atlasTextureArray; }
 
+	uint16_t CalculateCharWidth(char32_t c, int fontSize);
+
 private:
 	FontManager() : isInitialized(false) {}
 
@@ -106,7 +108,7 @@ private:
 
 	GLuint atlasTextureArray = 0;
 	int atlasDepth = MIN_ATLAS_DEPTH;
-	SableUI::uvec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
+	SableUI::u16vec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 
 	std::set<std::pair<FontRange, int>> loadedAtlasKeys;
 
@@ -345,6 +347,11 @@ void FontManager::ResizeTextureArray(int newDepth)
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
+uint16_t FontManager::CalculateCharWidth(char32_t c, int fontSize)
+{
+	return characters[c].size.x;
+}
+
 FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 {
 	// inspired from djb2 hash
@@ -415,8 +422,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 	int initialAtlasYForRenderPass = atlasCursor.y;
 
 	/* first pass, get bounds of all glyphs to calculate height of atlas */
-	SableUI::uvec2 tempCursor = { ATLAS_PADDING, atlasCursor.y };
-	unsigned int currentRowHeight = 0;
+	SableUI::u16vec2 tempCursor = { (uint16_t)ATLAS_PADDING, (uint16_t)atlasCursor.y };
+	uint16_t currentRowHeight = 0;
 	int maxGlobalYReached = atlasCursor.y;
 
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
@@ -428,7 +435,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_BITMAP_METRICS_ONLY)) continue;
 
 		FT_GlyphSlot glyph = face->glyph;
-		SableUI::uvec2 size = { glyph->bitmap.width, glyph->bitmap.rows };
+		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width, (uint16_t)glyph->bitmap.rows };
 
 		if (size.x == 0 || size.y == 0)
 		{
@@ -505,14 +512,14 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER)) continue;
 
 		FT_GlyphSlot glyph = face->glyph;
-		SableUI::uvec2 size = { glyph->bitmap.width, glyph->bitmap.rows };
+		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width,(uint16_t)glyph->bitmap.rows };
 
 		if (size.x == 0 || size.y == 0)
 		{
 			Character emptyChar = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+				SableUI::u16vec2(glyph->bitmap_left, glyph->bitmap_top),
 				static_cast<unsigned int>(glyph->advance.x >> 6),
 				static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -552,7 +559,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			characters[c] = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+				SableUI::u16vec2(glyph->bitmap_left, glyph->bitmap_top),
 				static_cast<unsigned int>(glyph->advance.x >> 6),
 				static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -580,7 +587,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		characters[c] = Character{
 			atlasCursor,
 			size,
-			SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+			SableUI::u16vec2(glyph->bitmap_left, glyph->bitmap_top),
 			static_cast<unsigned int>(glyph->advance.x >> 6),
 			static_cast<unsigned int>(atlasCursor.y / ATLAS_HEIGHT)
 		};
@@ -676,14 +683,14 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 		char32_t char_code = pair.first;
 		const Character& character = pair.second;
 		file.write(reinterpret_cast<const char*>(&char_code), sizeof(char32_t));
-		file.write(reinterpret_cast<const char*>(&character.pos.x), sizeof(unsigned int));
-		file.write(reinterpret_cast<const char*>(&character.pos.y), sizeof(unsigned int));
-		file.write(reinterpret_cast<const char*>(&character.size.x), sizeof(unsigned int));
-		file.write(reinterpret_cast<const char*>(&character.size.y), sizeof(unsigned int));
-		file.write(reinterpret_cast<const char*>(&character.bearing.x), sizeof(int));
-		file.write(reinterpret_cast<const char*>(&character.bearing.y), sizeof(int));
-		file.write(reinterpret_cast<const char*>(&character.advance), sizeof(unsigned int));
-		file.write(reinterpret_cast<const char*>(&character.layer), sizeof(unsigned int));
+		file.write(reinterpret_cast<const char*>(&character.pos.x), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.pos.y), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.size.x), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.size.y), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.bearing.x), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.bearing.y), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.advance), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.layer), sizeof(uint16_t));
 	}
 
 	file.close();
@@ -767,14 +774,14 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& out_atlas
 			char32_t charCode{};
 			Character character{};
 			file.read(reinterpret_cast<char*>(&charCode), sizeof(char32_t));
-			file.read(reinterpret_cast<char*>(&character.pos.x), sizeof(unsigned int));
-			file.read(reinterpret_cast<char*>(&character.pos.y), sizeof(unsigned int));
-			file.read(reinterpret_cast<char*>(&character.size.x), sizeof(unsigned int));
-			file.read(reinterpret_cast<char*>(&character.size.y), sizeof(unsigned int));
-			file.read(reinterpret_cast<char*>(&character.bearing.x), sizeof(int));
-			file.read(reinterpret_cast<char*>(&character.bearing.y), sizeof(int));
-			file.read(reinterpret_cast<char*>(&character.advance), sizeof(unsigned int));
-			file.read(reinterpret_cast<char*>(&character.layer), sizeof(unsigned int));
+			file.read(reinterpret_cast<char*>(&character.pos.x), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.pos.y), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.size.x), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.size.y), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.bearing.x), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.bearing.y), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.advance), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.layer), sizeof(uint16_t));
 
 			characters[charCode] = character;
 		}

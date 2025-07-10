@@ -74,6 +74,39 @@ namespace SableUI
         }
     };
 
+    struct u16vec2
+    {
+        uint16_t x;
+        uint16_t y;
+
+        u16vec2() = default;
+        u16vec2(uint16_t x, uint16_t y) : x(x), y(y) {}
+        u16vec2(int x, int y) : x(x), y(y) {}
+        u16vec2(uint16_t x) : x(x), y(x) {}
+
+        u16vec2 operator+(const u16vec2& other) const {
+            return { x + other.x, y + other.y };
+        }
+
+        u16vec2 operator-(const u16vec2& other) const {
+            return { x - other.x, y - other.y };
+        }
+
+        u16vec2 operator*(uint16_t scalar) const {
+            return { x * scalar, y * scalar };
+        }
+
+        u16vec2 operator/(uint16_t scalar) const {
+            if (scalar != 0) {
+                return { x / scalar, y / scalar };
+            }
+            else {
+                printf("Error: Division by zero error\n");
+                return { 0, 0 };
+            }
+        }
+    };
+
     struct vec2
     {
         float x;
