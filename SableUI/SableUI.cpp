@@ -1,5 +1,6 @@
 #include "SableUI/SableUI.h"
 #include "SableUI/shader.h"
+#include "SableUI/text.h"
 
 #include <cstdio>
 #include <iostream>
@@ -73,7 +74,6 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 			SableUI_Runtime_Error("Could not initialize GLFW");
 		}
 	}
-
 
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
@@ -714,20 +714,31 @@ void SableUI::Window::Resize(SableUI::vec2 pos, SableUI::Node* node)
 int SableUI::Window::GetRefreshRate()
 {
 	GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
-	if (!monitor) {
+	if (!monitor)
+	{
 		int xpos, ypos;
 		glfwGetWindowPos(m_window, &xpos, &ypos);
 		monitor = glfwGetPrimaryMonitor();
 		int monitorCount;
 		GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-		for (int i = 0; i < monitorCount; ++i) {
+
+		for (int i = 0; i < monitorCount; i++)
+		{
 			const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
 			if (xpos >= mode->width && xpos < mode->width + mode->width &&
-				ypos >= mode->height && ypos < mode->height + mode->height) {
+				ypos >= mode->height && ypos < mode->height + mode->height)
+			{
 				monitor = monitors[i];
 				break;
 			}
 		}
+
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		int widthMM, heightMM;
+		glfwGetMonitorPhysicalSize(monitor, &widthMM, &heightMM);
+
+		windowDPI.x = (mode->width / static_cast<float>(widthMM)) * 25.4f;
+		windowDPI.y = (mode->height / static_cast<float>(heightMM)) * 25.4f;
 	}
 
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);

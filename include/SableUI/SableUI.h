@@ -7,7 +7,6 @@
 #include <GLFW/glfw3.h>
 
 #include "SableUI/node.h"
-#include "SableUI/renderer.h"
 
 namespace SableUI
 {
@@ -73,6 +72,7 @@ namespace SableUI
 		
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;
+		vec2 windowDPI = vec2(96.0f, 96.0f);
 
 		GLFWcursor* m_currentCursor = nullptr;
 		GLFWcursor* m_arrowCursor   = nullptr;

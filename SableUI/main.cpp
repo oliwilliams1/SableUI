@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 	el5.hType = SableUI::RectType::FIXED;
 	el5.height = 24.0f;
 	SableUI::Element* textElement1 = mainWindow.AddElementToComponent("component 3", el5, SableUI::ElementType::TEXT);
-	textElement1->SetText(U"Hello 123 | (#♥) | (＜★) | 이브, 프시케 Soñar 😔", 24);
+	textElement1->SetText(U"The quick brown fox jumped over the lazy dog 123 | (#♥) | (＜★) | 이브 프시케 カタカナ 漢字 ひらがな พยัญชนะ 汉字 स्वर äöüçñæ 生而平等 ¿ 😔", 11.5f);
 
 	while (mainWindow.PollEvents())
 	{

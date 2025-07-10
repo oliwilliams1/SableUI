@@ -49,7 +49,7 @@ namespace SableUI
         void UpdateChildren();
         void AddChild(Element* child);
         void SetImage(const std::string& path);
-        void SetText(const std::u32string& text, int fontSize = 12);
+        void SetText(const std::u32string& text, float fontSize = 12.0f);
 
         /* User-level settings for rect */
         float xOffset = 0;

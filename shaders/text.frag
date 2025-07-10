@@ -1,6 +1,6 @@
 #version 330 core
 
-out vec4 FragColor;
+out vec4 FragColour;
 
 in vec3 UV;
 
@@ -8,5 +8,7 @@ uniform sampler2DArray uAtlas;
 
 void main()
 {
-	FragColor = vec4(texture(uAtlas, UV).r);
+	vec3 colour = texture(uAtlas, UV).rgb;
+	
+	FragColour = vec4(colour, 1.0);
 }
