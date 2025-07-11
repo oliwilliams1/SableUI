@@ -2,6 +2,7 @@
 #include <map>
 #include <algorithm>
 #include <fstream>
+#include <cwctype>
 #include <sstream>
 #include <vector>
 #include <memory>
@@ -79,7 +80,7 @@ struct Atlas {
 
 struct char_t {
 	char32_t c = 0;
-	uint32_t fontSize = 0;
+	int fontSize = 0;
 
 	bool operator<(const char_t& other) const {
 		if (c != other.c) return c < other.c;
@@ -103,8 +104,6 @@ public:
 
 	void ResizeTextureArray(int newDepth);
 	GLuint GetAtlasTexture() const { return atlasTextureArray; }
-
-	uint16_t CalculateCharWidth(char32_t c, int fontSize);
 
 private:
 	FontManager() : isInitialized(false) {}
@@ -130,13 +129,13 @@ private:
 
 	FontRangeHash GetAtlasHash(const FontRange& range, int fontSize);
 	FT_Face GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
-		std::map<std::string, FT_Face>& currentLoadedFaces);
+		std::map<std::string, FT_Face>& currentLoadedFaces) const;
 	void RenderGlyphs(Atlas& atlas);
 	void LoadAllFontRanges();
 	void LoadFontRange(Atlas& atlas, const FontRange& range);
 
 	void SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
-		const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType);
+		const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType, int initialYOffset);
 	bool DeserialiseAtlas(const std::string& filename, Atlas& outAtlas);
 
 	void UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GLenum pixelType) const;
@@ -340,17 +339,6 @@ void FontManager::ResizeTextureArray(int newDepth)
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
-uint16_t FontManager::CalculateCharWidth(char32_t c, int fontSize)
-{
-	char_t key = { c, (uint32_t)fontSize };
-	auto it = characters.find(key);
-	if (it != characters.end()) {
-		return it->second.advance;
-	}
-	SableUI_Warn("Character U+%04X with font size %d not found in cache. Using default advance.", static_cast<unsigned int>(c), fontSize);
-	return fontSize;
-}
-
 FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 {
 	// inspired from djb2 hash
@@ -378,7 +366,7 @@ FontRangeHash FontManager::GetAtlasHash(const FontRange& range, int fontSize)
 }
 
 FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
-	std::map<std::string, FT_Face>& currentLoadedFaces)
+	std::map<std::string, FT_Face>& currentLoadedFaces) const
 {
 	if (fontPathForAtlas.empty())
 	{
@@ -389,7 +377,7 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 	auto it = currentLoadedFaces.find(fontPathForAtlas);
 	if (it != currentLoadedFaces.end())
 	{
-		if (it->second->size->metrics.x_ppem != fontSize)
+		if (it->second->size->metrics.x_ppem / 64 != fontSize)
 		{
 			FT_Set_Pixel_Sizes(it->second, 0, fontSize);
 		}
@@ -428,11 +416,11 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
-		FT_Face face = GetFontForChar(c, atlas.fontSize, atlas.range.fontPath, facesForCurrentRender);
+		FT_Face face = GetFontForChar(c, static_cast<int>(atlas.fontSize), atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
-		FT_Set_Pixel_Sizes(face, 0, atlas.fontSize);
-		FT_Set_Char_Size(face, 0, atlas.fontSize * 64, s_dpi.x, s_dpi.y);
+		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
+		FT_Set_Char_Size(face, 0, static_cast<FT_F26Dot6>(atlas.fontSize * 64), s_dpi.x, s_dpi.y);
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT | FT_LOAD_TARGET_LCD)) continue;
@@ -443,7 +431,6 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width, (uint16_t)glyph->bitmap.rows };
 
-		// Glyphs with 0 width/height still have advance
 		if (size.x == 0 || size.y == 0)
 		{
 			tempCursor.x += (glyph->advance.x >> 6) + ATLAS_PADDING;
@@ -530,7 +517,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
 			};
 
-			char_t ct = { c, (uint32_t)atlas.fontSize };
+			char_t ct = { c, atlas.fontSize };
 			characters[ct] = emptyChar;
 			charsForSerialization[c] = emptyChar;
 
@@ -565,7 +552,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			SableUI_Error("Atlas overflow during glyph rendering (glyph too tall/misplaced for remaining space)! Char: U+%04X. Corrupt?",
 				static_cast<unsigned int>(c));
 
-			char_t ct = { c, (uint32_t)atlas.fontSize };
+			char_t ct = { c, atlas.fontSize };
 			characters[ct] = Character{
 				atlasCursor,
 				size,
@@ -596,7 +583,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			}
 		}
 
-		char_t ct = { c, (uint32_t)atlas.fontSize };
+		char_t ct = { c, atlas.fontSize };
 		characters[ct] = Character{
 			atlasCursor,
 			size,
@@ -611,7 +598,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels, GL_RGB);
 
-	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass, charsForSerialization, GL_RGB);
+	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass, charsForSerialization, GL_RGB, initialAtlasYForRenderPass);
 
 	delete[] atlasPixels;
 
@@ -651,7 +638,7 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GL
 }
 
 void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
-	const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType)
+	const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType, int initialYOffset)
 {
 	FontRangeHash atlasHash = GetAtlasHash(atlas.range, atlas.fontSize);
 	std::string directory = "cache/";
@@ -685,6 +672,7 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 	file.write(reinterpret_cast<const char*>(&width), sizeof(int));
 	file.write(reinterpret_cast<const char*>(&height), sizeof(int));
 	file.write(reinterpret_cast<const char*>(&pixelType), sizeof(GLenum));
+	file.write(reinterpret_cast<const char*>(&initialYOffset), sizeof(int));
 
 
 	/* main content */
@@ -697,7 +685,12 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 	for (const auto& pair : charsToSerialise)
 	{
 		char32_t char_code = pair.first;
-		const Character& character = pair.second;
+		Character character = pair.second;
+
+		character.pos.y = character.pos.y - initialYOffset;
+		character.layer = character.pos.y / ATLAS_HEIGHT;
+
+
 		file.write(reinterpret_cast<const char*>(&char_code), sizeof(char32_t));
 		file.write(reinterpret_cast<const char*>(&character.pos.x), sizeof(uint16_t));
 		file.write(reinterpret_cast<const char*>(&character.pos.y), sizeof(uint16_t));
@@ -713,7 +706,7 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 	SableUI_Log("Saved atlas to %s", filename.c_str());
 }
 
-bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& out_atlas)
+bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 {
 	std::ifstream file(filename, std::ios::binary);
 
@@ -736,13 +729,13 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& out_atlas
 			return false;
 		}
 
-		file.read(reinterpret_cast<char*>(&out_atlas.fontSize), sizeof(float));
-		file.read(reinterpret_cast<char*>(&out_atlas.range.start), sizeof(char32_t));
-		file.read(reinterpret_cast<char*>(&out_atlas.range.end), sizeof(char32_t));
+		file.read(reinterpret_cast<char*>(&outAtlas.fontSize), sizeof(int));
+		file.read(reinterpret_cast<char*>(&outAtlas.range.start), sizeof(char32_t));
+		file.read(reinterpret_cast<char*>(&outAtlas.range.end), sizeof(char32_t));
 		size_t path_len{};
 		file.read(reinterpret_cast<char*>(&path_len), sizeof(size_t));
-		out_atlas.range.fontPath.resize(path_len);
-		file.read(out_atlas.range.fontPath.data(), path_len);
+		outAtlas.range.fontPath.resize(path_len);
+		file.read(outAtlas.range.fontPath.data(), path_len);
 
 		int cachedWidth{};
 		int cachedHeight{};
@@ -750,6 +743,9 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& out_atlas
 		file.read(reinterpret_cast<char*>(&cachedHeight), sizeof(int));
 		GLenum cachedPixelType{};
 		file.read(reinterpret_cast<char*>(&cachedPixelType), sizeof(GLenum));
+		int originalInitialYOffset{};
+		file.read(reinterpret_cast<char*>(&originalInitialYOffset), sizeof(int));
+
 
 		if (cachedWidth != ATLAS_WIDTH)
 		{
@@ -811,12 +807,16 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& out_atlas
 			file.read(reinterpret_cast<char*>(&character.advance), sizeof(uint16_t));
 			file.read(reinterpret_cast<char*>(&character.layer), sizeof(uint16_t));
 
-			char_t key = { charCode, (uint32_t)out_atlas.fontSize };
+			character.pos.y = character.pos.y + initialAtlasYForDeserialisedPass;
+			character.layer = static_cast<uint16_t>(character.pos.y / ATLAS_HEIGHT);
+
+
+			char_t key = { charCode, outAtlas.fontSize };
 			characters[key] = character;
 		}
 
 		file.close();
-		out_atlas.isLoadedFromCache = true;
+		outAtlas.isLoadedFromCache = true;
 		SableUI_Log("Deserialised atlas: %s", filename.c_str());
 		return true;
 	}
@@ -885,7 +885,6 @@ void FontManager::LoadAllFontRanges()
 	FindFontRanges();
 	SableUI_Log("FontManager ready for character requests.");
 }
-
 
 struct Vertex
 {
@@ -990,7 +989,7 @@ GLuint SableUI::GetAtlasTexture()
 }
 
 /* ------------- TEXT BACKEND ------------- */
-int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, float fontSize, float lineSpacing)
+int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontSize, float lineSpacing)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -1001,17 +1000,11 @@ int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, float fon
 	m_content = str;
 	m_fontSize = fontSize;
 	m_lineSpacing = lineSpacing;
+	m_maxWidth = maxWidth;
 
 	fontManager->GetDrawInfo(this);
 
-	int strWidth = 0;
-	for (char32_t c : m_content)
-	{
-		strWidth += fontManager->CalculateCharWidth(c, m_fontSize);
-	}
-	SableUI_Log("String width: %i", strWidth);
-
-	return m_fontSize * m_lineSpacing;
+	return static_cast<int>(1 * m_fontSize * m_lineSpacing);
 }
 
 void SableUI::InitFontManager()
