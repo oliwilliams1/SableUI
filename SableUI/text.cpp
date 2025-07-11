@@ -60,13 +60,13 @@ struct FontRangeHash {
 
 struct Character {
 	Character() = default;
-	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::ivec2 bearing,
+	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::vec2 bearing,
 		uint16_t advance, uint16_t layer)
 		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
 
 	SableUI::u16vec2 pos = SableUI::u16vec2(0);
 	SableUI::u16vec2 size = SableUI::u16vec2(0);
-	SableUI::ivec2 bearing = SableUI::ivec2(0);
+	SableUI::vec2 bearing = SableUI::vec2(0);
 	uint16_t advance = 0;
 	uint16_t layer = 0;
 };
@@ -100,7 +100,7 @@ public:
 	bool Initialize();
 	void Shutdown();
 	bool isInitialized = false;
-	void GetDrawInfo(SableUI::Text* text);
+	int GetDrawInfo(SableUI::Text* text);
 
 	void ResizeTextureArray(int newDepth);
 	GLuint GetAtlasTexture() const { return atlasTextureArray; }
@@ -314,8 +314,6 @@ void FontManager::ResizeTextureArray(int newDepth)
 		return;
 	}
 
-	SableUI_Log("Resizing font atlas texture array from depth %i to %i", atlasDepth, newDepth);
-
 	GLuint newTextureArray = 0;
 	glGenTextures(1, &newTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
@@ -512,7 +510,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			Character emptyChar = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2((uint16_t)glyph->bitmap_left, (uint16_t)glyph->bitmap_top),
+				SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
 				static_cast<uint16_t>(glyph->advance.x >> 6),
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -556,7 +554,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			characters[ct] = Character{
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+				SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
 				static_cast<uint16_t>(glyph->advance.x >> 6),
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
 			};
@@ -587,7 +585,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		characters[ct] = Character{
 			atlasCursor,
 			size,
-			SableUI::ivec2(glyph->bitmap_left, glyph->bitmap_top),
+			SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
 			static_cast<uint16_t>(glyph->advance.x >> 6),
 			static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
 		};
@@ -762,7 +760,6 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 			return false;
 		}
 
-
 		/* main content */
 		size_t bytesPerPixel = (cachedPixelType == GL_RGB ? 3 : 1);
 		size_t pxArraySize = static_cast<size_t>(cachedWidth) * cachedHeight * bytesPerPixel;
@@ -793,7 +790,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 		size_t num_chars{};
 		file.read(reinterpret_cast<char*>(&num_chars), sizeof(size_t));
 
-		for (size_t i = 0; i < num_chars; ++i)
+		for (size_t i = 0; i < num_chars; i++)
 		{
 			char32_t charCode{};
 			Character character{};
@@ -817,7 +814,6 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 
 		file.close();
 		outAtlas.isLoadedFromCache = true;
-		SableUI_Log("Deserialised atlas: %s", filename.c_str());
 		return true;
 	}
 	catch (const std::exception& e)
@@ -886,29 +882,48 @@ void FontManager::LoadAllFontRanges()
 	SableUI_Log("FontManager ready for character requests.");
 }
 
-struct Vertex
-{
+struct Vertex {
 	SableUI::vec2 pos;
 	SableUI::vec3 uv; // uv.x and uv.y for texture coordinates, uv.z for layer
 };
 
-void FontManager::GetDrawInfo(SableUI::Text* text)
+struct TextToken {
+	std::u32string content = U"";
+	float width = 0.0f;
+	bool isSpace = false;
+	bool isNewline = false;
+	std::vector<Character> charDataList;
+};
+
+int FontManager::GetDrawInfo(SableUI::Text* text)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
+	int height = 0;
 
-	// Last line will not clip bottom
-	SableUI::vec2 cursor = SableUI::vec2(0.0f, text->m_fontSize * (1.0f - text->m_lineSpacing));
-	for (size_t i = 0; i < text->m_content.size(); i++)
+	std::vector<TextToken> tokens;
+	TextToken currentToken;
+
+	/* wordwrapping */
+	for (char32_t c : text->m_content)
 	{
-		const char32_t& c = text->m_content[i];
-		Character char_data;
+		if (c == U'\n') {
+			if (!currentToken.content.empty()) {
+				tokens.push_back(currentToken);
+			}
+			TextToken newlineToken;
+			newlineToken.isNewline = true;
+			tokens.push_back(newlineToken);
+			currentToken = TextToken{};
+			continue;
+		}
 
-		char_t charKey = { c, (uint32_t)text->m_fontSize };
+		Character charData;
+		char_t charKey = { c, text->m_fontSize };
 		auto it = characters.find(charKey);
 		if (it != characters.end())
 		{
-			char_data = it->second;
+			charData = it->second;
 		}
 		else
 		{
@@ -922,49 +937,154 @@ void FontManager::GetDrawInfo(SableUI::Text* text)
 				it = characters.find(charKey);
 				if (it != characters.end())
 				{
-					char_data = it->second;
+					charData = it->second;
 				}
 				else
 				{
-					SableUI_Warn("Could not find character U+%04X with font size %d even after attempting to load its range. Using empty glyph.", c, text->m_fontSize);
-					char_data = Character{};
+					SableUI_Warn("Could not find character U+%04X with font size %d even after attempting to load its range. Using empty glyph.",
+						c, text->m_fontSize);
+					charData = Character{};
 				}
 			}
 			else
 			{
 				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph.", c);
-				char_data = Character{};
+				charData = Character{};
 			}
 		}
 
-		float x = cursor.x + char_data.bearing.x;
-		float y = cursor.y - char_data.bearing.y;
+		if (std::iswspace(static_cast<wint_t>(c)))
+		{
+			if (!currentToken.content.empty() && !currentToken.isSpace)
+			{
+				tokens.push_back(currentToken);
+				currentToken = TextToken{};
+			}
+			if (currentToken.content.empty() || !currentToken.isSpace)
+			{
+				currentToken.isSpace = true;
+			}
+			currentToken.content.push_back(c);
+			currentToken.width += charData.advance;
+			currentToken.charDataList.push_back(charData);
+		}
+		else
+		{
+			if (!currentToken.content.empty() && currentToken.isSpace)
+			{
+				tokens.push_back(currentToken);
+				currentToken = TextToken{};
+			}
+			currentToken.isSpace = false;
+			currentToken.content.push_back(c);
+			currentToken.width += charData.advance;
+			currentToken.charDataList.push_back(charData);
+		}
+	}
 
-		float w = static_cast<float>(char_data.size.x) / 3.0f;
-		float h = static_cast<float>(char_data.size.y);
+	if (!currentToken.content.empty())
+	{
+		tokens.push_back(currentToken);
+	}
 
-		float uBottomLeft = static_cast<float>(char_data.pos.x) / ATLAS_WIDTH;
-		float vBottomLeft = static_cast<float>(char_data.pos.y % ATLAS_HEIGHT) / ATLAS_HEIGHT;
+	SableUI::ivec2 cursor{};
 
-		float uTopRight = uBottomLeft + (static_cast<float>(char_data.size.x) / ATLAS_WIDTH);
-		float vTopRight = vBottomLeft + (static_cast<float>(char_data.size.y) / ATLAS_HEIGHT);
+	/* calc top left position via line height */
+	{
+		int tempLines = 1;
+		SableUI::ivec2 tempCursor{};
+		int tempCurrentLineX = 0;
 
-		float layerIndex = static_cast<float>(char_data.layer);
+		for (const TextToken& token : tokens)
+		{
+			if (token.isNewline)
+			{
+				tempCursor.x = 0;
+				tempCursor.y += text->m_lineSpacingPx;
+				tempLines++;
+				tempCurrentLineX = 0;
+				continue;
+			}
 
-		vertices.push_back(Vertex{ {x, y},            {uBottomLeft, vBottomLeft, layerIndex} });
-		vertices.push_back(Vertex{ {x + w, y},        {uTopRight,   vBottomLeft, layerIndex} });
-		vertices.push_back(Vertex{ {x + w, y + h},    {uTopRight,   vTopRight,   layerIndex} });
-		vertices.push_back(Vertex{ {x, y + h},        {uBottomLeft, vTopRight,   layerIndex} });
+			if (!token.isSpace && text->m_maxWidth > 0 && (tempCurrentLineX + token.width > text->m_maxWidth) && tempCurrentLineX > 0)
+			{
+				tempCursor.x = 0;
+				tempCursor.y += text->m_lineSpacingPx;
+				tempLines++;
+				tempCurrentLineX = 0;
+			}
 
-		unsigned int offset = static_cast<unsigned int>(i) * 4;
-		indices.push_back(offset);
-		indices.push_back(offset + 1);
-		indices.push_back(offset + 2);
-		indices.push_back(offset);
-		indices.push_back(offset + 2);
-		indices.push_back(offset + 3);
+			for (size_t i = 0; i < token.content.length(); i++)
+			{
+				const Character& charData = token.charDataList[i];
+				tempCursor.x += charData.advance;
+				tempCurrentLineX += charData.advance;
+			}
+		}
 
-		cursor.x += char_data.advance;
+		tempLines;
+		height = tempLines * text->m_lineSpacingPx;
+		cursor.y -= height;
+	}
+
+	int currentLineX = 0;
+	unsigned int currentGlyphOffset = 0;
+	int lines = 1;
+
+	for (const TextToken& token : tokens)
+	{
+		if (token.isNewline)
+		{
+			cursor.x = 0;
+			cursor.y += text->m_lineSpacingPx;
+			lines++;
+			currentLineX = 0;
+			continue;
+		}
+
+		if (!token.isSpace && text->m_maxWidth > 0 && (currentLineX + token.width > text->m_maxWidth) && currentLineX > 0)
+		{
+			cursor.x = 0;
+			cursor.y += text->m_lineSpacingPx;
+			lines++;
+			currentLineX = 0;
+		}
+
+		for (size_t i = 0; i < token.content.length(); i++)
+		{
+			const Character& charData = token.charDataList[i];
+
+			float x = cursor.x;
+			float y = cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize);
+			
+			float w = static_cast<float>(charData.size.x) / 3.0f;
+			float h = static_cast<float>(charData.size.y);
+
+			float uBottomLeft = static_cast<float>(charData.pos.x) / ATLAS_WIDTH;
+			float vBottomLeft = static_cast<float>(charData.pos.y % ATLAS_HEIGHT) / ATLAS_HEIGHT;
+
+			float uTopRight = uBottomLeft + (static_cast<float>(charData.size.x) / ATLAS_WIDTH);
+			float vTopRight = vBottomLeft + (static_cast<float>(charData.size.y) / ATLAS_HEIGHT);
+
+			float layerIndex = static_cast<float>(charData.layer);
+
+			vertices.push_back(Vertex{ {x, y},           {uBottomLeft, vBottomLeft, layerIndex} });
+			vertices.push_back(Vertex{ {x + w, y},       {uTopRight,   vBottomLeft, layerIndex} });
+			vertices.push_back(Vertex{ {x + w, y + h},   {uTopRight,   vTopRight,   layerIndex} });
+			vertices.push_back(Vertex{ {x, y + h},       {uBottomLeft, vTopRight,   layerIndex} });
+
+			unsigned int offset = currentGlyphOffset * 4;
+			indices.push_back(offset);
+			indices.push_back(offset + 1);
+			indices.push_back(offset + 2);
+			indices.push_back(offset);
+			indices.push_back(offset + 2);
+			indices.push_back(offset + 3);
+
+			cursor.x += static_cast<float>(charData.advance);
+			currentLineX += static_cast<float>(charData.advance);
+			currentGlyphOffset++;
+		}
 	}
 
 	glBindVertexArray(text->m_VAO);
@@ -977,6 +1097,8 @@ void FontManager::GetDrawInfo(SableUI::Text* text)
 	text->indiciesSize = indices.size();
 
 	glBindVertexArray(0);
+
+	return height;
 }
 
 GLuint SableUI::GetAtlasTexture()
@@ -989,7 +1111,7 @@ GLuint SableUI::GetAtlasTexture()
 }
 
 /* ------------- TEXT BACKEND ------------- */
-int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontSize, float lineSpacing)
+int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontSize, float lineSpacingFac)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -999,12 +1121,12 @@ int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontS
 
 	m_content = str;
 	m_fontSize = fontSize;
-	m_lineSpacing = lineSpacing;
+	m_lineSpacingPx = fontSize * lineSpacingFac;
 	m_maxWidth = maxWidth;
 
-	fontManager->GetDrawInfo(this);
-
-	return static_cast<int>(1 * m_fontSize * m_lineSpacing);
+	int height = fontManager->GetDrawInfo(this);
+	SableUI_Log("height %dpx", height);
+	return height;
 }
 
 void SableUI::InitFontManager()

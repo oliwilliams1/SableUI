@@ -232,7 +232,7 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize)
 	
 	if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 	{
-		int reqHeight = drText->m_text.SetContent(text, width, fontSize);
+		int reqHeight = drText->m_text.SetContent(text, drawable->m_rect.w, fontSize);
 		height = reqHeight;
 	}
 	else

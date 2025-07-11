@@ -427,6 +427,7 @@ SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& node
 			
 			defaultComponent->AddElement(element);
 			RecalculateNodes();
+			defaultComponent->UpdateElements();
 			return element;
 		}
 	}

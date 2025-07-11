@@ -22,7 +22,7 @@ namespace SableUI
 		std::u32string m_actualContent = U"";
 		int m_fontSize = 0;
 		int m_maxWidth = 0;
-		float m_lineSpacing = 1.0f;
+		int m_lineSpacingPx = 0;
 		
 		GLuint m_fontTextureID = 0;
 		GLuint m_VAO = 0;
