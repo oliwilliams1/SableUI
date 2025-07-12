@@ -41,8 +41,7 @@ struct FontRange {
 	char32_t end = 0;
 	std::string fontPath = "";
 
-	bool operator<(const FontRange& other) const
-	{
+	bool operator<(const FontRange& other) const {
 		if (start != other.start) return start < other.start;
 		if (end != other.end) return end < other.end;
 		return fontPath < other.fontPath;
@@ -368,7 +367,8 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 {
 	if (fontPathForAtlas.empty())
 	{
-		SableUI_Error("GetFontForChar: Empty font path provided for char U+%04X", static_cast<unsigned int>(c));
+		SableUI_Error("GetFontForChar: Empty font path provided for char U+%04X",
+			static_cast<unsigned int>(c));
 		return nullptr;
 	}
 
@@ -385,13 +385,15 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 	FT_Face face;
 	if (FT_New_Face(ft_library, fontPathForAtlas.c_str(), 0, &face))
 	{
-		SableUI_Error("Could not load font: %s for char U+%04X", fontPathForAtlas.c_str(), static_cast<unsigned int>(c));
+		SableUI_Error("Could not load font: %s for char U+%04X",
+			fontPathForAtlas.c_str(), static_cast<unsigned int>(c));
 		return nullptr;
 	}
 
 	FT_Set_Pixel_Sizes(face, 0, fontSize);
 	currentLoadedFaces[fontPathForAtlas] = face;
-	SableUI_Log("Loaded font: %s (size %i) for rendering atlas", fontPathForAtlas.c_str(), fontSize);
+	SableUI_Log("Loaded font: %s (size %i) for rendering atlas",
+		fontPathForAtlas.c_str(), fontSize);
 	return face;
 }
 
@@ -414,7 +416,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
-		FT_Face face = GetFontForChar(c, static_cast<int>(atlas.fontSize), atlas.range.fontPath, facesForCurrentRender);
+		FT_Face face = GetFontForChar(c, static_cast<int>(atlas.fontSize),atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
@@ -567,15 +569,19 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		{
 			for (int x = 0; x < size.x; x++)
 			{
-				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + (atlasCursor.x + static_cast<size_t>(x))) * 3;
+				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH +
+					(atlasCursor.x + static_cast<size_t>(x))) * 3;
 
 				if (pixelIndexInAtlasPixels + 2 < static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3)
 				{
 					if (glyph->bitmap.buffer)
 					{
-						atlasPixels[pixelIndexInAtlasPixels + 0] = glyph->bitmap.buffer[static_cast<size_t>(y) * glyph->bitmap.pitch + x];
-						atlasPixels[pixelIndexInAtlasPixels + 1] = glyph->bitmap.buffer[static_cast<size_t>(y) * glyph->bitmap.pitch + x + 1];
-						atlasPixels[pixelIndexInAtlasPixels + 2] = glyph->bitmap.buffer[static_cast<size_t>(y) * glyph->bitmap.pitch + x + 2];
+						atlasPixels[pixelIndexInAtlasPixels + 0] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
+							glyph->bitmap.pitch + x];
+						atlasPixels[pixelIndexInAtlasPixels + 1] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
+							glyph->bitmap.pitch + x + 1];
+						atlasPixels[pixelIndexInAtlasPixels + 2] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
+							glyph->bitmap.pitch + x + 2];
 					}
 				}
 			}
@@ -596,7 +602,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels, GL_RGB);
 
-	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass, charsForSerialization, GL_RGB, initialAtlasYForRenderPass);
+	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass,
+		charsForSerialization, GL_RGB, initialAtlasYForRenderPass);
 
 	delete[] atlasPixels;
 
@@ -624,7 +631,8 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GL
 
 		if (heightToUpload <= 0) break;
 
-		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) * ATLAS_WIDTH * (pixelType == GL_RGB ? 3 : 1));
+		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) *
+											   ATLAS_WIDTH * (pixelType == GL_RGB ? 3 : 1));
 
 		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, yOffsetInTargetLayer, targetLayer,
 			ATLAS_WIDTH, heightToUpload, 1, pixelType, GL_UNSIGNED_BYTE, chunkPixels);
@@ -1005,7 +1013,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 				continue;
 			}
 
-			if (!token.isSpace && text->m_maxWidth > 0 && (tempCurrentLineX + token.width > text->m_maxWidth) && tempCurrentLineX > 0)
+			if (!token.isSpace && text->m_maxWidth > 0
+				&& (tempCurrentLineX + token.width > text->m_maxWidth) && tempCurrentLineX > 0)
 			{
 				tempCursor.x = 0;
 				tempCursor.y += text->m_lineSpacingPx;
@@ -1041,7 +1050,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			continue;
 		}
 
-		if (!token.isSpace && text->m_maxWidth > 0 && (currentLineX + token.width > text->m_maxWidth) && currentLineX > 0)
+		if (!token.isSpace && text->m_maxWidth > 0
+			&& (currentLineX + token.width > text->m_maxWidth) && currentLineX > 0)
 		{
 			cursor.x = 0;
 			cursor.y += text->m_lineSpacingPx;
@@ -1091,7 +1101,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text->m_EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+				 indices.data(), GL_STATIC_DRAW);
 
 	text->indiciesSize = indices.size();
 
@@ -1124,7 +1135,20 @@ int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontS
 	m_maxWidth = maxWidth;
 
 	int height = fontManager->GetDrawInfo(this);
-	SableUI_Log("height %dpx", height);
+	return height;
+}
+
+int SableUI::Text::UpdateMaxWidth(int maxWidth)
+{
+	// Ensure FontManager is initialized
+	if (fontManager == nullptr || !fontManager->isInitialized)
+	{
+		FontManager::GetInstance().Initialize();
+	}
+
+	m_maxWidth = maxWidth;
+
+	int height = fontManager->GetDrawInfo(this);
 	return height;
 }
 

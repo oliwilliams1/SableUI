@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	SableUI::Element* imageElement = mainWindow.AddElementToComponent("component 3", el3, SableUI::ElementType::IMAGE);
 	imageElement->width = 128.0f;
 	imageElement->height = 128.0f;
-	imageElement->SetImage("img.jpg");
+	imageElement->SetImage("dirtywork.jpg");
 
 	SableUI::ElementInfo el4{};
 	el4.name = "element 4";
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	el4.width = 128.0f;
 	el4.height = 128.0f;
 	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement1->SetImage("bomb.png");
+	imageElement1->SetImage("junior.jpg");
 
 	SableUI::ElementInfo el5{};
 	el5.wType = SableUI::RectType::FILL;

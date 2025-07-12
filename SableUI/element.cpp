@@ -59,6 +59,11 @@ void SableUI::Element::SetRect(const Rect& r)
 	case ElementType::TEXT:
 		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 		{
+			if (drText->m_rect.w != r.w)
+			{
+				rect.h = drText->m_text.UpdateMaxWidth(rect.w);
+				height = rect.h;
+			}
 			renderer->Draw(drText);
 			drText->Update(rect);
 		}

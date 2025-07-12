@@ -139,8 +139,8 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
     glUniform3f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
 
-    int startX = std::clamp(SableUI::f2i(m_rect.x), 0, texture->width - 1);
-    int startY = std::clamp(SableUI::f2i(m_rect.y), 0, texture->height - 1);
+    int startX = std::clamp(SableUI::f2i(m_rect.x), 0, texture->width);
+    int startY = std::clamp(SableUI::f2i(m_rect.y), 0, texture->height);
     int boundWidth = std::clamp(SableUI::f2i(m_rect.w), 0, texture->width - startX);
     int boundHeight = std::clamp(SableUI::f2i(m_rect.h), 0, texture->height - startY);
 
