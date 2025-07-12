@@ -67,7 +67,7 @@ struct Character {
 	SableUI::u16vec2 pos = SableUI::u16vec2(0);
 	SableUI::u16vec2 size = SableUI::u16vec2(0);
 	SableUI::vec2 bearing = SableUI::vec2(0);
-	uint16_t advance = 0;
+	float advance = 0;
 	uint16_t layer = 0;
 };
 
@@ -418,7 +418,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if (!face) continue;
 
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
-		FT_Set_Char_Size(face, 0, static_cast<FT_F26Dot6>(atlas.fontSize * 64), s_dpi.x, s_dpi.y);
+		FT_Set_Char_Size(face, 0, atlas.fontSize * 64, s_dpi.x, s_dpi.y);
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT | FT_LOAD_TARGET_LCD)) continue;
@@ -507,13 +507,13 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		if (size.x == 0 || size.y == 0)
 		{
-			Character emptyChar = Character{
+			Character emptyChar = Character(
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
-				static_cast<uint16_t>(glyph->advance.x >> 6),
+				SableUI::vec2(static_cast<float>(glyph->bitmap_left), static_cast<float>(glyph->bitmap_top)),
+				static_cast<float>(glyph->advance.x) / 64.0f,
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
-			};
+			);
 
 			char_t ct = { c, atlas.fontSize };
 			characters[ct] = emptyChar;
@@ -551,13 +551,13 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 				static_cast<unsigned int>(c));
 
 			char_t ct = { c, atlas.fontSize };
-			characters[ct] = Character{
+			characters[ct] = Character(
 				atlasCursor,
 				size,
-				SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
-				static_cast<uint16_t>(glyph->advance.x >> 6),
+				SableUI::vec2(static_cast<float>(glyph->bitmap_left), static_cast<float>(glyph->bitmap_top)),
+				static_cast<float>(glyph->advance.x) / 64.0f,
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
-			};
+			);
 			charsForSerialization[c] = characters[ct];
 			atlasCursor.x += (glyph->advance.x >> 6) + ATLAS_PADDING;
 			continue;
@@ -567,7 +567,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		{
 			for (int x = 0; x < size.x; x++)
 			{
-				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + (atlasCursor.x + x)) * 3;
+				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + (atlasCursor.x + static_cast<size_t>(x))) * 3;
 
 				if (pixelIndexInAtlasPixels + 2 < static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3)
 				{
@@ -582,13 +582,13 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		}
 
 		char_t ct = { c, atlas.fontSize };
-		characters[ct] = Character{
+		characters[ct] = Character(
 			atlasCursor,
 			size,
-			SableUI::ivec2(glyph->metrics.horiBearingX >> 6, glyph->metrics.horiBearingY >> 6),
-			static_cast<uint16_t>(glyph->advance.x >> 6),
+			SableUI::vec2(static_cast<float>(glyph->bitmap_left), static_cast<float>(glyph->bitmap_top)),
+			static_cast<float>(glyph->advance.x) / 64.0f,
 			static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
-		};
+		);
 		charsForSerialization[c] = characters[ct];
 
 		atlasCursor.x += size.x + ATLAS_PADDING;
@@ -694,9 +694,9 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 		file.write(reinterpret_cast<const char*>(&character.pos.y), sizeof(uint16_t));
 		file.write(reinterpret_cast<const char*>(&character.size.x), sizeof(uint16_t));
 		file.write(reinterpret_cast<const char*>(&character.size.y), sizeof(uint16_t));
-		file.write(reinterpret_cast<const char*>(&character.bearing.x), sizeof(int));
-		file.write(reinterpret_cast<const char*>(&character.bearing.y), sizeof(int));
-		file.write(reinterpret_cast<const char*>(&character.advance), sizeof(uint16_t));
+		file.write(reinterpret_cast<const char*>(&character.bearing.x), sizeof(float));
+		file.write(reinterpret_cast<const char*>(&character.bearing.y), sizeof(float));
+		file.write(reinterpret_cast<const char*>(&character.advance), sizeof(float));
 		file.write(reinterpret_cast<const char*>(&character.layer), sizeof(uint16_t));
 	}
 
@@ -799,14 +799,13 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 			file.read(reinterpret_cast<char*>(&character.pos.y), sizeof(uint16_t));
 			file.read(reinterpret_cast<char*>(&character.size.x), sizeof(uint16_t));
 			file.read(reinterpret_cast<char*>(&character.size.y), sizeof(uint16_t));
-			file.read(reinterpret_cast<char*>(&character.bearing.x), sizeof(int));
-			file.read(reinterpret_cast<char*>(&character.bearing.y), sizeof(int));
-			file.read(reinterpret_cast<char*>(&character.advance), sizeof(uint16_t));
+			file.read(reinterpret_cast<char*>(&character.bearing.x), sizeof(float));
+			file.read(reinterpret_cast<char*>(&character.bearing.y), sizeof(float));
+			file.read(reinterpret_cast<char*>(&character.advance), sizeof(float));
 			file.read(reinterpret_cast<char*>(&character.layer), sizeof(uint16_t));
 
 			character.pos.y = character.pos.y + initialAtlasYForDeserialisedPass;
 			character.layer = static_cast<uint16_t>(character.pos.y / ATLAS_HEIGHT);
-
 
 			char_t key = { charCode, outAtlas.fontSize };
 			characters[key] = character;
@@ -987,13 +986,13 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 		tokens.push_back(currentToken);
 	}
 
-	SableUI::ivec2 cursor{};
+	SableUI::vec2 cursor{};
 
 	/* calc top left position via line height */
 	{
 		int tempLines = 1;
-		SableUI::ivec2 tempCursor{};
-		int tempCurrentLineX = 0;
+		SableUI::vec2 tempCursor{};
+		float tempCurrentLineX = 0.0f;
 
 		for (const TextToken& token : tokens)
 		{
@@ -1002,7 +1001,7 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 				tempCursor.x = 0;
 				tempCursor.y += text->m_lineSpacingPx;
 				tempLines++;
-				tempCurrentLineX = 0;
+				tempCurrentLineX = 0.0f;
 				continue;
 			}
 
@@ -1011,7 +1010,7 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 				tempCursor.x = 0;
 				tempCursor.y += text->m_lineSpacingPx;
 				tempLines++;
-				tempCurrentLineX = 0;
+				tempCurrentLineX = 0.0f;
 			}
 
 			for (size_t i = 0; i < token.content.length(); i++)
@@ -1027,7 +1026,7 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 		cursor.y -= height;
 	}
 
-	int currentLineX = 0;
+	float currentLineX = 0.0f;
 	unsigned int currentGlyphOffset = 0;
 	int lines = 1;
 
@@ -1038,7 +1037,7 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			cursor.x = 0;
 			cursor.y += text->m_lineSpacingPx;
 			lines++;
-			currentLineX = 0;
+			currentLineX = 0.0f;
 			continue;
 		}
 
@@ -1047,15 +1046,15 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			cursor.x = 0;
 			cursor.y += text->m_lineSpacingPx;
 			lines++;
-			currentLineX = 0;
+			currentLineX = 0.0f;
 		}
 
 		for (size_t i = 0; i < token.content.length(); i++)
 		{
 			const Character& charData = token.charDataList[i];
 
-			float x = cursor.x;
-			float y = cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize);
+			float x = std::round(cursor.x + charData.bearing.x);
+			float y = std::round(cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize));
 			
 			float w = static_cast<float>(charData.size.x) / 3.0f;
 			float h = static_cast<float>(charData.size.y);
@@ -1081,8 +1080,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			indices.push_back(offset + 2);
 			indices.push_back(offset + 3);
 
-			cursor.x += static_cast<float>(charData.advance);
-			currentLineX += static_cast<float>(charData.advance);
+			cursor.x += charData.advance;
+			currentLineX += charData.advance;
 			currentGlyphOffset++;
 		}
 	}
