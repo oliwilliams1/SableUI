@@ -38,9 +38,22 @@ file(GLOB_RECURSE TINYXML2_SOURCES "vendor/TinyXML2/*.cpp" "vendor/TinyXML2/*.h"
 add_library(TinyXML2 STATIC ${TINYXML2_SOURCES})
 target_include_directories(TinyXML2 PUBLIC "vendor/TinyXML2")
 
-# utf8proc
-add_subdirectory("vendor/utf8proc")
-
+# libwebp
+set(WEBP_BUILD_ANIM_UTILS   OFF)
+set(WEBP_BUILD_CWEBP        OFF)
+set(WEBP_BUILD_DWEBP        OFF)
+set(WEBP_BUILD_GIF2WEBP     OFF)
+set(WEBP_BUILD_IMG2WEBP     OFF)
+set(WEBP_BUILD_VWEBP        OFF)
+set(WEBP_BUILD_WEBPINFO     OFF)
+set(WEBP_BUILD_LIBWEBPMUX   OFF)
+set(WEBP_BUILD_WEBPMUX      OFF)
+set(WEBP_BUILD_EXTRAS       OFF)
+set(WEBP_USE_THREAD         OFF)
+set(WEBP_NEAR_LOSSLESS      OFF)
+set(WEBP_UNICODE            OFF)
+add_subdirectory("vendor/libwebp")
+include_directories("vendor/libwebp/src")
 
 # SableUI
 include_directories("include")
@@ -56,7 +69,7 @@ target_link_libraries(SableUI PRIVATE
     glfw
     TinyXML2
     freetype
-    utf8proc
+    webp
 )
 
 target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS})

@@ -25,7 +25,7 @@ namespace SableUI
 		void SetTexture(uint8_t* pixels, int width, int height, int channels);
 		GLuint m_texID = 0;
 
-		uint8_t* GenerateDefaultTexture(int width, int height);
+		void GenerateDefaultTexture();
 		GLuint m_defaultTexID = 0;
 	};
 };

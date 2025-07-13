@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	el4.width = 128.0f;
 	el4.height = 128.0f;
 	SableUI::Element* imageElement1 = mainWindow.AddElementToComponent("component 3", el4, SableUI::ElementType::IMAGE);
-	imageElement1->SetImage("junior.jpg");
+	imageElement1->SetImage("bomb.webp");
 
 	SableUI::ElementInfo el5{};
 	el5.wType = SableUI::RectType::FILL;

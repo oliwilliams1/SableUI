@@ -1,5 +1,8 @@
 #include "SableUI/texture.h"
+
+#define SABLEUI_SUBSYSTEM "SableUI::Texture"
 #include "SableUI/console.h"
+#include <fstream>
 #include <cmath>
 #include <chrono>
 
@@ -8,6 +11,8 @@
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <stb_image_resize2.h>
+
+#include <webp/decode.h>
 
 void SableUI::Texture::LoadTexture(const std::string& path)
 {
@@ -26,31 +31,46 @@ void SableUI::Texture::LoadTexture(const std::string& path)
         }
         else {
             SableUI_Warn("Unsupported channel count: %d for texture: %s", channels, path.c_str());
-            uint8_t* defaultPixels = GenerateDefaultTexture(m_width, m_height);
-            if (defaultPixels != nullptr)
-            {
-                SetTexture(defaultPixels, m_width, m_height, 3);
-                delete[] defaultPixels;
-            }
+            GenerateDefaultTexture();
         }
         stbi_image_free(pixels);
     }
     else
     {
-        SableUI_Warn("Failed to load texture: %s", path.c_str());
-        uint8_t* defaultPixels = GenerateDefaultTexture(m_width, m_height);
-        if (defaultPixels != nullptr)
+        std::ifstream file(path, std::ios::binary);
+        if (!file.is_open())
         {
-            SetTexture(defaultPixels, m_width, m_height, 3);
-            delete[] defaultPixels;
+            SableUI_Warn("Unable to open file: %s", path.c_str());
+            GenerateDefaultTexture();
+            return;
         }
+
+        std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        if (buffer.size() < 12 || memcmp(buffer.data(), "RIFF", 4) != 0 || memcmp(buffer.data() + 8, "WEBP", 4) != 0)
+        {
+            SableUI_Warn("File is not a valid WebP format: %s", path.c_str());
+            GenerateDefaultTexture();
+            return;
+        }
+
+        int loadedWidth, loadedHeight;
+        uint8_t* webpPixels = WebPDecodeRGB(buffer.data(), buffer.size(), &loadedWidth, &loadedHeight);
+        if (!webpPixels)
+        {
+            SableUI_Warn("Failed to decode WebP image: %s. Generating default texture.", path.c_str());
+            GenerateDefaultTexture();
+            return;
+        }
+        SetTexture(webpPixels, loadedWidth, loadedHeight, 3);
     }
 }
-
 
 void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, int height)
 {
     auto start = std::chrono::high_resolution_clock::now();
+
     if (width < 16 || height < 16)
     {
         SableUI_Warn("Optimized texture load requested for dimensions (%d, %d) less than 16. Using normal LoadTexture.", width, height);
@@ -63,14 +83,33 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
 
     if (!loadedPixels)
     {
-        SableUI_Warn("Failed to load texture: %s. Generating default texture.", path.c_str());
-        uint8_t* defaultPixels = GenerateDefaultTexture(width, height);
-        if (defaultPixels != nullptr)
+        std::ifstream file(path, std::ios::binary);
+        if (!file.is_open())
         {
-            SetTexture(defaultPixels, width, height, 3);
-            delete[] defaultPixels;
+            SableUI_Warn("Unable to open file: %s", path.c_str());
+            GenerateDefaultTexture();
+            return;
         }
-        return;
+
+        std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        if (buffer.size() < 12 || memcmp(buffer.data(), "RIFF", 4) != 0 || memcmp(buffer.data() + 8, "WEBP", 4) != 0)
+        {
+            SableUI_Warn("File is not a valid WebP format: %s", path.c_str());
+            GenerateDefaultTexture();
+            return;
+        }
+
+        uint8_t* webpPixels = WebPDecodeRGB(buffer.data(), buffer.size(), &loadedWidth, &loadedHeight);
+        if (!webpPixels)
+        {
+            SableUI_Warn("Failed to decode WebP image: %s. Generating default texture.", path.c_str());
+            GenerateDefaultTexture();
+            return;
+        }
+        loadedPixels = webpPixels;
+        loadedChannels = 3;
     }
 
     const int targetChannels = 3;
@@ -81,7 +120,8 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
     {
         convertedToRgbPixels = loadedPixels;
     }
-    else {
+    else
+    {
         convertedToRgbPixels = new uint8_t[loadedWidth * loadedHeight * targetChannels];
         convertedAllocated = true;
 
@@ -89,7 +129,7 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
         {
             if (loadedChannels == 4)
             {
-                // RGBA to RGB (dropping alpha)
+                // RGBA to RGB
                 convertedToRgbPixels[i * 3 + 0] = loadedPixels[i * 4 + 0];
                 convertedToRgbPixels[i * 3 + 1] = loadedPixels[i * 4 + 1];
                 convertedToRgbPixels[i * 3 + 2] = loadedPixels[i * 4 + 2];
@@ -103,15 +143,10 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
             }
             else
             {
-                SableUI_Warn("Unsupported loaded channel count for conversion: %d. Using default texture.", loadedChannels);
+                SableUI_Warn("Unsupported loaded channel count for conversion: %d. Generating default texture.", loadedChannels);
                 if (convertedAllocated) delete[] convertedToRgbPixels;
-                stbi_image_free(loadedPixels);
-                uint8_t* defaultPixels = GenerateDefaultTexture(width, height);
-                if (defaultPixels != nullptr)
-                {
-                    SetTexture(defaultPixels, width, height, 3);
-                    delete[] defaultPixels;
-                }
+                if (loadedPixels) stbi_image_free(loadedPixels);
+                GenerateDefaultTexture();
                 return;
             }
         }
@@ -124,12 +159,10 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
 
     if (!isDownsampling)
     {
-        /* upscaling or no scaling, upload direct to gpu */
-        SetTexture(finalPixels, width, height, targetChannels);
+        SetTexture(convertedToRgbPixels, loadedWidth, loadedHeight, targetChannels);
     }
     else
     {
-        /* downsampling, do 2-step resizing, linear to 2x target, then 2x nearest downsample */
         int scaleWidth1 = width * 2;
         int scaleHeight1 = height * 2;
 
@@ -144,7 +177,7 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
             intermediatePixels, scaleWidth1, scaleHeight1, 0, STBIR_RGB
         );
 
-        if (resizeResult == 0)
+        if (resizeResult == nullptr)
         {
             SableUI_Warn("Failed to resize texture, using non-resized, 3-channel version");
             SetTexture(convertedToRgbPixels, loadedWidth, loadedHeight, targetChannels);
@@ -152,11 +185,10 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
             if (loadedPixels) stbi_image_free(loadedPixels);
             if (intermediateAllocated) delete[] intermediatePixels;
             if (convertedAllocated) delete[] convertedToRgbPixels;
-            if (finalPixelsAllocated) delete[] finalPixels;
             return;
         }
-        else {
-            /* 2x nearest neighbout downsample */
+        else
+        {
             finalPixels = new uint8_t[width * height * targetChannels];
             finalPixelsAllocated = true;
 
@@ -164,7 +196,6 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
             {
                 for (int x = 0; x < width; x++)
                 {
-                    /* bounds check */
                     int srcX = (int)std::round((float)x * scaleWidth1 / width);
                     int srcY = (int)std::round((float)y * scaleHeight1 / height);
 
@@ -190,41 +221,18 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
     if (finalPixelsAllocated) delete[] finalPixels;
 
     auto end = std::chrono::high_resolution_clock::now();
-
     std::chrono::duration<double> duration = end - start;
-    SableUI_Log("Texture thing duration %f", duration.count());
+    SableUI_Log("Texture loading duration: %f seconds", duration.count());
 }
 
-uint8_t* SableUI::Texture::GenerateDefaultTexture(int width, int height)
+void SableUI::Texture::GenerateDefaultTexture()
 {
-    if (m_defaultTexID != 0)
-    {
-        m_texID = m_defaultTexID;
-        return nullptr;
-    }
+    uint32_t pixels[16] = { 0xFF000000, 0xFFFF00FF, 0xFF000000, 0xFFFF00FF,
+                            0xFFFF00FF, 0xFF000000, 0xFFFF00FF, 0xFF000000,
+                            0xFF000000, 0xFFFF00FF, 0xFF000000, 0xFFFF00FF,
+                            0xFFFF00FF, 0xFF000000, 0xFFFF00FF, 0xFF000000, };
 
-    uint8_t* pixels = new uint8_t[width * height * 3];
-
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
-        {
-            int index = (y * width + x) * 3;
-            if ((x / 128) % 2 == (y / 128) % 2)
-            {
-                pixels[index]     = 0xFF;
-                pixels[index + 1] = 0x00;
-                pixels[index + 2] = 0xFF;
-            }
-            else
-            {
-                pixels[index]     = 0x00;
-                pixels[index + 1] = 0x00;
-                pixels[index + 2] = 0x00;
-            }
-        }
-    }
-    return pixels;
+	SetTexture((uint8_t*)pixels, 4, 4, 4);
 }
 
 void SableUI::Texture::SetDefaultTexture(GLuint texID)
