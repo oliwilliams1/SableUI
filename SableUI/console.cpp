@@ -167,8 +167,7 @@ void Console::NotifyError(const char* format, const char* file, int line, const 
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    std::string finalMessage = time + buffer + " | file: " + std::string(file)
-        + " line: " + std::to_string(line) + " func: " + std::string(func);
+    std::string finalMessage = time + "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
     SetConsoleColour(RED);
     std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;
@@ -190,8 +189,7 @@ void Console::RuntimeError(const char* format, const char* file, int line, const
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    std::string finalMessage = time + buffer + " | file: " + std::string(file)
-        + " line: " + std::to_string(line) + " func: " + std::string(func);
+    std::string finalMessage = time + "[" + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
     SetConsoleColour(RED);
     std::cout << EnumToString(LogType::SBUI_ERROR) << finalMessage << std::endl;

@@ -14,7 +14,8 @@ namespace SableUI
         UNDEF,
         RECT,
         IMAGE,
-        TEXT
+        TEXT,
+        DIV,
     };
 
     struct ElementInfo
@@ -51,6 +52,9 @@ namespace SableUI
         void SetImage(const std::string& path);
         void SetText(const std::u32string& text, int fontSize = 11);
 
+        float GetWidth();
+        float GetHeight();
+
         /* User-level settings for rect */
         float xOffset = 0;
         float yOffset = 0;
@@ -66,6 +70,7 @@ namespace SableUI
         Colour bgColour = Colour(128, 128, 128);
 
         std::string name = "unnamed element";
+        ElementType type = ElementType::UNDEF;
 
     private:
         /* Private settings for rendering */
@@ -73,6 +78,5 @@ namespace SableUI
         DrawableBase* drawable;
         std::vector<Element*> children;
         Renderer* renderer = nullptr;
-        ElementType type = ElementType::UNDEF;
     };
 }

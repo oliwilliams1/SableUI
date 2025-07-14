@@ -19,6 +19,10 @@ SableUI::Element::Element(const std::string name, Renderer* renderer, ElementTyp
 		drawable = new DrawableText();
 		break;
 
+	case ElementType::DIV:
+		drawable = nullptr;
+		break;
+
 	default:
 		SableUI_Runtime_Error("Unknown ElementType");
 		drawable = nullptr;
@@ -73,6 +77,9 @@ void SableUI::Element::SetRect(const Rect& r)
 		}
 		break;
 
+	case ElementType::DIV:
+		break;
+
 	default:
 		SableUI_Error("Unknown ElementType");
 		break;
@@ -111,7 +118,6 @@ void SableUI::Element::Render(int z)
 			{
 				element->Render(z + 1);
 			}
-			if (children.size() == 0) return;
 		}
 		else
 		{
@@ -119,6 +125,7 @@ void SableUI::Element::Render(int z)
 		}
 		break;
 	}
+
 	case ElementType::IMAGE:
 	{
 		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
@@ -132,6 +139,7 @@ void SableUI::Element::Render(int z)
 		}
 		break;
 	}
+
 	case ElementType::TEXT:
 		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 		{
@@ -142,6 +150,18 @@ void SableUI::Element::Render(int z)
 		{
 			SableUI_Error("Dynamic cast failed");
 		}
+		break;
+
+	case ElementType::DIV:
+		UpdateChildren();
+		for (Element* element : children)
+		{
+			element->Render(z + 1);
+		}
+		break;
+
+	default:
+		SableUI_Error("Unknown ElementType");
 		break;
 	}
 }
@@ -213,7 +233,7 @@ void SableUI::Element::UpdateChildren()
 
 void SableUI::Element::AddChild(Element* child)
 {
-	if (type == ElementType::IMAGE) SableUI_Error("Cannot add children to element of type image");
+	if (type == ElementType::IMAGE || type == ElementType::TEXT) SableUI_Error("Cannot add children to element of type image");
 	children.push_back(child);
 }
 
@@ -244,6 +264,19 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize)
 	{
 		SableUI_Error("Dynamic cast failed");
 	}
+}
+
+float SableUI::Element::GetWidth()
+{
+	if (children.size() == 0 && wType == RectType::FIXED) return width;
+
+	// ASSUME DIVS CHILDREN ARE VERTICALLY SPLIT
+	float retWidth = 0.0f;
+	for (Element* child : children)
+	{
+		retWidth = std::max(retWidth, child->GetWidth());
+	}
+	return retWidth;
 }
 
 SableUI::Element::~Element()

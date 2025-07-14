@@ -36,8 +36,8 @@ namespace SableUI
 		void SetupSplitter(const std::string& name, float bSize);
 		Node* AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
 		void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
-		Element* AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type);
-		Element* AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type);
+		Element* AddElementToComponent(const std::string& nodeName, ElementInfo info, ElementType type);
+		Element* AddElementToElement(const std::string& elementName, ElementInfo info, ElementType type);
 
 		Node* GetRoot();
 		Node* FindNodeByName(const std::string& name);
