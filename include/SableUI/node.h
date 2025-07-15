@@ -30,6 +30,8 @@ namespace SableUI
 
         float bSize = 0.0f;
 
+        ivec2 minBounds = {0};
+
         Node(SableUI::NodeType type, Node* parent, const std::string& name);
     };
     

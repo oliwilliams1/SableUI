@@ -52,7 +52,7 @@ void SableUI::InitDrawables()
     g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
     g_rURectLoc = GetUniformLocation(g_rShader, "uRect");
     g_rUTexBoolLoc = GetUniformLocation(g_rShader, "uUseTexture");
-    glUniform3f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f);
+    glUniform4f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
     glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
 
@@ -117,7 +117,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
 
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
-    glUniform3f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f);
+    glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
     glBindVertexArray(g_rectVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -136,7 +136,7 @@ void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colo
 void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 {
     g_rShader.Use();
-    glUniform3f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f);
+    glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
 
     int startX = std::clamp(SableUI::f2i(m_rect.x), 0, texture->width);
@@ -277,7 +277,7 @@ void SableUI::DrawWindowBorder(RenderTarget* target)
 
     g_rShader.Use();
     glBindVertexArray(g_rectVAO);
-    glUniform3f(g_rUColourLoc, 51.0f / 255.0f, 51.0f / 255.0f, 51.0f / 255.0f);
+    glUniform4f(g_rUColourLoc, 51.0f / 255.0f, 51.0f / 255.0f, 51.0f / 255.0f, 1.0f);
 
     // Top
     {

@@ -115,8 +115,8 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	InitFontManager();
 	InitDrawables();
 
-	renderer.renderTarget.SetTarget(TargetType::WINDOW);
-	renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
+	m_renderer.renderTarget.SetTarget(TargetType::WINDOW);
+	m_renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
 
 	if (m_root != nullptr)
 	{
@@ -191,7 +191,7 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->m_windowSize = ivec2(width, height);
 	glViewport(0, 0, width, height);
 
-	instance->renderer.renderTarget.Resize(width, height);
+	instance->m_renderer.renderTarget.Resize(width, height);
 
 	SetupRootNode(instance->m_root, width, height);
 	instance->RecalculateNodes();
@@ -208,7 +208,7 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		//PrintNodeTree();
-		renderer.Flush();   // Clear the draw stack from init draw commands
+		m_renderer.Flush();   // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
@@ -276,7 +276,7 @@ bool SableUI::Window::PollEvents()
 		if (m_mouseButtonStates.LMB == MouseState::UP)
 		{
 			m_resizing = false;
-			renderer.Flush();
+			m_renderer.Flush();
 			RecalculateNodes();
 			RerenderAllNodes();
 		}
@@ -310,9 +310,11 @@ void SableUI::Window::Draw()
 	if (m_needsStaticRedraw)
 	{
 		/* flush drawable stack & render to screen */
-		renderer.Draw();
+		m_renderer.Draw();
 
 		glFlush();
+
+		// DrawDebugBounds();
 
 		m_needsStaticRedraw = false;
 	}
@@ -394,7 +396,7 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 
 	node->component = std::move(component);
 	node->component->SetParent(node);
-	node->component->SetRenderer(&renderer);
+	node->component->SetRenderer(&m_renderer);
 }
 
 static int elementCtr = 0;
@@ -417,7 +419,7 @@ SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& node
 	{
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
-			Element* element = renderer.CreateElement(info.name, type);
+			Element* element = m_renderer.CreateElement(info.name, type);
 			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
 
 			info.type = type;
@@ -444,7 +446,7 @@ SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elemen
 		info.name = std::to_string(elementCtr++);
 	}
 
-	Element* parent = renderer.GetElement(elementName);
+	Element* parent = m_renderer.GetElement(elementName);
 
 	if (parent->type == ElementType::IMAGE || parent->type == ElementType::TEXT)
 	{
@@ -458,7 +460,7 @@ SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elemen
 		return nullptr;
 	}
 
-	Element* child = renderer.CreateElement(info.name, type);
+	Element* child = m_renderer.CreateElement(info.name, type);
 	if (child == nullptr)
 	{
 		SableUI_Error("Failed to create element: %s", info.name.c_str());
@@ -824,20 +826,20 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 
 int SableUI::Window::CalculateMinimumWidth(Node* node)
 {
-	if (node == nullptr) return 40;
+	if (node == nullptr) return 20; // Default minimum for a null node
 
 	if (node->type == NodeType::COMPONENT)
 	{
 		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
 		{
-			int maxWidth = 40;
+			int maxWidth = 20;
 			for (Element* element : defaultComponent->elements)
 			{
 				maxWidth = (std::max)(maxWidth, (int)element->GetWidth());
 			}
 			return maxWidth;
 		}
-		return 40;
+		return 20;
 	}
 	else if (node->type == NodeType::HSPLITTER)
 	{
@@ -855,10 +857,10 @@ int SableUI::Window::CalculateMinimumWidth(Node* node)
 		{
 			maxChildWidth = (std::max)(maxChildWidth, CalculateMinimumWidth(child));
 		}
-		return (std::max)(maxChildWidth, 40);
+		return (std::max)(maxChildWidth, 20);
 	}
 
-	return 40;
+	return 20;
 }
 
 int SableUI::Window::CalculateMinimumHeight(Node* node)
@@ -872,11 +874,11 @@ int SableUI::Window::CalculateMinimumHeight(Node* node)
 			int totalMinHeight = 20;
 			for (Element* element : defaultComponent->elements)
 			{
-				totalMinHeight += element->height;
+				totalMinHeight += element->GetHeight();
 			}
 			return totalMinHeight;
 		}
-		return 20;
+		return 20; 
 	}
 	else if (node->type == NodeType::VSPLITTER)
 	{
@@ -900,6 +902,14 @@ int SableUI::Window::CalculateMinimumHeight(Node* node)
 	return 20;
 }
 
+void SableUI::Window::CalculateAllNodeMinimumBounds()
+{
+	for (Node* node : m_nodes)
+	{
+		node->minBounds = { CalculateMinimumWidth(node), CalculateMinimumHeight(node) };
+	}
+}
+
 void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 {
 	if (m_nodes.empty()) return;
@@ -909,6 +919,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 	/* if first call, run for children of root node */
 	if (node == nullptr)
 	{
+		CalculateAllNodeMinimumBounds();
 		for (SableUI::Node* child : m_root->children)
 		{
 			CalculateNodeScales(child);
@@ -931,7 +942,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 
 		if (node->rect.wType == SableUI::RectType::FIXED)
 		{
-			node->rect.w = (std::max)(node->rect.w, (float)CalculateMinimumWidth(node));
+			node->rect.w = (std::max)(node->rect.w, (float)node->minBounds.x);
 			break;
 		}
 
@@ -950,7 +961,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 			{
 				numFillChildren++;
 				fillChildren.push_back(sibling);
-				totalFillMinAllowedWidth += CalculateMinimumWidth(sibling);
+				totalFillMinAllowedWidth += sibling->minBounds.x;
 			}
 		}
 
@@ -963,7 +974,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 				float ratio = availableWidthForFill / totalFillMinAllowedWidth;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.w = CalculateMinimumWidth(fillChild) * ratio;
+					fillChild->rect.w = fillChild->minBounds.x * ratio;
 					fillChild->rect.w = (std::max)(0.0f, fillChild->rect.w);
 				}
 			}
@@ -976,7 +987,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 				float widthPerFillChild = remainingDistributableWidth / numFillChildren;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.w = (float)CalculateMinimumWidth(fillChild) + widthPerFillChild;
+					fillChild->rect.w = (float)fillChild->minBounds.x + widthPerFillChild;
 				}
 			}
 		}
@@ -989,7 +1000,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 
 		if (node->rect.hType == SableUI::RectType::FIXED)
 		{
-			node->rect.h = (std::max)(node->rect.h, (float)CalculateMinimumHeight(node));
+			node->rect.h = (std::max)(node->rect.h, (float)node->minBounds.y);
 			break;
 		}
 
@@ -1008,7 +1019,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 			{
 				numFillChildren++;
 				fillChildren.push_back(sibling);
-				totalFillMinAllowedHeight += CalculateMinimumHeight(sibling);
+				totalFillMinAllowedHeight += sibling->minBounds.y;
 			}
 		}
 
@@ -1021,7 +1032,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 				float ratio = availableHeightForFill / totalFillMinAllowedHeight;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.h = CalculateMinimumHeight(fillChild) * ratio;
+					fillChild->rect.h = fillChild->minBounds.y * ratio;
 					fillChild->rect.h = (std::max)(0.0f, fillChild->rect.h);
 				}
 			}
@@ -1034,7 +1045,7 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 				float heightPerFillChild = remainingDistributableHeight / numFillChildren;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.h = (float)CalculateMinimumHeight(fillChild) + heightPerFillChild;
+					fillChild->rect.h = (float)fillChild->minBounds.y + heightPerFillChild;
 				}
 			}
 		}
@@ -1047,6 +1058,28 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 	{
 		CalculateNodeScales(child);
 	}
+}
+
+void SableUI::Window::DrawDebugBounds()
+{
+	m_renderer.StartDirectDraw();
+	for (SableUI::Node* node : m_nodes)
+	{
+		int x = node->rect.x;
+		int y = node->rect.y;
+
+		int w = node->minBounds.x;
+		int h = node->minBounds.y;
+
+		Colour c = Colour(255, 0, 0, 60);
+		if (node->type != NodeType::COMPONENT)
+		{
+			c = Colour(0, 0, 255, 60);
+		}
+
+		m_renderer.DirectDrawRect(Rect(x, y, w, h), c);
+	}
+	m_renderer.EndDirectDraw();
 }
 
 SableUI::Window::~Window()

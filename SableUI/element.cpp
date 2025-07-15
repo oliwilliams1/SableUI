@@ -266,17 +266,66 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize)
 	}
 }
 
+/* ASSUMING VERTICALLY SPLIT */
 float SableUI::Element::GetWidth()
 {
-	if (children.size() == 0 && wType == RectType::FIXED) return width;
+	if (children.empty())
+	{
+		if (wType == RectType::FIXED)
+		{
+			return width;
+		}
+		else
+		{
+			return (width > 0) ? width: 20.0f;
+		}
+	}
 
-	// ASSUME DIVS CHILDREN ARE VERTICALLY SPLIT
-	float retWidth = 0.0f;
+	float maxChildrenWidth = 0.0f;
 	for (Element* child : children)
 	{
-		retWidth = std::max(retWidth, child->GetWidth());
+		maxChildrenWidth = (std::max)(maxChildrenWidth, child->GetWidth() + 2.0f * padding);
 	}
-	return retWidth;
+
+	if (wType == RectType::FIXED)
+	{
+		return (std::max)(width, maxChildrenWidth);
+	}
+	else
+	{
+		return (std::max)(maxChildrenWidth, 20.0f);
+	}
+}
+
+/* ASSUMING VERTICALLY SPLIT */
+float SableUI::Element::GetHeight()
+{
+	if (children.empty())
+	{
+		if (hType == RectType::FIXED)
+		{
+			return height;
+		}
+		else
+		{
+			return (height > 0) ? height: 20.0f;
+		}
+	}
+
+	float totalChildrenHeight = 0.0f;
+	for (Element* child : children)
+	{
+		totalChildrenHeight += child->GetHeight() + 2.0f * padding;
+	}
+
+	if (hType == RectType::FIXED)
+	{
+		return (std::max)(height, totalChildrenHeight);
+	}
+	else
+	{
+		return (std::max)(totalChildrenHeight, 20.0f);
+	}
 }
 
 SableUI::Element::~Element()

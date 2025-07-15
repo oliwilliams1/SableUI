@@ -55,11 +55,13 @@ namespace SableUI
 
 	private:
 		int GetRefreshRate();
-		Renderer renderer;
+		Renderer m_renderer;
 
 		void CalculateNodePositions(Node* node = nullptr);
 		void CalculateNodeScales(Node* node = nullptr);
+		void CalculateAllNodeMinimumBounds();
 		void Resize(vec2 pos, Node* node = nullptr);
+		void DrawDebugBounds();
 
 		std::chrono::milliseconds m_frameDelay;
 		Node* m_root = nullptr;

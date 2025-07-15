@@ -71,12 +71,12 @@ namespace SableUI
 
         std::string name = "unnamed element";
         ElementType type = ElementType::UNDEF;
+        std::vector<Element*> children;
 
     private:
         /* Private settings for rendering */
         Rect rect = { 0, 0, 0, 0 };
         DrawableBase* drawable;
-        std::vector<Element*> children;
         Renderer* renderer = nullptr;
     };
 }

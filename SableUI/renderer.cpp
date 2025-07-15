@@ -15,8 +15,32 @@ void SableUI::Renderer::Draw(DrawableBase* drawable)
     drawStack.push_back(drawable);
 }
 
+void SableUI::Renderer::StartDirectDraw()
+{
+	directDraw = true;
+}
+
+void SableUI::Renderer::DirectDrawRect(const Rect& rect, const Colour& colour)
+{
+    DrawableRect dr;
+    dr.m_rect = rect;
+    dr.m_colour = colour;
+    dr.Draw(&renderTarget);
+}
+
+void SableUI::Renderer::EndDirectDraw()
+{
+	directDraw = false;
+    glFlush();
+}
+
 void SableUI::Renderer::Draw()
 {
+    if (directDraw == true)
+    {
+        SableUI_Warn("Direct draw is enabled when drawing normally, forgot to end direct draw?");
+    }
+
     if (renderTarget.target == TargetType::TEXTURE) renderTarget.Bind();
 
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
