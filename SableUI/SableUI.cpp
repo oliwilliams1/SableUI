@@ -20,25 +20,36 @@
 static float DistToEdge(SableUI::Node* node, SableUI::ivec2 p)
 {
 	SableUI::Rect r = node->rect;
-	SableUI::NodeType parentType = SableUI::NodeType::ROOTNODE;
 
-	if (node->parent != nullptr)
+	SableUI::NodeType parentType = (node->parent == nullptr) ? SableUI::NodeType::ROOTNODE : node->parent->type;
+
+	switch (parentType)
 	{
-		parentType = node->parent->type;
-	}
+		case SableUI::NodeType::ROOTNODE:
+		{
+			float distLeft = p.x - r.x;
+			float distRight = (r.x + r.w) - p.x;
+			float distTop = p.y - r.y;
+			float distBottom = (r.y + r.h) - p.y;
 
-	if (parentType == SableUI::NodeType::HSPLITTER) {
-		float distRight = (r.x + r.w) - p.x;
-		return (distRight < 0) ? 0 : distRight;
-	}
+			return (std::max)(0.0f, (std::min)({ distLeft, distRight, distTop, distBottom }));
+		}
 
-	if (parentType == SableUI::NodeType::VSPLITTER)
-	{
-		float distBottom = (r.y + r.h) - p.y;
-		return (distBottom < 0) ? 0 : distBottom;
-	}
+		case SableUI::NodeType::HSPLITTER:
+		{
+			float distRight = (r.x + r.w) - p.x;
+			return (distRight < 0) ? 0 : distRight;
+		}
 
-	return 0;
+		case SableUI::NodeType::VSPLITTER:
+		{
+			float distBottom = (r.y + r.h) - p.y;
+			return (distBottom < 0) ? 0 : distBottom;
+		}
+
+		default:
+			return 0.0f;
+	}
 }
 
 static void PrintNode(SableUI::Node* node, int depth = 0)
@@ -208,7 +219,7 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		//PrintNodeTree();
-		m_renderer.Flush();   // Clear the draw stack from init draw commands
+		m_renderer.Flush(); // Clear the draw stack from init draw commands
 		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
@@ -220,42 +231,44 @@ bool SableUI::Window::PollEvents()
 
 	GLFWcursor* cursorToSet = m_arrowCursor;
 
-	/* check if need to resize */
-	for (Node* node : m_nodes)
+	if (DistToEdge(m_root, m_mousePos) > 5.0f)
 	{
-		if (DistToEdge(m_root, m_mousePos) > 5.0f) continue;
-		if (!RectBoundingBox(node->rect, m_mousePos)) continue;
-
-		if (m_mousePos.x == 0 && m_mousePos.y == 0) continue;
-
-		float d1 = DistToEdge(node, m_mousePos);
-
-		if (node->parent == nullptr) continue;
-
-		if (d1 < 5.0f)
+		/* check if need to resize */
+		for (Node* node : m_nodes)
 		{
-			switch (node->parent->type)
+			if (!RectBoundingBox(node->rect, m_mousePos)) continue;
+
+			if (m_mousePos.x == 0 && m_mousePos.y == 0) continue;
+
+			float d1 = DistToEdge(node, m_mousePos);
+
+			if (node->parent == nullptr) continue;
+
+			if (d1 < 5.0f)
 			{
-			case NodeType::VSPLITTER:
-				cursorToSet = m_vResizeCursor;
-				break;
+				switch (node->parent->type)
+				{
+				case NodeType::VSPLITTER:
+					cursorToSet = m_vResizeCursor;
+					break;
 
-			case NodeType::HSPLITTER:
-				cursorToSet = m_hResizeCursor;
-				break;
-			}
+				case NodeType::HSPLITTER:
+					cursorToSet = m_hResizeCursor;
+					break;
+				}
 
-			if (!m_resizing && m_mouseButtonStates.LMB == MouseState::DOWN && cursorToSet != m_arrowCursor)
-			{
-				resCalled = true;
-				Resize(m_mousePos, node);
+				if (!m_resizing && m_mouseButtonStates.LMB == MouseState::DOWN && cursorToSet != m_arrowCursor)
+				{
+					resCalled = true;
+					Resize(m_mousePos, node);
 
-				m_resizing = true;
-				continue;
+					m_resizing = true;
+					continue;
+				}
 			}
 		}
 	}
-
+	
 	if (m_currentCursor != cursorToSet && !m_resizing)
 	{
 		glfwSetCursor(m_window, cursorToSet);
@@ -826,7 +839,7 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 
 int SableUI::Window::CalculateMinimumWidth(Node* node)
 {
-	if (node == nullptr) return 20; // Default minimum for a null node
+	if (node == nullptr) return 20;
 
 	if (node->type == NodeType::COMPONENT)
 	{
@@ -943,6 +956,15 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 		if (node->rect.wType == SableUI::RectType::FIXED)
 		{
 			node->rect.w = (std::max)(node->rect.w, (float)node->minBounds.x);
+			int minSiblingWidth = 0;
+			for (SableUI::Node* sibling : node->parent->children)
+			{
+				if (sibling != node)
+				{
+					minSiblingWidth += (std::max)(0, sibling->minBounds.x);
+				}
+			}
+			node->rect.w = (std::min)(node->rect.w, node->parent->rect.w - (float)minSiblingWidth);
 			break;
 		}
 
@@ -971,11 +993,9 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 		{
 			if (numFillChildren > 0)
 			{
-				float ratio = availableWidthForFill / totalFillMinAllowedWidth;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.w = fillChild->minBounds.x * ratio;
-					fillChild->rect.w = (std::max)(0.0f, fillChild->rect.w);
+					fillChild->rect.w = (float)fillChild->minBounds.x;
 				}
 			}
 		}
@@ -1001,6 +1021,16 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 		if (node->rect.hType == SableUI::RectType::FIXED)
 		{
 			node->rect.h = (std::max)(node->rect.h, (float)node->minBounds.y);
+
+			int minSiblingHeight = 0;
+			for (SableUI::Node* sibling : node->parent->children)
+			{
+				if (sibling != node)
+				{
+					minSiblingHeight += (std::max)(0, sibling->minBounds.y);
+				}
+			}
+			node->rect.h = (std::min)(node->rect.h, node->parent->rect.h - (float)minSiblingHeight);
 			break;
 		}
 
@@ -1029,11 +1059,9 @@ void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
 		{
 			if (numFillChildren > 0)
 			{
-				float ratio = availableHeightForFill / totalFillMinAllowedHeight;
 				for (SableUI::Node* fillChild : fillChildren)
 				{
-					fillChild->rect.h = fillChild->minBounds.y * ratio;
-					fillChild->rect.h = (std::max)(0.0f, fillChild->rect.h);
+					fillChild->rect.h = (float)fillChild->minBounds.y;
 				}
 			}
 		}
