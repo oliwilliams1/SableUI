@@ -2,7 +2,7 @@
 
 out vec4 FragColor;
 
-uniform vec3 uColour = vec3(0.0);
+uniform vec4 uColour = vec4(vec3(0.0), 1.0);
 uniform bool uUseTexture = false;
 uniform sampler2D uTexture;
 
@@ -17,7 +17,7 @@ void main()
 	}
 	else
 	{
-		FragColor = vec4(uColour, 1.0);
+		FragColor = vec4(uColour);
 		return;
 	}
 }

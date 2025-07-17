@@ -328,7 +328,7 @@ void SableUI::Window::Draw()
 		glFlush();
 
 		// DrawDebugBounds();
-
+		// DrawDebugElementBounds();
 		m_needsStaticRedraw = false;
 	}
 
@@ -413,8 +413,13 @@ void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::un
 }
 
 static int elementCtr = 0;
-SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo info, ElementType type)
+SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& p_info, ElementType type)
 {
+	ElementInfo info = p_info;
+	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
+
 	if (info.name.length() == 0)
 	{
 		info.name = std::to_string(elementCtr++);
@@ -452,8 +457,13 @@ SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& node
 	return nullptr;
 }
 
-SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo info, ElementType type)
+SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& p_info, ElementType type)
 {
+	ElementInfo info = p_info;
+	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
+
 	if (info.name.length() == 0)
 	{
 		info.name = std::to_string(elementCtr++);
@@ -815,12 +825,7 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 	node->rect.x = cursor.x;
 	node->rect.y = cursor.y;
 
-	if (node->component)
-	{
-		node->component.get()->UpdateDrawable();
-	}
-
-	if (node->parent)
+	if (node->parent) 
 	{
 		if (node->parent->component != nullptr)
 		{
@@ -834,6 +839,11 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 	for (SableUI::Node* child : node->children)
 	{
 		CalculateNodePositions(child);
+	}
+
+	if (node->component)
+	{
+		node->component.get()->UpdateDrawable();
 	}
 }
 
@@ -1108,6 +1118,60 @@ void SableUI::Window::DrawDebugBounds()
 		m_renderer.DirectDrawRect(Rect(x, y, w, h), c);
 	}
 	m_renderer.EndDirectDraw();
+}
+
+void SableUI::Window::DrawDebugElementBounds(Node* node)
+{
+	if (node == nullptr)
+	{
+		m_renderer.StartDirectDraw();
+		for (Node* child : m_root->children)
+		{
+			DrawDebugElementBounds(child);
+		}
+		m_renderer.EndDirectDraw();
+		return;
+	}
+
+	std::function<void(Element*)> DrawElementsRecurse = [&](Element* element) -> void
+	{
+		if (element == nullptr) return;
+
+		Colour c( 255, 255, 255, 0 );
+
+		switch (element->type)
+		{
+		case ElementType::IMAGE:
+			c = Colour(255, 0, 0, 60);
+			break;
+		case ElementType::TEXT:
+			c = Colour(0, 0, 255, 60);
+			break;
+		default:
+			c = Colour(0, 255, 0, 60);
+			break;
+		}
+
+		m_renderer.DirectDrawRect(element->rect, c);
+
+		for (Element* elChild : element->children)
+		{
+			DrawElementsRecurse(elChild);
+		}
+	};
+
+	if (auto* component = dynamic_cast<DefaultComponent*>(node->component.get()))
+	{
+		for (Element* element : component->elements)
+		{
+			DrawElementsRecurse(element);
+		}
+	}
+
+	for (Node* child : node->children)
+	{
+		DrawDebugElementBounds(child);
+	}
 }
 
 SableUI::Window::~Window()

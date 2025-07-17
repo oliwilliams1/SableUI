@@ -82,24 +82,20 @@ int main(int argc, char** argv)
 
 		// A fixed-height DIV at the top
 		info.name = "TopDiv_TopLeft";
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
-		info.height = 30.0f;
+		info.height = 50.0f;
 		info.bgColour = SableUI::Colour(60, 60, 60);
-		info.padding = 5.0f;
+		info.padding = 4.0f;
 		SableUI::Element* topDiv = mainWindow.AddElementToComponent("TopLeftComponent", info, SableUI::ElementType::RECT);
 		if (topDiv)
 		{
 			info.name = "TopDivText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(topDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Top Bar Content", 16);
 		}
 
 		SableUI::ElementInfo el1{};
 		el1.name = "element 1";
-		el1.wType = SableUI::RectType::FILL;
 		el1.hType = SableUI::RectType::FIXED;
 		el1.height = 20.0f;
 		el1.bgColour = SableUI::Colour(255, 0, 0);
@@ -107,14 +103,11 @@ int main(int argc, char** argv)
 
 		SableUI::ElementInfo el2{};
 		el2.name = "element 2";
-		el2.wType = SableUI::RectType::FILL;
-		el2.hType = SableUI::RectType::FILL;
 		el2.bgColour = SableUI::Colour(255, 0, 255);
 		el2.padding = 5.0f;
 		mainWindow.AddElementToComponent("TopLeftComponent", el2, SableUI::ElementType::RECT);
 
 		info.name = "ImageContainerDiv";
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
 		info.height = 250.0f; // Adjusted height for image container to be more compact
 		info.bgColour = SableUI::Colour(45, 45, 45);
@@ -138,9 +131,6 @@ int main(int argc, char** argv)
 		}
 
 		SableUI::ElementInfo el5{};
-		el5.wType = SableUI::RectType::FILL;
-		el5.hType = SableUI::RectType::FIXED;
-		el5.height = 24.0f;
 		SableUI::Element* textElement1 = mainWindow.AddElementToComponent("TopLeftComponent", el5, SableUI::ElementType::TEXT);
 		textElement1->SetText(U"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. | (#♥) | (＜★) | 이브 프시케 カタカナ 漢字 ひらがな พยัญชนะ 汉字 स्वर äöüçñæ 生而平等 ¿ 😔", 14);
 	}
@@ -149,17 +139,12 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "NestedTopDiv";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(50, 50, 50);
 		info.padding = 10.0f;
 		SableUI::Element* nestedTopDiv = mainWindow.AddElementToComponent("NestedTopComponent", info, SableUI::ElementType::RECT);
 		if (nestedTopDiv)
 		{
 			info.name = "NestedTopDivText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 20.0f;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(nestedTopDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Nested Top Content", 18);
 
@@ -178,7 +163,6 @@ int main(int argc, char** argv)
 	// NestedBottomLeftComponent: Multiple DIVs and a button (RECT with text), now with more dynamic content
 	{
 		SableUI::ElementInfo info{};
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
 		info.height = 40.0f;
 		info.bgColour = SableUI::Colour(70, 70, 70);
@@ -188,8 +172,6 @@ int main(int argc, char** argv)
 		if (headerDiv)
 		{
 			info.name = "HeaderDivText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(headerDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"User Controls", 16);
 		}
@@ -206,25 +188,18 @@ int main(int argc, char** argv)
 		if (buttonDiv)
 		{
 			info.name = "ButtonText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(buttonDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Click Me", 14);
 		}
 
 		// A fill div with more content
 		info.name = "FillDiv_NestedBottomLeft";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(40, 40, 40);
 		info.padding = 10.0f;
 		SableUI::Element* fillDivNBL = mainWindow.AddElementToComponent("NestedBottomLeftComponent", info, SableUI::ElementType::RECT);
 		if (fillDivNBL)
 		{
 			info.name = "ContentTextNBL";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 60.0f;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(fillDivNBL->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"This is some dynamic content inside the bottom-left pane. It should expand and contract with the window.", 12);
 
@@ -240,8 +215,6 @@ int main(int argc, char** argv)
 			if (anotherDiv)
 			{
 				info.name = "AnotherFixedDivTextNBL";
-				info.wType = SableUI::RectType::FILL;
-				info.hType = SableUI::RectType::FILL;
 				SableUI::Element* textEl = mainWindow.AddElementToElement(anotherDiv->name, info, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Fixed Item", 10);
 			}
@@ -254,8 +227,6 @@ int main(int argc, char** argv)
 
 		// Outer DIV
 		info.name = "OuterDiv_NestedBottomRight";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(20, 20, 20);
 		info.padding = 15.0f;
 		SableUI::Element* outerDiv = mainWindow.AddElementToComponent("NestedBottomRightComponent", info, SableUI::ElementType::RECT);
@@ -275,25 +246,18 @@ int main(int argc, char** argv)
 			if (innerDiv1)
 			{
 				info.name = "InnerDiv1Text";
-				info.wType = SableUI::RectType::FILL;
-				info.hType = SableUI::RectType::FILL;
 				SableUI::Element* textEl = mainWindow.AddElementToElement(innerDiv1->name, info, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Fixed Size Div", 16);
 			}
 
 			// Inner DIV 2 (fill size)
 			info.name = "InnerDiv2";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			info.bgColour = SableUI::Colour(60, 60, 60);
 			info.padding = 10.0f;
 			SableUI::Element* innerDiv2 = mainWindow.AddElementToElement(outerDiv->name, info, SableUI::ElementType::RECT);
 			if (innerDiv2)
 			{
 				info.name = "InnerDiv2Text";
-				info.wType = SableUI::RectType::FILL;
-				info.hType = SableUI::RectType::FIXED;
-				info.height = 20.0f;
 				SableUI::Element* textEl = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Flexible Div", 16);
 
@@ -309,8 +273,6 @@ int main(int argc, char** argv)
 				SableUI::Element* deepDiv = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::RECT);
 				if (deepDiv) {
 					info.name = "DeepNestedDivText";
-					info.wType = SableUI::RectType::FILL;
-					info.hType = SableUI::RectType::FILL;
 					SableUI::Element* textEl = mainWindow.AddElementToElement(deepDiv->name, info, SableUI::ElementType::TEXT);
 					textEl->SetText(U"Deep", 12);
 				}
@@ -322,7 +284,6 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "ProgressBarContainer";
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
 		info.height = 50.0f;
 		info.bgColour = SableUI::Colour(40, 40, 40);
@@ -333,7 +294,6 @@ int main(int argc, char** argv)
 		{
 			info.name = "ProgressBar";
 			info.wType = SableUI::RectType::FIXED;
-			info.hType = SableUI::RectType::FILL;
 			info.width = 250.0f;
 			info.bgColour = SableUI::Colour(0, 180, 0);
 			info.padding = 0.0f;
@@ -342,17 +302,12 @@ int main(int argc, char** argv)
 		}
 
 		info.name = "MainBottomFillDiv";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(50, 50, 50);
 		info.padding = 10.0f;
 		SableUI::Element* mainBottomFillDiv = mainWindow.AddElementToComponent("MainBottomComponent", info, SableUI::ElementType::RECT);
 		if (mainBottomFillDiv)
 		{
 			info.name = "StatusText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 30.0f;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(mainBottomFillDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Application Status: Running...", 15);
 		}
@@ -362,7 +317,6 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "RightTopHeader";
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
 		info.height = 50.0f;
 		info.bgColour = SableUI::Colour(70, 70, 90);
@@ -371,15 +325,11 @@ int main(int argc, char** argv)
 		if (header)
 		{
 			info.name = "RightTopHeaderText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(header->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Right Panel: Settings & Options", 20);
 		}
 
 		info.name = "SettingsContainer";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(35, 35, 35);
 		info.padding = 10.0f;
 		SableUI::Element* settingsDiv = mainWindow.AddElementToComponent("RightTopComponent", info, SableUI::ElementType::RECT);
@@ -387,7 +337,6 @@ int main(int argc, char** argv)
 		{
 			// Setting 1: Checkbox (represented by a small rect + text)
 			info.name = "Setting1Div";
-			info.wType = SableUI::RectType::FILL;
 			info.hType = SableUI::RectType::FIXED;
 			info.height = 30.0f;
 			info.bgColour = SableUI::Colour(45, 45, 45);
@@ -408,21 +357,16 @@ int main(int argc, char** argv)
 				{
 					// Inner "check" mark
 					info.name = "CheckMark1";
-					info.wType = SableUI::RectType::FILL;
-					info.hType = SableUI::RectType::FILL;
 					info.bgColour = SableUI::Colour(0, 200, 0); // Green if checked
 					mainWindow.AddElementToElement(checkbox->name, info, SableUI::ElementType::RECT);
 				}
 				info.name = "Setting1Text";
-				info.wType = SableUI::RectType::FILL;
-				info.hType = SableUI::RectType::FILL;
 				SableUI::Element* textEl = mainWindow.AddElementToElement(setting1->name, info, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Enable Feature A", 14);
 			}
 
 			// Setting 2: Text input field (represented by two rects + text)
 			info.name = "Setting2Div";
-			info.wType = SableUI::RectType::FILL;
 			info.hType = SableUI::RectType::FIXED;
 			info.height = 30.0f;
 			info.bgColour = SableUI::Colour(45, 45, 45);
@@ -432,25 +376,9 @@ int main(int argc, char** argv)
 			{
 				info.name = "Setting2Label";
 				info.wType = SableUI::RectType::FIXED;
-				info.hType = SableUI::RectType::FILL;
 				info.width = 100.0f;
 				SableUI::Element* label = mainWindow.AddElementToElement(setting2->name, info, SableUI::ElementType::TEXT);
 				label->SetText(U"Username:", 14);
-
-				info.name = "Setting2InputBg";
-				info.wType = SableUI::RectType::FILL;
-				info.hType = SableUI::RectType::FILL;
-				info.bgColour = SableUI::Colour(60, 60, 60);
-				info.padding = 3.0f;
-				SableUI::Element* inputBg = mainWindow.AddElementToElement(setting2->name, info, SableUI::ElementType::RECT);
-				if (inputBg)
-				{
-					info.name = "Setting2InputText";
-					info.wType = SableUI::RectType::FILL;
-					info.hType = SableUI::RectType::FILL;
-					SableUI::Element* inputText = mainWindow.AddElementToElement(inputBg->name, info, SableUI::ElementType::TEXT);
-					inputText->SetText(U"User123", 14); // Placeholder text
-				}
 			}
 		}
 	}
@@ -459,59 +387,42 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "ConsoleOutputHeader";
-		info.wType = SableUI::RectType::FILL;
 		info.hType = SableUI::RectType::FIXED;
 		info.height = 40.0f;
 		info.bgColour = SableUI::Colour(80, 60, 60);
-		info.padding = 5.0f;
 		SableUI::Element* header = mainWindow.AddElementToComponent("RightBottomComponent", info, SableUI::ElementType::RECT);
 		if (header)
 		{
 			info.name = "ConsoleOutputHeaderText";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(header->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Console Output", 18);
 		}
 
 		info.name = "ConsoleLogDiv";
-		info.wType = SableUI::RectType::FILL;
-		info.hType = SableUI::RectType::FILL;
 		info.bgColour = SableUI::Colour(15, 15, 15);
-		info.padding = 5.0f;
+		info.hType = SableUI::RectType::FILL;
 		SableUI::Element* consoleLogDiv = mainWindow.AddElementToComponent("RightBottomComponent", info, SableUI::ElementType::RECT);
 		if (consoleLogDiv)
 		{
+			info.hType = SableUI::RectType::UNDEF;
 			// Multiple log lines
 			info.name = "LogLine1";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 18.0f;
 			SableUI::Element* log1 = mainWindow.AddElementToElement(consoleLogDiv->name, info, SableUI::ElementType::TEXT);
-			log1->SetText(U"[INFO] Application started successfully.", 12);
+			log1->SetText(U"[INFO] Application started successfully.", 12, 1.0f);
 
 			info.name = "LogLine2";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 18.0f;
 			SableUI::Element* log2 = mainWindow.AddElementToElement(consoleLogDiv->name, info, SableUI::ElementType::TEXT);
-			log2->SetText(U"[WARN] Resource 'texture.png' not found, using default.", 12);
+			log2->SetText(U"[WARN] Resource 'texture.png' not found, using default.", 12, 1.0f);
 
 			info.name = "LogLine3";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 18.0f;
 			SableUI::Element* log3 = mainWindow.AddElementToElement(consoleLogDiv->name, info, SableUI::ElementType::TEXT);
-			log3->SetText(U"[ERROR] Failed to connect to server: Connection timed out.", 12);
+			log3->SetText(U"[ERROR] Failed to connect to server: Connection timed out.", 12, 1.0f);
 
 			info.name = "LogLine4";
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL; // This one will fill remaining space
 			SableUI::Element* log4 = mainWindow.AddElementToElement(consoleLogDiv->name, info, SableUI::ElementType::TEXT);
-			log4->SetText(U"[DEBUG] User input processed. Render loop active. FPS: 60.", 12);
+			log4->SetText(U"[DEBUG] User input processed. Render loop active. FPS: 60.", 12, 1.0f);
 		}
 	}
-
 
 	// --- Main Loop ---
 	while (mainWindow.PollEvents())

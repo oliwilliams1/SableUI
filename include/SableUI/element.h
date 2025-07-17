@@ -29,8 +29,8 @@ namespace SableUI
         float padding = 0;                       // Inner padding of elements, useful when adding children elements
         bool centerX = false;                    // Is centered horizontally?
         bool centerY = false;                    // Is centered vertically?
-        RectType wType = RectType::FILL;         // Can be FILL or FIXED, use fill to enable automatic dynamic resizing, fixed for fixed-width elements
-        RectType hType = RectType::FILL;
+        RectType wType = RectType::UNDEF;         // Can be FILL or FIXED, use fill to enable automatic dynamic resizing, fixed for fixed-width elements
+        RectType hType = RectType::UNDEF;
         ElementType type = ElementType::UNDEF;   // Can be UNDEF (for init error checks), RECT (for solid rectangle elements), IMAGE, or TEXT
     };
 
@@ -50,7 +50,7 @@ namespace SableUI
         void UpdateChildren();
         void AddChild(Element* child);
         void SetImage(const std::string& path);
-        void SetText(const std::u32string& text, int fontSize = 11);
+        void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
 
         float GetWidth();
         float GetHeight();
@@ -73,9 +73,9 @@ namespace SableUI
         ElementType type = ElementType::UNDEF;
         std::vector<Element*> children;
 
-    private:
-        /* Private settings for rendering */
         Rect rect = { 0, 0, 0, 0 };
+    private:
+        /* Private vars for rendering */
         DrawableBase* drawable;
         Renderer* renderer = nullptr;
     };

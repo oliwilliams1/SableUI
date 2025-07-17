@@ -16,9 +16,9 @@ void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 
 	drawable.Update(parentNode->rect, colour, bSize);
 
-	if (draw) Render();
-
 	UpdateElements();
+
+	if (draw) Render();
 }
 
 void SableUI::DefaultComponent::Render()
@@ -52,12 +52,12 @@ void SableUI::DefaultComponent::UpdateElements()
 
 	for (Element* element : elements)
 	{
-		if (parentNode != nullptr && element->wType == RectType::FIXED && element->centerX)
+		if (parentNode != nullptr && (element->wType == RectType::FIXED || element->wType == RectType::FIT_CONTENT) && element->centerX)
 		{
 			element->xOffset = (parentNode->rect.w - element->width) / 2.0f;
 		}
 
-		if (parentNode != nullptr && element->hType == RectType::FIXED && element->centerY)
+		if (parentNode != nullptr && (element->hType == RectType::FIXED || element->hType == RectType::FIT_CONTENT) && element->centerY)
 		{
 			element->yOffset = (parentNode->rect.h - element->height) / 2.0f;
 		}
@@ -90,7 +90,7 @@ void SableUI::DefaultComponent::UpdateElements()
 
 				for (Element* el2 : elements)
 				{
-					if (el2->hType == RectType::FIXED) fillHeight -= el2->height;
+					if (el2->hType == RectType::FIXED || el2->hType == RectType::FIT_CONTENT) fillHeight -= el2->height;
 					else fillCtr++;
 				}
 				tempElRect.h = fillHeight / fillCtr;

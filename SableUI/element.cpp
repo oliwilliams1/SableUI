@@ -39,8 +39,8 @@ void SableUI::Element::SetRect(const Rect& r)
 	case ElementType::RECT:
 		if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
 		{
-			renderer->Draw(drRect);
 			drRect->Update(rect, bgColour, 0.0f);
+			renderer->Draw(drRect);
 		}
 		else
 		{
@@ -51,8 +51,8 @@ void SableUI::Element::SetRect(const Rect& r)
 	case ElementType::IMAGE:
 		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
 		{
-			renderer->Draw(drImage);
 			drImage->Update(rect);
+			renderer->Draw(drImage);
 		}
 		else
 		{
@@ -63,13 +63,10 @@ void SableUI::Element::SetRect(const Rect& r)
 	case ElementType::TEXT:
 		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 		{
-			if (drText->m_rect.w != r.w)
-			{
-				rect.h = drText->m_text.UpdateMaxWidth(rect.w);
-				height = rect.h;
-			}
-			renderer->Draw(drText);
+			rect.h = drText->m_text.UpdateMaxWidth(rect.w);
+			height = rect.h;
 			drText->Update(rect);
+			renderer->Draw(drText);
 		}
 		else
 		{
@@ -168,7 +165,7 @@ void SableUI::Element::Render(int z)
 
 void SableUI::Element::UpdateChildren()
 {
-	if (type == ElementType::IMAGE) return;
+	if (type == ElementType::IMAGE || type == ElementType::TEXT) return;
 
 	/* use cursor to place elements */
 	vec2 cursor = { SableUI::f2i(rect.x),
@@ -216,7 +213,7 @@ void SableUI::Element::UpdateChildren()
 		if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
 
 		/* upd cursor */
-		cursor.y += tempElRect.h + child->yOffset;
+		cursor.y += tempElRect.h + child->yOffset + (2.0f * child->padding);
 
 		/* calc padding */
 		if (child->padding > 0.0f)
@@ -251,13 +248,13 @@ void SableUI::Element::SetImage(const std::string& path)
 	}
 }
 
-void SableUI::Element::SetText(const std::u32string& text, int fontSize)
+void SableUI::Element::SetText(const std::u32string& text, int fontSize, float lineHeight)
 {
 	if (type != ElementType::TEXT) SableUI_Error("Cannot set text on element not of type text");
 	
 	if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
 	{
-		int reqHeight = drText->m_text.SetContent(text, drawable->m_rect.w, fontSize);
+		int reqHeight = drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight);
 		height = reqHeight;
 	}
 	else
@@ -331,4 +328,4 @@ float SableUI::Element::GetHeight()
 SableUI::Element::~Element()
 {
 	delete drawable;
-}  
+}
