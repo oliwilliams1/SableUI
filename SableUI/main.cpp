@@ -297,7 +297,7 @@ int main(int argc, char** argv)
 		{
 			info.name = "ProgressBar";
 			info.wType = SableUI::RectType::FIXED;
-			info.width = 250.0f;
+			info.width = 400.0f;
 			info.bgColour = SableUI::Colour(0, 180, 0);
 			info.padding = 0.0f;
 			mainWindow.AddElementToElement(progressBarContainer->name, info, SableUI::ElementType::RECT);
@@ -305,82 +305,274 @@ int main(int argc, char** argv)
 
 		info.name = "MainBottomFillDiv";
 		info.bgColour = SableUI::Colour(50, 50, 50);
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.padding = 10.0f;
 		SableUI::Element* mainBottomFillDiv = mainWindow.AddElementToComponent("MainBottomComponent", info, SableUI::ElementType::RECT);
 		if (mainBottomFillDiv)
 		{
 			info.name = "StatusText";
+			info.padding = 5.0f;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(mainBottomFillDiv->name, info, SableUI::ElementType::TEXT);
-			textEl->SetText(U"Application Status: Running...", 15);
+			textEl->SetText(U"Application Status: ænergy running...", 15);
 		}
 	}
 
 	// --- New Elements for RightTopComponent (top-right pane) ---
 	{
-		SableUI::ElementInfo info{};
-		info.name = "RightTopHeader";
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 50.0f;
-		info.bgColour = SableUI::Colour(70, 70, 90);
-		info.padding = 10.0f;
-		SableUI::Element* header = mainWindow.AddElementToComponent("RightTopComponent", info, SableUI::ElementType::RECT);
+		// --- Header Section ---
+		SableUI::ElementInfo headerInfo{}; // Always create a fresh info struct for each new element or section
+		headerInfo.name = "RightTopHeader";
+		headerInfo.hType = SableUI::RectType::FIXED;
+		headerInfo.height = 50.0f;
+		headerInfo.bgColour = SableUI::Colour(70, 70, 90);
+		headerInfo.padding = 10.0f;
+		headerInfo.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Set layout for header's potential children
+
+		SableUI::Element* header = mainWindow.AddElementToComponent("RightTopComponent", headerInfo, SableUI::ElementType::RECT);
 		if (header)
 		{
-			info.name = "RightTopHeaderText";
-			SableUI::Element* textEl = mainWindow.AddElementToElement(header->name, info, SableUI::ElementType::TEXT);
-			textEl->SetText(U"Right Panel: Settings & Options", 20);
+			SableUI::ElementInfo headerTextInfo{}; // New info for the text element
+			headerTextInfo.name = "RightTopHeaderText";
+			// Text element usually has FIT_CONTENT for width/height by default, or FILL if it should expand.
+			// For a header, FILL is often appropriate if it needs to occupy all available space.
+			headerTextInfo.wType = SableUI::RectType::FILL;
+			headerTextInfo.hType = SableUI::RectType::FILL;
+			headerTextInfo.padding = 0.0f; // Text often has padding on the parent, not itself
+			headerTextInfo.centerY = true; // Vertically center text in the header
+			headerTextInfo.centerX = true; // Horizontally center text in the header if its parent is fixed/fill
+
+			SableUI::Element* textEl = mainWindow.AddElementToElement(header->name, headerTextInfo, SableUI::ElementType::TEXT);
+			if (textEl)
+			{
+				textEl->SetText(U"SableUI Settings & Dashboard", 22); // Larger font for a main header
+			}
 		}
 
-		info.name = "SettingsContainer";
-		info.bgColour = SableUI::Colour(35, 35, 35);
-		info.padding = 10.0f;
-		SableUI::Element* settingsDiv = mainWindow.AddElementToComponent("RightTopComponent", info, SableUI::ElementType::RECT);
+		// --- Main Settings Container (Horizontal layout for side-by-side sections) ---
+		SableUI::ElementInfo settingsContainerInfo{};
+		settingsContainerInfo.name = "SettingsContainer";
+		settingsContainerInfo.bgColour = SableUI::Colour(35, 35, 35);
+		settingsContainerInfo.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // This is key for side-by-side
+		settingsContainerInfo.hType = SableUI::RectType::FILL; // Let it fill remaining height
+		settingsContainerInfo.wType = SableUI::RectType::FILL; // Let it fill remaining width
+		settingsContainerInfo.padding = 10.0f; // Padding around the entire settings area
+
+		SableUI::Element* settingsDiv = mainWindow.AddElementToComponent("RightTopComponent", settingsContainerInfo, SableUI::ElementType::RECT);
 		if (settingsDiv)
 		{
-			// Setting 1: Checkbox (represented by a small rect + text)
-			info.name = "Setting1Div";
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 30.0f;
-			info.bgColour = SableUI::Colour(45, 45, 45);
-			info.padding = 5.0f;
-			SableUI::Element* setting1 = mainWindow.AddElementToElement(settingsDiv->name, info, SableUI::ElementType::RECT);
-			if (setting1)
+			// --- Left Column: General Settings (Vertical Layout) ---
+			SableUI::ElementInfo leftColumnInfo{};
+			leftColumnInfo.name = "GeneralSettingsColumn";
+			leftColumnInfo.wType = SableUI::RectType::FILL; // This column fills its parent's width (settingsContainerInfo)
+			leftColumnInfo.hType = SableUI::RectType::FILL; // This column fills its parent's height
+			leftColumnInfo.bgColour = SableUI::Colour(40, 40, 50); // Slightly different background
+			leftColumnInfo.padding = 15.0f;
+			leftColumnInfo.layoutDirection = SableUI::LayoutDirection::VERTICAL; // Children will stack vertically
+
+			SableUI::Element* leftColumn = mainWindow.AddElementToElement(settingsDiv->name, leftColumnInfo, SableUI::ElementType::RECT);
+			if (leftColumn)
 			{
-				info.name = "Checkbox1";
-				info.wType = SableUI::RectType::FIXED;
-				info.hType = SableUI::RectType::FIXED;
-				info.width = 20.0f;
-				info.height = 20.0f;
-				info.bgColour = SableUI::Colour(100, 100, 100);
-				info.padding = 2.0f; // For a checked state indicator
-				info.centerY = true;
-				SableUI::Element* checkbox = mainWindow.AddElementToElement(setting1->name, info, SableUI::ElementType::RECT);
-				if (checkbox)
+				// Sub-header for Left Column
+				SableUI::ElementInfo subHeaderInfo{};
+				subHeaderInfo.name = "GeneralSettingsHeader";
+				subHeaderInfo.hType = SableUI::RectType::FIXED;
+				subHeaderInfo.height = 30.0f;
+				subHeaderInfo.bgColour = SableUI::Colour(50, 50, 60);
+				subHeaderInfo.padding = 5.0f;
+				SableUI::Element* subHeader = mainWindow.AddElementToElement(leftColumn->name, subHeaderInfo, SableUI::ElementType::RECT);
+				if (subHeader)
 				{
-					// Inner "check" mark
-					info.name = "CheckMark1";
-					info.bgColour = SableUI::Colour(0, 200, 0); // Green if checked
-					mainWindow.AddElementToElement(checkbox->name, info, SableUI::ElementType::RECT);
+					SableUI::ElementInfo subHeaderTextInfo{};
+					subHeaderTextInfo.name = "GeneralSettingsHeaderText";
+					subHeaderTextInfo.wType = SableUI::RectType::FILL;
+					subHeaderTextInfo.hType = SableUI::RectType::FILL;
+					subHeaderTextInfo.centerY = true;
+					SableUI::Element* textEl = mainWindow.AddElementToElement(subHeader->name, subHeaderTextInfo, SableUI::ElementType::TEXT);
+					if (textEl) textEl->SetText(U"General Options", 16);
 				}
-				info.name = "Setting1Text";
-				SableUI::Element* textEl = mainWindow.AddElementToElement(setting1->name, info, SableUI::ElementType::TEXT);
-				textEl->SetText(U"Enable Feature A", 14);
+
+				// Setting 1: Checkbox (Horizontal layout within itself)
+				SableUI::ElementInfo setting1Info{};
+				setting1Info.name = "EnableFeatureASetting";
+				setting1Info.hType = SableUI::RectType::FIXED;
+				setting1Info.height = 35.0f; // Fixed height for the setting row
+				setting1Info.bgColour = SableUI::Colour(45, 45, 55);
+				setting1Info.padding = 5.0f;
+				setting1Info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Checkbox and text side-by-side
+
+				SableUI::Element* setting1 = mainWindow.AddElementToElement(leftColumn->name, setting1Info, SableUI::ElementType::RECT);
+				if (setting1)
+				{
+					// Checkbox visual (fixed size)
+					SableUI::ElementInfo checkboxInfo{};
+					checkboxInfo.name = "CheckboxIcon1";
+					checkboxInfo.wType = SableUI::RectType::FIXED;
+					checkboxInfo.hType = SableUI::RectType::FIXED;
+					checkboxInfo.width = 20;
+					checkboxInfo.height = 20;
+					checkboxInfo.bgColour = SableUI::Colour(100, 100, 100); // Unchecked color
+					checkboxInfo.centerY = true; // Center vertically within the setting row
+					SableUI::Element* checkbox = mainWindow.AddElementToElement(setting1->name, checkboxInfo, SableUI::ElementType::RECT);
+					if (checkbox)
+					{
+						// Inner "check" mark (example for a checked state)
+						SableUI::ElementInfo checkMarkInfo{};
+						checkMarkInfo.name = "CheckMark1";
+						checkMarkInfo.wType = SableUI::RectType::FIXED; // Fixed size relative to checkbox
+						checkMarkInfo.hType = SableUI::RectType::FIXED;
+						checkMarkInfo.width = 10;
+						checkMarkInfo.height = 10;
+						checkMarkInfo.bgColour = SableUI::Colour(0, 200, 0); // Green if checked
+						checkMarkInfo.centerX = true; // Center within the checkbox
+						checkMarkInfo.centerY = true;
+						mainWindow.AddElementToElement(checkbox->name, checkMarkInfo, SableUI::ElementType::RECT);
+					}
+
+					// Checkbox Label Text
+					SableUI::ElementInfo settingTextInfo{};
+					settingTextInfo.name = "FeatureAText";
+					settingTextInfo.wType = SableUI::RectType::FILL; // Text fills remaining width
+					settingTextInfo.hType = SableUI::RectType::FILL; // Text fills remaining height
+					settingTextInfo.padding = 0.0f;
+					settingTextInfo.xOffset = 5.0f; // Small horizontal offset from checkbox
+					settingTextInfo.centerY = true; // Vertically center text in the setting row
+
+					SableUI::Element* textEl = mainWindow.AddElementToElement(setting1->name, settingTextInfo, SableUI::ElementType::TEXT);
+					if (textEl) textEl->SetText(U"Enable Advanced Features", 14);
+				}
+
+				// Setting 2: Text input field (e.g., for username)
+				SableUI::ElementInfo setting2Info{};
+				setting2Info.name = "UsernameSetting";
+				setting2Info.hType = SableUI::RectType::FIXED;
+				setting2Info.height = 35.0f;
+				setting2Info.bgColour = SableUI::Colour(45, 45, 55);
+				setting2Info.padding = 5.0f;
+				setting2Info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Label and input side-by-side
+
+				SableUI::Element* setting2 = mainWindow.AddElementToElement(leftColumn->name, setting2Info, SableUI::ElementType::RECT);
+				if (setting2)
+				{
+					// Label for input
+					SableUI::ElementInfo labelInfo{};
+					labelInfo.name = "UsernameLabel";
+					labelInfo.wType = SableUI::RectType::FIXED;
+					labelInfo.width = 80.0f; // Fixed width for label
+					labelInfo.hType = SableUI::RectType::FILL;
+					labelInfo.centerY = true;
+					SableUI::Element* label = mainWindow.AddElementToElement(setting2->name, labelInfo, SableUI::ElementType::TEXT);
+					if (label) label->SetText(U"Username:", 14);
+
+					// Input field background
+					SableUI::ElementInfo inputBgInfo{};
+					inputBgInfo.name = "UsernameInputField";
+					inputBgInfo.wType = SableUI::RectType::FILL; // Fills remaining width
+					inputBgInfo.hType = SableUI::RectType::FILL;
+					inputBgInfo.bgColour = SableUI::Colour(60, 60, 70); // Darker background for input area
+					inputBgInfo.padding = 3.0f; // Padding inside the input field
+					SableUI::Element* inputField = mainWindow.AddElementToElement(setting2->name, inputBgInfo, SableUI::ElementType::RECT);
+					if (inputField)
+					{
+						// Placeholder/Current Text in input field
+						SableUI::ElementInfo inputTextInfo{};
+						inputTextInfo.name = "UsernameInputText";
+						inputTextInfo.wType = SableUI::RectType::FILL;
+						inputTextInfo.hType = SableUI::RectType::FILL;
+						inputTextInfo.centerY = true;
+						SableUI::Element* inputText = mainWindow.AddElementToElement(inputField->name, inputTextInfo, SableUI::ElementType::TEXT);
+						if (inputText) inputText->SetText(U"Enter username...", 14);
+					}
+				}
+				// More settings...
 			}
 
-			// Setting 2: Text input field (represented by two rects + text)
-			info.name = "Setting2Div";
-			info.hType = SableUI::RectType::FIXED;
-			info.height = 30.0f;
-			info.bgColour = SableUI::Colour(45, 45, 45);
-			info.padding = 5.0f;
-			SableUI::Element* setting2 = mainWindow.AddElementToElement(settingsDiv->name, info, SableUI::ElementType::RECT);
-			if (setting2)
+			// --- Right Column: Status & Info (Vertical Layout) ---
+			SableUI::ElementInfo rightColumnInfo{};
+			rightColumnInfo.name = "StatusInfoColumn";
+			rightColumnInfo.wType = SableUI::RectType::FIXED; // Fixed width for this column, so Left Column can take FILL
+			rightColumnInfo.width = 150.0f; // Example fixed width
+			rightColumnInfo.hType = SableUI::RectType::FILL;
+			rightColumnInfo.bgColour = SableUI::Colour(50, 40, 40); // Different background for distinction
+			rightColumnInfo.padding = 15.0f;
+			rightColumnInfo.layoutDirection = SableUI::LayoutDirection::VERTICAL;
+
+			SableUI::Element* rightColumn = mainWindow.AddElementToElement(settingsDiv->name, rightColumnInfo, SableUI::ElementType::RECT);
+			if (rightColumn)
 			{
-				info.name = "Setting2Label";
-				info.wType = SableUI::RectType::FIXED;
-				info.width = 100.0f;
-				SableUI::Element* label = mainWindow.AddElementToElement(setting2->name, info, SableUI::ElementType::TEXT);
-				label->SetText(U"Username:", 14);
+				// Sub-header for Right Column
+				SableUI::ElementInfo subHeaderInfo{};
+				subHeaderInfo.name = "StatusInfoHeader";
+				subHeaderInfo.hType = SableUI::RectType::FIXED;
+				subHeaderInfo.height = 30.0f;
+				subHeaderInfo.bgColour = SableUI::Colour(60, 50, 50);
+				subHeaderInfo.padding = 5.0f;
+				SableUI::Element* subHeader = mainWindow.AddElementToElement(rightColumn->name, subHeaderInfo, SableUI::ElementType::RECT);
+				if (subHeader)
+				{
+					SableUI::ElementInfo subHeaderTextInfo{};
+					subHeaderTextInfo.name = "StatusInfoHeaderText";
+					subHeaderTextInfo.wType = SableUI::RectType::FILL;
+					subHeaderTextInfo.hType = SableUI::RectType::FILL;
+					subHeaderTextInfo.centerY = true;
+					SableUI::Element* textEl = mainWindow.AddElementToElement(subHeader->name, subHeaderTextInfo, SableUI::ElementType::TEXT);
+					if (textEl) textEl->SetText(U"System Status", 16);
+				}
+
+				// Status Icon (Image)
+				SableUI::ElementInfo statusIconInfo{};
+				statusIconInfo.name = "StatusImage";
+				statusIconInfo.wType = SableUI::RectType::FIXED;
+				statusIconInfo.hType = SableUI::RectType::FIXED;
+				statusIconInfo.width = 60.0f;
+				statusIconInfo.height = 60.0f;
+				statusIconInfo.centerX = true; // Center image horizontally
+				statusIconInfo.yOffset = 10.0f; // Small offset from previous element
+				SableUI::Element* statusImage = mainWindow.AddElementToElement(rightColumn->name, statusIconInfo, SableUI::ElementType::IMAGE);
+				if (statusImage)
+				{
+					statusImage->SetImage("junior.jpg"); // Assuming you have an icon image
+				}
+
+				// Status Text
+				SableUI::ElementInfo statusTextInfo{};
+				statusTextInfo.name = "CurrentStatusText";
+				statusTextInfo.wType = SableUI::RectType::FILL;
+				statusTextInfo.hType = SableUI::RectType::FIT_CONTENT; // Text fits its content
+				statusTextInfo.padding = 5.0f;
+				statusTextInfo.centerX = true; // Center text horizontally
+				statusTextInfo.yOffset = 5.0f;
+				SableUI::Element* statusText = mainWindow.AddElementToElement(rightColumn->name, statusTextInfo, SableUI::ElementType::TEXT);
+				if (statusText)
+				{
+					statusText->SetText(U"All Systems Nominal", 14);
+				}
+
+				// Spacer (Empty RECT to push content)
+				SableUI::ElementInfo spacerInfo{};
+				spacerInfo.name = "Spacer";
+				spacerInfo.hType = SableUI::RectType::FILL; // This spacer takes up all remaining vertical space
+				spacerInfo.bgColour = SableUI::Colour(0, 0, 0, 0); // Transparent
+				mainWindow.AddElementToElement(rightColumn->name, spacerInfo, SableUI::ElementType::RECT);
+
+
+				// Footer (version info, etc.)
+				SableUI::ElementInfo footerInfo{};
+				footerInfo.name = "VersionFooter";
+				footerInfo.hType = SableUI::RectType::FIXED;
+				footerInfo.height = 25.0f;
+				footerInfo.bgColour = SableUI::Colour(60, 50, 50);
+				footerInfo.padding = 5.0f;
+				SableUI::Element* footer = mainWindow.AddElementToElement(rightColumn->name, footerInfo, SableUI::ElementType::RECT);
+				if (footer)
+				{
+					SableUI::ElementInfo footerTextInfo{};
+					footerTextInfo.name = "VersionText";
+					footerTextInfo.wType = SableUI::RectType::FILL;
+					footerTextInfo.hType = SableUI::RectType::FILL;
+					footerTextInfo.centerY = true;
+					SableUI::Element* textEl = mainWindow.AddElementToElement(footer->name, footerTextInfo, SableUI::ElementType::TEXT);
+					if (textEl) textEl->SetText(U"Ver 1.0.0", 12);
+				}
 			}
 		}
 	}

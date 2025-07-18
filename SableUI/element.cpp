@@ -225,14 +225,14 @@ void SableUI::Element::UpdateChildren()
 
 		if (layoutDirection == LayoutDirection::VERTICAL)
 		{
-			if (child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT && child->centerX)
+			if ((child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT) && child->centerX)
 			{
 				child->xOffset = (rect.w - child->width) / 2.0f;
 			}
 		}
 		else
 		{
-			if (child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT && child->centerY)
+			if ((child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT) && child->centerY)
 			{
 				child->yOffset = (rect.h - child->height) / 2.0f;
 			}
@@ -354,7 +354,7 @@ float SableUI::Element::GetWidth()
 {
 	if (children.empty())
 	{
-		if (wType == RectType::FIXED)
+		if (wType == RectType::FIXED || wType == RectType::FIT_CONTENT)
 		{
 			return width;
 		}
@@ -371,7 +371,7 @@ float SableUI::Element::GetWidth()
 		float maxChildrenContentWidth = 0.0f;
 		for (Element* child : children)
 		{
-			maxChildrenContentWidth = std::max(maxChildrenContentWidth, child->GetWidth() + (2.0f * child->padding));
+			maxChildrenContentWidth = std::max(maxChildrenContentWidth, child->GetWidth());
 		}
 		calculatedWidth = maxChildrenContentWidth;
 	}
@@ -380,27 +380,26 @@ float SableUI::Element::GetWidth()
 		float totalChildrenContentWidth = 0.0f;
 		for (Element* child : children)
 		{
-			totalChildrenContentWidth += child->GetWidth() + (2.0f * child->padding);
+			totalChildrenContentWidth += child->GetWidth();
 		}
 		calculatedWidth = totalChildrenContentWidth;
 	}
 
-	if (wType == RectType::FIXED)
+	if (wType == RectType::FIXED || wType == RectType::FIT_CONTENT)
 	{
 		return std::max(width, calculatedWidth);
 	}
 	else
 	{
-		return std::max(calculatedWidth, 20.0f);
+		return std::max(calculatedWidth + (2.0f * padding), 20.0f);
 	}
 }
-
 
 float SableUI::Element::GetHeight()
 {
 	if (children.empty())
 	{
-		if (hType == RectType::FIXED)
+		if (hType == RectType::FIXED || hType == RectType::FIT_CONTENT)
 		{
 			return height;
 		}
@@ -417,7 +416,7 @@ float SableUI::Element::GetHeight()
 		float totalChildrenContentHeight = 0.0f;
 		for (Element* child : children)
 		{
-			totalChildrenContentHeight += child->GetHeight() + (2.0f * child->padding);
+			totalChildrenContentHeight += child->GetHeight();
 		}
 		calculatedHeight = totalChildrenContentHeight;
 	}
@@ -426,18 +425,18 @@ float SableUI::Element::GetHeight()
 		float maxChildrenContentHeight = 0.0f;
 		for (Element* child : children)
 		{
-			maxChildrenContentHeight = std::max(maxChildrenContentHeight, child->GetHeight() + (2.0f * child->padding));
+			maxChildrenContentHeight = std::max(maxChildrenContentHeight, child->GetHeight());
 		}
 		calculatedHeight = maxChildrenContentHeight;
 	}
 
-	if (hType == RectType::FIXED)
+	if (hType == RectType::FIXED || hType == RectType::FIT_CONTENT)
 	{
 		return std::max(height, calculatedHeight);
 	}
 	else
 	{
-		return std::max(calculatedHeight, 20.0f);
+		return std::max(calculatedHeight + (2.0f * padding), 20.0f);
 	}
 }
 
