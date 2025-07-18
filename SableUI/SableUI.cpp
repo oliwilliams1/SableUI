@@ -328,7 +328,7 @@ void SableUI::Window::Draw()
 		glFlush();
 
 		// DrawDebugBounds();
-		// DrawDebugElementBounds();
+		DrawDebugElementBounds();
 		m_needsStaticRedraw = false;
 	}
 

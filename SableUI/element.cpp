@@ -169,47 +169,54 @@ void SableUI::Element::UpdateChildren()
 	if (type == ElementType::IMAGE || type == ElementType::TEXT) return;
 
 	/* use cursor to place elements */
-	vec2 cursor = { SableUI::f2i(rect.x),
-							 SableUI::f2i(rect.y) };
+	vec2 cursor = { SableUI::f2i(rect.x), SableUI::f2i(rect.y) };
 
-	vec2 bounds = { SableUI::f2i(rect.x + rect.w),
-							 SableUI::f2i(rect.y + rect.h) };
+	vec2 bounds = { SableUI::f2i(rect.x + rect.w), SableUI::f2i(rect.y + rect.h) };
 
-	float totalFixedMainAxisDimension = 0.0f;
-	float fillMainAxisCount = 0.0f;
+	if (wType == RectType::FIT_CONTENT)
+	{
+		width = GetWidth();
+	}
+	if (hType == RectType::FIT_CONTENT)
+	{
+		height = GetHeight();
+	}
+
+	float totalFixed = 0.0f;
+	float fillCount = 0.0f;
 
 	for (Element* child : children)
 	{
 		if (layoutDirection == LayoutDirection::VERTICAL)
 		{
-			if (child->hType == RectType::FIXED)
+			if (child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT)
 			{
-				totalFixedMainAxisDimension += child->height + (2.0f * child->padding);
+				totalFixed += child->height + (2.0f * child->padding);
 			}
 			else if (child->hType == RectType::FILL)
 			{
-				fillMainAxisCount++;
+				fillCount++;
 			}
 		}
 		else
 		{
-			if (child->wType == RectType::FIXED)
+			if (child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT)
 			{
-				totalFixedMainAxisDimension += child->width + (2.0f * child->padding);
+				totalFixed += child->width + (2.0f * child->padding);
 			}
 			else if (child->wType == RectType::FILL)
 			{
-				fillMainAxisCount++;
+				fillCount++;
 			}
 		}
 	}
 
-	float availableMainAxisDimension = (layoutDirection == LayoutDirection::VERTICAL) ? rect.h : rect.w;
-	float fillMainAxisUnitDimension = 0.0f;
-	if (fillMainAxisCount > 0)
+	float availableSize = (layoutDirection == LayoutDirection::VERTICAL) ? rect.h : rect.w;
+	float fillSize = 0.0f;
+	if (fillCount > 0)
 	{
-		fillMainAxisUnitDimension = (availableMainAxisDimension - totalFixedMainAxisDimension) / fillMainAxisCount;
-		if (fillMainAxisUnitDimension < 0) fillMainAxisUnitDimension = 0;
+		fillSize = (availableSize - totalFixed) / fillCount;
+		if (fillSize < 0) fillSize = 0;
 	}
 
 	for (Element* child : children)
@@ -218,14 +225,14 @@ void SableUI::Element::UpdateChildren()
 
 		if (layoutDirection == LayoutDirection::VERTICAL)
 		{
-			if (child->wType == RectType::FIXED && child->centerX)
+			if (child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT && child->centerX)
 			{
 				child->xOffset = (rect.w - child->width) / 2.0f;
 			}
 		}
 		else
 		{
-			if (child->hType == RectType::FIXED && child->centerY)
+			if (child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT && child->centerY)
 			{
 				child->yOffset = (rect.h - child->height) / 2.0f;
 			}
@@ -248,7 +255,7 @@ void SableUI::Element::UpdateChildren()
 
 			if (child->hType == RectType::FILL)
 			{
-				tempElRect.h = fillMainAxisUnitDimension - (2.0f * child->padding);
+				tempElRect.h = fillSize - (2.0f * child->padding);
 				if (tempElRect.h < 0) tempElRect.h = 0;
 			}
 			else
@@ -268,7 +275,7 @@ void SableUI::Element::UpdateChildren()
 
 			if (child->wType == RectType::FILL)
 			{
-				tempElRect.w = fillMainAxisUnitDimension - (2.0f * child->padding);
+				tempElRect.w = fillSize - (2.0f * child->padding);
 				if (tempElRect.w < 0) tempElRect.w = 0;
 			}
 			else

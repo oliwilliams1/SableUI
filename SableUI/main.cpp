@@ -108,10 +108,11 @@ int main(int argc, char** argv)
 		mainWindow.AddElementToComponent("TopLeftComponent", el2, SableUI::ElementType::RECT);
 
 		info.name = "ImageContainerDiv";
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 250.0f; // Adjusted height for image container to be more compact
+		info.wType = SableUI::RectType::FIT_CONTENT;
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(45, 45, 45);
 		info.padding = 5.0f;
+		info.centerX = true;
 		info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL;
 
 		SableUI::Element* imgDiv = mainWindow.AddElementToComponent("TopLeftComponent", info, SableUI::ElementType::RECT);
