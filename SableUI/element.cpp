@@ -85,18 +85,19 @@ void SableUI::Element::SetRect(const Rect& r)
 
 void SableUI::Element::SetInfo(const ElementInfo& info)
 {
-    this->name     = info.name;
-    this->xOffset  = info.xOffset;
-    this->yOffset  = info.yOffset;
-    this->width    = info.width;
-    this->height   = info.height;
-    this->padding  = info.padding;
-    this->wType    = info.wType;
-    this->hType    = info.hType;
-    this->centerX  = info.centerX;
-    this->centerY  = info.centerY;
-    this->bgColour = info.bgColour;
-	this->type     = info.type;
+    this->name = info.name;
+    this->xOffset = info.xOffset;
+    this->yOffset = info.yOffset;
+    this->width	= info.width;
+    this->height = info.height;
+    this->padding = info.padding;
+    this->wType = info.wType;
+    this->hType = info.hType;
+    this->centerX = info.centerX;
+    this->centerY = info.centerY;
+    this->bgColour	= info.bgColour;
+	this->type = info.type;
+	this->layoutDirection = info.layoutDirection;
 }
 
 void SableUI::Element::Render(int z)
@@ -174,46 +175,122 @@ void SableUI::Element::UpdateChildren()
 	vec2 bounds = { SableUI::f2i(rect.x + rect.w),
 							 SableUI::f2i(rect.y + rect.h) };
 
+	float totalFixedMainAxisDimension = 0.0f;
+	float fillMainAxisCount = 0.0f;
+
 	for (Element* child : children)
 	{
-		if (child->wType == RectType::FIXED && child->centerX)
+		if (layoutDirection == LayoutDirection::VERTICAL)
 		{
-			child->xOffset = (rect.w - child->width) / 2.0f;
-		}
-
-		if (child->hType == RectType::FIXED && child->centerY)
-		{
-			child->yOffset = (rect.h - child->height) / 2.0f;
-		}
-
-		SableUI::Rect tempElRect = { 0, 0, 0, 0 };
-		tempElRect.y = cursor.y + child->yOffset;
-		tempElRect.x = cursor.x + child->xOffset;
-		tempElRect.w = child->width;
-		tempElRect.h = child->height;
-
-		/* calc fill type */
-		if (child->wType == RectType::FILL) tempElRect.w = rect.w;
-
-		if (child->hType == RectType::FILL)
-		{
-			float fillHeight = rect.h;
-			float fillCtr = 0;
-
-			for (Element* child2 : children)
+			if (child->hType == RectType::FIXED)
 			{
-				if (child2->hType == RectType::FIXED) fillHeight -= child2->height;
-				else fillCtr++;
+				totalFixedMainAxisDimension += child->height + (2.0f * child->padding);
 			}
-			tempElRect.h = fillHeight / fillCtr;
+			else if (child->hType == RectType::FILL)
+			{
+				fillMainAxisCount++;
+			}
+		}
+		else
+		{
+			if (child->wType == RectType::FIXED)
+			{
+				totalFixedMainAxisDimension += child->width + (2.0f * child->padding);
+			}
+			else if (child->wType == RectType::FILL)
+			{
+				fillMainAxisCount++;
+			}
+		}
+	}
+
+	float availableMainAxisDimension = (layoutDirection == LayoutDirection::VERTICAL) ? rect.h : rect.w;
+	float fillMainAxisUnitDimension = 0.0f;
+	if (fillMainAxisCount > 0)
+	{
+		fillMainAxisUnitDimension = (availableMainAxisDimension - totalFixedMainAxisDimension) / fillMainAxisCount;
+		if (fillMainAxisUnitDimension < 0) fillMainAxisUnitDimension = 0;
+	}
+
+	for (Element* child : children)
+	{
+		SableUI::Rect tempElRect = { 0, 0, 0, 0 };
+
+		if (layoutDirection == LayoutDirection::VERTICAL)
+		{
+			if (child->wType == RectType::FIXED && child->centerX)
+			{
+				child->xOffset = (rect.w - child->width) / 2.0f;
+			}
+		}
+		else
+		{
+			if (child->hType == RectType::FIXED && child->centerY)
+			{
+				child->yOffset = (rect.h - child->height) / 2.0f;
+			}
 		}
 
-		/* max to bounds */
-		if (tempElRect.x + tempElRect.w > bounds.x) tempElRect.w = bounds.x - tempElRect.x;
-		if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
 
-		/* upd cursor */
-		cursor.y += tempElRect.h + child->yOffset + (2.0f * child->padding);
+		if (layoutDirection == LayoutDirection::VERTICAL)
+		{
+			tempElRect.y = cursor.y + child->yOffset;
+			tempElRect.x = cursor.x + child->xOffset;
+
+			if (child->wType == RectType::FILL)
+			{
+				tempElRect.w = rect.w;
+			}
+			else
+			{
+				tempElRect.w = child->width;
+			}
+
+			if (child->hType == RectType::FILL)
+			{
+				tempElRect.h = fillMainAxisUnitDimension - (2.0f * child->padding);
+				if (tempElRect.h < 0) tempElRect.h = 0;
+			}
+			else
+			{
+				tempElRect.h = child->height;
+			}
+
+			if (tempElRect.x + tempElRect.w > bounds.x) tempElRect.w = bounds.x - tempElRect.x;
+			if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
+
+			cursor.y += tempElRect.h + child->yOffset + (2.0f * child->padding);
+		}
+		else
+		{
+			tempElRect.x = cursor.x + child->xOffset;
+			tempElRect.y = cursor.y + child->yOffset;
+
+			if (child->wType == RectType::FILL)
+			{
+				tempElRect.w = fillMainAxisUnitDimension - (2.0f * child->padding);
+				if (tempElRect.w < 0) tempElRect.w = 0;
+			}
+			else
+			{
+				tempElRect.w = child->width;
+			}
+
+			if (child->hType == RectType::FILL)
+			{
+				tempElRect.h = rect.h;
+			}
+			else
+			{
+				tempElRect.h = child->height;
+			}
+
+			// clamp to bounds
+			if (tempElRect.x + tempElRect.w > bounds.x) tempElRect.w = bounds.x - tempElRect.x;
+			if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
+
+			cursor.x += tempElRect.w + child->xOffset + (2.0f * child->padding);
+		}
 
 		/* calc padding */
 		if (child->padding > 0.0f)
@@ -222,6 +299,9 @@ void SableUI::Element::UpdateChildren()
 			tempElRect.y += child->padding;
 			tempElRect.w -= 2.0f * child->padding;
 			tempElRect.h -= 2.0f * child->padding;
+			
+			if (tempElRect.w < 0) tempElRect.w = 0;
+			if (tempElRect.h < 0) tempElRect.h = 0;
 		}
 
 		child->SetRect(tempElRect);
@@ -263,7 +343,6 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize, float l
 	}
 }
 
-/* ASSUMING VERTICALLY SPLIT */
 float SableUI::Element::GetWidth()
 {
 	if (children.empty())
@@ -274,27 +353,42 @@ float SableUI::Element::GetWidth()
 		}
 		else
 		{
-			return (width > 0) ? width: 20.0f;
+			return (width > 0) ? width : 20.0f;
 		}
 	}
 
-	float maxChildrenWidth = 0.0f;
-	for (Element* child : children)
+	float calculatedWidth = 0.0f;
+
+	if (layoutDirection == LayoutDirection::VERTICAL)
 	{
-		maxChildrenWidth = (std::max)(maxChildrenWidth, child->GetWidth() + 2.0f * padding);
+		float maxChildrenContentWidth = 0.0f;
+		for (Element* child : children)
+		{
+			maxChildrenContentWidth = std::max(maxChildrenContentWidth, child->GetWidth() + (2.0f * child->padding));
+		}
+		calculatedWidth = maxChildrenContentWidth;
+	}
+	else
+	{
+		float totalChildrenContentWidth = 0.0f;
+		for (Element* child : children)
+		{
+			totalChildrenContentWidth += child->GetWidth() + (2.0f * child->padding);
+		}
+		calculatedWidth = totalChildrenContentWidth;
 	}
 
 	if (wType == RectType::FIXED)
 	{
-		return (std::max)(width, maxChildrenWidth);
+		return std::max(width, calculatedWidth);
 	}
 	else
 	{
-		return (std::max)(maxChildrenWidth, 20.0f);
+		return std::max(calculatedWidth, 20.0f);
 	}
 }
 
-/* ASSUMING VERTICALLY SPLIT */
+
 float SableUI::Element::GetHeight()
 {
 	if (children.empty())
@@ -305,23 +399,38 @@ float SableUI::Element::GetHeight()
 		}
 		else
 		{
-			return (height > 0) ? height: 20.0f;
+			return (height > 0) ? height : 20.0f;
 		}
 	}
 
-	float totalChildrenHeight = 0.0f;
-	for (Element* child : children)
+	float calculatedHeight = 0.0f;
+
+	if (layoutDirection == LayoutDirection::VERTICAL)
 	{
-		totalChildrenHeight += child->GetHeight() + 2.0f * padding;
+		float totalChildrenContentHeight = 0.0f;
+		for (Element* child : children)
+		{
+			totalChildrenContentHeight += child->GetHeight() + (2.0f * child->padding);
+		}
+		calculatedHeight = totalChildrenContentHeight;
+	}
+	else
+	{
+		float maxChildrenContentHeight = 0.0f;
+		for (Element* child : children)
+		{
+			maxChildrenContentHeight = std::max(maxChildrenContentHeight, child->GetHeight() + (2.0f * child->padding));
+		}
+		calculatedHeight = maxChildrenContentHeight;
 	}
 
 	if (hType == RectType::FIXED)
 	{
-		return (std::max)(height, totalChildrenHeight);
+		return std::max(height, calculatedHeight);
 	}
 	else
 	{
-		return (std::max)(totalChildrenHeight, 20.0f);
+		return std::max(calculatedHeight, 20.0f);
 	}
 }
 

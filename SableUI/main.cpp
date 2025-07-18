@@ -112,6 +112,8 @@ int main(int argc, char** argv)
 		info.height = 250.0f; // Adjusted height for image container to be more compact
 		info.bgColour = SableUI::Colour(45, 45, 45);
 		info.padding = 5.0f;
+		info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL;
+
 		SableUI::Element* imgDiv = mainWindow.AddElementToComponent("TopLeftComponent", info, SableUI::ElementType::RECT);
 		if (imgDiv)
 		{
@@ -297,7 +299,6 @@ int main(int argc, char** argv)
 			info.width = 250.0f;
 			info.bgColour = SableUI::Colour(0, 180, 0);
 			info.padding = 0.0f;
-			info.centerY = true;
 			mainWindow.AddElementToElement(progressBarContainer->name, info, SableUI::ElementType::RECT);
 		}
 
