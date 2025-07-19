@@ -43,79 +43,75 @@ void SableUI::DefaultComponent::AddElement(Element* e)
 
 void SableUI::DefaultComponent::UpdateElements()
 {
-	/* use cursor to place elements */
-	vec2 cursor = { SableUI::f2i(parentNode->rect.x),
-							 SableUI::f2i(parentNode->rect.y) };
+    /* use cursor to place elements */
+    vec2 cursor = { SableUI::f2i(parentNode->rect.x),
+                    SableUI::f2i(parentNode->rect.y) };
 
-	vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
-							 SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
+    vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
+                    SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
 
-	for (Element* element : elements)
-	{
-		if (parentNode != nullptr && (element->wType == RectType::FIXED || element->wType == RectType::FIT_CONTENT) && element->centerX)
-		{
-			element->xOffset = (parentNode->rect.w - element->width) / 2.0f;
-		}
+    for (Element* element : elements)
+    {
+        if (parentNode != nullptr && (element->wType == RectType::FIXED || element->wType == RectType::FIT_CONTENT) && element->centerX)
+        {
+            element->xOffset = (parentNode->rect.w - element->width) / 2.0f;
+        }
 
-		if (parentNode != nullptr && (element->hType == RectType::FIXED || element->hType == RectType::FIT_CONTENT) && element->centerY)
-		{
-			element->yOffset = (parentNode->rect.h - element->height) / 2.0f;
-		}
+        if (parentNode != nullptr && (element->hType == RectType::FIXED || element->hType == RectType::FIT_CONTENT) && element->centerY)
+        {
+            element->yOffset = (parentNode->rect.h - element->height) / 2.0f;
+        }
 
-		SableUI::Rect tempElRect = { 0, 0, 0, 0 };
-		tempElRect.y = cursor.y + element->yOffset;
-		tempElRect.x = cursor.x + element->xOffset;
-		tempElRect.w = element->width;
-		tempElRect.h = element->height;
+        SableUI::Rect tempElRect = { 0, 0, 0, 0 };
+        tempElRect.y = cursor.y + element->yOffset;
+        tempElRect.x = cursor.x + element->xOffset;
+        tempElRect.w = element->width;
+        tempElRect.h = element->height;
 
-		/* apply border */
-		float bSize = 0.0f;
-		if (parentNode != nullptr && parentNode->parent != nullptr)
-		{
-			bSize = parentNode->parent->bSize;
-		}
+        /* apply border */
+        float bSize = 0.0f;
+        if (parentNode != nullptr && parentNode->parent != nullptr)
+        {
+            bSize = parentNode->parent->bSize;
+        }
 
-		tempElRect.x += bSize;
-		tempElRect.y += bSize;
+        tempElRect.x += bSize;
+        tempElRect.y += bSize;
 
-		/* calc fill type */
-		if (parentNode != nullptr)
-		{
-			if (element->wType == RectType::FILL) tempElRect.w = parentNode->rect.w - 2.0f * bSize;
+        /* calc fill type */
+        if (parentNode != nullptr)
+        {
+            if (element->wType == RectType::FILL)
+                tempElRect.w = parentNode->rect.w - 2.0f * bSize;
 
-			if (element->hType == RectType::FILL)
-			{
-				float fillHeight = parentNode->rect.h - 2.0f * bSize;
-				float fillCtr = 0;
+            if (element->hType == RectType::FILL)
+            {
+                float fillHeight = parentNode->rect.h - 2.0f * bSize;
+                float fillCtr = 0;
 
-				for (Element* el2 : elements)
-				{
-					if (el2->hType == RectType::FIXED || el2->hType == RectType::FIT_CONTENT) fillHeight -= el2->height;
-					else fillCtr++;
-				}
-				tempElRect.h = fillHeight / fillCtr;
-			}
-		}
+                for (Element* el2 : elements)
+                {
+                    if (el2->hType == RectType::FIXED || el2->hType == RectType::FIT_CONTENT)
+                        fillHeight -= el2->height;
+                    else
+                        fillCtr++;
+                }
+                tempElRect.h = fillHeight / fillCtr;
+            }
+        }
 
-		/* max to bounds */
-		if (tempElRect.x + tempElRect.w > bounds.x) tempElRect.w = bounds.x - tempElRect.x;
-		if (tempElRect.y + tempElRect.h > bounds.y) tempElRect.h = bounds.y - tempElRect.y;
+        /* max to bounds */
+        if (tempElRect.x + tempElRect.w > bounds.x)
+            tempElRect.w = bounds.x - tempElRect.x;
+        if (tempElRect.y + tempElRect.h > bounds.y)
+            tempElRect.h = bounds.y - tempElRect.y;
 
-		/* upd cursor */
-		cursor.y += tempElRect.h + element->yOffset;
+        /* upd cursor */
+        cursor.y += tempElRect.h + element->yOffset;
 
-		/* calc padding */
-		if (element->padding > 0.0f)
-		{
-			tempElRect.x += element->padding;
-			tempElRect.y += element->padding;
-			tempElRect.w -= 2.0f * element->padding;
-			tempElRect.h -= 2.0f * element->padding;
-		}
-		
-		element->SetRect(tempElRect);
-	}
-};
+        element->SetRect(tempElRect);
+    }
+}
 
 /* - Splitter - */
 

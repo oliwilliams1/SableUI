@@ -82,8 +82,7 @@ int main(int argc, char** argv)
 
 		// A fixed-height DIV at the top
 		info.name = "TopDiv_TopLeft";
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 50.0f;
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(60, 60, 60);
 		info.padding = 4.0f;
 		SableUI::Element* topDiv = mainWindow.AddElementToComponent("TopLeftComponent", info, SableUI::ElementType::RECT);
@@ -144,10 +143,12 @@ int main(int argc, char** argv)
 		info.name = "NestedTopDiv";
 		info.bgColour = SableUI::Colour(50, 50, 50);
 		info.padding = 10.0f;
+		info.hType = SableUI::RectType::FILL;
 		SableUI::Element* nestedTopDiv = mainWindow.AddElementToComponent("NestedTopComponent", info, SableUI::ElementType::RECT);
 		if (nestedTopDiv)
 		{
 			info.name = "NestedTopDivText";
+			info.hType = SableUI::RectType::FIT_CONTENT;
 			SableUI::Element* textEl = mainWindow.AddElementToElement(nestedTopDiv->name, info, SableUI::ElementType::TEXT);
 			textEl->SetText(U"Nested Top Content", 18);
 
@@ -166,8 +167,7 @@ int main(int argc, char** argv)
 	// NestedBottomLeftComponent: Multiple DIVs and a button (RECT with text), now with more dynamic content
 	{
 		SableUI::ElementInfo info{};
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 40.0f;
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(70, 70, 70);
 		info.padding = 5.0f;
 
@@ -180,9 +180,8 @@ int main(int argc, char** argv)
 		}
 
 		info.name = "ButtonDiv";
-		info.wType = SableUI::RectType::FIXED;
-		info.height = 30.0f;
-		info.width = 100.0f;
+		info.wType = SableUI::RectType::FIT_CONTENT;
+		info.width = 150.0f;
 		info.bgColour = SableUI::Colour(0, 120, 215); // Blue button
 		info.padding = 5.0f;
 		info.centerX = true;
@@ -197,6 +196,7 @@ int main(int argc, char** argv)
 
 		// A fill div with more content
 		info.name = "FillDiv_NestedBottomLeft";
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(40, 40, 40);
 		info.padding = 10.0f;
 		SableUI::Element* fillDivNBL = mainWindow.AddElementToComponent("NestedBottomLeftComponent", info, SableUI::ElementType::RECT);
@@ -257,10 +257,13 @@ int main(int argc, char** argv)
 			info.name = "InnerDiv2";
 			info.bgColour = SableUI::Colour(60, 60, 60);
 			info.padding = 10.0f;
+			info.wType = SableUI::RectType::FILL;
+			info.hType = SableUI::RectType::FILL;
 			SableUI::Element* innerDiv2 = mainWindow.AddElementToElement(outerDiv->name, info, SableUI::ElementType::RECT);
 			if (innerDiv2)
 			{
 				info.name = "InnerDiv2Text";
+				info.hType = SableUI::RectType::FIT_CONTENT;
 				SableUI::Element* textEl = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Flexible Div", 16);
 
@@ -275,6 +278,8 @@ int main(int argc, char** argv)
 				info.centerX = true;
 				SableUI::Element* deepDiv = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::RECT);
 				if (deepDiv) {
+					info.wType = SableUI::RectType::FIT_CONTENT;
+					info.hType = SableUI::RectType::FIT_CONTENT;
 					info.name = "DeepNestedDivText";
 					SableUI::Element* textEl = mainWindow.AddElementToElement(deepDiv->name, info, SableUI::ElementType::TEXT);
 					textEl->SetText(U"Deep", 12);
@@ -287,33 +292,34 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "ProgressBarContainer";
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 50.0f;
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(40, 40, 40);
-		info.padding = 10.0f;
+		info.padding = 0.0f; // Set padding to 0 for container
 		SableUI::Element* progressBarContainer = mainWindow.AddElementToComponent("MainBottomComponent", info, SableUI::ElementType::RECT);
 
 		if (progressBarContainer)
 		{
 			info.name = "ProgressBar";
+			info.hType = SableUI::RectType::FIXED;
+			info.height = 40.0f;
 			info.wType = SableUI::RectType::FIXED;
 			info.width = 400.0f;
 			info.bgColour = SableUI::Colour(0, 180, 0);
-			info.padding = 0.0f;
+			info.padding = 0.0f; // No padding for the progress bar
 			mainWindow.AddElementToElement(progressBarContainer->name, info, SableUI::ElementType::RECT);
 		}
 
-		info.name = "MainBottomFillDiv";
-		info.bgColour = SableUI::Colour(50, 50, 50);
-		info.hType = SableUI::RectType::FIT_CONTENT;
-		info.padding = 10.0f;
-		SableUI::Element* mainBottomFillDiv = mainWindow.AddElementToComponent("MainBottomComponent", info, SableUI::ElementType::RECT);
-		if (mainBottomFillDiv)
+		SableUI::ElementInfo info2{};
+		info2.hType = SableUI::RectType::FIT_CONTENT;
+		info2.wType = SableUI::RectType::FIXED;
+		info2.width = 200.0f;
+		info2.bgColour = SableUI::Colour(50, 50, 50);
+		SableUI::Element* textParent = mainWindow.AddElementToComponent("MainBottomComponent", info2, SableUI::ElementType::RECT);
+		if (textParent)
 		{
-			info.name = "StatusText";
-			info.padding = 5.0f;
-			SableUI::Element* textEl = mainWindow.AddElementToElement(mainBottomFillDiv->name, info, SableUI::ElementType::TEXT);
-			textEl->SetText(U"Application Status: ænergy running...", 15);
+			info2.name = "ProgressBarText";
+			SableUI::Element* textEl = mainWindow.AddElementToElement(textParent->name, info2, SableUI::ElementType::TEXT);
+			textEl->SetText(U"Progress: 50%", 16);
 		}
 	}
 
@@ -322,8 +328,7 @@ int main(int argc, char** argv)
 		// --- Header Section ---
 		SableUI::ElementInfo headerInfo{}; // Always create a fresh info struct for each new element or section
 		headerInfo.name = "RightTopHeader";
-		headerInfo.hType = SableUI::RectType::FIXED;
-		headerInfo.height = 50.0f;
+		headerInfo.hType = SableUI::RectType::FIT_CONTENT;
 		headerInfo.bgColour = SableUI::Colour(70, 70, 90);
 		headerInfo.padding = 10.0f;
 		headerInfo.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Set layout for header's potential children
@@ -364,7 +369,7 @@ int main(int argc, char** argv)
 			SableUI::ElementInfo leftColumnInfo{};
 			leftColumnInfo.name = "GeneralSettingsColumn";
 			leftColumnInfo.wType = SableUI::RectType::FILL; // This column fills its parent's width (settingsContainerInfo)
-			leftColumnInfo.hType = SableUI::RectType::FILL; // This column fills its parent's height
+			leftColumnInfo.hType = SableUI::RectType::FIT_CONTENT; // This column fills its parent's height
 			leftColumnInfo.bgColour = SableUI::Colour(40, 40, 50); // Slightly different background
 			leftColumnInfo.padding = 15.0f;
 			leftColumnInfo.layoutDirection = SableUI::LayoutDirection::VERTICAL; // Children will stack vertically
@@ -375,8 +380,7 @@ int main(int argc, char** argv)
 				// Sub-header for Left Column
 				SableUI::ElementInfo subHeaderInfo{};
 				subHeaderInfo.name = "GeneralSettingsHeader";
-				subHeaderInfo.hType = SableUI::RectType::FIXED;
-				subHeaderInfo.height = 30.0f;
+				subHeaderInfo.hType = SableUI::RectType::FIT_CONTENT;
 				subHeaderInfo.bgColour = SableUI::Colour(50, 50, 60);
 				subHeaderInfo.padding = 5.0f;
 				SableUI::Element* subHeader = mainWindow.AddElementToElement(leftColumn->name, subHeaderInfo, SableUI::ElementType::RECT);
@@ -395,7 +399,7 @@ int main(int argc, char** argv)
 				SableUI::ElementInfo setting1Info{};
 				setting1Info.name = "EnableFeatureASetting";
 				setting1Info.hType = SableUI::RectType::FIXED;
-				setting1Info.height = 35.0f; // Fixed height for the setting row
+				setting1Info.height = 50;
 				setting1Info.bgColour = SableUI::Colour(45, 45, 55);
 				setting1Info.padding = 5.0f;
 				setting1Info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Checkbox and text side-by-side
@@ -435,7 +439,7 @@ int main(int argc, char** argv)
 					settingTextInfo.hType = SableUI::RectType::FILL; // Text fills remaining height
 					settingTextInfo.padding = 0.0f;
 					settingTextInfo.xOffset = 5.0f; // Small horizontal offset from checkbox
-					settingTextInfo.centerY = true; // Vertically center text in the setting row
+					settingTextInfo.centerY = true;
 
 					SableUI::Element* textEl = mainWindow.AddElementToElement(setting1->name, settingTextInfo, SableUI::ElementType::TEXT);
 					if (textEl) textEl->SetText(U"Enable Advanced Features", 14);
@@ -444,8 +448,7 @@ int main(int argc, char** argv)
 				// Setting 2: Text input field (e.g., for username)
 				SableUI::ElementInfo setting2Info{};
 				setting2Info.name = "UsernameSetting";
-				setting2Info.hType = SableUI::RectType::FIXED;
-				setting2Info.height = 35.0f;
+				setting2Info.hType = SableUI::RectType::FIT_CONTENT;
 				setting2Info.bgColour = SableUI::Colour(45, 45, 55);
 				setting2Info.padding = 5.0f;
 				setting2Info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Label and input side-by-side
@@ -466,18 +469,15 @@ int main(int argc, char** argv)
 					// Input field background
 					SableUI::ElementInfo inputBgInfo{};
 					inputBgInfo.name = "UsernameInputField";
-					inputBgInfo.wType = SableUI::RectType::FILL; // Fills remaining width
-					inputBgInfo.hType = SableUI::RectType::FILL;
+					inputBgInfo.hType = SableUI::RectType::FIT_CONTENT;
 					inputBgInfo.bgColour = SableUI::Colour(60, 60, 70); // Darker background for input area
-					inputBgInfo.padding = 3.0f; // Padding inside the input field
 					SableUI::Element* inputField = mainWindow.AddElementToElement(setting2->name, inputBgInfo, SableUI::ElementType::RECT);
 					if (inputField)
 					{
 						// Placeholder/Current Text in input field
 						SableUI::ElementInfo inputTextInfo{};
 						inputTextInfo.name = "UsernameInputText";
-						inputTextInfo.wType = SableUI::RectType::FILL;
-						inputTextInfo.hType = SableUI::RectType::FILL;
+						inputTextInfo.hType = SableUI::RectType::FIT_CONTENT;
 						inputTextInfo.centerY = true;
 						SableUI::Element* inputText = mainWindow.AddElementToElement(inputField->name, inputTextInfo, SableUI::ElementType::TEXT);
 						if (inputText) inputText->SetText(U"Enter username...", 14);
@@ -502,8 +502,7 @@ int main(int argc, char** argv)
 				// Sub-header for Right Column
 				SableUI::ElementInfo subHeaderInfo{};
 				subHeaderInfo.name = "StatusInfoHeader";
-				subHeaderInfo.hType = SableUI::RectType::FIXED;
-				subHeaderInfo.height = 30.0f;
+				subHeaderInfo.hType = SableUI::RectType::FIT_CONTENT;
 				subHeaderInfo.bgColour = SableUI::Colour(60, 50, 50);
 				subHeaderInfo.padding = 5.0f;
 				SableUI::Element* subHeader = mainWindow.AddElementToElement(rightColumn->name, subHeaderInfo, SableUI::ElementType::RECT);
@@ -539,7 +538,6 @@ int main(int argc, char** argv)
 				statusTextInfo.wType = SableUI::RectType::FILL;
 				statusTextInfo.hType = SableUI::RectType::FIT_CONTENT; // Text fits its content
 				statusTextInfo.padding = 5.0f;
-				statusTextInfo.centerX = true; // Center text horizontally
 				statusTextInfo.yOffset = 5.0f;
 				SableUI::Element* statusText = mainWindow.AddElementToElement(rightColumn->name, statusTextInfo, SableUI::ElementType::TEXT);
 				if (statusText)
@@ -558,8 +556,7 @@ int main(int argc, char** argv)
 				// Footer (version info, etc.)
 				SableUI::ElementInfo footerInfo{};
 				footerInfo.name = "VersionFooter";
-				footerInfo.hType = SableUI::RectType::FIXED;
-				footerInfo.height = 25.0f;
+				footerInfo.hType = SableUI::RectType::FIT_CONTENT;
 				footerInfo.bgColour = SableUI::Colour(60, 50, 50);
 				footerInfo.padding = 5.0f;
 				SableUI::Element* footer = mainWindow.AddElementToElement(rightColumn->name, footerInfo, SableUI::ElementType::RECT);
@@ -567,8 +564,8 @@ int main(int argc, char** argv)
 				{
 					SableUI::ElementInfo footerTextInfo{};
 					footerTextInfo.name = "VersionText";
-					footerTextInfo.wType = SableUI::RectType::FILL;
-					footerTextInfo.hType = SableUI::RectType::FILL;
+					footerTextInfo.wType = SableUI::RectType::FIT_CONTENT;
+					footerTextInfo.hType = SableUI::RectType::FIT_CONTENT;
 					footerTextInfo.centerY = true;
 					SableUI::Element* textEl = mainWindow.AddElementToElement(footer->name, footerTextInfo, SableUI::ElementType::TEXT);
 					if (textEl) textEl->SetText(U"Ver 1.0.0", 12);
@@ -581,8 +578,7 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 		info.name = "ConsoleOutputHeader";
-		info.hType = SableUI::RectType::FIXED;
-		info.height = 40.0f;
+		info.hType = SableUI::RectType::FIT_CONTENT;
 		info.bgColour = SableUI::Colour(80, 60, 60);
 		SableUI::Element* header = mainWindow.AddElementToComponent("RightBottomComponent", info, SableUI::ElementType::RECT);
 		if (header)
