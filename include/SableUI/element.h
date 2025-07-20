@@ -29,11 +29,11 @@ namespace SableUI
 	{
 		std::string name;												// Custom name, used for attaching, editing components without a saved reference
 		Colour bgColour = Colour(128, 128, 128);						// Background colour for solid rect elements
-		float xOffset = 0;												// Horizontal offset from left side
-		float yOffset = 0;												// Vertical offset from top
-		float width = 0;												// Width in px, only useful if wType == RectType::FIXED
-		float height = 0;												// Height in px, only useful if hType == RectType::FIXED
-		float padding = 0;												// Inner padding of elements, useful when adding children elements
+		int xOffset = 0;												// Horizontal offset from left side
+		int yOffset = 0;												// Vertical offset from top
+		int width = 0;												    // Width in px, only useful if wType == RectType::FIXED
+		int height = 0;												    // Height in px, only useful if hType == RectType::FIXED
+		int padding = 0;												// Inner padding of elements, useful when adding children elements
 		bool centerX = false;											// Is centered horizontally?
 		bool centerY = false;											// Is centered vertically?
 		RectType wType = RectType::UNDEF;								// Can be FILL or FIXED, use fill to enable automatic dynamic resizing, fixed for fixed-width elements
@@ -60,15 +60,15 @@ namespace SableUI
 		void SetImage(const std::string& path);
 		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
 
-		float GetWidth();
-		float GetHeight();
+		int GetWidth(bool surface = true);
+		int GetHeight(bool surface = true);
 
 		/* User-level settings for rect */
-		float xOffset = 0;
-		float yOffset = 0;
-		float width = 0;
-		float height = 0;
-		float padding = 0;
+		int xOffset = 0;
+		int yOffset = 0;
+		int width = 0;
+		int height = 0;
+		int padding = 0;
 		bool centerX = false;
 		bool centerY = false;
 

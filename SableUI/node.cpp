@@ -27,5 +27,5 @@ void SableUI::SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx)
 		return;
 	}
 
-	root->rect = { 0, 0, static_cast<float>(wPx), static_cast<float>(hPx)};
+	root->rect = { 0, 0, static_cast<int>(wPx), static_cast<int>(hPx)};
 }

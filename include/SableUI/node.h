@@ -28,7 +28,7 @@ namespace SableUI
         std::vector<Node*> children;
         std::unique_ptr<SableUI::BaseComponent> component;
 
-        float bSize = 0.0f;
+        int bSize = 0;
 
         ivec2 minBounds = {0};
 

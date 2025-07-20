@@ -33,7 +33,7 @@ namespace SableUI
 		void SetMaxFPS(int fps);
 
 		void PrintNodeTree();
-		void SetupSplitter(const std::string& name, float bSize);
+		void SetupSplitter(const std::string& name, int bSize);
 		Node* AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
 		void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
 		Element* AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type);
@@ -60,7 +60,7 @@ namespace SableUI
 		void CalculateNodePositions(Node* node = nullptr);
 		void CalculateNodeScales(Node* node = nullptr);
 		void CalculateAllNodeMinimumBounds();
-		void Resize(vec2 pos, Node* node = nullptr);
+		void Resize(ivec2 pos, Node* node = nullptr);
 		void DrawDebugBounds();
 		void DrawDebugElementBounds(Node* node = nullptr);
 

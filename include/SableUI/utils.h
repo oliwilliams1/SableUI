@@ -226,14 +226,14 @@ namespace SableUI
 
 	struct Rect
 	{
-		Rect(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
-		Rect(float x, float y, float w, float h, RectType wType, RectType hType)
+		Rect(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
+		Rect(int x, int y, int w, int h, RectType wType, RectType hType)
 			: x(x), y(y), w(w), h(h), wType(wType), hType(hType) {}
 
-		float x = 0;
-		float y = 0;
-		float w = 0;
-		float h = 0;
+		int x = 0;
+		int y = 0;
+		int w = 0;
+		int h = 0;
 
 		RectType wType = UNDEF;
 		RectType hType = UNDEF;
@@ -244,7 +244,7 @@ namespace SableUI
 
 		void print() const
 		{
-			printf("x: %f, y: %f, w: %f, h: %f\n", x, y, w, h);
+			printf("x: %i, y: %i, w: %i, h: %i\n", x, y, w, h);
 		}
 	};
 

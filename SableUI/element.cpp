@@ -88,227 +88,79 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->name = info.name;
     this->xOffset = info.xOffset;
     this->yOffset = info.yOffset;
-    this->width	= info.width;
+    this->width = info.width;
     this->height = info.height;
     this->padding = info.padding;
     this->wType = info.wType;
     this->hType = info.hType;
     this->centerX = info.centerX;
     this->centerY = info.centerY;
-    this->bgColour	= info.bgColour;
-	this->type = info.type;
-	this->layoutDirection = info.layoutDirection;
+    this->bgColour = info.bgColour;
+    this->type = info.type;
+    this->layoutDirection = info.layoutDirection;
 }
 
 void SableUI::Element::Render(int z)
 {
-	switch (type)
-	{
-	case ElementType::RECT:
-	{
-		if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-		{
-			drawable->setZ(z);
-			renderer->Draw(drawable);
-
-			UpdateChildren();
-			for (Element* element : children)
-			{
-				element->Render(z + 1);
-			}
-		}
-		else
-		{
-			SableUI_Error("Dynamic cast failed");
-		}
-		break;
-	}
-
-	case ElementType::IMAGE:
-	{
-		if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-		{
-			drawable->setZ(z);
-			renderer->Draw(drawable);
-		}
-		else
-		{
-			SableUI_Error("Dynamic cast failed");
-		}
-		break;
-	}
-
-	case ElementType::TEXT:
-		if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
-		{
-			drawable->setZ(z);
-			renderer->Draw(drawable);
-		}
-		else
-		{
-			SableUI_Error("Dynamic cast failed");
-		}
-		break;
-
-	case ElementType::DIV:
-		UpdateChildren();
-		for (Element* element : children)
-		{
-			element->Render(z + 1);
-		}
-		break;
-
-	default:
-		SableUI_Error("Unknown ElementType");
-		break;
-	}
-}
-void SableUI::Element::UpdateChildren()
-{
-    if (type == ElementType::IMAGE || type == ElementType::TEXT) return;
-
-    vec2 cursor = { SableUI::f2i(rect.x), SableUI::f2i(rect.y) };
-    vec2 bounds = { SableUI::f2i(rect.x + rect.w), SableUI::f2i(rect.y + rect.h) };
-
-    if (wType == RectType::FIT_CONTENT)
+    switch (type)
     {
-        width = GetWidth();
-    }
-    if (hType == RectType::FIT_CONTENT)
+    case ElementType::RECT:
     {
-        height = GetHeight();
-    }
-
-    float totalSize = 0.0f;
-    float fillCount = 0.0f;
-
-    for (Element* child : children)
-    {
-        if (layoutDirection == LayoutDirection::VERTICAL)
+        if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            if (child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT)
+            drawable->setZ(z);
+            renderer->Draw(drawable);
+
+            UpdateChildren();
+            for (Element* element : children)
             {
-                totalSize += child->height + child->yOffset;
-            }
-            else if (child->hType == RectType::FILL)
-            {
-                fillCount++;
+                element->Render(z + 1);
             }
         }
         else
         {
-            if (child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT)
-            {
-                totalSize += child->width + child->xOffset;
-            }
-            else if (child->wType == RectType::FILL)
-            {
-                fillCount++;
-            }
+            SableUI_Error("Dynamic cast failed");
         }
+        break;
     }
 
-    float availableSize = (layoutDirection == LayoutDirection::VERTICAL) ? rect.h : rect.w;
-    float fillSizePerElement = 0.0f;
-
-    if (fillCount > 0)
+    case ElementType::IMAGE:
     {
-        fillSizePerElement = (availableSize - totalSize) / fillCount;
-        if (fillSizePerElement < 0) fillSizePerElement = 0;
-    }
-
-    for (Element* child : children)
-    {
-        SableUI::Rect childRect = { 0, 0, 0, 0 };
-
-        if (layoutDirection == LayoutDirection::VERTICAL || children.size() == 1)
+        if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
         {
-            if (child->centerX)
-            {
-                float availableWidth = rect.w;
-                float childWidth = (child->wType == RectType::FILL) ? availableWidth : child->width;
-                child->xOffset = (availableWidth - childWidth) / 2.0f;
-                if (child->xOffset < 0) child->xOffset = 0;
-            }
-        }
-        if (layoutDirection == LayoutDirection::HORIZONTAL || children.size() == 1)
-        {
-            if (child->centerY)
-            {
-                float availableHeight = rect.h;
-                float childHeight = (child->hType == RectType::FILL) ? availableHeight : child->height;
-                child->yOffset = (availableHeight - childHeight) / 2.0f;
-                if (child->yOffset < 0) child->yOffset = 0;
-            }
-        }
-
-
-        if (layoutDirection == LayoutDirection::VERTICAL)
-        {
-            childRect.x = cursor.x + child->xOffset;
-            childRect.y = cursor.y + child->yOffset;
-
-            if (child->wType == RectType::FILL)
-            {
-                childRect.w = (bounds.x - childRect.x);
-                if (childRect.w < 0) childRect.w = 0;
-            }
-            else
-            {
-                childRect.w = child->width;
-            }
-
-            if (child->hType == RectType::FILL)
-            {
-                childRect.h = fillSizePerElement - child->yOffset;
-                if (childRect.h < 0) childRect.h = 0;
-            }
-            else
-            {
-                childRect.h = child->height;
-            }
-
-            if (childRect.x + childRect.w > bounds.x) childRect.w = bounds.x - childRect.x;
-            if (childRect.y + childRect.h > bounds.y) childRect.h = bounds.y - childRect.y;
-            if (childRect.w < 0) childRect.w = 0;
-            if (childRect.h < 0) childRect.h = 0;
-
-            cursor.y += childRect.h + child->yOffset;
+            drawable->setZ(z);
+            renderer->Draw(drawable);
         }
         else
         {
-            childRect.x = cursor.x + child->xOffset;
-            childRect.y = cursor.y + child->yOffset;
-
-            if (child->wType == RectType::FILL)
-            {
-                childRect.w = fillSizePerElement - child->xOffset;
-                if (childRect.w < 0) childRect.w = 0;
-            }
-            else
-            {
-                childRect.w = child->width;
-            }
-
-            if (child->hType == RectType::FILL)
-            {
-                childRect.h = (bounds.y - childRect.y);
-                if (childRect.h < 0) childRect.h = 0;
-            }
-            else
-            {
-                childRect.h = child->height;
-            }
-
-            if (childRect.x + childRect.w > bounds.x) childRect.w = bounds.x - childRect.x;
-            if (childRect.y + childRect.h > bounds.y) childRect.h = bounds.y - childRect.y;
-            if (childRect.w < 0) childRect.w = 0;
-            if (childRect.h < 0) childRect.h = 0;
-
-            cursor.x += childRect.w + child->xOffset;
+            SableUI_Error("Dynamic cast failed");
         }
+        break;
+    }
 
-        child->SetRect(childRect);
+    case ElementType::TEXT:
+        if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+        {
+            drawable->setZ(z);
+            renderer->Draw(drawable);
+        }
+        else
+        {
+            SableUI_Error("Dynamic cast failed");
+        }
+        break;
+
+    case ElementType::DIV:
+        UpdateChildren();
+        for (Element* element : children)
+        {
+            element->Render(z + 1);
+        }
+        break;
+
+    default:
+        SableUI_Error("Unknown ElementType");
+        break;
     }
 }
 
@@ -347,95 +199,245 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize, float l
     }
 }
 
-float SableUI::Element::GetWidth()
+void SableUI::Element::UpdateChildren()
 {
-    if (children.empty())
+    if (type == ElementType::IMAGE || type == ElementType::TEXT) return;
+
+    ivec2 cursor = { rect.x + padding, rect.y + padding };
+    ivec2 bounds = { rect.x + rect.w - padding, rect.y + rect.h - padding };
+
+    if (wType == RectType::FIT_CONTENT)
     {
-        if (wType == RectType::FIXED || wType == RectType::FIT_CONTENT)
+        width = GetWidth();
+    }
+    if (hType == RectType::FIT_CONTENT)
+    {
+        height = GetHeight();
+    }
+
+    int totalSize = 0;
+    int fillCount = 0;
+
+    for (Element* child : children)
+    {
+        if (layoutDirection == LayoutDirection::VERTICAL)
         {
-            return width;
+            if (child->hType == RectType::FIXED || child->hType == RectType::FIT_CONTENT)
+            {
+                totalSize += child->height + child->yOffset;
+            }
+            else if (child->hType == RectType::FILL)
+            {
+                fillCount++;
+            }
         }
         else
         {
-            return (width > 0) ? width : 0.0f;
+            if (child->wType == RectType::FIXED || child->wType == RectType::FIT_CONTENT)
+            {
+                totalSize += child->width + child->xOffset;
+            }
+            else if (child->wType == RectType::FILL)
+            {
+                fillCount++;
+            }
         }
     }
 
-    float calcWidth = 0.0f;
+    int availableSize = (layoutDirection == LayoutDirection::VERTICAL) ?
+        (rect.h - 2 * padding) : (rect.w - 2 * padding);
+    int fillSizePerElement = 0;
+
+    if (fillCount > 0)
+    {
+        fillSizePerElement = (availableSize - totalSize) / fillCount;
+    }
+    else
+    {
+        fillSizePerElement = 0;
+    }
+
+    int remainingSize = (fillCount > 0) ? (availableSize - totalSize) % fillCount : 0;
+
+    for (Element* child : children)
+    {
+        SableUI::Rect childRect = { 0, 0, 0, 0 };
+
+        int availableWidth = rect.w - 2 * padding;
+        int availableHeight = rect.h - 2 * padding;
+
+        if (layoutDirection == LayoutDirection::VERTICAL || children.size() == 1)
+        {
+            if (child->centerX)
+            {
+                int childWidth = (child->wType == RectType::FILL) ? availableWidth : child->width;
+                child->xOffset = (availableWidth - childWidth) / 2;
+                if (child->xOffset < 0) child->xOffset = 0;
+            }
+        }
+        if (layoutDirection == LayoutDirection::HORIZONTAL || children.size() == 1)
+        {
+            if (child->centerY)
+            {
+                int childHeight = (child->hType == RectType::FILL) ? availableHeight : child->height;
+                child->yOffset = (availableHeight - childHeight) / 2;
+                if (child->yOffset < 0) child->yOffset = 0;
+            }
+        }
+
+        if (layoutDirection == LayoutDirection::VERTICAL)
+        {
+            childRect.x = cursor.x + child->xOffset;
+            childRect.y = cursor.y + child->yOffset;
+
+            if (child->wType == RectType::FILL)
+            {
+                childRect.w = (bounds.x - childRect.x);
+                if (childRect.w < 0) childRect.w = 0;
+            }
+            else
+            {
+                childRect.w = child->width;
+            }
+
+            if (child->hType == RectType::FILL)
+            {
+                childRect.h = fillSizePerElement + (remainingSize > 0 ? 1 : 0) - child->yOffset;
+                if (childRect.h < 0) childRect.h = 0;
+                remainingSize--;
+            }
+            else
+            {
+                childRect.h = child->height;
+            }
+
+            if (childRect.x + childRect.w > bounds.x) childRect.w = bounds.x - childRect.x;
+            if (childRect.y + childRect.h > bounds.y) childRect.h = bounds.y - childRect.y;
+            if (childRect.w < 0) childRect.w = 0;
+            if (childRect.h < 0) childRect.h = 0;
+
+            cursor.y += childRect.h + child->yOffset;
+        }
+        else
+        {
+            childRect.x = cursor.x + child->xOffset;
+            childRect.y = cursor.y + child->yOffset;
+
+            if (child->wType == RectType::FILL)
+            {
+                childRect.w = fillSizePerElement + (remainingSize > 0 ? 1 : 0) - child->xOffset;
+                if (childRect.w < 0) childRect.w = 0;
+                remainingSize--;
+            }
+            else
+            {
+                childRect.w = child->width;
+            }
+
+            if (child->hType == RectType::FILL)
+            {
+                childRect.h = (bounds.y - childRect.y);
+                if (childRect.h < 0) childRect.h = 0;
+            }
+            else
+            {
+                childRect.h = child->height;
+            }
+
+            if (childRect.x + childRect.w > bounds.x) childRect.w = bounds.x - childRect.x;
+            if (childRect.y + childRect.h > bounds.y) childRect.h = bounds.y - childRect.y;
+            if (childRect.w < 0) childRect.w = 0;
+            if (childRect.h < 0) childRect.h = 0;
+
+            cursor.x += childRect.w + child->xOffset;
+        }
+
+        child->SetRect(childRect);
+    }
+}
+
+int SableUI::Element::GetWidth(bool surface)
+{
+    if (wType == RectType::FIXED) return width + xOffset;
+    if (children.empty())
+    {
+        return std::max(width, 0);
+    }
+
+    int calcWidth = xOffset;
 
     if (layoutDirection == LayoutDirection::VERTICAL)
     {
-        float maxWidth = 0.0f;
+        int maxWidth = 0;
         for (Element* child : children)
         {
-            maxWidth = std::max(maxWidth, child->GetWidth());
+            maxWidth = std::max(maxWidth, child->GetWidth(false));
         }
         calcWidth = maxWidth;
     }
     else
     {
-        float totalWidth = 0.0f;
+        int totalWidth = 0;
         for (Element* child : children)
         {
-            totalWidth += child->GetWidth();
+            totalWidth += child->GetWidth(false);
         }
-        calcWidth = totalWidth;
+        if (wType == RectType::FIXED) calcWidth = std::max(width, totalWidth);
+        else calcWidth = totalWidth;
     }
 
-    if (wType == RectType::FIXED || wType == RectType::FIT_CONTENT)
+    if (wType == RectType::FIT_CONTENT)
     {
-        return std::max(width, calcWidth);
+        calcWidth += 2 * padding;
     }
-    else
+    else if (surface)
     {
-        return std::max(calcWidth, 0.0f);
+        calcWidth += 2 * padding;
     }
+
+    return std::max(calcWidth, 0);
 }
 
-float SableUI::Element::GetHeight()
+int SableUI::Element::GetHeight(bool surface)
 {
+    if (hType == RectType::FIXED) return height + yOffset;
     if (children.empty())
     {
-        if (hType == RectType::FIXED || hType == RectType::FIT_CONTENT)
-        {
-            return height;
-        }
-        else
-        {
-            return (height > 0) ? height : 0.0f;
-        }
+        return std::max(height, 0);
     }
 
-
-    float calcHeight = 0.0f;
+    int calcHeight = yOffset;
 
     if (layoutDirection == LayoutDirection::VERTICAL)
     {
-        float totalHeight = 0.0f;
+        int totalHeight = 0;
         for (Element* child : children)
         {
-            totalHeight += child->GetHeight();
+            totalHeight += child->GetHeight(false);
         }
-        calcHeight = totalHeight;
+        if (hType == RectType::FIXED) calcHeight = std::max(height, totalHeight);
+        else calcHeight = totalHeight;
     }
     else
     {
-        float maxHeight = 0.0f;
+        int maxHeight = 0;
         for (Element* child : children)
         {
-            maxHeight = std::max(maxHeight, child->GetHeight());
+            maxHeight = std::max(maxHeight, child->GetHeight(false));
         }
         calcHeight = maxHeight;
     }
 
-    if (hType == RectType::FIXED || hType == RectType::FIT_CONTENT)
+    if (hType == RectType::FIT_CONTENT)
     {
-        return std::max(height, calcHeight);
+        calcHeight += 2 * padding;
     }
-    else
-    {
-        return std::max(calcHeight, 0.0f);
-    }
+    else if (surface)
+	{
+		calcHeight += 2 * padding;
+	}
+
+    return std::max(calcHeight, 0);
 }
 
 SableUI::Element::~Element()

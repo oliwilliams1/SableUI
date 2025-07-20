@@ -11,20 +11,20 @@ int main(int argc, char** argv)
 	if (rootHSplitter)
 	{
 		mainWindow.AttachComponentToNode("RootHSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-		mainWindow.SetupSplitter("RootHSplitter", 2.0f); // A slightly thicker splitter for main division
+		mainWindow.SetupSplitter("RootHSplitter", 2); // A slightly thicker splitter for main division
 
 		// Left side of RootHSplitter: Your original main VSplitter structure
 		SableUI::Node* vsplitter1 = mainWindow.AddNodeToParent(SableUI::NodeType::VSPLITTER, "MainVSplitter", "RootHSplitter");
 		if (vsplitter1)
 		{
 			mainWindow.AttachComponentToNode("MainVSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-			mainWindow.SetupSplitter("MainVSplitter", 1.0f);
+			mainWindow.SetupSplitter("MainVSplitter", 1);
 
 			SableUI::Node* hsplitter1 = mainWindow.AddNodeToParent(SableUI::NodeType::HSPLITTER, "TopHSplitter", "MainVSplitter");
 			if (hsplitter1)
 			{
 				mainWindow.AttachComponentToNode("TopHSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-				mainWindow.SetupSplitter("TopHSplitter", 1.0f);
+				mainWindow.SetupSplitter("TopHSplitter", 1);
 
 				mainWindow.AddNodeToParent(SableUI::NodeType::COMPONENT, "TopLeftComponent", "TopHSplitter");
 				mainWindow.AttachComponentToNode("TopLeftComponent", std::make_unique<SableUI::DefaultComponent>(SableUI::Colour(32, 32, 32)));
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 				if (vsplitter2)
 				{
 					mainWindow.AttachComponentToNode("NestedVSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-					mainWindow.SetupSplitter("NestedVSplitter", 1.0f);
+					mainWindow.SetupSplitter("NestedVSplitter", 1);
 
 					mainWindow.AddNodeToParent(SableUI::NodeType::COMPONENT, "NestedTopComponent", "NestedVSplitter");
 					mainWindow.AttachComponentToNode("NestedTopComponent", std::make_unique<SableUI::DefaultComponent>(SableUI::Colour(32, 32, 32)));
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 					if (hsplitter2)
 					{
 						mainWindow.AttachComponentToNode("NestedHSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-						mainWindow.SetupSplitter("NestedHSplitter", 1.0f);
+						mainWindow.SetupSplitter("NestedHSplitter", 1);
 
 						mainWindow.AddNodeToParent(SableUI::NodeType::COMPONENT, "NestedBottomLeftComponent", "NestedHSplitter");
 						mainWindow.AttachComponentToNode("NestedBottomLeftComponent", std::make_unique<SableUI::DefaultComponent>(SableUI::Colour(32, 32, 32)));
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 		if (rightVSplitter)
 		{
 			mainWindow.AttachComponentToNode("RightVSplitter", std::make_unique<SableUI::SplitterComponent>(SableUI::Colour(51, 51, 51)));
-			mainWindow.SetupSplitter("RightVSplitter", 1.0f);
+			mainWindow.SetupSplitter("RightVSplitter", 1);
 
 			// Component at the top of the right VSplitter
 			mainWindow.AddNodeToParent(SableUI::NodeType::COMPONENT, "RightTopComponent", "RightVSplitter");
@@ -228,60 +228,58 @@ int main(int argc, char** argv)
 	{
 		SableUI::ElementInfo info{};
 
-		// Outer DIV
-		info.name = "OuterDiv_NestedBottomRight";
-		info.bgColour = SableUI::Colour(20, 20, 20);
 		info.padding = 15.0f;
-		SableUI::Element* outerDiv = mainWindow.AddElementToComponent("NestedBottomRightComponent", info, SableUI::ElementType::RECT);
+		info.wType = SableUI::RectType::FILL;
+		info.hType = SableUI::RectType::FILL;
+		info.bgColour = SableUI::Colour(40, 40, 40);
+		SableUI::Element* parent = mainWindow.AddElementToComponent("NestedBottomRightComponent", info, SableUI::ElementType::RECT);
 
-		if (outerDiv)
+		if (parent)
 		{
-			// Inner DIV 1 (fixed size)
-			info.name = "InnerDiv1";
-			info.wType = SableUI::RectType::FIXED;
-			info.hType = SableUI::RectType::FIXED;
-			info.width = 200.0f;
-			info.height = 100.0f;
-			info.bgColour = SableUI::Colour(80, 80, 80);
-			info.padding = 10.0f;
-			info.centerX = true;
-			SableUI::Element* innerDiv1 = mainWindow.AddElementToElement(outerDiv->name, info, SableUI::ElementType::RECT);
-			if (innerDiv1)
+			SableUI::ElementInfo fxDivInfo{};
+			fxDivInfo.wType = SableUI::RectType::FIXED;
+			fxDivInfo.hType = SableUI::RectType::FIXED;
+			fxDivInfo.width = 200.0f;
+			fxDivInfo.height = 100.0f;
+			fxDivInfo.padding = 10.0f;
+			fxDivInfo.xOffset = 10;
+			fxDivInfo.bgColour = SableUI::Colour(80, 80, 80);
+			SableUI::Element* fxDiv = mainWindow.AddElementToElement(parent->name, fxDivInfo, SableUI::ElementType::RECT);
+
+			if (fxDiv)
 			{
-				info.name = "InnerDiv1Text";
-				SableUI::Element* textEl = mainWindow.AddElementToElement(innerDiv1->name, info, SableUI::ElementType::TEXT);
+				fxDivInfo.name = "FixedDivText";
+				fxDivInfo.wType = SableUI::RectType::FIT_CONTENT;
+				fxDivInfo.hType = SableUI::RectType::FIT_CONTENT;
+				SableUI::Element* textEl = mainWindow.AddElementToElement(fxDiv->name, fxDivInfo, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Fixed Size Div", 16);
 			}
 
-			// Inner DIV 2 (fill size)
-			info.name = "InnerDiv2";
-			info.bgColour = SableUI::Colour(60, 60, 60);
-			info.padding = 10.0f;
-			info.wType = SableUI::RectType::FILL;
-			info.hType = SableUI::RectType::FILL;
-			SableUI::Element* innerDiv2 = mainWindow.AddElementToElement(outerDiv->name, info, SableUI::ElementType::RECT);
-			if (innerDiv2)
+			SableUI::ElementInfo fillDivInfo{};
+			fillDivInfo.bgColour = SableUI::Colour(60, 60, 60);
+			SableUI::Element* fillDiv = mainWindow.AddElementToElement(parent->name, fillDivInfo, SableUI::ElementType::RECT);
+
+			if (fillDiv)
 			{
-				info.name = "InnerDiv2Text";
-				info.hType = SableUI::RectType::FIT_CONTENT;
-				SableUI::Element* textEl = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::TEXT);
+				SableUI::ElementInfo fillDivTextInfo{};
+				fillDivTextInfo.name = "FillDivText";
+				SableUI::Element* textEl = mainWindow.AddElementToElement(fillDiv->name, fillDivTextInfo, SableUI::ElementType::TEXT);
 				textEl->SetText(U"Flexible Div", 16);
 
-				// Deeply nested DIV inside InnerDiv2
-				info.name = "DeepNestedDiv";
-				info.wType = SableUI::RectType::FIXED;
-				info.hType = SableUI::RectType::FIXED;
-				info.width = 80.0f;
-				info.height = 80.0f;
-				info.bgColour = SableUI::Colour(255, 50, 50);
-				info.padding = 5.0f;
-				info.centerX = true;
-				SableUI::Element* deepDiv = mainWindow.AddElementToElement(innerDiv2->name, info, SableUI::ElementType::RECT);
-				if (deepDiv) {
-					info.wType = SableUI::RectType::FIT_CONTENT;
-					info.hType = SableUI::RectType::FIT_CONTENT;
-					info.name = "DeepNestedDivText";
-					SableUI::Element* textEl = mainWindow.AddElementToElement(deepDiv->name, info, SableUI::ElementType::TEXT);
+				SableUI::ElementInfo deepInfo{};
+				deepInfo.wType = SableUI::RectType::FIXED;
+				deepInfo.hType = SableUI::RectType::FIXED;
+				deepInfo.width = 50.0f;
+				deepInfo.height = 50.0f;
+				deepInfo.centerX = true;
+				deepInfo.centerY = true;
+				deepInfo.padding = 10.0f;
+				deepInfo.bgColour = SableUI::Colour(80, 80, 80);
+				SableUI::Element* deepDiv = mainWindow.AddElementToElement(fillDiv->name, deepInfo, SableUI::ElementType::RECT);
+				if (deepDiv)
+				{
+					deepInfo.name = "DeepDivText";
+					SableUI::Element* textEl = mainWindow.AddElementToElement(deepDiv->name, deepInfo, SableUI::ElementType::TEXT);
 					textEl->SetText(U"Deep", 12);
 				}
 			}
@@ -314,6 +312,7 @@ int main(int argc, char** argv)
 		info2.wType = SableUI::RectType::FIXED;
 		info2.width = 200.0f;
 		info2.bgColour = SableUI::Colour(50, 50, 50);
+		info2.padding = 10.0f;
 		SableUI::Element* textParent = mainWindow.AddElementToComponent("MainBottomComponent", info2, SableUI::ElementType::RECT);
 		if (textParent)
 		{
@@ -398,8 +397,7 @@ int main(int argc, char** argv)
 				// Setting 1: Checkbox (Horizontal layout within itself)
 				SableUI::ElementInfo setting1Info{};
 				setting1Info.name = "EnableFeatureASetting";
-				setting1Info.hType = SableUI::RectType::FIXED;
-				setting1Info.height = 50;
+				setting1Info.hType = SableUI::RectType::FIT_CONTENT;
 				setting1Info.bgColour = SableUI::Colour(45, 45, 55);
 				setting1Info.padding = 5.0f;
 				setting1Info.layoutDirection = SableUI::LayoutDirection::HORIZONTAL; // Checkbox and text side-by-side
