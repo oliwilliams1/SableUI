@@ -144,7 +144,7 @@ SableUI::Window::Window(const std::string& title, int width, int height, int x, 
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 
 	/* make root node */
-	m_root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node");
+	m_root = new SableUI::Node(NodeType::ROOTNODE, nullptr, "Root Node", &m_renderer);
 	SetupRootNode(m_root, width, height);
 	m_nodes.push_back(m_root);
 }
@@ -351,25 +351,13 @@ void SableUI::Window::PrintNodeTree()
 	PrintNode(m_root);
 }
 
-void SableUI::Window::SetupSplitter(const std::string& name, int bSize)
-{
-	Node* node = FindNodeByName(name);
-
-	if (node == nullptr) return;
-
-	node->bSize = bSize;
-}
-
-SableUI::Node* SableUI::Window::AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName)
+SableUI::Node* SableUI::Window::AddNodeToParent(const char* name, Node* parent, NodeType type)
 {
 	CalculateNodePositions();
 
-	SableUI::Node* parent = FindNodeByName(parentName);
-
 	if (parent == nullptr)
 	{
-		SableUI_Error("Parent node is null!");
-		return nullptr;
+		parent = m_root;
 	}
 
 	if (parent->type == NodeType::COMPONENT)
@@ -384,79 +372,14 @@ SableUI::Node* SableUI::Window::AddNodeToParent(NodeType type, const std::string
 		return nullptr;
 	}
 
-	SableUI::Node* node = new SableUI::Node(type, parent, name);
+	SableUI::Node* node = new SableUI::Node(type, parent, name, &m_renderer);
 
 	m_nodes.push_back(node);
 
 	return node;
 }
 
-void SableUI::Window::AttachComponentToNode(const std::string& nodeName, std::unique_ptr<SableUI::BaseComponent> component)
-{
-	Node* node = FindNodeByName(nodeName);
-
-	if (node == nullptr)
-	{
-		SableUI_Warn("Cannot find node: %s!", nodeName.c_str());
-		return;
-	}
-
-	if (node->component != nullptr)
-	{
-		SableUI_Error("Node: %s already has a component attached!", nodeName.c_str());
-		return;
-	}
-
-	node->component = std::move(component);
-	node->component->SetParent(node);
-	node->component->SetRenderer(&m_renderer);
-}
-
 static int elementCtr = 0;
-SableUI::Element* SableUI::Window::AddElementToComponent(const std::string& nodeName, ElementInfo& p_info, ElementType type)
-{
-	ElementInfo info = p_info;
-	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
-	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-
-	if (info.name.length() == 0)
-	{
-		info.name = std::to_string(elementCtr++);
-	}
-
-	Node* node = FindNodeByName(nodeName);
-
-	if (node == nullptr)
-	{
-		SableUI_Warn("Cannot find node: %s!", nodeName.c_str());
-		return nullptr;
-	}
-
-	if (node->type == NodeType::COMPONENT)
-	{
-		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
-		{
-			Element* element = m_renderer.CreateElement(info.name, type);
-			if (element == nullptr) SableUI_Error("Failed to create element: %s", info.name.c_str());
-
-			info.type = type;
-			element->SetInfo(info);
-			
-			defaultComponent->AddElement(element);
-			RecalculateNodes();
-			defaultComponent->UpdateElements();
-			return element;
-		}
-	}
-	else
-	{
-		SableUI_Error("Adding element to non-component node: %s", nodeName.c_str());
-	}
-
-	return nullptr;
-}
-
 SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& p_info, ElementType type)
 {
 	ElementInfo info = p_info;
@@ -517,104 +440,14 @@ SableUI::Node* SableUI::Window::FindNodeByName(const std::string& name)
 	return nullptr;
 }
 
-void SableUI::Window::OpenUIFile(const std::string& path)
-{
-	if (m_nodes.size() > 0)
-	{
-		for (Node* node : m_nodes)
-		{
-			delete node;
-		}
-		m_nodes.clear();
-		m_root = nullptr;
-		SableUI_Log("Reloading UI");
-	}
-
-	using namespace tinyxml2;
-
-	tinyxml2::XMLDocument doc;
-	if (doc.LoadFile(path.c_str()) != XML_SUCCESS)
-	{
-		SableUI_Notify_Error("Failed to load file: %s", path.c_str(), true);
-		return;
-	}
-
-	XMLElement* rootElement = doc.FirstChildElement("root");
-	if (!rootElement) {
-		SableUI_Error("Invalid XML structure: Missing <root> element");
-		return;
-	}
-
-	m_root = new Node(NodeType::ROOTNODE, nullptr, "Root Node");
-
-	SetupRootNode(m_root, m_windowSize.x, m_windowSize.y);
-	m_nodes.push_back(m_root);
-
-	std::stack<std::string> parentStack;
-	parentStack.push("Root Node");
-
-	std::function<void(XMLElement*, const std::string&)> parseNode;
-	parseNode = [&](XMLElement* element, const std::string& parentName)
-	{
-		while (element)
-		{
-			std::string elementName = element->Name();
-			const char* nameAttr = element->Attribute("name");
-
-			const char* colourAttr = element->Attribute("colour");
-			SableUI::Colour colour = SableUI::Colour(51, 51, 51);
-			if (colourAttr) colour = StringTupleToColour(colourAttr);
-
-			const char* borderAttr = element->Attribute("border");
-			float border = 1.0f;
-			if (borderAttr) border = std::stof(borderAttr);
-
-			const char* borderColourAttr = element->Attribute("borderColour");
-			SableUI::Colour borderColour = StringTupleToColour(borderColourAttr);
-
-			std::string nodeName = (nameAttr) ? nameAttr : elementName + " " + std::to_string(m_nodes.size());
-
-			if (elementName == "hsplitter")
-			{
-				AddNodeToParent(NodeType::HSPLITTER, nodeName, parentName);
-				SetupSplitter(nodeName, border);
-				AttachComponentToNode(nodeName, std::make_unique<SplitterComponent>(colour));
-
-				parentStack.push(nodeName);
-				parseNode(element->FirstChildElement(), nodeName);
-				parentStack.pop();
-			}
-			else if (elementName == "vsplitter")
-			{
-				AddNodeToParent(NodeType::VSPLITTER, nodeName, parentName);
-				SetupSplitter(nodeName, border);
-				AttachComponentToNode(nodeName, std::make_unique<SplitterComponent>(colour));
-
-				parentStack.push(nodeName);
-				parseNode(element->FirstChildElement(), nodeName);
-				parentStack.pop();
-			}
-			else if (elementName == "component")
-			{
-				AddNodeToParent(NodeType::COMPONENT, nodeName, parentName);
-				AttachComponentToNode(nodeName, std::make_unique<DefaultComponent>(colour));
-			}
-
-			element = element->NextSiblingElement();
-		}
-	};
-
-	parseNode(rootElement->FirstChildElement(), parentStack.top());
-}
-
 void SableUI::Window::RerenderAllNodes()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 	for (SableUI::Node* node : m_nodes)
 	{
-		if (node->component)
+		if (node->m_component)
 		{
-			node->component.get()->UpdateDrawable();
+			node->m_component->UpdateDrawable();
 		}
 	}
 	m_needsStaticRedraw = true;
@@ -628,9 +461,9 @@ void SableUI::Window::RecalculateNodes()
 
 	for (Node* node : m_nodes)
 	{
-		if (node->component != nullptr && node->type != NodeType::COMPONENT)
+		if (node->m_component != nullptr && node->type != NodeType::COMPONENT)
 		{
-			node->component.get()->UpdateDrawable(false);
+			node->m_component->UpdateDrawable(false);
 		}
 	}
 }
@@ -827,9 +660,9 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 
 	if (node->parent) 
 	{
-		if (node->parent->component != nullptr)
+		if (node->parent->m_component != nullptr)
 		{
-			if (auto* splitterComponent = dynamic_cast<SplitterComponent*>(node->component.get()))
+			if (auto* splitterComponent = dynamic_cast<Splitter*>(node->m_component))
 			{
 				splitterComponent->Render();
 			}
@@ -841,9 +674,9 @@ void SableUI::Window::CalculateNodePositions(Node* node)
 		CalculateNodePositions(child);
 	}
 
-	if (node->component)
+	if (node->m_component)
 	{
-		node->component.get()->UpdateDrawable();
+		node->m_component->UpdateDrawable();
 	}
 }
 
@@ -853,14 +686,9 @@ int SableUI::Window::CalculateMinimumWidth(Node* node)
 
 	if (node->type == NodeType::COMPONENT)
 	{
-		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
+		if (auto* defaultComponent = dynamic_cast<Body*>(node->m_component))
 		{
-			int maxWidth = 20;
-			for (Element* element : defaultComponent->elements)
-			{
-				maxWidth = (std::max)(maxWidth, element->GetWidth());
-			}
-			return maxWidth;
+			return defaultComponent->m_element->GetWidth();
 		}
 		return 20;
 	}
@@ -892,14 +720,9 @@ int SableUI::Window::CalculateMinimumHeight(Node* node)
 
 	if (node->type == NodeType::COMPONENT)
 	{
-		if (auto* defaultComponent = dynamic_cast<DefaultComponent*>(node->component.get()))
+		if (auto* defaultComponent = dynamic_cast<Body*>(node->m_component))
 		{
-			int totalMinHeight = 20;
-			for (Element* element : defaultComponent->elements)
-			{
-				totalMinHeight += element->GetHeight();
-			}
-			return totalMinHeight;
+			return defaultComponent->m_element->GetHeight();
 		}
 		return 20; 
 	}
@@ -1166,12 +989,9 @@ void SableUI::Window::DrawDebugElementBounds(Node* node)
 		}
 	};
 
-	if (auto* component = dynamic_cast<DefaultComponent*>(node->component.get()))
+	if (auto* component = dynamic_cast<Body*>(node->m_component))
 	{
-		for (Element* element : component->elements)
-		{
-			DrawElementsRecurse(element);
-		}
+		DrawElementsRecurse(component->m_element);
 	}
 
 	for (Node* child : node->children)

@@ -33,10 +33,7 @@ namespace SableUI
 		void SetMaxFPS(int fps);
 
 		void PrintNodeTree();
-		void SetupSplitter(const std::string& name, int bSize);
-		Node* AddNodeToParent(NodeType type, const std::string& name, const std::string& parentName);
-		void AttachComponentToNode(const std::string& nodeName, std::unique_ptr<BaseComponent> component);
-		Element* AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type);
+		Node* AddNodeToParent(const char* name, Node* parent, NodeType type);
 		Element* AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type);
 
 		Node* GetRoot();
@@ -54,6 +51,8 @@ namespace SableUI
 		ivec2 m_windowSize = ivec2(0, 0);
 
 	private:
+		Element* Private_AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type);
+
 		int GetRefreshRate();
 		Renderer m_renderer;
 

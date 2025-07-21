@@ -5,7 +5,7 @@ static SableUI::Renderer* renderer = nullptr;
 
 /* - Default solid component - */
 
-void SableUI::DefaultComponent::UpdateDrawable(bool draw)
+void SableUI::Body::UpdateDrawable(bool draw)
 {
 	float bSize = 0.0f;
 
@@ -21,27 +21,29 @@ void SableUI::DefaultComponent::UpdateDrawable(bool draw)
 	if (draw) Render();
 }
 
-void SableUI::DefaultComponent::Render()
+void SableUI::Body::Render()
 {
     renderer->Draw(&drawable);
 
 	RenderElements();
 }
 
-void SableUI::DefaultComponent::RenderElements()
+void SableUI::Body::RenderElements()
 {
-	for (Element* element : elements)
-	{
-		element->Render();
-	}
+    m_element->Render();
 }
 
-void SableUI::DefaultComponent::AddElement(Element* e)
+void SableUI::Body::AddElement(Element* e)
 {
-	elements.push_back(e);
+    if (m_element == nullptr)
+    {
+        m_element = e;
+        return;
+    }
+    SableUI_Error("Cannot add more than one element to body");
 }
 
-void SableUI::DefaultComponent::UpdateElements()
+void SableUI::Body::UpdateElements()
 {
     if (parentNode == nullptr)
     {
@@ -55,88 +57,11 @@ void SableUI::DefaultComponent::UpdateElements()
     vec2 bounds = { SableUI::f2i(parentNode->rect.x + parentNode->rect.w),
                     SableUI::f2i(parentNode->rect.y + parentNode->rect.h) };
 
-    for (Element* element : elements)
-    {
-        if (parentNode != nullptr && (element->wType == RectType::FIXED || element->wType == RectType::FIT_CONTENT) && element->centerX)
-        {
-            element->xOffset = (parentNode->rect.w - element->width) / 2.0f;
-            if (element->xOffset < 0) element->xOffset = 0;
-        }
-        if (parentNode != nullptr && (element->hType == RectType::FIXED || element->hType == RectType::FIT_CONTENT) && element->centerY)
-        {
-            element->yOffset = (parentNode->rect.h - element->height) / 2.0f;
-            if (element->yOffset < 0) element->yOffset = 0;
-        }
-
-        SableUI::Rect tempElRect = { 0, 0, 0, 0 };
-        tempElRect.y = cursor.y + element->yOffset;
-        tempElRect.x = cursor.x + element->xOffset;
-        tempElRect.w = element->width;
-        tempElRect.h = element->height;
-
-        /* apply border */
-        int bSize = parentNode->bSize;
-        if (parentNode != nullptr && parentNode->parent != nullptr)
-        {
-            bSize = parentNode->parent->bSize;
-        }
-        tempElRect.x += bSize;
-        tempElRect.y += bSize;
-
-        /* calc fill type */
-        if (parentNode != nullptr)
-        {
-            if (element->wType == RectType::FILL)
-            {
-                tempElRect.w = parentNode->rect.w - 2 * bSize;
-                if (tempElRect.w < 0) tempElRect.w = 0;
-            }
-            if (element->hType == RectType::FILL)
-            {
-                int fillHeight = parentNode->rect.h - 2 * bSize;
-                int fillCtr = 0;
-
-                for (Element* el2 : elements)
-                {
-                    if (el2->hType == RectType::FIXED || el2->hType == RectType::FIT_CONTENT)
-                        fillHeight -= el2->height;
-                    else
-                        fillCtr++;
-                }
-
-                if (fillCtr > 0)
-                {
-                    tempElRect.h = fillHeight / fillCtr;
-                    if (tempElRect.h < 0) tempElRect.h = 0;
-                }
-                else
-                {
-                    tempElRect.h = 0;
-                }
-            }
-        }
-
-        /* max to bounds */
-        if (tempElRect.x + tempElRect.w > bounds.x)
-        {
-            tempElRect.w = bounds.x - tempElRect.x;
-            if (tempElRect.w < 0) tempElRect.w = 0;
-        }
-        if (tempElRect.y + tempElRect.h > bounds.y)
-        {
-            tempElRect.h = bounds.y - tempElRect.y;
-            if (tempElRect.h < 0) tempElRect.h = 0;
-        }
-
-        /* upd cursor */
-        cursor.y += tempElRect.h + element->yOffset;
-        element->SetRect(tempElRect);
-    }
+    m_element->SetRect(Rect(cursor.x, cursor.y, bounds.x - cursor.x, bounds.y - cursor.y));
 }
 
 /* - Splitter - */
-
-void SableUI::SplitterComponent::UpdateDrawable(bool draw)
+void SableUI::Splitter::UpdateDrawable(bool draw)
 {
 	std::vector<int> segments;
 
@@ -159,7 +84,7 @@ void SableUI::SplitterComponent::UpdateDrawable(bool draw)
 	if (draw) Render();
 }
 
-void SableUI::SplitterComponent::Render()
+void SableUI::Splitter::Render()
 {
 	renderer->Draw(&drawable);
 }

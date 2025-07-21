@@ -18,6 +18,12 @@ namespace SableUI
 
     struct Node
     {
+        Node(SableUI::NodeType type, Node* parent, const std::string& name, Renderer* renderer);
+        ~Node();
+
+        SableUI::Node* AttachSplitter(SableUI::Colour colour, int borderSize);
+        SableUI::Node* AttachBase(SableUI::Colour colour);
+
         std::string name = "";
         SableUI::NodeType type = SableUI::NodeType::COMPONENT;
 
@@ -26,13 +32,13 @@ namespace SableUI
 
         Node* parent = nullptr;
         std::vector<Node*> children;
-        std::unique_ptr<SableUI::BaseComponent> component;
+        BaseComponent* m_component = nullptr;
 
         int bSize = 0;
-
         ivec2 minBounds = {0};
 
-        Node(SableUI::NodeType type, Node* parent, const std::string& name);
+    private:
+        Renderer* m_renderer = nullptr;
     };
     
     void SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx);
