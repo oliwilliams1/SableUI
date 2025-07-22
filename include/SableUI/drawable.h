@@ -13,7 +13,7 @@ namespace SableUI
 	enum class NodeType
 	{
 		ROOTNODE = 0x00,
-		COMPONENT = 0x01,
+		BASE = 0x01,
 		VSPLITTER = 0x02,
 		HSPLITTER = 0x03,
 		UNDEF = 0xFF

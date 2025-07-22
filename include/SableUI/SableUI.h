@@ -32,14 +32,12 @@ namespace SableUI
 		bool m_needsStaticRedraw = false;
 		void SetMaxFPS(int fps);
 
-		void PrintNodeTree();
-		Node* AddNodeToParent(const char* name, Node* parent, NodeType type);
+		SplitterNode* AddSplitter(Node* parent, NodeType type, const char* name = nullptr);
+		BaseNode* AddBaseNode(Node* parent, const char* name = nullptr);
+
 		Element* AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type);
 
 		Node* GetRoot();
-		Node* FindNodeByName(const std::string& name);
-
-		void OpenUIFile(const std::string& path);
 		
 		void RerenderAllNodes();
 		void RecalculateNodes();
@@ -51,8 +49,6 @@ namespace SableUI
 		ivec2 m_windowSize = ivec2(0, 0);
 
 	private:
-		Element* Private_AddElementToComponent(const std::string& nodeName, ElementInfo& info, ElementType type);
-
 		int GetRefreshRate();
 		Renderer m_renderer;
 
@@ -60,13 +56,12 @@ namespace SableUI
 		void CalculateNodeScales(Node* node = nullptr);
 		void CalculateAllNodeMinimumBounds();
 		void Resize(ivec2 pos, Node* node = nullptr);
-		void DrawDebugBounds();
-		void DrawDebugElementBounds(Node* node = nullptr);
+		GLFWcursor* CheckResize(Node* node, bool* resCalled);
+		void DrawDebugNodeBounds();
 
 		std::chrono::milliseconds m_frameDelay;
-		Node* m_root = nullptr;
+		RootNode* m_root = nullptr;
 		bool m_resizing = false;
-		std::vector<Node*> m_nodes;
 
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

@@ -1,85 +1,123 @@
 #include "SableUI/node.h"
 
-SableUI::Node::Node(SableUI::NodeType type, SableUI::Node* parent, const std::string& name, Renderer* renderer)
-	: type(type), parent(parent), name(name), m_renderer(renderer)
+/* node */
+SableUI::Node::Node(Node* parent, Renderer* renderer, const char* name) : parent(parent), m_renderer(renderer), name(name)
 {
-	if (type != SableUI::NodeType::ROOTNODE)
+	SableUI_Log("Initalised %s", name);
+};
+
+/* root node */
+SableUI::RootNode::RootNode(Renderer* renderer, int w, int h) : Node(nullptr, renderer, "Root Node")
+{
+	type = NodeType::ROOTNODE;
+	rect.w = w;
+	rect.h = h;
+}
+
+SableUI::RootNode::~RootNode()
+{
+	for (SableUI::Node* child : children)
 	{
-		if (parent == nullptr)
-		{
-			SableUI_Error("Parent node is null on a non-root node");
-			return;
-		}
-		parent->children.push_back(this);
-		index = static_cast<uint16_t>(parent->children.size() - 1);
+		delete child;
 	}
-	else
+
+	children.clear();
+}
+
+void SableUI::RootNode::Render()
+{
+	for (SableUI::Node* child : children)
 	{
-		index = 0;
+		child->Render();
 	}
 }
 
-SableUI::Node* SableUI::Node::AttachSplitter(SableUI::Colour colour, int borderSize)
+void SableUI::RootNode::Recalculate()
 {
-	if (m_component != nullptr)
+	for (SableUI::Node* child : children)
 	{
-		SableUI_Error("Node: %s already has a component attached!", name.c_str());
-		return this;
+		child->Recalculate();
 	}
-
-	bSize = borderSize;
-
-	m_component = new Splitter(this, colour);
-	
-	m_component->SetParent(this);
-	m_component->SetRenderer(m_renderer);
-
-	return this;
 }
 
-SableUI::Node* SableUI::Node::AttachBase(SableUI::Colour colour)
+void SableUI::RootNode::DebugDrawBounds()
 {
-	if (m_component != nullptr)
+	for (SableUI::Node* child : children)
 	{
-		SableUI_Error("Node: %s already has a component attached!", name.c_str());
-		return this;
+		child->DebugDrawBounds();
 	}
-
-	m_component = new Body(this, colour);
-
-	m_component->SetParent(this);
-	m_component->SetRenderer(m_renderer);
-
-	if (auto* base = dynamic_cast<Body*>(m_component))
-	{
-		ElementInfo info{};
-		info.name = name + "_body";
-		info.wType = RectType::FILL;
-		info.hType = RectType::FILL;
-
-		Element* element = m_renderer->CreateElement(info.name, ElementType::DIV);
-		info.type = ElementType::DIV;
-		element->SetInfo(info);
-
-		base->AddElement(element);
-		base->UpdateElements();
-	}
-
-	return this;
 }
 
-void SableUI::SetupRootNode(Node* root, uint16_t wPx, uint16_t hPx)
+void SableUI::RootNode::AddChild(Node* node)
 {
-	if (root->type != SableUI::NodeType::ROOTNODE)
+	if (children.size() > 0)
 	{
-		SableUI_Error("Setting up a non-root node");
+		SableUI_Error("Root node can only have one child node");
 		return;
 	}
 
-	root->rect = { 0, 0, static_cast<int>(wPx), static_cast<int>(hPx)};
+	children.push_back(node);
 }
 
-SableUI::Node::~Node()
+void SableUI::RootNode::Resize(int w, int h)
 {
-	delete m_component;
+	rect.w = w;
+	rect.h = h;
+}
+
+/* splitter node */
+void SableUI::SplitterNode::Render()
+{
+	for (SableUI::Node* child : children)
+	{
+		child->Render();
+	}
+}
+
+void SableUI::SplitterNode::Recalculate()
+{
+	for (SableUI::Node* child : children)
+	{
+		child->Recalculate();
+	}
+}
+
+void SableUI::SplitterNode::DebugDrawBounds()
+{
+	for (SableUI::Node* child : children)
+	{
+		child->DebugDrawBounds();
+	}
+}
+
+void SableUI::SplitterNode::AddChild(Node* node)
+{
+	children.push_back(node);
+}
+
+SableUI::SplitterNode::~SplitterNode()
+{
+	for (Node* child : children)
+	{
+		delete child;
+	}
+
+	children.clear();
+}
+
+/* base node */
+SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer, const char* name) : Node(parent, renderer, name)
+{
+	type = NodeType::BASE;
+}
+
+void SableUI::BaseNode::DebugDrawBounds()
+{
+	rect.print();
+	m_renderer->DirectDrawRect(rect, Colour(255, 0, 0));
+}
+
+void SableUI::BaseNode::AddChild(Node* node)
+{
+	SableUI_Error("Cannot add child to base node!");
 }
