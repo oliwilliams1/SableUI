@@ -12,19 +12,25 @@
 
 namespace SableUI
 {
+    struct SplitterNode;
+    struct BaseNode;
+
     struct Node
     {
-        Node(Node* parent, Renderer* renderer, const char* name);
+        Node(Node* parent, Renderer* renderer);
         virtual ~Node() = default;
         virtual void Render() = 0;
-        virtual void Recalculate() = 0;
-        virtual void DebugDrawBounds() = 0;
-        virtual void AddChild(Node* node) = 0;
+        virtual void Recalculate() {};
+
+        virtual SplitterNode* AddSplitter(NodeType type) = 0;
+        virtual BaseNode* AddBaseNode() = 0;
+
+        virtual void CalculateScales() {};
+        virtual void CalculatePositions() {};
 
         Node* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
         ivec2 minBounds = { 0 };
-        std::string name = "";
         NodeType type = NodeType::UNDEF;
         std::vector<Node*> children;
 
@@ -40,31 +46,42 @@ namespace SableUI
         void Resize(int w, int h);
         void Render() override;
         void Recalculate() override;
-        void DebugDrawBounds() override;
-        void AddChild(Node* node) override;
+
+        SplitterNode* AddSplitter(NodeType type) override;
+        BaseNode* AddBaseNode() override;
+
+        void CalculateScales() override;
+        void CalculatePositions() override;
     };
 
     struct SplitterNode : public Node
     {
-        SplitterNode(Node* parent, NodeType type, Renderer* renderer, const char* name) : Node(parent, renderer, name) {};
+        SplitterNode(Node* parent, NodeType type, Renderer* renderer);
         ~SplitterNode();
 
         void Render() override;
-        void Recalculate() override;
-        void DebugDrawBounds() override;
-        void AddChild(Node* node) override;
+
+        SplitterNode* AddSplitter(NodeType type) override;
+        BaseNode* AddBaseNode() override;
+
+        void CalculateScales() override;
+        void CalculatePositions() override;
 
     private:
-        int bSize = 0;
+        void UpdateDrawable();
+        DrawableSplitter* m_drawable = nullptr;
+        bool m_drawableUpToDate = false;
+
+        int m_bSize = 1;
+        Colour m_bColour = { 51, 51, 51 };
     };
 
     struct BaseNode : public Node
     {
-        BaseNode(Node* parent, Renderer* renderer, const char* name);
+        BaseNode(Node* parent, Renderer* renderer);
 
         void Render() override {};
-        void Recalculate() override {};
-        void DebugDrawBounds() override;
-        void AddChild(Node* node) override;
+        SplitterNode* AddSplitter(NodeType type) override;
+        BaseNode* AddBaseNode() override;
     };   
 }

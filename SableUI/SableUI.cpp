@@ -236,8 +236,6 @@ bool SableUI::Window::PollEvents()
 	static bool init = false;
 	glfwPollEvents();
 	
-	DrawDebugNodeBounds();
-
 	if (!init)
 	{
 		m_renderer.Flush(); // Clear the draw stack from init draw commands
@@ -307,15 +305,8 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	if (m_needsStaticRedraw)
-	{
-		/* flush drawable stack & render to screen */
-		m_renderer.Draw();
-
-		glFlush();
-
-		m_needsStaticRedraw = false;
-	}
+	/* flush drawable stack & render to screen */
+	m_renderer.Draw();
 
 	/* ensure application doesnt run faster than desired fps */
 	auto frameTime = std::chrono::system_clock::now() - frameStart;
@@ -331,84 +322,50 @@ inline void SableUI::Window::SetMaxFPS(int fps)
 	m_frameDelay = std::chrono::milliseconds(1000 / fps);
 }
 
-SableUI::SplitterNode* SableUI::Window::AddSplitter(Node* parent, NodeType type, const char* name)
-{
-	CalculateNodePositions();
+//static int elementCtr = 0;
+//SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& p_info, ElementType type)
+//{
+//	ElementInfo info = p_info;
+//	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+//	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+//	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
+//
+//	if (info.name.length() == 0)
+//	{
+//		info.name = std::to_string(elementCtr++);
+//	}
+//
+//	Element* parent = m_renderer.GetElement(elementName);
+//
+//	if (parent->type == ElementType::IMAGE || parent->type == ElementType::TEXT)
+//	{
+//		SableUI_Warn("Cannot add element to image or text element");
+//		return nullptr;
+//	}
+//
+//	if (parent == nullptr)
+//	{
+//		SableUI_Warn("Cannot find element: %s!", elementName.c_str());
+//		return nullptr;
+//	}
+//
+//	Element* child = m_renderer.CreateElement(info.name, type);
+//	if (child == nullptr)
+//	{
+//		SableUI_Error("Failed to create element: %s", info.name.c_str());
+//		return nullptr;
+//	}
+//
+//	info.type = type;
+//	child->SetInfo(info);
+//	parent->AddChild(child);
+//
+//	RecalculateNodes();
+//
+//	return child;
+//}
 
-	if (parent == nullptr)
-	{
-		parent = m_root;
-	}
-
-	SplitterNode* node = new SplitterNode(parent, type, &m_renderer, name);
-	parent->AddChild(node);
-
-	return node;
-}
-
-SableUI::BaseNode* SableUI::Window::AddBaseNode(Node* parent, const char* name)
-{
-	if (parent == nullptr)
-	{
-		parent = m_root;
-	}
-
-	if (parent->type == NodeType::BASE)
-	{
-		SableUI_Warn("Cannot add base node to base node!");
-		return nullptr;
-	}
-
-	BaseNode* node = new BaseNode(parent, &m_renderer, name);
-	parent->AddChild(node);
-
-	return node;
-}
-
-static int elementCtr = 0;
-SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& p_info, ElementType type)
-{
-	ElementInfo info = p_info;
-	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
-	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-
-	if (info.name.length() == 0)
-	{
-		info.name = std::to_string(elementCtr++);
-	}
-
-	Element* parent = m_renderer.GetElement(elementName);
-
-	if (parent->type == ElementType::IMAGE || parent->type == ElementType::TEXT)
-	{
-		SableUI_Warn("Cannot add element to image or text element");
-		return nullptr;
-	}
-
-	if (parent == nullptr)
-	{
-		SableUI_Warn("Cannot find element: %s!", elementName.c_str());
-		return nullptr;
-	}
-
-	Element* child = m_renderer.CreateElement(info.name, type);
-	if (child == nullptr)
-	{
-		SableUI_Error("Failed to create element: %s", info.name.c_str());
-		return nullptr;
-	}
-
-	info.type = type;
-	child->SetInfo(info);
-	parent->AddChild(child);
-
-	RecalculateNodes();
-
-	return child;
-}
-
-SableUI::Node* SableUI::Window::GetRoot()
+SableUI::RootNode* SableUI::Window::GetRoot()
 {
 	return m_root;
 }
@@ -425,9 +382,6 @@ void SableUI::Window::RerenderAllNodes()
 
 void SableUI::Window::RecalculateNodes()
 {
-	CalculateNodeScales();
-	CalculateNodePositions();
-
 	m_root->Recalculate();
 }
 
@@ -513,7 +467,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 			}
 		}
 
-		CalculateNodeScales(selectedNode->parent);
+		selectedNode->parent->CalculateScales();
 	}
 	else if (currentEdgeType == SableUI::EdgeType::NS_EDGE)
 	{
@@ -536,10 +490,10 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 			}
 		}
 
-		CalculateNodeScales(selectedNode->parent);
+		selectedNode->parent->CalculateScales();
 	}
 
-	CalculateNodePositions();
+	m_root->Recalculate();
 }
 
 int SableUI::Window::GetRefreshRate()
@@ -583,59 +537,6 @@ int SableUI::Window::GetRefreshRate()
 	}
 }
 
-void SableUI::Window::CalculateNodePositions(Node* node)
-{
-	if (m_root->children.empty()) return;
-
-	m_needsStaticRedraw = true;
-
-	if (node == nullptr)
-	{
-		for (Node* child : m_root->children)
-		{
-			CalculateNodePositions(child);
-		}
-		return;
-	}
-
-	vec2 cursor = { node->parent->rect.x, node->parent->rect.y };
-
-	auto& siblings = node->parent->children;
-	for (Node* sibling : siblings)
-	{
-		if (sibling == node) break;
-
-		if (node->parent->type == NodeType::HSPLITTER)
-		{
-			cursor.x += sibling->rect.w;
-		}
-		else if (node->parent->type == NodeType::VSPLITTER)
-		{
-			cursor.y += sibling->rect.h;
-		}
-	}
-
-	node->rect.x = cursor.x;
-	node->rect.y = cursor.y;
-
-	if (node->parent)
-	{
-		if (node->parent->type == NodeType::HSPLITTER || node->parent->type == NodeType::VSPLITTER)
-		{
-			node->parent->Render();
-		}
-	}
-
-	for (Node* child : node->children)
-	{
-		CalculateNodePositions(child);
-	}
-
-	if (node->type == NodeType::BASE)
-	{
-		node->Render();
-	}
-}
 
 int SableUI::Window::CalculateMinimumWidth(Node* node)
 {
@@ -713,182 +614,6 @@ void SableUI::Window::CalculateAllNodeMinimumBounds()
 		if (node->parent) bSize = node->parent->bSize;
 		node->minBounds = { CalculateMinimumWidth(node) + 2 * bSize, CalculateMinimumHeight(node) + 2 * bSize};
 	}*/
-}
-
-void SableUI::Window::CalculateNodeScales(SableUI::Node* node)
-{
-	if (m_root->children.empty()) return;
-
-	m_needsStaticRedraw = true;
-
-	/* if first call, run for children of root node */
-	if (node == nullptr)
-	{
-		CalculateAllNodeMinimumBounds();
-		for (SableUI::Node* child : m_root->children)
-		{
-			CalculateNodeScales(child);
-		}
-		return;
-	}
-
-	if (node->parent == nullptr) return;
-
-	/* calculate rect using integer logic */
-	switch (node->parent->type)
-	{
-	case SableUI::NodeType::ROOTNODE:
-		node->rect = node->parent->rect;
-		break;
-
-	case SableUI::NodeType::HSPLITTER:
-	{
-		node->rect.h = node->parent->rect.h;
-
-		if (node->rect.wType == SableUI::RectType::FIXED || node->rect.wType == SableUI::RectType::FIT_CONTENT)
-		{
-			node->rect.w = (std::max)(node->rect.w, node->minBounds.x);
-			int minSiblingWidth = 0;
-			for (SableUI::Node* sibling : node->parent->children)
-			{
-				if (sibling != node)
-				{
-					minSiblingWidth += (std::max)(0, sibling->minBounds.x);
-				}
-			}
-			node->rect.w = (std::min)(node->rect.w, node->parent->rect.w - minSiblingWidth);
-			break;
-		}
-
-		int totalFixedChildrenWidth = 0;
-		int totalFillMinAllowedWidth = 0;
-		int numFillChildren = 0;
-		std::vector<SableUI::Node*> fillChildren;
-
-		for (SableUI::Node* sibling : node->parent->children)
-		{
-			if (sibling->rect.wType == SableUI::RectType::FIXED || sibling->rect.wType == SableUI::RectType::FIT_CONTENT)
-			{
-				totalFixedChildrenWidth += (std::max)(0, sibling->rect.w);
-			}
-			else
-			{
-				numFillChildren++;
-				fillChildren.push_back(sibling);
-				totalFillMinAllowedWidth += sibling->minBounds.x;
-			}
-		}
-
-		int availableWidthForFill = node->parent->rect.w - totalFixedChildrenWidth;
-
-		if (availableWidthForFill < totalFillMinAllowedWidth)
-		{
-			if (numFillChildren > 0)
-			{
-				for (SableUI::Node* fillChild : fillChildren)
-				{
-					fillChild->rect.w = fillChild->minBounds.x;
-				}
-			}
-		}
-		else
-		{
-			int remainingDistributableWidth = availableWidthForFill - totalFillMinAllowedWidth;
-			if (numFillChildren > 0)
-			{
-				int widthPerFillChild = remainingDistributableWidth / numFillChildren;
-				int leftoverWidth = remainingDistributableWidth % numFillChildren;
-
-				for (size_t i = 0; i < fillChildren.size(); ++i)
-				{
-					fillChildren[i]->rect.w = fillChildren[i]->minBounds.x + widthPerFillChild + (i < leftoverWidth ? 1 : 0);
-				}
-			}
-		}
-		break;
-	}
-
-	case SableUI::NodeType::VSPLITTER:
-	{
-		node->rect.w = node->parent->rect.w;
-
-		if (node->rect.hType == RectType::FIXED || node->rect.hType == RectType::FIT_CONTENT)
-		{
-			node->rect.h = (std::max)(node->rect.h, node->minBounds.y);
-
-			int minSiblingHeight = 0;
-			for (SableUI::Node* sibling : node->parent->children)
-			{
-				if (sibling != node)
-				{
-					minSiblingHeight += (std::max)(0, sibling->minBounds.y);
-				}
-			}
-			node->rect.h = (std::min)(node->rect.h, node->parent->rect.h - minSiblingHeight);
-			break;
-		}
-
-		int totalFixedChildrenHeight = 0;
-		int totalFillMinAllowedHeight = 0;
-		int numFillChildren = 0;
-		std::vector<SableUI::Node*> fillChildren;
-
-		for (SableUI::Node* sibling : node->parent->children)
-		{
-			if (sibling->rect.hType == RectType::FIXED || sibling->rect.hType == RectType::FIT_CONTENT)
-			{
-				totalFixedChildrenHeight += (std::max)(0, sibling->rect.h);
-			}
-			else
-			{
-				numFillChildren++;
-				fillChildren.push_back(sibling);
-				totalFillMinAllowedHeight += sibling->minBounds.y;
-			}
-		}
-
-		int availableHeightForFill = node->parent->rect.h - totalFixedChildrenHeight;
-
-		if (availableHeightForFill < totalFillMinAllowedHeight)
-		{
-			if (numFillChildren > 0)
-			{
-				for (SableUI::Node* fillChild : fillChildren)
-				{
-					fillChild->rect.h = fillChild->minBounds.y;
-				}
-			}
-		}
-		else
-		{
-			int remainingDistributableHeight = availableHeightForFill - totalFillMinAllowedHeight;
-			if (numFillChildren > 0)
-			{
-				int heightPerFillChild = remainingDistributableHeight / numFillChildren;
-				int leftoverHeight = remainingDistributableHeight % numFillChildren;
-
-				for (size_t i = 0; i < fillChildren.size(); ++i)
-				{
-					fillChildren[i]->rect.h = fillChildren[i]->minBounds.y + heightPerFillChild + (i < leftoverHeight ? 1 : 0);
-				}
-			}
-		}
-		break;
-	}
-	}
-
-	/* recursively run for children */
-	for (SableUI::Node* child : node->children)
-	{
-		CalculateNodeScales(child);
-	}
-}
-
-void SableUI::Window::DrawDebugNodeBounds()
-{
-	m_renderer.StartDirectDraw();
-	m_root->DebugDrawBounds();
-	m_renderer.EndDirectDraw();
 }
 
 SableUI::Window::~Window()

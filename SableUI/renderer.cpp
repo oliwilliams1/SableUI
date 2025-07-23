@@ -36,6 +36,8 @@ void SableUI::Renderer::EndDirectDraw()
 
 void SableUI::Renderer::Draw()
 {
+    if (drawStack.size() == 0) return;
+
     if (directDraw == true)
     {
         SableUI_Warn("Direct draw is enabled when drawing normally, forgot to end direct draw?");
@@ -46,8 +48,6 @@ void SableUI::Renderer::Draw()
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
         return a->m_zIndex < b->m_zIndex;
     });
-
-    if (drawStack.size() == 0) return;
 
     std::set<unsigned int> drawnUUIDs;
 
@@ -66,44 +66,6 @@ void SableUI::Renderer::Draw()
     DrawWindowBorder(&renderTarget);
 
     drawStack.clear();
-}
 
-SableUI::Element* SableUI::Renderer::CreateElement(const std::string& name, ElementType type)
-{
-    for (Element* element : elements)
-    {
-        if (element->name == name)
-        {
-            SableUI_Error("Element already exists: %s", name.c_str());
-            return nullptr;
-        }
-    }
-
-    Element* element = new Element(name, this, type);
-    elements.push_back(element);
-
-    return element;
-}
-
-SableUI::Element* SableUI::Renderer::GetElement(const std::string& name)
-{
-    for (Element* element : elements)
-    {
-        if (element->name == name)
-        {
-            return element;
-        }
-    }
-
-    return nullptr;
-}
-
-SableUI::Renderer::~Renderer()
-{
-    for (Element* element : elements)
-	{
-		delete element;
-	}
-
-    elements.clear();
+    glFlush();
 }

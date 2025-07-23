@@ -32,12 +32,7 @@ namespace SableUI
 		bool m_needsStaticRedraw = false;
 		void SetMaxFPS(int fps);
 
-		SplitterNode* AddSplitter(Node* parent, NodeType type, const char* name = nullptr);
-		BaseNode* AddBaseNode(Node* parent, const char* name = nullptr);
-
-		Element* AddElementToElement(const std::string& elementName, ElementInfo& info, ElementType type);
-
-		Node* GetRoot();
+		RootNode* GetRoot();
 		
 		void RerenderAllNodes();
 		void RecalculateNodes();
@@ -52,12 +47,9 @@ namespace SableUI
 		int GetRefreshRate();
 		Renderer m_renderer;
 
-		void CalculateNodePositions(Node* node = nullptr);
-		void CalculateNodeScales(Node* node = nullptr);
 		void CalculateAllNodeMinimumBounds();
 		void Resize(ivec2 pos, Node* node = nullptr);
 		GLFWcursor* CheckResize(Node* node, bool* resCalled);
-		void DrawDebugNodeBounds();
 
 		std::chrono::milliseconds m_frameDelay;
 		RootNode* m_root = nullptr;

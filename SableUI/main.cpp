@@ -10,58 +10,61 @@ int main(int argc, char** argv)
 {
     SableUI::Window mainWindow("SableUI Layout Test", 1600, 1000);
 
-    // Root = nullptr
-    SableUI::SplitterNode* rootHSplitter = mainWindow.AddSplitter(nullptr, HSPLITTER, "RootHSplitter");
+    // Create the root node
+    SableUI::RootNode* rootNode = mainWindow.GetRoot();
+
+    // Add the root horizontal splitter
+    SableUI::SplitterNode* rootHSplitter = rootNode->AddSplitter(HSPLITTER);
     if (rootHSplitter)
     {
         // Left side of RootHSplitter: Your original main VSplitter structure
-        SableUI::SplitterNode* vsplitter1 = mainWindow.AddSplitter(rootHSplitter, VSPLITTER, "MainVSplitter");
+        SableUI::SplitterNode* vsplitter1 = rootHSplitter->AddSplitter(VSPLITTER);
         if (vsplitter1)
         {
             // Adding TopHSplitter with splitter attachment
-            SableUI::SplitterNode* hsplitter1 = mainWindow.AddSplitter(vsplitter1, HSPLITTER, "TopHSplitter");
+            SableUI::SplitterNode* hsplitter1 = vsplitter1->AddSplitter(HSPLITTER);
             if (hsplitter1)
             {
-                mainWindow.AddBaseNode(hsplitter1, "TopLeftComponent");
+                hsplitter1->AddBaseNode(); // TopLeftComponent
 
                 // Adding NestedVSplitter with splitter attachment
-                SableUI::SplitterNode* vsplitter2 = mainWindow.AddSplitter(hsplitter1, VSPLITTER, "NestedVSplitter");
+                SableUI::SplitterNode* vsplitter2 = hsplitter1->AddSplitter(VSPLITTER);
                 if (vsplitter2)
                 {
-                    mainWindow.AddBaseNode(vsplitter2, "NestedTopComponent");
+                    vsplitter2->AddBaseNode(); // NestedTopComponent
 
                     // Adding NestedHSplitter with splitter attachment
-                    SableUI::SplitterNode* hsplitter2 = mainWindow.AddSplitter(vsplitter2, HSPLITTER, "NestedHSplitter");
+                    SableUI::SplitterNode* hsplitter2 = vsplitter2->AddSplitter(HSPLITTER);
                     if (hsplitter2)
                     {
-                        mainWindow.AddBaseNode(hsplitter2, "NestedBottomLeftComponent");
-                        mainWindow.AddBaseNode(hsplitter2, "NestedBottomRightComponent");
+                        hsplitter2->AddBaseNode(); // NestedBottomLeftComponent
+                        hsplitter2->AddBaseNode(); // NestedBottomRightComponent
                     }
                 }
             }
 
             // Adding MainBottomComponent with splitter attachment
-            mainWindow.AddBaseNode(vsplitter1, "MainBottomComponent");
+            vsplitter1->AddBaseNode(); // MainBottomComponent
         }
 
         // Right side of RootHSplitter: A brand new VSplitter branch
-        SableUI::SplitterNode* rightVSplitter = mainWindow.AddSplitter(rootHSplitter, VSPLITTER, "RightVSplitter");
+        SableUI::SplitterNode* rightVSplitter = rootHSplitter->AddSplitter(VSPLITTER);
         if (rightVSplitter)
         {
             // Component at the top of the right VSplitter
-            mainWindow.AddBaseNode(rightVSplitter, "RightTopComponent");
+            rightVSplitter->AddBaseNode(); // RightTopComponent
 
             // Component at the bottom of the right VSplitter
-            mainWindow.AddBaseNode(rightVSplitter, "RightBottomComponent");
+            rightVSplitter->AddBaseNode(); // RightBottomComponent
         }
     }
 
-	// --- Main Loop ---
-	while (mainWindow.PollEvents())
-	{
-        
-		mainWindow.Draw();
-	}
+    // --- Main Loop ---
+    while (mainWindow.PollEvents())
+    {
+        mainWindow.Draw();
+    }
 
-	return 0;
+    delete rootNode; // Clean up the root node
+    return 0;
 }
