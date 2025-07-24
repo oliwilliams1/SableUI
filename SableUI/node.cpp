@@ -52,6 +52,8 @@ SableUI::SplitterNode* SableUI::RootNode::AddSplitter(NodeType type)
     }
     SplitterNode* node = new SplitterNode(this, type, m_renderer);
     children.push_back(node);
+
+    Recalculate();
     return node;
 }
 
@@ -64,6 +66,15 @@ SableUI::BaseNode* SableUI::RootNode::AddBaseNode()
     }
     BaseNode* node = new BaseNode(this, m_renderer);
     children.push_back(node);
+
+    Recalculate();
+    return node;
+}
+
+SableUI::Node* SableUI::Node::FindRoot()
+{
+    Node* node = this;
+    while (node->parent != nullptr) node = node->parent;
     return node;
 }
 
@@ -93,19 +104,21 @@ SableUI::SplitterNode::SplitterNode(Node* parent, NodeType type, Renderer* rende
 
 void SableUI::SplitterNode::Render()
 {
-    if (!m_drawableUpToDate) UpdateDrawable();
+    if (!m_drawableUpToDate) Update();
     for (SableUI::Node* child : children)
     {
         child->Render();
     }
 
-    m_renderer->Draw(m_drawable);
+    m_renderer->Draw(&m_drawable);
 }
 
 SableUI::SplitterNode* SableUI::SplitterNode::AddSplitter(NodeType type)
 {
     SplitterNode* node = new SplitterNode(this, type, m_renderer);
     children.push_back(node);
+
+    FindRoot()->Recalculate();
     return node;
 }
 
@@ -113,6 +126,8 @@ SableUI::BaseNode* SableUI::SplitterNode::AddBaseNode()
 {
     BaseNode* node = new BaseNode(this, m_renderer);
     children.push_back(node);
+
+    FindRoot()->Recalculate();
     return node;
 }
 
@@ -126,7 +141,6 @@ void SableUI::SplitterNode::CalculateScales()
     {
         child->CalculateScales();
     }
-
 
     if (type == NodeType::HSPLITTER)
     {
@@ -233,6 +247,7 @@ void SableUI::SplitterNode::CalculatePositions()
     if (children.empty()) return;
 
     m_drawableUpToDate = false;
+    bool toUpdate = false;
 
     vec2 cursor = { rect.x, rect.y };
 
@@ -240,8 +255,15 @@ void SableUI::SplitterNode::CalculatePositions()
     {
         for (Node* child : children)
         {
+            vec2 originalPosition = { child->rect.x, child->rect.y };
+
             child->rect.x = cursor.x;
             child->rect.y = cursor.y;
+
+            if (child->rect.x != originalPosition.x || child->rect.y != originalPosition.y)
+            {
+                toUpdate = true;
+            }
 
             cursor.x += child->rect.w;
         }
@@ -250,8 +272,15 @@ void SableUI::SplitterNode::CalculatePositions()
     {
         for (Node* child : children)
         {
+            vec2 originalPosition = { child->rect.x, child->rect.y };
+
             child->rect.x = cursor.x;
             child->rect.y = cursor.y;
+
+            if (child->rect.x != originalPosition.x || child->rect.y != originalPosition.y)
+            {
+                toUpdate = true;
+            }
 
             cursor.y += child->rect.h;
         }
@@ -259,11 +288,18 @@ void SableUI::SplitterNode::CalculatePositions()
 
     for (Node* child : children)
     {
+        bool childPositionChanged = false;
         child->CalculatePositions();
+        if (childPositionChanged)
+        {
+            toUpdate = true;
+        }
     }
+
+    if (toUpdate) Update();
 }
 
-void SableUI::SplitterNode::UpdateDrawable()
+void SableUI::SplitterNode::Update()
 {
     std::vector<int> segments;
 
@@ -279,9 +315,9 @@ void SableUI::SplitterNode::UpdateDrawable()
 		}
 	}
     
-    m_drawable->Update(rect, m_bColour, type, m_bSize, segments);
-
+    m_drawable.Update(rect, m_bColour, type, m_bSize, segments);
     m_drawableUpToDate = true;
+    Render();
 }
 
 SableUI::SplitterNode::~SplitterNode()
@@ -310,4 +346,9 @@ SableUI::BaseNode* SableUI::BaseNode::AddBaseNode()
 {
     SableUI_Error("Base node cannot have any children, skipping call");
     return nullptr;
+}
+
+void SableUI::BaseNode::Update()
+{
+
 }

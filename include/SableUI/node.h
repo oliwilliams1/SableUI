@@ -27,6 +27,7 @@ namespace SableUI
 
         virtual void CalculateScales() {};
         virtual void CalculatePositions() {};
+        virtual void Update() {};
 
         Node* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
@@ -36,6 +37,7 @@ namespace SableUI
 
     protected:
 		Renderer* m_renderer = nullptr;
+        SableUI::Node* FindRoot();
     };
 
     struct RootNode : public Node
@@ -66,10 +68,10 @@ namespace SableUI
 
         void CalculateScales() override;
         void CalculatePositions() override;
+        void Update() override;
 
     private:
-        void UpdateDrawable();
-        DrawableSplitter* m_drawable = nullptr;
+        DrawableSplitter m_drawable;
         bool m_drawableUpToDate = false;
 
         int m_bSize = 1;
@@ -83,5 +85,6 @@ namespace SableUI
         void Render() override {};
         SplitterNode* AddSplitter(NodeType type) override;
         BaseNode* AddBaseNode() override;
+        void Update() override;
     };   
 }

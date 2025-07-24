@@ -239,7 +239,6 @@ bool SableUI::Window::PollEvents()
 	if (!init)
 	{
 		m_renderer.Flush(); // Clear the draw stack from init draw commands
-		RecalculateNodes(); // Recalc everything after init
 		RerenderAllNodes();
 		Draw();             // Redraw from fresh stack
 		init = true;
