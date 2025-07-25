@@ -233,16 +233,7 @@ GLFWcursor* SableUI::Window::CheckResize(Node* node, bool* resCalled)
 
 bool SableUI::Window::PollEvents()
 {
-	static bool init = false;
 	glfwPollEvents();
-	
-	if (!init)
-	{
-		m_renderer.Flush(); // Clear the draw stack from init draw commands
-		RerenderAllNodes();
-		Draw();             // Redraw from fresh stack
-		init = true;
-	}
 
 	// static for multiple calls on one resize event (lifetime of static is until mouse up)
 	static bool resCalled = false;
@@ -273,7 +264,7 @@ bool SableUI::Window::PollEvents()
 		if (m_mouseButtonStates.LMB == MouseState::UP)
 		{
 			m_resizing = false;
-			m_renderer.Flush();
+			m_renderer.ClearStack();
 			RecalculateNodes();
 			RerenderAllNodes();
 		}
@@ -371,6 +362,8 @@ SableUI::RootNode* SableUI::Window::GetRoot()
 
 void SableUI::Window::RerenderAllNodes()
 {
+	m_renderer.ClearStack();
+
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	m_root->Render();

@@ -19,7 +19,7 @@ namespace SableUI
 		Renderer() {};
 		~Renderer() = default;
 
-		void Flush();
+		void ClearStack();
 
 		void Draw(DrawableBase* drawable);
 		void Draw();

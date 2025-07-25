@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "SableUI/component.h"
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
 
@@ -70,11 +69,11 @@ namespace SableUI
         void CalculatePositions() override;
         void Update() override;
 
+        int bSize = 1;
     private:
         DrawableSplitter m_drawable;
         bool m_drawableUpToDate = false;
 
-        int m_bSize = 1;
         Colour m_bColour = { 51, 51, 51 };
     };
 
@@ -82,9 +81,12 @@ namespace SableUI
     {
         BaseNode(Node* parent, Renderer* renderer);
 
-        void Render() override {};
+        void Render() override;
         SplitterNode* AddSplitter(NodeType type) override;
         BaseNode* AddBaseNode() override;
         void Update() override;
+
+    private:
+        Element m_element;
     };   
 }

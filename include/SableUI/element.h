@@ -45,9 +45,11 @@ namespace SableUI
 	class Element
 	{
 	public:
-		Element(const std::string name, Renderer* renderer, ElementType type);
+		Element() {};
+		Element(const char* name, Renderer* renderer, ElementType type);
 		~Element();
 
+		void Init(const char* name, Renderer* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
 
 		/* Base render (background) */

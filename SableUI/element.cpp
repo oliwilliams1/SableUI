@@ -2,9 +2,17 @@
 
 using namespace SableUI;
 
-SableUI::Element::Element(const std::string name, Renderer* renderer, ElementType type)
-    : name(name), renderer(renderer), type(type)
+SableUI::Element::Element(const char* name, Renderer* renderer, ElementType type)
 {
+    Init(name, renderer, type);
+}
+
+void SableUI::Element::Init(const char* name, Renderer* renderer, ElementType type)
+{
+    this->name = name;
+    this->renderer = renderer;
+    this->type = type;
+
     switch (type)
     {
     case ElementType::RECT:

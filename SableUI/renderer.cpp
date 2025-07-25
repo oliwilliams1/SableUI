@@ -5,7 +5,7 @@
 #include "SableUI/renderer.h"
 #include "SableUI/utils.h"
 
-void SableUI::Renderer::Flush()
+void SableUI::Renderer::ClearStack()
 {
     drawStack.clear();
 }

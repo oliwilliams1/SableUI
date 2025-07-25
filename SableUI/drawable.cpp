@@ -265,7 +265,6 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
 }
 
 static unsigned int s_nextUUID = 0;
-
 unsigned int SableUI::DrawableBase::GetUUID()
 {
     return s_nextUUID++;

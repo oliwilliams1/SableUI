@@ -110,6 +110,7 @@ void SableUI::SplitterNode::Render()
         child->Render();
     }
 
+    m_drawable.m_zIndex = 999;
     m_renderer->Draw(&m_drawable);
 }
 
@@ -136,11 +137,6 @@ void SableUI::SplitterNode::CalculateScales()
     if (children.empty()) return;
 
     m_drawableUpToDate = false;
-
-    for (Node* child : children)
-    {
-        child->CalculateScales();
-    }
 
     if (type == NodeType::HSPLITTER)
     {
@@ -240,6 +236,11 @@ void SableUI::SplitterNode::CalculateScales()
             }
         }
     }
+
+    for (Node* child : children)
+    {
+        child->CalculateScales();
+    }
 }
 
 void SableUI::SplitterNode::CalculatePositions()
@@ -305,6 +306,8 @@ void SableUI::SplitterNode::Update()
 
     for (SableUI::Node* child : children)
     {
+        child->Update();
+
         if (type == NodeType::HSPLITTER)
         {
             segments.push_back(child->rect.x - rect.x);
@@ -315,7 +318,7 @@ void SableUI::SplitterNode::Update()
 		}
 	}
     
-    m_drawable.Update(rect, m_bColour, type, m_bSize, segments);
+    m_drawable.Update(rect, m_bColour, type, bSize, segments);
     m_drawableUpToDate = true;
     Render();
 }
@@ -330,10 +333,20 @@ SableUI::SplitterNode::~SplitterNode()
 }
 
 /* Base Node Implementation */
+static int s_ctr = 0;
 SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer) : Node(parent, renderer)
 {
     type = NodeType::BASE;
     minBounds = { 50, 50 };
+
+    /* Fixed, will update via code, should NOT be modified by algo */
+    m_element.hType = RectType::FIXED;
+    m_element.wType = RectType::FIXED;
+    m_element.bgColour = { 80, 0, 0 };
+
+    m_element.Init(("node_" + std::to_string(s_ctr++)).c_str(), m_renderer, ElementType::RECT);
+    
+    Update();
 }
 
 SableUI::SplitterNode* SableUI::BaseNode::AddSplitter(NodeType type)
@@ -350,5 +363,21 @@ SableUI::BaseNode* SableUI::BaseNode::AddBaseNode()
 
 void SableUI::BaseNode::Update()
 {
+    SableUI::Rect realRect = rect;
+    
+    if (auto* splitter = dynamic_cast<SplitterNode*>(parent); splitter != nullptr)
+    {
+        realRect.x += splitter->bSize;
+		realRect.y += splitter->bSize;
+        realRect.w -= splitter->bSize * 2;
+        realRect.h -= splitter->bSize * 2;
+    }
 
+    m_element.SetRect(realRect);
+    m_element.UpdateChildren();
+}
+
+void SableUI::BaseNode::Render()
+{
+    m_element.Render();
 }
