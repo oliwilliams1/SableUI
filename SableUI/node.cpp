@@ -3,6 +3,8 @@
 SableUI::Node::Node(Node* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
     type = NodeType::BASE;
+    rect.wType = RectType::FILL;
+    rect.hType = RectType::FILL;
 }
 
 /* Root node implementation */
@@ -40,6 +42,7 @@ void SableUI::RootNode::Recalculate()
 
         child->CalculateScales();
         child->CalculatePositions();
+        child->CalculateMinBounds();
     }
 }
 
@@ -300,6 +303,47 @@ void SableUI::SplitterNode::CalculatePositions()
     if (toUpdate) Update();
 }
 
+void SableUI::SplitterNode::CalculateMinBounds()
+{
+    if (children.empty())
+    {
+        minBounds = { 20, 20 };
+        return;
+    }
+
+    if (type == NodeType::HSPLITTER)
+    {
+        int totalWidth = 0;
+        int maxHeight = 0;
+
+        for (Node* child : children)
+        {
+            child->CalculateMinBounds();
+            totalWidth += child->minBounds.x;
+            maxHeight = std::max(maxHeight, child->minBounds.y);
+        }
+
+        minBounds = { totalWidth, maxHeight };
+    }
+    else if (type == NodeType::VSPLITTER)
+    {
+        int totalHeight = 0;
+        int maxWidth = 0;
+
+        for (Node* child : children)
+        {
+            child->CalculateMinBounds();
+            totalHeight += child->minBounds.y;
+            maxWidth = std::max(maxWidth, child->minBounds.x);
+        }
+
+        minBounds = { maxWidth, totalHeight };
+    }
+
+    if (rect.wType == SableUI::FIXED) minBounds.x = rect.w;
+    if (rect.hType == SableUI::FIXED) minBounds.y = rect.h;
+}
+
 void SableUI::SplitterNode::Update()
 {
     std::vector<int> segments;
@@ -337,7 +381,6 @@ static int s_ctr = 0;
 SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer) : Node(parent, renderer)
 {
     type = NodeType::BASE;
-    minBounds = { 50, 50 };
 
     /* Fixed, will update via code, should NOT be modified by algo */
     m_element.hType = RectType::FIXED;

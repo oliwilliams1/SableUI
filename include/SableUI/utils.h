@@ -221,7 +221,9 @@ namespace SableUI
 		UNDEF       = 0x0,
 		FILL        = 0x1,
 		FIXED       = 0x2,
-		FIT_CONTENT = 0x3
+		FIT_CONTENT = 0x3,
+		SET			= 0x4,
+		LOCKED		= 0x6
 	};
 
 	struct Rect

@@ -377,6 +377,16 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
+inline int SableUI::Window::CalculateMinimumWidth(Node* node)
+{
+	return (node == nullptr) ? 20 : node->minBounds.x;
+}
+
+inline int SableUI::Window::CalculateMinimumHeight(Node* node)
+{
+	return (node == nullptr) ? 20 : node->minBounds.y;
+}
+
 void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 {
 	m_needsStaticRedraw = true;
@@ -527,85 +537,6 @@ int SableUI::Window::GetRefreshRate()
 	{
 		return -1;
 	}
-}
-
-
-int SableUI::Window::CalculateMinimumWidth(Node* node)
-{
-	/*if (node == nullptr) return 20;
-
-	if (node->type == NodeType::BASE)
-	{
-		if (auto* defaultComponent = dynamic_cast<Body*>(node->m_component))
-		{
-			return defaultComponent->m_element->GetWidth();
-		}
-		return 20;
-	}
-	else if (node->type == NodeType::HSPLITTER)
-	{
-		int totalMinChildWidth = 0;
-		for (SableUI::Node* child : node->children)
-		{
-			totalMinChildWidth += CalculateMinimumWidth(child);
-		}
-		return (std::max)(totalMinChildWidth, 2 * node->bSize);
-	}
-	else if (node->type == NodeType::VSPLITTER)
-	{
-		int maxChildWidth = 0;
-		for (SableUI::Node* child : node->children)
-		{
-			maxChildWidth = (std::max)(maxChildWidth, CalculateMinimumWidth(child));
-		}
-		return (std::max)(maxChildWidth, 20);
-	}*/
-
-	return 20;
-}
-
-int SableUI::Window::CalculateMinimumHeight(Node* node)
-{
-	/*if (node == nullptr) return 20;
-
-	if (node->type == NodeType::BASE)
-	{
-		if (auto* defaultComponent = dynamic_cast<Body*>(node->m_component))
-		{
-			return defaultComponent->m_element->GetHeight();
-		}
-		return 20; 
-	}
-	else if (node->type == NodeType::VSPLITTER)
-	{
-		int totalMinChildHeight = 0;
-		for (SableUI::Node* child : node->children)
-		{
-			totalMinChildHeight += CalculateMinimumHeight(child);
-		}
-		return (std::max)(totalMinChildHeight, 2 * node->bSize);
-	}
-	else if (node->type == NodeType::HSPLITTER)
-	{
-		int maxChildHeight = 0;
-		for (SableUI::Node* child : node->children)
-		{
-			maxChildHeight = (std::max)(maxChildHeight, CalculateMinimumHeight(child));
-		}
-		return (std::max)(maxChildHeight, 20);
-	}*/
-
-	return 20;
-}
-
-void SableUI::Window::CalculateAllNodeMinimumBounds()
-{
-	/*for (Node* node : m_nodes)
-	{
-		int bSize = 0;
-		if (node->parent) bSize = node->parent->bSize;
-		node->minBounds = { CalculateMinimumWidth(node) + 2 * bSize, CalculateMinimumHeight(node) + 2 * bSize};
-	}*/
 }
 
 SableUI::Window::~Window()

@@ -26,11 +26,12 @@ namespace SableUI
 
         virtual void CalculateScales() {};
         virtual void CalculatePositions() {};
+        virtual void CalculateMinBounds() {};
         virtual void Update() {};
 
         Node* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
-        ivec2 minBounds = { 0 };
+        ivec2 minBounds = { 20, 20 };
         NodeType type = NodeType::UNDEF;
         std::vector<Node*> children;
 
@@ -67,6 +68,7 @@ namespace SableUI
 
         void CalculateScales() override;
         void CalculatePositions() override;
+        void CalculateMinBounds() override;
         void Update() override;
 
         int bSize = 1;
@@ -84,6 +86,7 @@ namespace SableUI
         void Render() override;
         SplitterNode* AddSplitter(NodeType type) override;
         BaseNode* AddBaseNode() override;
+        void CalculateMinBounds() override {};
         void Update() override;
 
     private:
