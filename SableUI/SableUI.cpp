@@ -379,12 +379,83 @@ void SableUI::Window::RecalculateNodes()
 
 inline int SableUI::Window::CalculateMinimumWidth(Node* node)
 {
-	return (node == nullptr) ? 20 : node->minBounds.x;
+	return 20;
 }
 
 inline int SableUI::Window::CalculateMinimumHeight(Node* node)
 {
-	return (node == nullptr) ? 20 : node->minBounds.y;
+	return 20;
+}
+
+static void FixWidth(SableUI::Node* node)
+{
+	if (node->children.size() == 0 || node->type == SableUI::NodeType::BASE) return;
+	for (SableUI::Node* child : node->children)
+	{
+		FixWidth(child);
+	}
+
+	bool fix = false;
+	for (SableUI::Node* child : node->children)
+	{
+		if (child->rect.w < child->minBounds.x)
+		{
+			child->rect.w = child->minBounds.x;
+			child->rect.wType = SableUI::RectType::FIXED;
+			fix = true;
+			break;
+		}
+	}
+
+	if (fix)
+	{
+		int wToSet = 0;
+		for (SableUI::Node* child : node->children)
+		{
+			wToSet += child->rect.w;
+		}
+
+		node->rect.w = wToSet;
+		node->rect.wType = SableUI::RectType::FIXED;
+		node->CalculateScales();
+		node->CalculatePositions();
+	}
+}
+
+static void FixHeight(SableUI::Node* node)
+{
+	if (node->children.size() == 0 || node->type == SableUI::NodeType::BASE) return;
+
+	for (SableUI::Node* child : node->children)
+	{
+		FixHeight(child);
+	}
+
+	bool fix = false;
+	for (SableUI::Node* child : node->children)
+	{
+		if (child->rect.h < child->minBounds.y)
+		{
+			child->rect.h = child->minBounds.y;
+			child->rect.hType = SableUI::RectType::FIXED;
+			fix = true;
+			break;
+		}
+	}
+
+	if (fix)
+	{
+		int hToSet = 0;
+		for (SableUI::Node* child : node->children)
+		{
+			hToSet += child->rect.h;
+		}
+
+		node->rect.h = hToSet;
+		node->rect.hType = SableUI::RectType::FIXED;
+		node->CalculateScales();
+		node->CalculatePositions();
+	}
 }
 
 void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
@@ -442,59 +513,62 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 
 	SableUI::ivec2 deltaPos = pos - oldPos;
 
-	static SableUI::ivec2 prevPos = { 0, 0 };
-	SableUI::ivec2 dPos = prevPos - pos;
-	if (dPos.x == 0 && dPos.y == 0) return;
-	prevPos = pos;
-
-	if (currentEdgeType == SableUI::EdgeType::EW_EDGE)
 	{
-		int minWidth = CalculateMinimumWidth(node);
-		deltaPos.x = std::clamp(deltaPos.x,
-			-oldNodeRect.w + minWidth,
-			olderSiblingOldRect.w - minWidth);
-
-		int newWidth = (std::max)(oldNodeRect.w + deltaPos.x, minWidth);
-		selectedNode->rect.w = newWidth;
-		olderSiblingNode->rect.w = olderSiblingOldRect.w - (newWidth - oldNodeRect.w);
-
-		selectedNode->rect.wType = SableUI::RectType::FIXED;
-
-		for (SableUI::Node* sibling : selectedNode->parent->children)
-		{
-			if (sibling != selectedNode)
-			{
-				sibling->rect.wType = SableUI::RectType::FILL;
-				sibling->rect.hType = SableUI::RectType::FILL;
-			}
-		}
-
-		selectedNode->parent->CalculateScales();
-	}
-	else if (currentEdgeType == SableUI::EdgeType::NS_EDGE)
-	{
-		int minHeight = CalculateMinimumHeight(node);
-		deltaPos.y = std::clamp(deltaPos.y,
-			-oldNodeRect.h + minHeight,
-			olderSiblingOldRect.h - minHeight);
-
-		selectedNode->rect.h = oldNodeRect.h + deltaPos.y;
-		olderSiblingNode->rect.h = olderSiblingOldRect.h - deltaPos.y;
-
-		selectedNode->rect.hType = SableUI::RectType::FIXED;
-
-		for (SableUI::Node* sibling : selectedNode->parent->children)
-		{
-			if (sibling != selectedNode)
-			{
-				sibling->rect.hType = SableUI::RectType::FILL;
-				sibling->rect.wType = SableUI::RectType::FILL;
-			}
-		}
-
-		selectedNode->parent->CalculateScales();
+		static SableUI::ivec2 prevPos = { 0, 0 };
+		SableUI::ivec2 dPos = prevPos - pos;
+		if (dPos.x == 0 && dPos.y == 0) return;
+		prevPos = pos;
 	}
 
+	if (selectedNode == nullptr)
+	{
+		SableUI_Log("No node selected");
+		return;
+	}
+
+	switch (currentEdgeType)
+	{
+	case SableUI::EdgeType::EW_EDGE:
+	{
+		int width = oldNodeRect.w + deltaPos.x;
+		width = (std::max)(width, selectedNode->minBounds.x);
+
+		int maxWidth = selectedNode->parent->rect.w - olderSiblingNode->minBounds.x;
+		width = (std::min)(width, maxWidth);
+
+		int newOlderSiblingWidth = olderSiblingOldRect.w - (width - oldNodeRect.w);
+		newOlderSiblingWidth = (std::max)(newOlderSiblingWidth, olderSiblingNode->minBounds.x);
+
+		selectedNode->rect.wType = RectType::FIXED;
+		selectedNode->rect.w = width;
+
+		olderSiblingNode->rect.wType = RectType::FILL;
+
+		FixWidth(selectedNode);
+		break;
+	}
+	case SableUI::EdgeType::NS_EDGE:
+	{
+		int height = oldNodeRect.h + deltaPos.y;
+		height = (std::max)(height, selectedNode->minBounds.y);
+
+		int maxHeight = selectedNode->parent->rect.h - olderSiblingNode->minBounds.y;
+		height = (std::min)(height, maxHeight);
+
+		int newOlderSiblingHeight = olderSiblingOldRect.h - (height - oldNodeRect.h);
+		newOlderSiblingHeight = (std::max)(newOlderSiblingHeight, olderSiblingNode->minBounds.y);
+
+		selectedNode->rect.hType = RectType::FIXED;
+		selectedNode->rect.h = height;
+
+		olderSiblingNode->rect.hType = RectType::FILL;
+
+		FixHeight(selectedNode);
+		break;
+	}
+	}
+
+	selectedNode->parent->CalculateScales();
 	m_root->Recalculate();
 }
 
