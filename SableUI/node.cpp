@@ -1,4 +1,5 @@
 #include "SableUI/node.h"
+#include "SableUI/component.h"
 
 SableUI::Node::Node(Node* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
@@ -355,12 +356,8 @@ SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer) : Node(parent, ren
     type = NodeType::BASE;
 
     /* Fixed, will update via code, should NOT be modified by algo */
-    m_element.hType = RectType::FIXED;
-    m_element.wType = RectType::FIXED;
-    m_element.bgColour = { 80, 0, 0 };
-
-    m_element.Init(("node_" + std::to_string(s_ctr++)).c_str(), m_renderer, ElementType::RECT);
-    
+    if (m_component == nullptr)
+        m_component = new BaseComponent(renderer);
     Update();
 }
 
@@ -388,11 +385,10 @@ void SableUI::BaseNode::Update()
         realRect.h -= splitter->bSize * 2;
     }
 
-    m_element.SetRect(realRect);
-    m_element.UpdateChildren();
+    m_component->GetBaseElement()->SetRect(realRect);
 }
 
 void SableUI::BaseNode::Render()
 {
-    m_element.Render();
+    m_component->GetBaseElement()->Render();
 }

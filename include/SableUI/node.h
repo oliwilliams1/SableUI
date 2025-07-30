@@ -90,6 +90,6 @@ namespace SableUI
         void Update() override;
 
     private:
-        Element m_element;
+        BaseComponent* m_component = nullptr;
     };   
 }

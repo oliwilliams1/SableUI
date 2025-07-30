@@ -607,6 +607,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 		pendingDelta = pendingDelta - stepDelta;
 	}
 
+	// Clear accumulated draw calls from resize steps
 	m_renderer.ClearStack();
 	m_root->Recalculate();
 
@@ -656,8 +657,6 @@ int SableUI::Window::GetRefreshRate()
 
 SableUI::Window::~Window()
 {
-	delete m_root;
-
 	DestroyFontManager();
 	DestroyDrawables();
 	DestroyShaders();

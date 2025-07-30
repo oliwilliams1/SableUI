@@ -1,28 +1,27 @@
 #pragma once
+
 #include <memory>
 #include <unordered_map>
-
+#include <vector>
+#include <string>
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
 
 namespace SableUI
 {
-	class Renderer;
-
 	enum class ElementType
 	{
-		UNDEF   = 0x0,
-		RECT    = 0x1,
-		IMAGE   = 0x2,
-		TEXT    = 0x3,
-		DIV     = 0x4,
-
+		UNDEF = 0x0,
+		RECT = 0x1,
+		IMAGE = 0x2,
+		TEXT = 0x3,
+		DIV = 0x4,
 	};
 
 	enum class LayoutDirection
 	{
-		VERTICAL    = 0x0,
-		HORIZONTAL  = 0x1
+		VERTICAL = 0x0,
+		HORIZONTAL = 0x1
 	};
 
 	struct ElementInfo
@@ -42,30 +41,45 @@ namespace SableUI
 		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;	// Vertical or horizontal child layout
 	};
 
+	enum class ChildType
+	{
+		ELEMENT = 0x0,
+		COMPONENT = 0x1,
+	};
+
+	class BaseComponent;
+	struct Child
+	{
+		ChildType type = ChildType::ELEMENT;
+		union
+		{
+			BaseComponent* component;
+			class Element* element;
+		};
+
+		Child(Element* element) : element(element), type(ChildType::ELEMENT) {}
+		Child(BaseComponent* component) : component(component), type(ChildType::COMPONENT) {}
+		~Child();
+
+		operator SableUI::Element* ();
+	};
+
 	class Element
 	{
 	public:
-		Element() {};
-		Element(const char* name, Renderer* renderer, ElementType type);
+		Element() {}
+		Element(Renderer* renderer, ElementType type);
 		~Element();
 
-		void Init(const char* name, Renderer* renderer, ElementType type);
+		void Init(Renderer* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
-
-		/* Base render (background) */
 		void Render(int z = 1);
-
 		void SetRect(const Rect& rect);
-
-		void UpdateChildren();
 		void AddChild(Element* child);
+		void AddChild(BaseComponent* component);
 		void SetImage(const std::string& path);
 		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
 
-		int GetWidth(bool surface = true);
-		int GetHeight(bool surface = true);
-
-		/* User-level settings for rect */
 		int xOffset = 0;
 		int yOffset = 0;
 		int width = 0;
@@ -78,16 +92,14 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 
 		Colour bgColour = Colour(128, 128, 128);
-
-		std::string name = "unnamed element";
 		ElementType type = ElementType::UNDEF;
-		std::vector<Element*> children;
+		std::vector<Child> children;
 		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;
 
 		Rect rect = { 0, 0, 0, 0 };
+
 	private:
-		/* Private vars for rendering */
-		DrawableBase* drawable;
+		DrawableBase* drawable = nullptr;
 		Renderer* renderer = nullptr;
 	};
 }
