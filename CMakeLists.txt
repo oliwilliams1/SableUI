@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.10...3.20)
+cmake_minimum_required(VERSION 3.15)
 
 project(SableUI VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+if (MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # Find OpenGL
 find_package(OpenGL REQUIRED)
@@ -18,7 +22,7 @@ include_directories("${GLEW_DIR}/include")
 add_definitions(-DGLEW_STATIC)
 
 file(GLOB_RECURSE GLEW_SOURCE "${GLEW_DIR}/src/*.c" "${GLEW_DIR}/include/*.h")
-add_library(glew ${GLEW_SOURCE})
+add_library(glew STATIC ${GLEW_SOURCE})
 
 # FreeType
 set(FT_DISABLE_ZLIB     TRUE CACHE BOOL "Disable Zlib support in FreeType")
@@ -34,7 +38,6 @@ include_directories("vendor/stb")
 
 # TinyXML2
 file(GLOB_RECURSE TINYXML2_SOURCES "vendor/TinyXML2/*.cpp" "vendor/TinyXML2/*.h")
-
 add_library(TinyXML2 STATIC ${TINYXML2_SOURCES})
 target_include_directories(TinyXML2 PUBLIC "vendor/TinyXML2")
 

@@ -458,22 +458,22 @@ static void FixHeight(SableUI::Node* node)
 	}
 }
 
-void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
+static void ResizeStep(SableUI::ivec2 deltaPos, SableUI::Node* node, SableUI::Node* root)
 {
-	m_needsStaticRedraw = true;
-
 	static SableUI::Node* selectedNode = nullptr;
 	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
-	static SableUI::ivec2 oldPos = { 0, 0 };
 	static SableUI::Rect oldNodeRect = { 0, 0, 0, 0 };
 	static SableUI::Node* olderSiblingNode = nullptr;
 	static SableUI::Rect olderSiblingOldRect = { 0, 0, 0, 0 };
+	static SableUI::ivec2 prevPos = { 0, 0 };
+	static SableUI::ivec2 totalDelta = { 0, 0 };
 
 	if (node != nullptr)
 	{
-		oldPos = pos;
 		selectedNode = node;
 		oldNodeRect = node->rect;
+		prevPos = { 0, 0 };
+		totalDelta = { 0, 0 };
 
 		if (node->parent == nullptr)
 		{
@@ -511,13 +511,13 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 		return;
 	}
 
-	SableUI::ivec2 deltaPos = pos - oldPos;
+	totalDelta = totalDelta + deltaPos;
 
 	{
-		static SableUI::ivec2 prevPos = { 0, 0 };
-		SableUI::ivec2 dPos = prevPos - pos;
+		SableUI::ivec2 currentPos = prevPos + deltaPos;
+		SableUI::ivec2 dPos = prevPos - currentPos;
 		if (dPos.x == 0 && dPos.y == 0) return;
-		prevPos = pos;
+		prevPos = currentPos;
 	}
 
 	if (selectedNode == nullptr)
@@ -530,7 +530,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 	{
 	case SableUI::EdgeType::EW_EDGE:
 	{
-		int width = oldNodeRect.w + deltaPos.x;
+		int width = oldNodeRect.w + totalDelta.x;
 		width = (std::max)(width, selectedNode->minBounds.x);
 
 		int maxWidth = selectedNode->parent->rect.w - olderSiblingNode->minBounds.x;
@@ -539,17 +539,17 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 		int newOlderSiblingWidth = olderSiblingOldRect.w - (width - oldNodeRect.w);
 		newOlderSiblingWidth = (std::max)(newOlderSiblingWidth, olderSiblingNode->minBounds.x);
 
-		selectedNode->rect.wType = RectType::FIXED;
+		selectedNode->rect.wType = SableUI::RectType::FIXED;
 		selectedNode->rect.w = width;
 
-		olderSiblingNode->rect.wType = RectType::FILL;
+		olderSiblingNode->rect.wType = SableUI::RectType::FILL;
 
 		FixWidth(selectedNode);
 		break;
 	}
 	case SableUI::EdgeType::NS_EDGE:
 	{
-		int height = oldNodeRect.h + deltaPos.y;
+		int height = oldNodeRect.h + totalDelta.y;
 		height = (std::max)(height, selectedNode->minBounds.y);
 
 		int maxHeight = selectedNode->parent->rect.h - olderSiblingNode->minBounds.y;
@@ -558,10 +558,10 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 		int newOlderSiblingHeight = olderSiblingOldRect.h - (height - oldNodeRect.h);
 		newOlderSiblingHeight = (std::max)(newOlderSiblingHeight, olderSiblingNode->minBounds.y);
 
-		selectedNode->rect.hType = RectType::FIXED;
+		selectedNode->rect.hType = SableUI::RectType::FIXED;
 		selectedNode->rect.h = height;
 
-		olderSiblingNode->rect.hType = RectType::FILL;
+		olderSiblingNode->rect.hType = SableUI::RectType::FILL;
 
 		FixHeight(selectedNode);
 		break;
@@ -569,7 +569,48 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
 	}
 
 	selectedNode->parent->CalculateScales();
+}
+
+void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::Node* node)
+{
+	const int threshold = 1;
+	static SableUI::ivec2 oldPos = { 0, 0 };
+	static SableUI::ivec2 pendingDelta = { 0, 0 };
+
+	SableUI::ivec2 deltaPos = pos - oldPos;
+	pendingDelta = pendingDelta + deltaPos;
+
+	while (std::abs(pendingDelta.x) > threshold || std::abs(pendingDelta.y) > threshold)
+	{
+		SableUI::ivec2 stepDelta = { 0, 0 };
+
+		if (std::abs(pendingDelta.x) > threshold)
+		{
+			stepDelta.x = (pendingDelta.x > 0) ? threshold : -threshold;
+		}
+		else
+		{
+			stepDelta.x = pendingDelta.x;
+		}
+
+		if (std::abs(pendingDelta.y) > threshold)
+		{
+			stepDelta.y = (pendingDelta.y > 0) ? threshold : -threshold;
+		}
+		else
+		{
+			stepDelta.y = pendingDelta.y;
+		}
+
+		ResizeStep(stepDelta, node, m_root);
+
+		pendingDelta = pendingDelta - stepDelta;
+	}
+
+	m_renderer.ClearStack();
 	m_root->Recalculate();
+
+	oldPos = pos;
 }
 
 int SableUI::Window::GetRefreshRate()
