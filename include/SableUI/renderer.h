@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "SableUI/renderTarget.h"
 #include "SableUI/drawable.h"
 #include "SableUI/element.h"
 

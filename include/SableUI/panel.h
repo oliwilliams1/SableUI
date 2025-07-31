@@ -8,66 +8,64 @@
 #include <type_traits>
 #include <utility>
 
-#include "SableUI/utils.h"
-#include "SableUI/renderer.h"
 #include "SableUI/component.h"
 
 namespace SableUI
 {
-    struct SplitterNode;
-    struct BaseNode;
+    struct SplitterPanel;
+    struct Panel;
 
-    struct Node
+    struct BasePanel
     {
-        Node(Node* parent, Renderer* renderer);
-        virtual ~Node() = default;
+        BasePanel(BasePanel* parent, Renderer* renderer);
+        virtual ~BasePanel() = default;
         virtual void Render() = 0;
         virtual void Recalculate() {};
 
-        virtual SplitterNode* AddSplitter(NodeType type) = 0;
-        virtual BaseNode* AddBaseNode() = 0;
+        virtual SplitterPanel* AddSplitter(PanelType type) = 0;
+        virtual Panel* AddPanel() = 0;
 
         virtual void CalculateScales() {};
         virtual void CalculatePositions() {};
         virtual void CalculateMinBounds() {};
         virtual void Update() {};
 
-        Node* parent = nullptr;
+        BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
         ivec2 minBounds = { 20, 20 };
-        NodeType type = NodeType::UNDEF;
-        std::vector<Node*> children;
+        PanelType type = PanelType::UNDEF;
+        std::vector<BasePanel*> children;
 
     protected:
 		Renderer* m_renderer = nullptr;
-        SableUI::Node* FindRoot();
+        SableUI::BasePanel* FindRoot();
     };
 
-    struct RootNode : public Node
+    struct RootPanel : public BasePanel
     {
-        RootNode(Renderer* renderer, int w, int h);
-        ~RootNode();
+        RootPanel(Renderer* renderer, int w, int h);
+        ~RootPanel();
 
         void Resize(int w, int h);
         void Render() override;
         void Recalculate() override;
 
-        SplitterNode* AddSplitter(NodeType type) override;
-        BaseNode* AddBaseNode() override;
+        SplitterPanel* AddSplitter(PanelType type) override;
+        Panel* AddPanel() override;
 
         void CalculateScales() override;
         void CalculatePositions() override;
     };
 
-    struct SplitterNode : public Node
+    struct SplitterPanel : public BasePanel
     {
-        SplitterNode(Node* parent, NodeType type, Renderer* renderer);
-        ~SplitterNode();
+        SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer);
+        ~SplitterPanel();
 
         void Render() override;
 
-        SplitterNode* AddSplitter(NodeType type) override;
-        BaseNode* AddBaseNode() override;
+        SplitterPanel* AddSplitter(PanelType type) override;
+        Panel* AddPanel() override;
 
         void CalculateScales() override;
         void CalculatePositions() override;
@@ -82,16 +80,16 @@ namespace SableUI
         Colour m_bColour = { 51, 51, 51 };
     };
 
-    struct BaseNode : public Node
+    struct Panel : public BasePanel
     {
-        BaseNode(Node* parent, Renderer* renderer);
+        Panel(BasePanel* parent, Renderer* renderer);
 
         void Render() override;
-        SplitterNode* AddSplitter(NodeType type) override;
-        BaseNode* AddBaseNode() override;
+        SplitterPanel* AddSplitter(PanelType type) override;
+        Panel* AddPanel() override;
 
         template<typename T, typename... Args>
-        BaseNode* AttachComponent(Args&&... args);
+        Panel* AttachComponent(Args&&... args);
 
         void Update() override;
 
@@ -100,7 +98,7 @@ namespace SableUI
     };
 
     template<typename T, typename ...Args>
-    inline BaseNode* BaseNode::AttachComponent(Args&&... args)
+    inline Panel* Panel::AttachComponent(Args&&... args)
     {
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 

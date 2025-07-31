@@ -123,7 +123,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
+void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
                                        float pBSize, const std::vector<int>& segments)
 {
     this->m_rect = rect;
@@ -146,7 +146,7 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
 
     switch (m_type)
     {
-    case SableUI::NodeType::HSPLITTER:
+    case SableUI::PanelType::HORIZONTAL:
     {
         for (int offset : m_offsets)
         {
@@ -179,7 +179,7 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
         break;
     }
 
-    case SableUI::NodeType::VSPLITTER:
+    case SableUI::PanelType::VERTICAL:
     {
         for (int offset : m_offsets)
         {

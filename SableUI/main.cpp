@@ -1,8 +1,8 @@
 ﻿#include "SableUI/SableUI.h"
 
-#define VSPLITTER SableUI::NodeType::VSPLITTER
-#define HSPLITTER SableUI::NodeType::HSPLITTER
-#define COMPONENT SableUI::NodeType::BASE
+#define VSPLITTER SableUI::PanelType::VERTICAL
+#define HSPLITTER SableUI::PanelType::HORIZONTAL
+#define COMPONENT SableUI::PanelType::BASE
 #define Colour SableUI::Colour
 #define Color SableUI::Colour
 
@@ -14,53 +14,78 @@ public:
 
 int main(int argc, char** argv)
 {
-    SableUI::Window mainWindow("SableUI Layout Test", 1600, 1000);
+    using namespace SableUI;
 
-    SableUI::RootNode* rootNode = mainWindow.GetRoot();
+    Window mainWindow("SableUI Layout Test", 1600, 1000);
+    SetContext(&mainWindow);
 
-    SableUI::SplitterNode* rootHSplitter = rootNode->AddSplitter(HSPLITTER);
-    if (rootHSplitter)
+    if (SableUI::SplitterPanel* rootHSplitter = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
     {
-        SableUI::SplitterNode* vsplitter1 = rootHSplitter->AddSplitter(VSPLITTER);
-        if (vsplitter1)
+        if (SableUI::SplitterPanel* vsplitter1 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
         {
-            SableUI::SplitterNode* hsplitter1 = vsplitter1->AddSplitter(HSPLITTER);
-            if (hsplitter1)
+            if (SableUI::SplitterPanel* hsplitter1 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
             {
-                hsplitter1->AddBaseNode()->AttachComponent<TestComponent>();
-
-                SableUI::SplitterNode* vsplitter2 = hsplitter1->AddSplitter(VSPLITTER);
-                if (vsplitter2)
+                if (SableUI::Panel* topLeftComponent = SableUI::AddPanel())
                 {
-                    vsplitter2->AddBaseNode();
-
-                    SableUI::SplitterNode* hsplitter2 = vsplitter2->AddSplitter(HSPLITTER);
-                    if (hsplitter2)
-                    {
-                        hsplitter2->AddBaseNode();
-                        hsplitter2->AddBaseNode();
-                    }
+                    topLeftComponent->AttachComponent<TestComponent>();
                 }
+
+                if (SableUI::SplitterPanel* vsplitter2 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
+                {
+                    SableUI::Panel* nestedTopComponent = SableUI::AddPanel();
+                    if (SableUI::SplitterPanel* hsplitter2 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
+                    {
+                        SableUI::Panel* nestedBottomLeftComponent = SableUI::AddPanel();
+                        SableUI::Panel* nestedBottomRightComponent = SableUI::AddPanel();
+
+                        SableUI::EndSplitter(); // HSplitter
+                    }
+
+                    SableUI::EndSplitter(); // VSplitter
+                }
+
+                SableUI::EndSplitter(); // TopHSplitter
             }
+            SableUI::Panel* mainBottomComponent = SableUI::AddPanel();
 
-            vsplitter1->AddBaseNode();
+            SableUI::EndSplitter(); // MainVSplitter
         }
-
-        SableUI::SplitterNode* rightVSplitter = rootHSplitter->AddSplitter(VSPLITTER);
-        if (rightVSplitter)
+        if (SableUI::SplitterPanel* rightVSplitter = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
         {
-            rightVSplitter->AddBaseNode();
+            SableUI::Panel* rightTopComponent = SableUI::AddPanel();
+            SableUI::Panel* rightBottomComponent = SableUI::AddPanel();
 
-            rightVSplitter->AddBaseNode();
+            SableUI::EndSplitter(); // RightVSplitter
         }
+
+        SableUI::EndSplitter(); // RootHSplitter
     }
 
-    /* main loop */
+    /* Can alternativley do (same thing)
+    SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL);
+    SableUI::StartSplitter(SableUI::PanelType::VERTICAL);
+    SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL);
+    SableUI::AddPanel();
+    SableUI::StartSplitter(SableUI::PanelType::VERTICAL);
+    SableUI::AddPanel();
+    SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL);
+    SableUI::AddPanel();
+    SableUI::AddPanel();
+    SableUI::EndSplitter();
+    SableUI::EndSplitter();
+    SableUI::EndSplitter();
+    SableUI::AddPanel();
+    SableUI::EndSplitter();
+    SableUI::StartSplitter(SableUI::PanelType::VERTICAL);
+    SableUI::AddPanel();
+    SableUI::AddPanel();
+    SableUI::EndSplitter();
+    SableUI::EndSplitter(); */
+
     while (mainWindow.PollEvents())
     {
         mainWindow.Draw();
     }
 
-    delete rootNode;
     return 0;
 }

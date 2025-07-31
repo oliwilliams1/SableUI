@@ -1,39 +1,39 @@
-#include "SableUI/node.h"
+#include "SableUI/panel.h"
 
-SableUI::Node::Node(Node* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
+SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
-    type = NodeType::BASE;
+    type = PanelType::BASE;
     rect.wType = RectType::FILL;
     rect.hType = RectType::FILL;
 }
 
 /* Root node implementation */
-SableUI::RootNode::RootNode(Renderer* renderer, int w, int h) : Node(nullptr, renderer)
+SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
-    type = NodeType::ROOTNODE;
+    type = PanelType::ROOTNODE;
     rect.w = w;
     rect.h = h;
 }
 
-SableUI::RootNode::~RootNode()
+SableUI::RootPanel::~RootPanel()
 {
-    for (SableUI::Node* child : children)
+    for (SableUI::BasePanel* child : children)
     {
         delete child;
     }
 }
 
-void SableUI::RootNode::Render()
+void SableUI::RootPanel::Render()
 {
-    for (SableUI::Node* child : children)
+    for (SableUI::BasePanel* child : children)
     {
         child->Render();
     }
 }
 
-void SableUI::RootNode::Recalculate()
+void SableUI::RootPanel::Recalculate()
 {
-    for (SableUI::Node* child : children)
+    for (SableUI::BasePanel* child : children)
     {
         child->rect.x = rect.x;
         child->rect.y = rect.y;
@@ -46,69 +46,69 @@ void SableUI::RootNode::Recalculate()
     }
 }
 
-SableUI::SplitterNode* SableUI::RootNode::AddSplitter(NodeType type)
+SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 {
     if (children.size() > 0)
     {
         SableUI_Error("Root node cannot have more than one child, dismissing call");
         return nullptr;
     }
-    SplitterNode* node = new SplitterNode(this, type, m_renderer);
+    SplitterPanel* node = new SplitterPanel(this, type, m_renderer);
     children.push_back(node);
 
     Recalculate();
     return node;
 }
 
-SableUI::BaseNode* SableUI::RootNode::AddBaseNode()
+SableUI::Panel* SableUI::RootPanel::AddPanel()
 {
     if (children.size() > 0)
     {
         SableUI_Error("Root node cannot have more than one child, dismissing call");
         return nullptr;
     }
-    BaseNode* node = new BaseNode(this, m_renderer);
+    Panel* node = new Panel(this, m_renderer);
     children.push_back(node);
 
     Recalculate();
     return node;
 }
 
-SableUI::Node* SableUI::Node::FindRoot()
+SableUI::BasePanel* SableUI::BasePanel::FindRoot()
 {
-    Node* node = this;
+    BasePanel* node = this;
     while (node->parent != nullptr) node = node->parent;
     return node;
 }
 
-void SableUI::RootNode::CalculateScales()
+void SableUI::RootPanel::CalculateScales()
 {
     SableUI_Error("Method does not exist for root node, use RootNode.Recalculate() instead");
     return;
 }
 
-void SableUI::RootNode::CalculatePositions()
+void SableUI::RootPanel::CalculatePositions()
 {
     SableUI_Error("Method does not exist for root node, use RootNode.Recalculate() instead");
     return;
 }
 
-void SableUI::RootNode::Resize(int w, int h)
+void SableUI::RootPanel::Resize(int w, int h)
 {
     rect.w = w;
     rect.h = h;
 }
 
 /* Splitter node implementation */
-SableUI::SplitterNode::SplitterNode(Node* parent, NodeType type, Renderer* renderer) : Node(parent, renderer)
+SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer) : BasePanel(parent, renderer)
 {
     this->type = type;
 }
 
-void SableUI::SplitterNode::Render()
+void SableUI::SplitterPanel::Render()
 {
     if (!m_drawableUpToDate) Update();
-    for (SableUI::Node* child : children)
+    for (SableUI::BasePanel* child : children)
     {
         child->Render();
     }
@@ -117,37 +117,37 @@ void SableUI::SplitterNode::Render()
     m_renderer->Draw(&m_drawable);
 }
 
-SableUI::SplitterNode* SableUI::SplitterNode::AddSplitter(NodeType type)
+SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 {
-    SplitterNode* node = new SplitterNode(this, type, m_renderer);
+    SplitterPanel* node = new SplitterPanel(this, type, m_renderer);
     children.push_back(node);
 
     FindRoot()->Recalculate();
     return node;
 }
 
-SableUI::BaseNode* SableUI::SplitterNode::AddBaseNode()
+SableUI::Panel* SableUI::SplitterPanel::AddPanel()
 {
-    BaseNode* node = new BaseNode(this, m_renderer);
+    Panel* node = new Panel(this, m_renderer);
     children.push_back(node);
 
     FindRoot()->Recalculate();
     return node;
 }
 
-void SableUI::SplitterNode::CalculateScales()
+void SableUI::SplitterPanel::CalculateScales()
 {
     if (children.empty()) return;
 
     m_drawableUpToDate = false;
 
-    if (type == NodeType::HSPLITTER)
+    if (type == PanelType::HORIZONTAL)
     {
         int totalFixedWidth = 0;
         int numFillChildren = 0;
-        std::vector<Node*> fillChildren;
+        std::vector<BasePanel*> fillChildren;
 
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             child->rect.h = rect.h;
             child->rect.hType = RectType::FILL;
@@ -177,13 +177,13 @@ void SableUI::SplitterNode::CalculateScales()
             }
         }
     }
-    else if (type == NodeType::VSPLITTER)
+    else if (type == PanelType::VERTICAL)
     {
         int totalFixedHeight = 0;
         int numFillChildren = 0;
-        std::vector<Node*> fillChildren;
+        std::vector<BasePanel*> fillChildren;
 
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             child->rect.w = rect.w;
             child->rect.wType = RectType::FILL;
@@ -214,14 +214,14 @@ void SableUI::SplitterNode::CalculateScales()
         }
     }
 
-    for (Node* child : children)
+    for (BasePanel* child : children)
     {
         child->CalculateScales();
     }
 }
 
 
-void SableUI::SplitterNode::CalculatePositions()
+void SableUI::SplitterPanel::CalculatePositions()
 {
     if (children.empty()) return;
 
@@ -230,9 +230,9 @@ void SableUI::SplitterNode::CalculatePositions()
 
     vec2 cursor = { rect.x, rect.y };
 
-    if (type == NodeType::HSPLITTER)
+    if (type == PanelType::HORIZONTAL)
     {
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             vec2 originalPosition = { child->rect.x, child->rect.y };
 
@@ -247,9 +247,9 @@ void SableUI::SplitterNode::CalculatePositions()
             cursor.x += child->rect.w;
         }
     }
-    else if (type == NodeType::VSPLITTER)
+    else if (type == PanelType::VERTICAL)
     {
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             vec2 originalPosition = { child->rect.x, child->rect.y };
 
@@ -265,7 +265,7 @@ void SableUI::SplitterNode::CalculatePositions()
         }
     }
 
-    for (Node* child : children)
+    for (BasePanel* child : children)
     {
         bool childPositionChanged = false;
         child->CalculatePositions();
@@ -278,7 +278,7 @@ void SableUI::SplitterNode::CalculatePositions()
     if (toUpdate) Update();
 }
 
-void SableUI::SplitterNode::CalculateMinBounds()
+void SableUI::SplitterPanel::CalculateMinBounds()
 {
     if (children.empty())
     {
@@ -286,12 +286,12 @@ void SableUI::SplitterNode::CalculateMinBounds()
         return;
     }
 
-    if (type == NodeType::HSPLITTER)
+    if (type == PanelType::HORIZONTAL)
     {
         int totalWidth = 0;
         int maxHeight = 0;
 
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             child->CalculateMinBounds();
             totalWidth += child->rect.wType == SableUI::FILL ? child->minBounds.x : child->rect.w;
@@ -300,12 +300,12 @@ void SableUI::SplitterNode::CalculateMinBounds()
 
         minBounds = { totalWidth, maxHeight };
     }
-    else if (type == NodeType::VSPLITTER)
+    else if (type == PanelType::VERTICAL)
     {
         int totalHeight = 0;
         int maxWidth = 0;
 
-        for (Node* child : children)
+        for (BasePanel* child : children)
         {
             child->CalculateMinBounds();
             totalHeight += child->rect.hType == SableUI::FILL ? child->minBounds.y : child->rect.h;
@@ -316,19 +316,19 @@ void SableUI::SplitterNode::CalculateMinBounds()
     }
 }
 
-void SableUI::SplitterNode::Update()
+void SableUI::SplitterPanel::Update()
 {
     std::vector<int> segments;
 
-    for (SableUI::Node* child : children)
+    for (SableUI::BasePanel* child : children)
     {
         child->Update();
 
-        if (type == NodeType::HSPLITTER)
+        if (type == PanelType::HORIZONTAL)
         {
             segments.push_back(child->rect.x - rect.x);
         }
-        if (type == NodeType::VSPLITTER)
+        if (type == PanelType::VERTICAL)
 		{
 			segments.push_back(child->rect.y - rect.y);
 		}
@@ -339,9 +339,9 @@ void SableUI::SplitterNode::Update()
     Render();
 }
 
-SableUI::SplitterNode::~SplitterNode()
+SableUI::SplitterPanel::~SplitterPanel()
 {
-    for (Node* child : children)
+    for (BasePanel* child : children)
     {
         delete child;
     }
@@ -350,24 +350,24 @@ SableUI::SplitterNode::~SplitterNode()
 
 /* Base Node Implementation */
 static int s_ctr = 0;
-SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer) : Node(parent, renderer)
+SableUI::Panel::Panel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
 {
-    type = NodeType::BASE;
+    type = PanelType::BASE;
 }
 
-SableUI::SplitterNode* SableUI::BaseNode::AddSplitter(NodeType type)
-{
-    SableUI_Error("Base node cannot have any children, skipping call");
-    return nullptr;
-}
-
-SableUI::BaseNode* SableUI::BaseNode::AddBaseNode()
+SableUI::SplitterPanel* SableUI::Panel::AddSplitter(PanelType type)
 {
     SableUI_Error("Base node cannot have any children, skipping call");
     return nullptr;
 }
 
-void SableUI::BaseNode::Update()
+SableUI::Panel* SableUI::Panel::AddPanel()
+{
+    SableUI_Error("Base node cannot have any children, skipping call");
+    return nullptr;
+}
+
+void SableUI::Panel::Update()
 {
     if (m_component == nullptr)
     {
@@ -377,7 +377,7 @@ void SableUI::BaseNode::Update()
 
     SableUI::Rect realRect = rect;
     
-    if (auto* splitter = dynamic_cast<SplitterNode*>(parent); splitter != nullptr)
+    if (auto* splitter = dynamic_cast<SplitterPanel*>(parent); splitter != nullptr)
     {
         realRect.x += splitter->bSize;
 		realRect.y += splitter->bSize;
@@ -388,7 +388,7 @@ void SableUI::BaseNode::Update()
     m_component->GetBaseElement()->SetRect(realRect);
 }
 
-void SableUI::BaseNode::Render()
+void SableUI::Panel::Render()
 {
     m_component->GetBaseElement()->Render();
 }

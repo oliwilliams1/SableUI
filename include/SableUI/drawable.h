@@ -1,21 +1,21 @@
 #pragma once
 #include <vector>
 
-#include "SableUI/utils.h"
 #include "SableUI/renderTarget.h"
 #include "SableUI/texture.h"
 #include "SableUI/text.h"
+#include "SableUI/utils.h"
 
 namespace SableUI
 {
 	class Renderer;
 
-	enum class NodeType
+	enum class PanelType
 	{
 		ROOTNODE = 0x00,
 		BASE = 0x01,
-		VSPLITTER = 0x02,
-		HSPLITTER = 0x03,
+		VERTICAL = 0x02,
+		HORIZONTAL = 0x03,
 		UNDEF = 0xFF
 	};
 
@@ -66,7 +66,7 @@ namespace SableUI
 		DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour) 
 			: m_colour(colour) { this->m_zIndex = 999; this->m_rect = r; }
 
-		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::NodeType type, 
+		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 
 		void Draw(SableUI::RenderTarget* texture) override;
@@ -74,7 +74,7 @@ namespace SableUI
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 0;
 		std::vector<int> m_offsets;
-		SableUI::NodeType m_type = SableUI::NodeType::UNDEF;
+		SableUI::PanelType m_type = SableUI::PanelType::UNDEF;
 	};
 
 	class DrawableImage : public DrawableBase
