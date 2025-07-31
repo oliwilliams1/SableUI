@@ -47,7 +47,6 @@ namespace SableUI
 		int GetRefreshRate();
 		Renderer m_renderer;
 
-		void CalculateAllNodeMinimumBounds();
 		void Resize(ivec2 pos, Node* node = nullptr);
 		GLFWcursor* CheckResize(Node* node, bool* resCalled);
 

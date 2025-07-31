@@ -1,5 +1,4 @@
 #include "SableUI/node.h"
-#include "SableUI/component.h"
 
 SableUI::Node::Node(Node* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
@@ -354,11 +353,6 @@ static int s_ctr = 0;
 SableUI::BaseNode::BaseNode(Node* parent, Renderer* renderer) : Node(parent, renderer)
 {
     type = NodeType::BASE;
-
-    /* Fixed, will update via code, should NOT be modified by algo */
-    if (m_component == nullptr)
-        m_component = new BaseComponent(renderer);
-    Update();
 }
 
 SableUI::SplitterNode* SableUI::BaseNode::AddSplitter(NodeType type)
@@ -375,6 +369,12 @@ SableUI::BaseNode* SableUI::BaseNode::AddBaseNode()
 
 void SableUI::BaseNode::Update()
 {
+    if (m_component == nullptr)
+    {
+        m_component = new BaseComponent();
+        m_component->SetRenderer(m_renderer);
+    }
+
     SableUI::Rect realRect = rect;
     
     if (auto* splitter = dynamic_cast<SplitterNode*>(parent); splitter != nullptr)

@@ -8,10 +8,11 @@ namespace SableUI
     class BaseComponent
     {
     public:
-        virtual void Init() {};
-
-        BaseComponent(Renderer* renderer);
+        BaseComponent(Colour colour = Colour{ 32, 32, 32 });
         ~BaseComponent() = default;
+
+        void SetRenderer(Renderer* renderer);
+        virtual void Init() {};
 
         Element* GetBaseElement();
 

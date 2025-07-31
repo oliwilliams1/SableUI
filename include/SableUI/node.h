@@ -5,9 +5,12 @@
 #include <cstdio>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
+#include <utility>
 
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
+#include "SableUI/component.h"
 
 namespace SableUI
 {
@@ -86,10 +89,25 @@ namespace SableUI
         void Render() override;
         SplitterNode* AddSplitter(NodeType type) override;
         BaseNode* AddBaseNode() override;
-        void CalculateMinBounds() override {};
+
+        template<typename T, typename... Args>
+        BaseNode* AttachComponent(Args&&... args);
+
         void Update() override;
 
     private:
         BaseComponent* m_component = nullptr;
-    };   
+    };
+
+    template<typename T, typename ...Args>
+    inline BaseNode* BaseNode::AttachComponent(Args&&... args)
+    {
+        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+        delete m_component;
+        m_component = new T(std::forward<Args>(args)...);
+        m_component->SetRenderer(m_renderer);
+        Update();
+        return this;
+    }
 }

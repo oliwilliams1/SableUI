@@ -1,8 +1,12 @@
 #include "SableUI/component.h"
 
-SableUI::BaseComponent::BaseComponent(Renderer* renderer)
+SableUI::BaseComponent::BaseComponent(Colour colour)
 {
-	m_baseElement.bgColour = { 80, 0, 0 };
+	m_baseElement.bgColour = colour;
+}
+
+void SableUI::BaseComponent::SetRenderer(Renderer* renderer)
+{
 	m_baseElement.Init(renderer, ElementType::RECT);
 }
 
