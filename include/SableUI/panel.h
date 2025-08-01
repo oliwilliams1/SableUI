@@ -89,23 +89,22 @@ namespace SableUI
         Panel* AddPanel() override;
 
         template<typename T, typename... Args>
-        Panel* AttachComponent(Args&&... args);
+        Panel* AttachComponent(Args&&... args)
+        {
+            static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+            if (m_component == nullptr) delete m_component;
+
+            m_component = new T(std::forward<Args>(args)...);
+            m_component->BackendInitialise(m_renderer);
+
+            Update();
+            return this;
+        }
 
         void Update() override;
 
     private:
         BaseComponent* m_component = nullptr;
     };
-
-    template<typename T, typename ...Args>
-    inline Panel* Panel::AttachComponent(Args&&... args)
-    {
-        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-        delete m_component;
-        m_component = new T(std::forward<Args>(args)...);
-        m_component->SetRenderer(m_renderer);
-        Update();
-        return this;
-    }
 }

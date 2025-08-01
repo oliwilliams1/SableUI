@@ -11,12 +11,12 @@ namespace SableUI
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
         ~BaseComponent() = default;
 
-        void SetRenderer(Renderer* renderer);
         virtual void Init() {};
+        void BackendInitialise(Renderer* renderer);
 
-        Element* GetBaseElement();
+        Element* GetRootElement();
 
     protected:
-        Element m_baseElement;
+        Element rootElement;
     };
 }

@@ -372,7 +372,7 @@ void SableUI::Panel::Update()
     if (m_component == nullptr)
     {
         m_component = new BaseComponent();
-        m_component->SetRenderer(m_renderer);
+        m_component->BackendInitialise(m_renderer);
     }
 
     SableUI::Rect realRect = rect;
@@ -385,10 +385,10 @@ void SableUI::Panel::Update()
         realRect.h -= splitter->bSize * 2;
     }
 
-    m_component->GetBaseElement()->SetRect(realRect);
+    m_component->GetRootElement()->SetRect(realRect);
 }
 
 void SableUI::Panel::Render()
 {
-    m_component->GetBaseElement()->Render();
+    m_component->GetRootElement()->Render();
 }

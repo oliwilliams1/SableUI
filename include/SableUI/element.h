@@ -27,19 +27,35 @@ namespace SableUI
 
 	struct ElementInfo
 	{
-		std::string name;												// Custom name, used for attaching, editing components without a saved reference
-		Colour bgColour = Colour(128, 128, 128);						// Background colour for solid rect elements
-		int xOffset = 0;												// Horizontal offset from left side
-		int yOffset = 0;												// Vertical offset from top
-		int width = 0;												    // Width in px, only useful if wType == RectType::FIXED
-		int height = 0;												    // Height in px, only useful if hType == RectType::FIXED
-		int padding = 0;												// Inner padding of elements, useful when adding children elements
-		bool centerX = false;											// Is centered horizontally?
-		bool centerY = false;											// Is centered vertically?
-		RectType wType = RectType::UNDEF;								// Can be FILL or FIXED, use fill to enable automatic dynamic resizing, fixed for fixed-width elements
+		std::string name;
+		Colour bgColour = Colour(128, 128, 128);
+		int xOffset = 0;
+		int yOffset = 0;
+		int width = 0;
+		int height = 0;
+		int paddingX = 0;
+		int paddingY = 0;
+		bool centerX = false;
+		bool centerY = false;
+		RectType wType = RectType::UNDEF;
 		RectType hType = RectType::UNDEF;
-		ElementType type = ElementType::UNDEF;							// Can be UNDEF (for init error checks), RECT (for solid rectangle elements), IMAGE, or TEXT
-		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;	// Vertical or horizontal child layout
+		ElementType type = ElementType::UNDEF;
+		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;
+
+		ElementInfo& setName(const std::string& newName) { name = newName; return *this; }
+		ElementInfo& setBgColour(const Colour& color) { bgColour = color; return *this; }
+		ElementInfo& setXOffset(int offset) { xOffset = offset; return *this; }
+		ElementInfo& setYOffset(int offset) { yOffset = offset; return *this; }
+		ElementInfo& setWidth(int newWidth) { width = newWidth; return *this; }
+		ElementInfo& setHeight(int newHeight) { height = newHeight; return *this; }
+		ElementInfo& setPaddingX(int newPadding) { paddingX = newPadding; return *this; }
+		ElementInfo& setPaddingY(int newPadding) { paddingY = newPadding; return *this; }
+		ElementInfo& setCenterX(bool value) { centerX = value; return *this; }
+		ElementInfo& setCenterY(bool value) { centerY = value; return *this; }
+		ElementInfo& setWType(RectType newType) { wType = newType; return *this; }
+		ElementInfo& setHType(RectType newType) { hType = newType; return *this; }
+		ElementInfo& setType(ElementType newType) { type = newType; return *this; }
+		ElementInfo& setLayoutDirection(LayoutDirection newDirection) { layoutDirection = newDirection; return *this; }
 	};
 
 	enum class ChildType
@@ -60,7 +76,6 @@ namespace SableUI
 
 		Child(Element* element) : element(element), type(ChildType::ELEMENT) {}
 		Child(BaseComponent* component) : component(component), type(ChildType::COMPONENT) {}
-		~Child();
 
 		operator SableUI::Element* ();
 	};
@@ -85,7 +100,8 @@ namespace SableUI
 		int yOffset = 0;
 		int width = 0;
 		int height = 0;
-		int padding = 0;
+		int paddingX = 0;
+		int paddingY = 0;
 		bool centerX = false;
 		bool centerY = false;
 

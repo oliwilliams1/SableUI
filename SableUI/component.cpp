@@ -1,16 +1,19 @@
 #include "SableUI/component.h"
+#include "SableUI/SableUI.h"
 
 SableUI::BaseComponent::BaseComponent(Colour colour)
 {
-	m_baseElement.bgColour = colour;
+	rootElement.bgColour = colour;
 }
 
-void SableUI::BaseComponent::SetRenderer(Renderer* renderer)
+void SableUI::BaseComponent::BackendInitialise(Renderer* renderer)
 {
-	m_baseElement.Init(renderer, ElementType::RECT);
+	rootElement.Init(renderer, ElementType::RECT);
+	SetElementBuilderContext(renderer, &rootElement);
+	Init();
 }
 
-SableUI::Element* SableUI::BaseComponent::GetBaseElement()
+SableUI::Element* SableUI::BaseComponent::GetRootElement()
 {
-	return &m_baseElement;
+	return &rootElement;
 }

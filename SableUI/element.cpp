@@ -7,18 +7,10 @@ SableUI::Child::operator SableUI::Element* ()
     if (type == ChildType::ELEMENT)
         return element;
     else if (type == ChildType::COMPONENT)
-        return component->GetBaseElement();
+        return component->GetRootElement();
 
     SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
 	return nullptr;
-}
-
-SableUI::Child::~Child()
-{
-    if (type == ChildType::ELEMENT)
-        delete element;
-    else if (type == ChildType::COMPONENT)
-        delete component;
 }
 
 SableUI::Element::Element(Renderer* renderer, ElementType type)
@@ -115,13 +107,13 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->yOffset = info.yOffset;
     this->width = info.width;
     this->height = info.height;
-    this->padding = info.padding;
+    this->paddingX = info.paddingX;
+    this->paddingY = info.paddingY;
     this->wType = info.wType;
     this->hType = info.hType;
     this->centerX = info.centerX;
     this->centerY = info.centerY;
     this->bgColour = info.bgColour;
-    this->type = info.type;
     this->layoutDirection = info.layoutDirection;
 }
 
@@ -194,6 +186,7 @@ void SableUI::Element::Render(int z)
 void SableUI::Element::AddChild(Element* child)
 {
     if (type == ElementType::IMAGE || type == ElementType::TEXT) SableUI_Error("Cannot add children to element of type image");
+    
     children.push_back(child);
 }
 
@@ -234,4 +227,20 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize, float l
 SableUI::Element::~Element()
 {
     delete drawable;
+
+    for (Child& child : children)
+    {
+        if (child.type == ChildType::ELEMENT)
+        {
+            delete child.element;
+        }
+        else if (child.type == ChildType::COMPONENT)
+        {
+            delete child.component;
+        }
+        else
+        {
+            SableUI_Error("Unexpected union behaviour");
+        }
+    }
 }
