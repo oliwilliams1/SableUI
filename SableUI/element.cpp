@@ -157,6 +157,7 @@ void SableUI::Element::Render(int z)
     }
 
     case ElementType::TEXT:
+    {
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
             drawable->setZ(z);
@@ -167,8 +168,10 @@ void SableUI::Element::Render(int z)
             SableUI_Error("Dynamic cast failed");
         }
         break;
+    }
 
     case ElementType::DIV:
+    {
         // UpdateChildren();
         for (Child child : children)
         {
@@ -176,6 +179,7 @@ void SableUI::Element::Render(int z)
             childElement->Render(z + 1);
         }
         break;
+    }
 
     default:
         SableUI_Error("Unknown ElementType");

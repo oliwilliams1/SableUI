@@ -3,7 +3,34 @@
 #define VERTICAL SableUI::PanelType::VERTICAL
 #define HORIZONTAL SableUI::PanelType::HORIZONTAL
 #define Colour SableUI::Colour
-#define Color SableUI::Colour
+#define Color Colour
+
+class RectGuard
+{
+public:
+    explicit RectGuard(const SableUI::ElementInfo& info)
+    {
+        SableUI::StartRect(info);
+    }
+    ~RectGuard()
+    {
+        SableUI_Log("Destructor called");
+        SableUI::EndRect();
+    }
+    RectGuard(const RectGuard&) = delete;
+    RectGuard& operator=(const RectGuard&) = delete;
+    RectGuard(RectGuard&&) = default;
+    RectGuard& operator=(RectGuard&&) = default;
+};
+
+#define Rect(...) auto CONCAT(_rect_guard_, __LINE__) = RectGuard(SableUI::ElementInfo{} __VA_ARGS__)
+
+#define CONCAT_IMPL(a, b) a##b
+#define CONCAT(a, b) CONCAT_IMPL(a, b)
+
+#define w(value)  .setWidth(value).setWType(SableUI::RectType::FIXED)
+#define h(value)  .setHeight(value).setHType(SableUI::RectType::FIXED)
+#define bg(...)   .setBgColour(Colour(__VA_ARGS__))
 
 class TestComponent : public SableUI::BaseComponent
 {
@@ -12,8 +39,14 @@ public:
 
     void Init() override
     {
-        SableUI::StartRect(SableUI::ElementInfo{}.setWType(SableUI::RectType::FIXED).setWidth(128).setHType(SableUI::RectType::FIXED).setHeight(128));
-        SableUI::EndRect();
+        Rect(w(200) h(200) bg(255, 0, 0));
+        {
+            Rect(w(50) h(50) bg(0, 255, 0));
+            {
+                Rect(w(20) h(20) bg(0, 0, 255));
+            }
+        }
+        Rect(w(75) h(75) bg(255, 255, 0));
     }
 };
 
