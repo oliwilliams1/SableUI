@@ -43,8 +43,10 @@ namespace SableUI
 
 	struct ivec2
 	{
-		int x;
-		int y;
+		union {
+			struct { int x, y; };
+			struct { int w, h; };
+		};
 
 		ivec2() = default;
 		ivec2(int x, int y) : x(x), y(y) {}
@@ -221,9 +223,7 @@ namespace SableUI
 		UNDEF       = 0x0,
 		FILL        = 0x1,
 		FIXED       = 0x2,
-		FIT_CONTENT = 0x3,
-		SET			= 0x4,
-		LOCKED		= 0x6
+		FIT_CONTENT = 0x3
 	};
 
 	struct Rect

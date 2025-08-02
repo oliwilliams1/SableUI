@@ -21,41 +21,64 @@ namespace SableUI
 
 	enum class LayoutDirection
 	{
-		VERTICAL = 0x0,
-		HORIZONTAL = 0x1
+		UP_DOWN    = 0x0,
+		DOWN_UP    = 0x1,
+		LEFT_RIGHT = 0x2,
+		RIGHT_LEFT = 0x3,
 	};
 
 	struct ElementInfo
 	{
-		std::string name;
+		std::string ID;
+
+		// attribs
 		Colour bgColour = Colour(128, 128, 128);
-		int xOffset = 0;
-		int yOffset = 0;
 		int width = 0;
 		int height = 0;
-		int paddingX = 0;
-		int paddingY = 0;
+		int marginTop = 0;
+		int marginBottom = 0;
+		int marginLeft = 0;
+		int marginRight = 0;
+		int paddingTop = 0;
+		int paddingBottom = 0;
+		int paddingLeft = 0;
+		int paddingRight = 0;
 		bool centerX = false;
 		bool centerY = false;
-		RectType wType = RectType::UNDEF;
-		RectType hType = RectType::UNDEF;
+		RectType wType = RectType::FILL;
+		RectType hType = RectType::FILL;
 		ElementType type = ElementType::UNDEF;
-		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;
+		LayoutDirection layoutDirection = LayoutDirection::LEFT_RIGHT;
 
-		ElementInfo& setName(const std::string& newName) { name = newName; return *this; }
-		ElementInfo& setBgColour(const Colour& color) { bgColour = color; return *this; }
-		ElementInfo& setXOffset(int offset) { xOffset = offset; return *this; }
-		ElementInfo& setYOffset(int offset) { yOffset = offset; return *this; }
-		ElementInfo& setWidth(int newWidth) { width = newWidth; return *this; }
-		ElementInfo& setHeight(int newHeight) { height = newHeight; return *this; }
-		ElementInfo& setPaddingX(int newPadding) { paddingX = newPadding; return *this; }
-		ElementInfo& setPaddingY(int newPadding) { paddingY = newPadding; return *this; }
-		ElementInfo& setCenterX(bool value) { centerX = value; return *this; }
-		ElementInfo& setCenterY(bool value) { centerY = value; return *this; }
-		ElementInfo& setWType(RectType newType) { wType = newType; return *this; }
-		ElementInfo& setHType(RectType newType) { hType = newType; return *this; }
-		ElementInfo& setType(ElementType newType) { type = newType; return *this; }
-		ElementInfo& setLayoutDirection(LayoutDirection newDirection) { layoutDirection = newDirection; return *this; }
+		// setter functions for macros
+		ElementInfo& setID(const std::string& v) { ID = v; return *this; }
+		ElementInfo& setBgColour(const Colour& v) { bgColour = v; return *this; }
+		ElementInfo& setWidth(int v) { width = v; wType = RectType::FIXED; return *this; }
+		ElementInfo& setHeight(int v) { height = v; hType = RectType::FIXED; return *this; }
+		ElementInfo& setWType(RectType v) { wType = v; return *this; }
+		ElementInfo& setHType(RectType v) { hType = v; return *this; }
+		
+		ElementInfo& setMargin(int v) { marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
+		ElementInfo& setMarginX(int v) { marginLeft = v; marginRight = v; return *this; }
+		ElementInfo& setMarginY(int v) { marginTop = v; marginBottom = v; return *this; }
+		ElementInfo& setMarginTop(int v) { marginTop = v; return *this; }
+		ElementInfo& setMarginBottom(int v) { marginBottom = v; return *this; }
+		ElementInfo& setMarginLeft(int v) { marginLeft = v; return *this; }
+		ElementInfo& setMarginRight(int v) { marginRight = v; return *this; }
+		
+		ElementInfo& setPadding(int v) { paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
+		ElementInfo& setPaddingX(int v) { paddingLeft = v; paddingRight = v; return *this; }
+		ElementInfo& setPaddingY(int v) { paddingTop = v; paddingBottom = v; return *this; }
+		ElementInfo& setPaddingTop(int v) { paddingTop = v; return *this; }
+		ElementInfo& setPaddingBottom(int v) { paddingBottom = v; return *this; }
+		ElementInfo& setPaddingLeft(int v) { paddingLeft = v; return *this; }
+		ElementInfo& setPaddingRight(int v) { paddingRight = v; return *this; }
+
+		ElementInfo& setCenterX(bool v) { centerX = v; return *this; }
+		ElementInfo& setCenterY(bool v) { centerY = v; return *this; }
+		ElementInfo& setLayoutDirection(LayoutDirection v) { layoutDirection = v; return *this; }
+
+		ElementInfo& setType(ElementType v) { type = v; return *this; }
 	};
 
 	enum class ChildType
@@ -87,6 +110,9 @@ namespace SableUI
 		Element(Renderer* renderer, ElementType type);
 		~Element();
 
+		ElementType type = ElementType::UNDEF;
+		
+		// functions for engine
 		void Init(Renderer* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
 		void Render(int z = 1);
@@ -96,24 +122,29 @@ namespace SableUI
 		void SetImage(const std::string& path);
 		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
 
-		int xOffset = 0;
-		int yOffset = 0;
+		// user defined
 		int width = 0;
 		int height = 0;
-		int paddingX = 0;
-		int paddingY = 0;
+		int marginTop = 0;
+		int marginBottom = 0;
+		int marginLeft = 0;
+		int marginRight = 0;
+		int paddingTop = 0;
+		int paddingBottom = 0;
+		int paddingLeft = 0;
+		int paddingRight = 0;
 		bool centerX = false;
 		bool centerY = false;
-
 		RectType wType = RectType::FILL;
 		RectType hType = RectType::FILL;
-
 		Colour bgColour = Colour(128, 128, 128);
-		ElementType type = ElementType::UNDEF;
-		std::vector<Child> children;
-		LayoutDirection layoutDirection = LayoutDirection::VERTICAL;
+		LayoutDirection layoutDirection = LayoutDirection::LEFT_RIGHT;
 
-		Rect rect = { 0, 0, 0, 0 };
+		// children handling
+		void LayoutChildren();
+		std::vector<Child> children;
+
+		Rect rect = { 0, 0, 0, 0 }; // data for rendering
 
 	private:
 		DrawableBase* drawable = nullptr;

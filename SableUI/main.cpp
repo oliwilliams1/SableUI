@@ -1,53 +1,30 @@
 ﻿#include "SableUI/SableUI.h"
 
-#define VERTICAL SableUI::PanelType::VERTICAL
-#define HORIZONTAL SableUI::PanelType::HORIZONTAL
-#define Colour SableUI::Colour
-#define Color Colour
-
-class RectGuard
-{
-public:
-    explicit RectGuard(const SableUI::ElementInfo& info)
-    {
-        SableUI::StartRect(info);
-    }
-    ~RectGuard()
-    {
-        SableUI_Log("Destructor called");
-        SableUI::EndRect();
-    }
-    RectGuard(const RectGuard&) = delete;
-    RectGuard& operator=(const RectGuard&) = delete;
-    RectGuard(RectGuard&&) = default;
-    RectGuard& operator=(RectGuard&&) = default;
-};
-
-#define Rect(...) auto CONCAT(_rect_guard_, __LINE__) = RectGuard(SableUI::ElementInfo{} __VA_ARGS__)
-
-#define CONCAT_IMPL(a, b) a##b
-#define CONCAT(a, b) CONCAT_IMPL(a, b)
-
-#define w(value)  .setWidth(value).setWType(SableUI::RectType::FIXED)
-#define h(value)  .setHeight(value).setHType(SableUI::RectType::FIXED)
-#define bg(...)   .setBgColour(Colour(__VA_ARGS__))
-
 class TestComponent : public SableUI::BaseComponent
 {
 public:
-    TestComponent(int r) : SableUI::BaseComponent(Colour(r, 32, 32)) {};
+    TestComponent(int r) : SableUI::BaseComponent(Colour(r, 32, 32)), v(r) {};
 
     void Init() override
     {
-        Rect(w(200) h(200) bg(255, 0, 0));
-        {
-            Rect(w(50) h(50) bg(0, 255, 0));
-            {
-                Rect(w(20) h(20) bg(0, 0, 255));
-            }
-        }
-        Rect(w(75) h(75) bg(255, 255, 0));
+        SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
+
+        RectContainer(.setLayoutDirection(dir) bg(255, 0, 0))
+            RectContainer(id("child") w(50) h(50) bg(0, 255, 0))
+                Rect(px(5) py(5) bg(0, 255, 255) w(50) h(50));
+            Rect(centerXY w(20) mt(4) h(20) bg(0, 0, 255));
+            EndContainer
+
+            RectContainer(m(5) w(100) h(100) bg(255, 255, 0))
+                Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
+            EndContainer
+        EndContainer
+
+        Rect(m(15) w_fill h(75) bg(128, 128, 128));
+        Rect(m(5) w(60) h(60) bg(255, 128, 0));
     }
+private:
+    int v;
 };
 
 int main(int argc, char** argv)
@@ -57,21 +34,21 @@ int main(int argc, char** argv)
     Window mainWindow("SableUI Layout Test", 1600, 1000);
     SetContext(&mainWindow);
 
-    if (SableUI::SplitterPanel* rootHSplitter = SableUI::StartSplitter(HORIZONTAL))
+    if (SableUI::SplitterPanel* rootHSplitter = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
     {
-        if (SableUI::SplitterPanel* vsplitter1 = SableUI::StartSplitter(VERTICAL))
+        if (SableUI::SplitterPanel* vsplitter1 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
         {
-            if (SableUI::SplitterPanel* hsplitter1 = SableUI::StartSplitter(HORIZONTAL))
+            if (SableUI::SplitterPanel* hsplitter1 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
             {
                 if (SableUI::Panel* topLeftComponent = SableUI::AddPanel())
                 {
                     topLeftComponent->AttachComponent<TestComponent>(128);
                 }
 
-                if (SableUI::SplitterPanel* vsplitter2 = SableUI::StartSplitter(VERTICAL))
+                if (SableUI::SplitterPanel* vsplitter2 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
                 {
                     SableUI::Panel* nestedTopComponent = SableUI::AddPanel();
-                    if (SableUI::SplitterPanel* hsplitter2 = SableUI::StartSplitter(HORIZONTAL))
+                    if (SableUI::SplitterPanel* hsplitter2 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
                     {
                         if (SableUI::Panel* nestedBottomLeftComponent = SableUI::AddPanel())
                         {
@@ -91,7 +68,7 @@ int main(int argc, char** argv)
 
             SableUI::EndSplitter(); // MainVSplitter
         }
-        if (SableUI::SplitterPanel* rightVSplitter = SableUI::StartSplitter(VERTICAL))
+        if (SableUI::SplitterPanel* rightVSplitter = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
         {
             SableUI::Panel* rightTopComponent = SableUI::AddPanel();
             SableUI::Panel* rightBottomComponent = SableUI::AddPanel();
@@ -101,27 +78,6 @@ int main(int argc, char** argv)
 
         SableUI::EndSplitter(); // RootHSplitter
     }
-
-    /* Can alternativley do (same thing)
-    SableUI::StartSplitter(HORIZONTAL);
-    SableUI::StartSplitter(VERTICAL);
-    SableUI::StartSplitter(HORIZONTAL);
-    SableUI::AddPanel();
-    SableUI::StartSplitter(VERTICAL);
-    SableUI::AddPanel();
-    SableUI::StartSplitter(HORIZONTAL);
-    SableUI::AddPanel();
-    SableUI::AddPanel();
-    SableUI::EndSplitter();
-    SableUI::EndSplitter();
-    SableUI::EndSplitter();
-    SableUI::AddPanel();
-    SableUI::EndSplitter();
-    SableUI::StartSplitter(VERTICAL);
-    SableUI::AddPanel();
-    SableUI::AddPanel();
-    SableUI::EndSplitter();
-    SableUI::EndSplitter(); */
 
     while (mainWindow.PollEvents())
     {
