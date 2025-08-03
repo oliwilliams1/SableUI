@@ -166,3 +166,49 @@ SableUI::Element* SableUI::AddImage(const std::string& path, const ElementInfo& 
 
     return newImage;
 }
+
+SableUI::Element* SableUI::AddText(const std::string& text, const ElementInfo& p_info)
+{
+    SableUI::ElementInfo info = p_info;
+
+    if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+    if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+
+    if (s_elementStack.empty() || s_elementRenderer == nullptr)
+    {
+        SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
+        return nullptr;
+    }
+
+    Element* parent = s_elementStack.top();
+    Element* newText = new Element(s_elementRenderer, ElementType::TEXT);
+
+    newText->SetInfo(info);
+    newText->SetText(std::u32string(text.begin(), text.end()));
+    parent->AddChild(newText);
+
+    return newText;
+}
+
+SableUI::Element* SableUI::AddTextU32(const std::u32string& text, const ElementInfo& p_info)
+{
+    SableUI::ElementInfo info = p_info;
+
+    if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+    if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+
+    if (s_elementStack.empty() || s_elementRenderer == nullptr)
+    {
+        SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
+        return nullptr;
+    }
+
+    Element* parent = s_elementStack.top();
+    Element* newTextU32 = new Element(s_elementRenderer, ElementType::TEXT);
+
+    newTextU32->SetInfo(info);
+    newTextU32->SetText(text);
+    parent->AddChild(newTextU32);
+
+    return newTextU32;
+}

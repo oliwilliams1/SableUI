@@ -38,7 +38,10 @@ public:
 
     void Init() override
     {
+        UpdateStyle(rootElement, bg(30, 30, 30));
+
         Image(m_path, w(width) h(height) centerXY);
+        Text(m_path);
     }
 
 private:

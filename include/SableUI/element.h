@@ -48,7 +48,7 @@ namespace SableUI
 		RectType wType = RectType::FILL;
 		RectType hType = RectType::FILL;
 		ElementType type = ElementType::UNDEF;
-		LayoutDirection layoutDirection = LayoutDirection::LEFT_RIGHT;
+		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 
 		// setter functions for macros
 		ElementInfo& setID(const std::string& v) { ID = v; return *this; }
@@ -123,6 +123,7 @@ namespace SableUI
 		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
 
 		// user defined
+		std::string ID = "";
 		int width = 0;
 		int height = 0;
 		int marginTop = 0;
@@ -138,13 +139,43 @@ namespace SableUI
 		RectType wType = RectType::FILL;
 		RectType hType = RectType::FILL;
 		Colour bgColour = Colour(128, 128, 128);
-		LayoutDirection layoutDirection = LayoutDirection::LEFT_RIGHT;
+		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 
 		// children handling
 		void LayoutChildren();
 		std::vector<Child> children;
 
 		Rect rect = { 0, 0, 0, 0 }; // data for rendering
+
+		// setter functions for macros
+		Element& setID(const std::string& v) { ID = v; return *this; }
+		Element& setBgColour(const Colour& v) { bgColour = v; return *this; }
+		Element& setWidth(int v) { width = v; wType = RectType::FIXED; return *this; }
+		Element& setHeight(int v) { height = v; hType = RectType::FIXED; return *this; }
+		Element& setWType(RectType v) { wType = v; return *this; }
+		Element& setHType(RectType v) { hType = v; return *this; }
+
+		Element& setMargin(int v) { marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
+		Element& setMarginX(int v) { marginLeft = v; marginRight = v; return *this; }
+		Element& setMarginY(int v) { marginTop = v; marginBottom = v; return *this; }
+		Element& setMarginTop(int v) { marginTop = v; return *this; }
+		Element& setMarginBottom(int v) { marginBottom = v; return *this; }
+		Element& setMarginLeft(int v) { marginLeft = v; return *this; }
+		Element& setMarginRight(int v) { marginRight = v; return *this; }
+
+		Element& setPadding(int v) { paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
+		Element& setPaddingX(int v) { paddingLeft = v; paddingRight = v; return *this; }
+		Element& setPaddingY(int v) { paddingTop = v; paddingBottom = v; return *this; }
+		Element& setPaddingTop(int v) { paddingTop = v; return *this; }
+		Element& setPaddingBottom(int v) { paddingBottom = v; return *this; }
+		Element& setPaddingLeft(int v) { paddingLeft = v; return *this; }
+		Element& setPaddingRight(int v) { paddingRight = v; return *this; }
+
+		Element& setCenterX(bool v) { centerX = v; return *this; }
+		Element& setCenterY(bool v) { centerY = v; return *this; }
+		Element& setLayoutDirection(LayoutDirection v) { layoutDirection = v; return *this; }
+
+		Element& setType(ElementType v) { type = v; return *this; }
 
 	private:
 		DrawableBase* drawable = nullptr;

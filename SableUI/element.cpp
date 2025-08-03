@@ -113,6 +113,7 @@ void SableUI::Element::SetRect(const Rect& r)
 
 void SableUI::Element::SetInfo(const ElementInfo& info)
 {
+    this->ID                = info.ID;
     this->width             = info.width;
     this->height            = info.height;
     this->marginTop         = info.marginTop;

@@ -17,6 +17,8 @@ namespace SableUI
     Element* AddRect(const ElementInfo& info = {});
     Element* AddText(const std::u32string& text, const ElementInfo& info = {});
     Element* AddImage(const std::string& path, const ElementInfo& info = {});
+    Element* AddText(const std::string& text, const ElementInfo& info = {});
+    Element* AddTextU32(const std::u32string& text, const ElementInfo& info = {});
 }
 
 namespace SableUI
@@ -46,6 +48,9 @@ namespace SableUI
 #define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__);
 #define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
 #define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__);
+#define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__);
+#define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__);
+#define UpdateStyle(element, ...) & element __VA_ARGS__
 
 #define Colour SableUI::Colour
 #define Color Colour
