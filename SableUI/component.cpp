@@ -8,7 +8,7 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 
 void SableUI::BaseComponent::BackendInitialise(Renderer* renderer)
 {
-	rootElement.Init(renderer, ElementType::RECT);
+	rootElement.Init(renderer, ElementType::DIV);
 	SetElementBuilderContext(renderer, &rootElement);
 	Init();
 }

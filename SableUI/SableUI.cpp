@@ -83,18 +83,23 @@ void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement)
     }
 }
 
-SableUI::Element* SableUI::StartDiv(const ElementInfo& info)
+SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info)
 {
+    SableUI::ElementInfo info = p_info;
+
+    if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
+    if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
         SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
         return nullptr;
     }
 
-    SableUI::Element* parent = s_elementStack.top();
-    SableUI::Element* newDiv = new SableUI::Element(s_elementRenderer, ElementType::DIV);
-    newDiv->SetInfo(info);
+    Element* parent = s_elementStack.top();
+    Element* newDiv = new Element(s_elementRenderer, ElementType::DIV);
 
+    newDiv->SetInfo(info);
     parent->AddChild(newDiv);
     s_elementStack.push(newDiv);
 
@@ -117,12 +122,12 @@ SableUI::Element* SableUI::AddText(const std::u32string& text, const ElementInfo
     return nullptr;
 }
 
-SableUI::Element* SableUI::StartRect(const ElementInfo& p_info)
+SableUI::Element* SableUI::AddRect(const ElementInfo& p_info)
 {
     SableUI::ElementInfo info = p_info;
 
     if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+    if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
 
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
@@ -135,18 +140,29 @@ SableUI::Element* SableUI::StartRect(const ElementInfo& p_info)
 
     newRect->SetInfo(info);
     parent->AddChild(newRect);
-    s_elementStack.push(newRect);
 
     return newRect;
 }
 
-void SableUI::EndRect()
+SableUI::Element* SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 {
-    if (s_elementStack.empty())
-    {
-        SableUI_Error("EndRect() called without a matching StartRect()");
-        return;
-    }
+    SableUI::ElementInfo info = p_info;
 
-    s_elementStack.pop();
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
+	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+
+    if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	{
+		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
+		return nullptr;
+	}
+
+    Element* parent = s_elementStack.top();
+    Element* newImage = new Element(s_elementRenderer, ElementType::IMAGE);
+
+    newImage->SetInfo(info);
+	newImage->SetImage(path);
+	parent->AddChild(newImage);
+
+    return newImage;
 }

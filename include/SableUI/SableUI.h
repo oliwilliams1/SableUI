@@ -1,52 +1,70 @@
 #pragma once
 #include "SableUI/window.h"
 
+/* non-macro user api */
+namespace SableUI
+{
+    void SetElementBuilderContext(Renderer* renderer, Element* rootElement);
+    void SetContext(Window* window);
+    
+    SplitterPanel* StartSplitter(PanelType orientation);
+    void EndSplitter();
+    Panel* AddPanel();
+    
+    Element* StartDiv(const ElementInfo& info = {});
+    void EndDiv();
+
+    Element* AddRect(const ElementInfo& info = {});
+    Element* AddText(const std::u32string& text, const ElementInfo& info = {});
+    Element* AddImage(const std::string& path, const ElementInfo& info = {});
+}
 
 namespace SableUI
 {
-    void SetContext(Window* window);
-    SplitterPanel* StartSplitter(PanelType orientation);
-    void EndSplitter();
-
-    Panel* AddPanel();
-
-    void SetElementBuilderContext(Renderer* renderer, Element* rootElement);
-    Element* StartDiv(const ElementInfo& info = {});
-    void EndDiv();
-    Element* AddText(const std::u32string& text, const ElementInfo& info = {});
-    Element* StartRect(const ElementInfo& info = {});
-    void EndRect();
+    struct DivScope
+    {
+    public:
+        explicit DivScope(const SableUI::ElementInfo& info)
+        {
+            SableUI::StartDiv(info);
+        }
+        ~DivScope()
+        {
+            SableUI::EndDiv();
+        }
+        DivScope(const DivScope&) = delete;
+        DivScope& operator=(const DivScope&) = delete;
+        DivScope(DivScope&&) = default;
+        DivScope& operator=(DivScope&&) = default;
+    };
 }
-
-class RectGuard
-{
-public:
-    explicit RectGuard(const SableUI::ElementInfo& info)
-    {
-        SableUI::StartRect(info);
-    }
-    ~RectGuard()
-    {
-        SableUI::EndRect();
-    }
-
-    RectGuard(const RectGuard&) = delete;
-    RectGuard& operator=(const RectGuard&) = delete;
-    RectGuard(RectGuard&&) = default;
-    RectGuard& operator=(RectGuard&&) = default;
-};
 
 #define Colour SableUI::Colour
 #define Color Colour
 
 /* scoped RAII rect guard api */
-#define Rect(...) auto CONCAT(_rect_guard_, __LINE__) = RectGuard(SableUI::ElementInfo{} __VA_ARGS__)
-#define RectContainer(...) { Rect(__VA_ARGS__);
-#define EndContainer }
+#define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__);
+#define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
+#define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__);
+
+#define Colour SableUI::Colour
+#define Color Colour
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
+/*  Box Model
+    /-----------------------------------------\
+    | Margin (Top, Bottom, Left, Right)       |
+    | |------------------------------------ | |
+    | | Padding (Top, Bottom, Left, Right)  | |
+    | | |-------------------------------- | | |
+    | | | Content (rect)                  | | |
+    | | |-------------------------------- | | |
+    | |------------------------------------ | |
+    \-----------------------------------------/ */
+
+/* style modifiers */
 #define id(value)       .setID(value)
 #define bg(...)         .setBgColour(Colour(__VA_ARGS__))
 #define w(value)        .setWidth(value)
@@ -80,32 +98,3 @@ public:
 #define right_left      .setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)
 #define up_down         .setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
 #define down_up         .setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
-
-/*  Box Model
-    /-----------------------------------------\
-    | Margin (Top, Bottom, Left, Right)       |
-    | |------------------------------------ | |
-    | | Padding (Top, Bottom, Left, Right)  | |
-    | | |-------------------------------- | | |
-    | | | Content (rect)                  | | |
-    | | |-------------------------------- | | |
-    | |------------------------------------ | |
-    \-----------------------------------------/ */
-
-class SplitterGuard
-{
-public:
-    explicit SplitterGuard(SableUI::PanelType orientation)
-    {
-        SableUI::StartSplitter(orientation);
-    }
-    ~SplitterGuard()
-    {
-        SableUI::EndSplitter();
-    }
-
-    SplitterGuard(const SplitterGuard&) = delete;
-    SplitterGuard& operator=(const SplitterGuard&) = delete;
-    SplitterGuard(SplitterGuard&&) = default;
-    SplitterGuard& operator=(SplitterGuard&&) = default;
-};

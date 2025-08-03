@@ -9,22 +9,41 @@ public:
     {
         SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
 
-        RectContainer(.setLayoutDirection(dir) bg(255, 0, 0))
-            RectContainer(id("child") w(50) h(50) bg(0, 255, 0))
+        Div(.setLayoutDirection(dir) bg(255, 0, 0))
+        {
+            Div(id("child") w(50) h(50) bg(0, 255, 0))
+            {
                 Rect(px(5) py(5) bg(0, 255, 255) w(50) h(50));
-            Rect(centerXY w(20) mt(4) h(20) bg(0, 0, 255));
-            EndContainer
+                Rect(centerY w(20) mt(4) h(20) bg(0, 0, 255));
+            }
 
-            RectContainer(m(5) w(100) h(100) bg(255, 255, 0))
+            Div(m(5) w(100) h(100) bg(255, 255, 0))
+            {
                 Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
-            EndContainer
-        EndContainer
+            }
+        }
 
         Rect(m(15) w_fill h(75) bg(128, 128, 128));
         Rect(m(5) w(60) h(60) bg(255, 128, 0));
+
     }
 private:
     int v;
+};
+
+class ImageView : public SableUI::BaseComponent
+{
+public:
+    ImageView(const std::string& path, int width = 128, int height = 128) : SableUI::BaseComponent(), width(width), height(height), m_path(path) {};
+
+    void Init() override
+    {
+        Image(m_path, w(width) h(height) centerXY);
+    }
+
+private:
+    std::string m_path;
+    int width, height;
 };
 
 int main(int argc, char** argv)
@@ -34,44 +53,38 @@ int main(int argc, char** argv)
     Window mainWindow("SableUI Layout Test", 1600, 1000);
     SetContext(&mainWindow);
 
-    if (SableUI::SplitterPanel* rootHSplitter = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
+    if (SplitterPanel* rootHSplitter = StartSplitter(PanelType::HORIZONTAL))
     {
-        if (SableUI::SplitterPanel* vsplitter1 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
+        if (SplitterPanel* vsplitter1 = StartSplitter(PanelType::VERTICAL))
         {
-            if (SableUI::SplitterPanel* hsplitter1 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
+            if (SplitterPanel* hsplitter1 = StartSplitter(PanelType::HORIZONTAL))
             {
-                if (SableUI::Panel* topLeftComponent = SableUI::AddPanel())
-                {
-                    topLeftComponent->AttachComponent<TestComponent>(128);
-                }
+                Panel* topLeftComponent = AddPanel()->AttachComponent<TestComponent>(128);
 
-                if (SableUI::SplitterPanel* vsplitter2 = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
+                if (SplitterPanel* vsplitter2 = StartSplitter(PanelType::VERTICAL))
                 {
-                    SableUI::Panel* nestedTopComponent = SableUI::AddPanel();
-                    if (SableUI::SplitterPanel* hsplitter2 = SableUI::StartSplitter(SableUI::PanelType::HORIZONTAL))
+                    Panel* nestedTopComponent = AddPanel();
+                    if (SplitterPanel* hsplitter2 = StartSplitter(PanelType::HORIZONTAL))
                     {
-                        if (SableUI::Panel* nestedBottomLeftComponent = SableUI::AddPanel())
-                        {
-                            nestedBottomLeftComponent->AttachComponent<TestComponent>(80);
-                        }
-                        SableUI::Panel* nestedBottomRightComponent = SableUI::AddPanel();
+                        Panel* nestedBottomLeftComponent = AddPanel()->AttachComponent<TestComponent>(80);
+                        Panel* nestedBottomRightComponent = AddPanel()->AttachComponent<ImageView>("dirtywork.jpg", 128, 128);
 
-                        SableUI::EndSplitter(); // HSplitter
+                        EndSplitter(); // HSplitter
                     }
 
-                    SableUI::EndSplitter(); // VSplitter
+                    EndSplitter(); // VSplitter
                 }
 
-                SableUI::EndSplitter(); // TopHSplitter
+                EndSplitter(); // TopHSplitter
             }
-            SableUI::Panel* mainBottomComponent = SableUI::AddPanel();
+            Panel* mainBottomComponent = AddPanel();
 
-            SableUI::EndSplitter(); // MainVSplitter
+            EndSplitter(); // MainVSplitter
         }
-        if (SableUI::SplitterPanel* rightVSplitter = SableUI::StartSplitter(SableUI::PanelType::VERTICAL))
+        if (SplitterPanel* rightVSplitter = StartSplitter(PanelType::VERTICAL))
         {
-            SableUI::Panel* rightTopComponent = SableUI::AddPanel();
-            SableUI::Panel* rightBottomComponent = SableUI::AddPanel();
+            Panel* rightTopComponent = AddPanel();
+            Panel* rightBottomComponent = AddPanel();
 
             SableUI::EndSplitter(); // RightVSplitter
         }
