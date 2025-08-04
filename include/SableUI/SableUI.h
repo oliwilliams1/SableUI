@@ -78,6 +78,8 @@ namespace SableUI
 #define h_fill          .setHType(SableUI::RectType::FILL)
 #define w_fixed         .setWType(SableUI::RectType::FIXED)
 #define h_fixed         .setHType(SableUI::RectType::FIXED)
+#define w_fit           .setWType(SableUI::RectType::FIT_CONTENT)
+#define h_fit           .setHType(SableUI::RectType::FIT_CONTENT)
 
 #define m(value)        .setMargin(value)
 #define mx(value)       .setMarginX(value)

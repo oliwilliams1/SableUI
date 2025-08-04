@@ -248,18 +248,101 @@ void SableUI::Element::SetText(const std::u32string& text, int fontSize, float l
     }
 }
 
+int SableUI::Element::GetMinWidth()
+{
+    if (wType == RectType::FIXED) return width;
+
+    if (wType == RectType::FIT_CONTENT && type != ElementType::DIV) return width;
+
+    if (children.empty()) return 0;
+
+    int minWidth = 0;
+    bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN ||
+        layoutDirection == LayoutDirection::DOWN_UP);
+
+    if (isVerticalFlow)
+    {
+        for (Child& child : children)
+        {
+            Element* childElement = (Element*)child;
+            int childTotalWidth = childElement->GetMinWidth() +
+                childElement->marginLeft + childElement->marginRight +
+                childElement->paddingLeft + childElement->paddingRight;
+            minWidth = std::max(minWidth, childTotalWidth);
+        }
+    }
+    else
+    {
+        for (Child& child : children)
+        {
+            Element* childElement = (Element*)child;
+            int childTotalWidth = childElement->GetMinWidth() +
+                childElement->marginLeft + childElement->marginRight +
+                childElement->paddingLeft + childElement->paddingRight;
+            minWidth += childTotalWidth;
+        }
+    }
+
+    minWidth += paddingLeft + paddingRight;
+
+    return minWidth;
+}
+
+int SableUI::Element::GetMinHeight()
+{
+    if (hType == RectType::FIXED) return height;
+
+    if (hType == RectType::FIT_CONTENT && type != ElementType::DIV) return height;
+
+    if (children.empty()) return 0;
+
+    int minHeight = 0;
+    bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN ||
+        layoutDirection == LayoutDirection::DOWN_UP);
+
+    if (isVerticalFlow)
+    {
+        for (Child& child : children)
+        {
+            Element* childElement = (Element*)child;
+            int childTotalHeight = childElement->GetMinHeight() +
+                childElement->marginTop + childElement->marginBottom +
+                childElement->paddingTop + childElement->paddingBottom;
+            minHeight += childTotalHeight;
+        }
+    }
+    else
+    {
+        for (Child& child : children)
+        {
+            Element* childElement = (Element*)child;
+            int childTotalHeight = childElement->GetMinHeight() +
+                childElement->marginTop + childElement->marginBottom +
+                childElement->paddingTop + childElement->paddingBottom;
+            minHeight = std::max(minHeight, childTotalHeight);
+        }
+    }
+
+    minHeight += paddingTop + paddingBottom;
+
+    return minHeight;
+}
+
 void SableUI::Element::LayoutChildren()
 {
     if (type != ElementType::DIV) return;
 
     if (children.empty()) return;
 
+    rect.w = std::max(rect.w, GetMinWidth());
+    rect.h = std::max(rect.h, GetMinHeight());
+
     // Calculate container area (no padding)
     ivec2 containerSize = { rect.w, rect.h };
 
     if (containerSize.x <= 0 || containerSize.y <= 0)
     {
-        SableUI_Warn("Container has zero or negative size");
+        SableUI_Warn("Container has zero or negative size ID: \"%s\"", ID.c_str());
         // Set all children to zero size
         for (Child& child : children)
         {
@@ -305,6 +388,11 @@ void SableUI::Element::LayoutChildren()
             {
                 totalFixedMainAxis += childElement->height;
             }
+            else if (childElement->hType == RectType::FIT_CONTENT)
+            {
+                int minHeight = childElement->GetMinHeight();
+                totalFixedMainAxis += std::max(0, minHeight - childElement->paddingTop - childElement->paddingBottom);
+            }
             else if (childElement->hType == RectType::FILL)
             {
                 fillMainAxisCount++;
@@ -317,6 +405,11 @@ void SableUI::Element::LayoutChildren()
             if (childElement->wType == RectType::FIXED)
             {
                 totalFixedMainAxis += childElement->width;
+            }
+            else if (childElement->wType == RectType::FIT_CONTENT)
+            {
+                int minWidth = childElement->GetMinWidth();
+                totalFixedMainAxis += std::max(0, minWidth - childElement->paddingLeft - childElement->paddingRight);
             }
             else if (childElement->wType == RectType::FILL)
             {
@@ -348,27 +441,73 @@ void SableUI::Element::LayoutChildren()
 
         if (isVerticalFlow)
         {
-            childContentHeight = (childElement->hType == RectType::FIXED) ? childElement->height : fillMainAxisSize;
-            if (distributedRemainder < fillMainAxisRemainder)
+            if (childElement->hType == RectType::FIXED)
             {
-                childContentHeight += 1;
-                distributedRemainder++;
+                childContentHeight = childElement->height;
+            }
+            else if (childElement->hType == RectType::FIT_CONTENT)
+            {
+                int minHeight = childElement->GetMinHeight();
+                childContentHeight = std::max(0, minHeight - childElement->paddingTop - childElement->paddingBottom);
+            }
+            else
+            {
+                childContentHeight = fillMainAxisSize;
+                if (distributedRemainder < fillMainAxisRemainder)
+                {
+                    childContentHeight += 1;
+                    distributedRemainder++;
+                }
             }
 
-            childContentWidth = (childElement->wType == RectType::FIXED) ? childElement->width :
-                std::max(0, contentAreaSize.x - childMarginWidth);
+            if (childElement->wType == RectType::FIXED)
+            {
+                childContentWidth = childElement->width;
+            }
+            else if (childElement->wType == RectType::FIT_CONTENT)
+            {
+                int minWidth = childElement->GetMinWidth();
+                childContentWidth = std::max(0, minWidth - childElement->paddingLeft - childElement->paddingRight);
+            }
+            else
+            {
+                childContentWidth = std::max(0, contentAreaSize.x - childMarginWidth);
+            }
         }
         else
         {
-            childContentWidth = (childElement->wType == RectType::FIXED) ? childElement->width : fillMainAxisSize;
-            if (distributedRemainder < fillMainAxisRemainder)
+            if (childElement->wType == RectType::FIXED)
             {
-                childContentWidth += 1;
-                distributedRemainder++;
+                childContentWidth = childElement->width;
+            }
+            else if (childElement->wType == RectType::FIT_CONTENT)
+            {
+                int minWidth = childElement->GetMinWidth();
+                childContentWidth = std::max(0, minWidth - childElement->paddingLeft - childElement->paddingRight);
+            }
+            else
+            {
+                childContentWidth = fillMainAxisSize;
+                if (distributedRemainder < fillMainAxisRemainder)
+                {
+                    childContentWidth += 1;
+                    distributedRemainder++;
+                }
             }
 
-            childContentHeight = (childElement->hType == RectType::FIXED) ? childElement->height :
-                std::max(0, contentAreaSize.y - childMarginHeight);
+            if (childElement->hType == RectType::FIXED)
+            {
+                childContentHeight = childElement->height;
+            }
+            else if (childElement->hType == RectType::FIT_CONTENT)
+            {
+                int minHeight = childElement->GetMinHeight();
+                childContentHeight = std::max(0, minHeight - childElement->paddingTop - childElement->paddingBottom);
+            }
+            else
+            {
+                childContentHeight = std::max(0, contentAreaSize.y - childMarginHeight);
+            }
         }
 
         int childTotalWidth = childContentWidth + childElement->paddingLeft + childElement->paddingRight + childMarginWidth;

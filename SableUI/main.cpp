@@ -41,7 +41,11 @@ public:
         UpdateStyle(rootElement, bg(30, 30, 30));
 
         Image(m_path, w(width) h(height) centerXY);
-        Text(m_path);
+        
+        Div(id("text parent") w_fit h_fit bg(80, 0, 0))
+        {
+            Text(m_path);
+        }
     }
 
 private:
