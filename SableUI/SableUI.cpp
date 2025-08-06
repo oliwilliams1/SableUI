@@ -117,11 +117,6 @@ void SableUI::EndDiv()
     s_elementStack.pop();
 }
 
-SableUI::Element* SableUI::AddText(const std::u32string& text, const ElementInfo& info)
-{
-    return nullptr;
-}
-
 SableUI::Element* SableUI::AddRect(const ElementInfo& p_info)
 {
     SableUI::ElementInfo info = p_info;
@@ -171,7 +166,7 @@ SableUI::Element* SableUI::AddText(const std::string& text, const ElementInfo& p
 {
     SableUI::ElementInfo info = p_info;
 
-    if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+    if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
     if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
@@ -194,7 +189,7 @@ SableUI::Element* SableUI::AddTextU32(const std::u32string& text, const ElementI
 {
     SableUI::ElementInfo info = p_info;
 
-    if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+    if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
     if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
     if (s_elementStack.empty() || s_elementRenderer == nullptr)

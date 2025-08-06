@@ -5,9 +5,11 @@ class TestComponent : public SableUI::BaseComponent
 public:
     TestComponent(int r) : SableUI::BaseComponent(Colour(r, 32, 32)), v(r) {};
 
-    void Init() override
+    void Layout() override
     {
         SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
+
+        auto [state, setter] = useState<bool>(false);
 
         Div(.setLayoutDirection(dir) bg(255, 0, 0))
         {
@@ -25,7 +27,6 @@ public:
 
         Rect(m(15) w_fill h(75) bg(128, 128, 128));
         Rect(m(5) w(60) h(60) bg(255, 128, 0));
-
     }
 private:
     int v;
@@ -36,15 +37,15 @@ class ImageView : public SableUI::BaseComponent
 public:
     ImageView(const std::string& path, int width = 128, int height = 128) : SableUI::BaseComponent(), width(width), height(height), m_path(path) {};
 
-    void Init() override
+    void Layout() override
     {
         UpdateStyle(rootElement, bg(30, 30, 30));
 
         Image(m_path, w(width) h(height) centerXY);
         
-        Div(id("text parent") w_fit h_fit bg(80, 0, 0))
+        Div(id("text parent") bg(80, 0, 0))
         {
-            Text(m_path);
+            Text("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua");
         }
     }
 
