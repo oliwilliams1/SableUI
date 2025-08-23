@@ -30,6 +30,8 @@ namespace SableUI
         virtual void CalculateMinBounds() {};
         virtual void Update() {};
 
+        virtual void HandleHoverEventPanel(const ivec2& mousePos);
+
         BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
         ivec2 minBounds = { 20, 20 };
@@ -37,8 +39,11 @@ namespace SableUI
         std::vector<BasePanel*> children;
 
     protected:
-		Renderer* m_renderer = nullptr;
+        ivec2 mousePos = { 0, 0 };
+        Renderer* m_renderer = nullptr;
         SableUI::BasePanel* FindRoot();
+
+        bool isFocused = true;
     };
 
     struct RootPanel : public BasePanel
@@ -103,6 +108,8 @@ namespace SableUI
         }
 
         void Update() override;
+
+        void HandleHoverEventPanel(const ivec2& mousePos) override;
 
     private:
         BaseComponent* m_component = nullptr;

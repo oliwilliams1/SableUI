@@ -259,7 +259,7 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
 
     glUniform1i(g_tAtlasLoc, 0);
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC1_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
     glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

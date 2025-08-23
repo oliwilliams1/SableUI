@@ -3,19 +3,19 @@
 class TestComponent : public SableUI::BaseComponent
 {
 public:
-    TestComponent(int r) : SableUI::BaseComponent(Colour(r, 32, 32)), v(r) {};
+    TestComponent(int r) : SableUI::BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {};
 
     void Layout() override
     {
         SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
 
-        auto [state, setter] = useState<bool>(false);
+        auto [state, setState] = useState<bool>(false);
 
         Div(.setLayoutDirection(dir) bg(255, 0, 0))
         {
             Div(id("child") w(50) h(50) bg(0, 255, 0))
             {
-                Rect(px(5) py(5) bg(0, 255, 255) w(50) h(50));
+                AddRect(SableUI::ElementInfo{} .setPaddingX(5).setPaddingY(5).setBgColour(SableUI::Colour(0, 255, 255)).setWidth(50).setHeight(50))->onHover([]() {SableUI_Log("Hovered"); });
                 Rect(centerY w(20) mt(4) h(20) bg(0, 0, 255));
             }
 

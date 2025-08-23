@@ -7,6 +7,19 @@ SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(pa
     rect.hType = RectType::FILL;
 }
 
+void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
+{
+    isFocused = RectBoundingBox(rect, mousePos);
+
+    if (isFocused)
+    {
+        for (SableUI::BasePanel* child : children)
+        {
+            child->HandleHoverEventPanel(mousePos);
+        }
+    }
+}
+
 /* Root node implementation */
 SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
@@ -391,4 +404,14 @@ void SableUI::Panel::Update()
 void SableUI::Panel::Render()
 {
     m_component->GetRootElement()->Render();
+}
+
+void SableUI::Panel::HandleHoverEventPanel(const ivec2& mousePos)
+{
+    isFocused = RectBoundingBox(rect, mousePos);
+
+    if (isFocused)
+    {
+        m_component->GetRootElement()->HandleHoverEvent(mousePos);
+    }
 }

@@ -40,9 +40,6 @@ namespace SableUI
     };
 }
 
-#define Colour SableUI::Colour
-#define Color Colour
-
 /* scoped RAII rect guard api */
 #define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__);
 #define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
@@ -50,9 +47,6 @@ namespace SableUI
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__);
 #define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__);
 #define UpdateStyle(element, ...) & element __VA_ARGS__
-
-#define Colour SableUI::Colour
-#define Color Colour
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -70,7 +64,7 @@ namespace SableUI
 
 /* style modifiers */
 #define id(value)       .setID(value)
-#define bg(...)         .setBgColour(Colour(__VA_ARGS__))
+#define bg(...)         .setBgColour(SableUI::Colour(__VA_ARGS__))
 #define w(value)        .setWidth(value)
 #define h(value)        .setHeight(value)
 #define w_fill          .setWType(SableUI::RectType::FILL)

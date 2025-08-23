@@ -608,6 +608,22 @@ void SableUI::Element::LayoutChildren()
     }
 }
 
+void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
+{
+    isHovered = RectBoundingBox(rect, mousePos);
+
+    if (isHovered)
+    {
+        if (onHoverFunc) onHoverFunc();
+
+        for (Child& child : children)
+		{
+			Element* el = (Element*)child;
+            el->HandleHoverEvent(mousePos);
+		}
+    }
+}
+
 SableUI::Element::~Element()
 {
     delete drawable;

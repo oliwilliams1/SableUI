@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <functional>
 
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
@@ -115,13 +116,11 @@ namespace SableUI
 		// functions for engine
 		void Init(Renderer* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
-		void Render(int z = 1);
 		void SetRect(const Rect& rect);
 		void AddChild(Element* child);
 		void AddChild(BaseComponent* component);
 		void SetImage(const std::string& path);
 		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
-
 		int GetMinWidth();
 		int GetMinHeight();
 
@@ -143,12 +142,6 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-
-		// children handling
-		void LayoutChildren();
-		std::vector<Child> children;
-
-		Rect rect = { 0, 0, 0, 0 }; // data for rendering
 
 		// setter functions for macros
 		Element& setID(const std::string& v) { ID = v; return *this; }
@@ -180,7 +173,22 @@ namespace SableUI
 
 		Element& setType(ElementType v) { type = v; return *this; }
 
+		/* internal functions */
+		// event system
+		void HandleHoverEvent(const ivec2& mousePos);
+		void onHover(const std::function<void()>& func) { onHoverFunc = func; }
+		std::function<void()> onHoverFunc = nullptr;
+
+		// rendering
+		void Render(int z = 1);
+		Rect rect = { 0, 0, 0, 0 };
+
+		// children handling
+		void LayoutChildren();
+		std::vector<Child> children;
+
 	private:
+		bool isHovered = false;
 		DrawableBase* drawable = nullptr;
 		Renderer* renderer = nullptr;
 	};

@@ -136,6 +136,7 @@ void SableUI::Window::MousePosCallback(GLFWwindow* window, double x, double y)
 	}
 
 	instance->m_mousePos = { static_cast<int>(x), static_cast<int>(y) };
+	instance->m_root->HandleHoverEventPanel(instance->m_mousePos);
 }
 
 void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -311,49 +312,6 @@ inline void SableUI::Window::SetMaxFPS(int fps)
 {
 	m_frameDelay = std::chrono::milliseconds(1000 / fps);
 }
-
-//static int elementCtr = 0;
-//SableUI::Element* SableUI::Window::AddElementToElement(const std::string& elementName, ElementInfo& p_info, ElementType type)
-//{
-//	ElementInfo info = p_info;
-//	if (type == ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
-//	if (type != ElementType::TEXT && info.hType == RectType::UNDEF) info.hType = RectType::FILL;
-//	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-//
-//	if (info.name.length() == 0)
-//	{
-//		info.name = std::to_string(elementCtr++);
-//	}
-//
-//	Element* parent = m_renderer.GetElement(elementName);
-//
-//	if (parent->type == ElementType::IMAGE || parent->type == ElementType::TEXT)
-//	{
-//		SableUI_Warn("Cannot add element to image or text element");
-//		return nullptr;
-//	}
-//
-//	if (parent == nullptr)
-//	{
-//		SableUI_Warn("Cannot find element: %s!", elementName.c_str());
-//		return nullptr;
-//	}
-//
-//	Element* child = m_renderer.CreateElement(info.name, type);
-//	if (child == nullptr)
-//	{
-//		SableUI_Error("Failed to create element: %s", info.name.c_str());
-//		return nullptr;
-//	}
-//
-//	info.type = type;
-//	child->SetInfo(info);
-//	parent->AddChild(child);
-//
-//	RecalculateNodes();
-//
-//	return child;
-//}
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
 {

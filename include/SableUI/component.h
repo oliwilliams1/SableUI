@@ -29,6 +29,7 @@ namespace SableUI
         ~BaseComponent() = default;
 
         virtual void Layout() {};
+        virtual void OnHover() {};
         void BackendInitialise(Renderer* renderer);
 
         Element* GetRootElement();
