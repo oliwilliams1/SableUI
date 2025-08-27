@@ -1,5 +1,5 @@
 #pragma once
-#include "SableUI\renderer.h"
+#include "SableUI/renderer.h"
 #include <functional>
 #include <map>
 #include <any>
@@ -36,36 +36,14 @@ namespace SableUI
 
         void Rerender();
 
+        bool needsRerender = false;
+        bool comp_PropagateComponentStateChanges();
+
     protected:
-        Element rootElement;
-
-        template<typename T>
-        std::tuple<T&, StateSetter<T>> useState(const T& initialValue)
-        {
-            if (m_states.find(m_stateCounter) == m_states.end())
-            {
-                m_states[m_stateCounter] = initialValue;
-            }
-
-            T& stateValue = std::any_cast<T&>(m_states.at(m_stateCounter));
-
-            auto setterLambda = [this, stateIndex = m_stateCounter](const T& newValue) {
-                m_states.at(stateIndex) = newValue;
-                this->Rerender();
-            };
-
-            StateSetter<T> stateSetter(setterLambda);
-
-            m_stateCounter++;
-
-            return { stateValue, stateSetter };
-        }
-
-        void resetStateCounter() { m_stateCounter = 0; }
+        Element* rootElement = nullptr;
 
     private:
-        std::map<int, std::any> m_states;
-        int m_stateCounter = 0;
         Renderer* m_renderer = nullptr;
+        Colour m_bgColour = Colour{ 32, 32, 32 };
     };
 }

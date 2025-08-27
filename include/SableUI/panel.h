@@ -31,6 +31,7 @@ namespace SableUI
         virtual void Update() {};
 
         virtual void HandleHoverEventPanel(const ivec2& mousePos);
+        virtual void PropagateComponentStateChanges();
 
         BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
@@ -110,6 +111,7 @@ namespace SableUI
         void Update() override;
 
         void HandleHoverEventPanel(const ivec2& mousePos) override;
+        void PropagateComponentStateChanges() override;
 
     private:
         BaseComponent* m_component = nullptr;

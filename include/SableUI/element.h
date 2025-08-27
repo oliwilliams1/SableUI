@@ -175,6 +175,8 @@ namespace SableUI
 
 		/* internal functions */
 		// event system
+		bool el_PropagateComponentStateChanges();
+
 		void HandleHoverEvent(const ivec2& mousePos);
 		void onHover(const std::function<void()>& func) { onHoverFunc = func; }
 		std::function<void()> onHoverFunc = nullptr;

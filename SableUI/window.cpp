@@ -136,7 +136,7 @@ void SableUI::Window::MousePosCallback(GLFWwindow* window, double x, double y)
 	}
 
 	instance->m_mousePos = { static_cast<int>(x), static_cast<int>(y) };
-	instance->m_root->HandleHoverEventPanel(instance->m_mousePos);
+	instance->mouseMoved = true;
 }
 
 void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -235,6 +235,13 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 bool SableUI::Window::PollEvents()
 {
 	glfwPollEvents();
+
+	if (mouseMoved)
+	{
+		m_root->HandleHoverEventPanel(m_mousePos);
+	}
+
+	m_root->PropagateComponentStateChanges();
 
 	// static for multiple calls on one resize event (lifetime of static is until mouse up)
 	static bool resCalled = false;

@@ -46,7 +46,7 @@ namespace SableUI
 #define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__);
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__);
 #define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__);
-#define UpdateStyle(element, ...) & element __VA_ARGS__
+#define UpdateStyle(element, ...) &(*element) __VA_ARGS__
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -98,3 +98,10 @@ namespace SableUI
 #define right_left      .setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)
 #define up_down         .setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
 #define down_up         .setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
+
+#define useState(variableName, setterName, T, initialValue) \
+    T variableName = initialValue; \
+    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>([this](const T& val) { \
+        this->variableName = val; \
+        this->needsRerender = true; \
+    })

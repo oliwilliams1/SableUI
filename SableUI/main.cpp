@@ -3,19 +3,22 @@
 class TestComponent : public SableUI::BaseComponent
 {
 public:
-    TestComponent(int r) : SableUI::BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {};
+    TestComponent(int r) : SableUI::BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {}
 
     void Layout() override
     {
         SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
-
-        auto [state, setState] = useState<bool>(false);
+        SableUI::Colour childColor = isHovered ? SableUI::Colour(255, 0, 0) : SableUI::Colour(0, 255, 0);
 
         Div(.setLayoutDirection(dir) bg(255, 0, 0))
         {
-            Div(id("child") w(50) h(50) bg(0, 255, 0))
+            Div(id("child") w(50) h(50) bg(childColor))
             {
-                AddRect(SableUI::ElementInfo{} .setPaddingX(5).setPaddingY(5).setBgColour(SableUI::Colour(0, 255, 255)).setWidth(50).setHeight(50))->onHover([]() {SableUI_Log("Hovered"); });
+                SableUI_Log("Layout called, isHovered: %s", isHovered ? "true" : "false");
+                AddRect(SableUI::ElementInfo{}
+                    .setPaddingX(5).setPaddingY(5).setBgColour(isHovered ? SableUI::Colour(255, 255, 255) : SableUI::Colour(0, 255, 255)).setWidth(50).setHeight(50)
+                )->onHover([&]() { setIsHovered(true); });
+
                 Rect(centerY w(20) mt(4) h(20) bg(0, 0, 255));
             }
 
@@ -28,7 +31,9 @@ public:
         Rect(m(15) w_fill h(75) bg(128, 128, 128));
         Rect(m(5) w(60) h(60) bg(255, 128, 0));
     }
+
 private:
+    useState(isHovered, setIsHovered, bool, false);
     int v;
 };
 

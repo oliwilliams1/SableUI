@@ -1,4 +1,6 @@
 #pragma once
+#pragma warning(push)
+#pragma warning(disable : 4005)
 #include <string>
 #include <chrono>
 
@@ -6,6 +8,8 @@
 #include <GLFW/glfw3.h>
 
 #include "SableUI/panel.h"
+#pragma warning(pop)
+
 
 namespace SableUI
 {
@@ -68,5 +72,7 @@ namespace SableUI
 		GLFWcursor* m_arrowCursor = nullptr;
 		GLFWcursor* m_hResizeCursor = nullptr;
 		GLFWcursor* m_vResizeCursor = nullptr;
+
+		bool mouseMoved = false;
 	};
 }

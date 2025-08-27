@@ -608,6 +608,24 @@ void SableUI::Element::LayoutChildren()
     }
 }
 
+bool SableUI::Element::el_PropagateComponentStateChanges()
+{
+    for (Child& child : children)
+	{
+		if (child.type == ChildType::COMPONENT)
+		{
+            return child.component->comp_PropagateComponentStateChanges();
+		}
+        if (child.type == ChildType::ELEMENT)
+		{
+			return child.element->el_PropagateComponentStateChanges();
+		}
+        SableUI_Error("Unexpected union behaviour, you've been struck by the sun again");
+	}
+
+    return false;
+}
+
 void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
 {
     isHovered = RectBoundingBox(rect, mousePos);
