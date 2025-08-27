@@ -407,6 +407,8 @@ void SableUI::Panel::Update()
 	}
 
 	m_component->GetRootElement()->SetRect(realRect);
+	m_component->GetRootElement()->LayoutChildren();
+	m_component->GetRootElement()->Render();
 }
 
 void SableUI::Panel::Render()
@@ -423,8 +425,5 @@ void SableUI::Panel::HandleHoverEventPanel(const ivec2& mousePos)
 
 void SableUI::Panel::PropagateComponentStateChanges()
 {
-	if (m_component->comp_PropagateComponentStateChanges())
-	{
-		m_component->GetRootElement()->LayoutChildren();
-	}
+	if (m_component->comp_PropagateComponentStateChanges()) Update();
 }

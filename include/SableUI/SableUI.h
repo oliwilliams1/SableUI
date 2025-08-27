@@ -62,6 +62,8 @@ namespace SableUI
     | |------------------------------------ | |
     \-----------------------------------------/ */
 
+#define rgb(r, g, b)    SableUI::Colour(r, g, b)
+
 /* style modifiers */
 #define id(value)       .setID(value)
 #define bg(...)         .setBgColour(SableUI::Colour(__VA_ARGS__))
@@ -99,9 +101,14 @@ namespace SableUI
 #define up_down         .setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
 #define down_up         .setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
 
+#define dir(value)      .setLayoutDirection(value)
+
 #define useState(variableName, setterName, T, initialValue) \
     T variableName = initialValue; \
     SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>([this](const T& val) { \
+        if (variableName == val) return; \
         this->variableName = val; \
         this->needsRerender = true; \
     })
+
+#define onHover(callback) .setOnHover(callback)

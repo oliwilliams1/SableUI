@@ -130,6 +130,8 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->hType             = info.hType;
     this->bgColour          = info.bgColour;
     this->layoutDirection   = info.layoutDirection;
+
+    this->onHoverFunc       = info.onHoverFunc;
 }
 
 void SableUI::Element::Render(int z)
@@ -190,7 +192,6 @@ void SableUI::Element::Render(int z)
 			SableUI_Error("Dynamic cast failed");
         }
 
-        LayoutChildren();
         for (Child child : children)
         {
             Element* childElement = (Element*)child;

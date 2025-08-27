@@ -7,19 +7,16 @@ public:
 
     void Layout() override
     {
-        SableUI::LayoutDirection dir = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
-        SableUI::Colour childColor = isHovered ? SableUI::Colour(255, 0, 0) : SableUI::Colour(0, 255, 0);
+        SableUI::LayoutDirection direction = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
 
-        Div(.setLayoutDirection(dir) bg(255, 0, 0))
+        Div(dir(direction) bg(255, 0, 0))
         {
-            Div(id("child") w(50) h(50) bg(childColor))
+            Div(id("child") w(50) h(50))
             {
-                SableUI_Log("Layout called, isHovered: %s", isHovered ? "true" : "false");
-                AddRect(SableUI::ElementInfo{}
-                    .setPaddingX(5).setPaddingY(5).setBgColour(isHovered ? SableUI::Colour(255, 255, 255) : SableUI::Colour(0, 255, 255)).setWidth(50).setHeight(50)
-                )->onHover([&]() { setIsHovered(true); });
-
-                Rect(centerY w(20) mt(4) h(20) bg(0, 0, 255));
+                Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50) onHover([&]() { setIsHovered(true); }))
+                {
+                    Rect(centerY w(20) h(20) bg(0, 0, 255));
+                }
             }
 
             Div(m(5) w(100) h(100) bg(255, 255, 0))
@@ -40,23 +37,49 @@ private:
 class ImageView : public SableUI::BaseComponent
 {
 public:
-    ImageView(const std::string& path, int width = 128, int height = 128) : SableUI::BaseComponent(), width(width), height(height), m_path(path) {};
+    ImageView(const std::string& path, int width = 128, int height = 128)
+        : SableUI::BaseComponent(), width(width), height(height), m_path(path) {};
 
     void Layout() override
     {
         UpdateStyle(rootElement, bg(30, 30, 30));
 
-        Image(m_path, w(width) h(height) centerXY);
-        
+        Image(m_path, w(width) h(height) centerXY onHover([&]() { setDisplayedText(m_path); }));
+
         Div(id("text parent") bg(80, 0, 0))
         {
-            Text("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua");
+            Text(displayedText);
         }
     }
 
 private:
     std::string m_path;
     int width, height;
+    useState(displayedText, setDisplayedText, std::string, "lorem ipsum");
+};
+
+class HoverImageView : public SableUI::BaseComponent
+{
+public:
+    HoverImageView() : SableUI::BaseComponent() {};
+
+    void Layout() override
+    {
+        std::string path = (isHovered) ? "bomb.webp" : "junior.jpg";
+
+        Div(w(128) h(160))
+        {
+            Div(bg(128, 32, 32) onHover([&]() { setIsHovered(true); }))
+            {
+                Text("Hover to change image, loaded: " + path);
+            }
+
+            Image(path, w(128) h(128));
+        }
+    }
+
+private:
+    useState(isHovered, setIsHovered, bool, false);
 };
 
 int main(int argc, char** argv)
@@ -90,7 +113,7 @@ int main(int argc, char** argv)
 
                 EndSplitter(); // TopHSplitter
             }
-            Panel* mainBottomComponent = AddPanel();
+            Panel* mainBottomComponent = AddPanel()->AttachComponent<HoverImageView>();
 
             EndSplitter(); // MainVSplitter
         }

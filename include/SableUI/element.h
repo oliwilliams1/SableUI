@@ -51,6 +51,8 @@ namespace SableUI
 		ElementType type = ElementType::UNDEF;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 
+		std::function<void()> onHoverFunc = nullptr;
+
 		// setter functions for macros
 		ElementInfo& setID(const std::string& v) { ID = v; return *this; }
 		ElementInfo& setBgColour(const Colour& v) { bgColour = v; return *this; }
@@ -80,6 +82,8 @@ namespace SableUI
 		ElementInfo& setLayoutDirection(LayoutDirection v) { layoutDirection = v; return *this; }
 
 		ElementInfo& setType(ElementType v) { type = v; return *this; }
+
+		ElementInfo& setOnHover(const std::function<void()>& func) { onHoverFunc = func; return *this; }
 	};
 
 	enum class ChildType
@@ -173,12 +177,12 @@ namespace SableUI
 
 		Element& setType(ElementType v) { type = v; return *this; }
 
+		Element& setOnHover(const std::function<void()>& func) { onHoverFunc = func; return *this; }
+
 		/* internal functions */
 		// event system
 		bool el_PropagateComponentStateChanges();
-
 		void HandleHoverEvent(const ivec2& mousePos);
-		void onHover(const std::function<void()>& func) { onHoverFunc = func; }
 		std::function<void()> onHoverFunc = nullptr;
 
 		// rendering
