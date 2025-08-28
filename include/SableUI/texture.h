@@ -5,6 +5,8 @@
 
 namespace SableUI
 {
+	void StepCachedTexturesCleaner();
+
 	struct Texture
 	{
 		Texture() = default;

@@ -358,3 +358,29 @@ SableUI::Texture::~Texture()
         }
     }
 }
+
+int iterations = 0;
+void SableUI::StepCachedTexturesCleaner()
+{
+    if (iterations++ < 500) return;
+
+    iterations = 0;
+    
+    std::vector<ImageHash> toDelete;
+
+	auto now = std::chrono::high_resolution_clock::now();
+	for (auto& it : textureCache)
+	{
+        if (it.second.currentlyUsed) continue;
+		if (now - it.second.lastUsed > std::chrono::seconds(300))
+		{
+			toDelete.push_back(it.first);
+		}
+	}
+
+    for (auto& it : toDelete)
+	{
+        glDeleteTextures(1, &textureCache[it].texID);
+		textureCache.erase(it);
+	}
+}

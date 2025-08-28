@@ -243,6 +243,8 @@ bool SableUI::Window::PollEvents()
 
 	m_root->PropagateComponentStateChanges();
 
+	StepCachedTexturesCleaner();
+
 	// static for multiple calls on one resize event (lifetime of static is until mouse up)
 	static bool resCalled = false;
 
