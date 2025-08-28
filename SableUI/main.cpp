@@ -15,7 +15,7 @@ public:
             {
                 Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50) onHover([&]() { setIsHovered(true); }) onHoverExit([&]() { setIsHovered(false); }))
                 {
-                    Rect(centerY w(20) h(20) bg(0, 0, 255));
+                    Rect(w(20) h(20) bg(0, 0, 255));
                 }
             }
 

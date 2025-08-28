@@ -94,6 +94,8 @@ namespace SableUI
         SplitterPanel* AddSplitter(PanelType type) override;
         Panel* AddPanel() override;
 
+        void CalculateMinBounds() override;
+
         template<typename T, typename... Args>
         Panel* AttachComponent(Args&&... args)
         {

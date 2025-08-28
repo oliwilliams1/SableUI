@@ -22,6 +22,7 @@ void SableUI::BaseComponent::BackendInitialise(Renderer* renderer)
 
 SableUI::Element* SableUI::BaseComponent::GetRootElement()
 {
+	if (rootElement == nullptr) return nullptr;
 	return rootElement;
 }
 

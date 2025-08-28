@@ -19,12 +19,9 @@ void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
 {
 	isFocused = RectBoundingBox(rect, mousePos);
 
-	if (isFocused)
+	for (SableUI::BasePanel* child : children)
 	{
-		for (SableUI::BasePanel* child : children)
-		{
-			child->HandleHoverEventPanel(mousePos);
-		}
+		child->HandleHoverEventPanel(mousePos);
 	}
 }
 
@@ -189,12 +186,29 @@ void SableUI::SplitterPanel::CalculateScales()
 
 		if (numFillChildren > 0)
 		{
-			int widthPerFillChild = availableWidth / numFillChildren;
-			int leftoverWidth = availableWidth % numFillChildren;
-
-			for (size_t i = 0; i < fillChildren.size(); i++)
+			int totalMinFillWidth = 0;
+			for (BasePanel* child : fillChildren)
 			{
-				fillChildren[i]->rect.w = widthPerFillChild + (i < leftoverWidth ? 1 : 0);
+				totalMinFillWidth += child->minBounds.x;
+			}
+
+			if (availableWidth >= totalMinFillWidth)
+			{
+				int remainingWidth = availableWidth - totalMinFillWidth;
+				int widthPerFillChild = remainingWidth / numFillChildren;
+				int leftoverWidth = remainingWidth % numFillChildren;
+
+				for (size_t i = 0; i < fillChildren.size(); i++)
+				{
+					fillChildren[i]->rect.w = fillChildren[i]->minBounds.x + widthPerFillChild + (i < leftoverWidth ? 1 : 0);
+				}
+			}
+			else
+			{
+				for (BasePanel* child : fillChildren)
+				{
+					child->rect.w = child->minBounds.x;
+				}
 			}
 		}
 	}
@@ -225,12 +239,29 @@ void SableUI::SplitterPanel::CalculateScales()
 
 		if (numFillChildren > 0)
 		{
-			int heightPerFillChild = availableHeight / numFillChildren;
-			int leftoverHeight = availableHeight % numFillChildren;
-
-			for (size_t i = 0; i < fillChildren.size(); i++)
+			int totalMinFillHeight = 0;
+			for (BasePanel* child : fillChildren)
 			{
-				fillChildren[i]->rect.h = heightPerFillChild + (i < leftoverHeight ? 1 : 0);
+				totalMinFillHeight += child->minBounds.y;
+			}
+
+			if (availableHeight >= totalMinFillHeight)
+			{
+				int remainingHeight = availableHeight - totalMinFillHeight;
+				int heightPerFillChild = remainingHeight / numFillChildren;
+				int leftoverHeight = remainingHeight % numFillChildren;
+
+				for (size_t i = 0; i < fillChildren.size(); i++)
+				{
+					fillChildren[i]->rect.h = fillChildren[i]->minBounds.y + heightPerFillChild + (i < leftoverHeight ? 1 : 0);
+				}
+			}
+			else
+			{
+				for (BasePanel* child : fillChildren)
+				{
+					child->rect.h = child->minBounds.y;
+				}
 			}
 		}
 	}
@@ -386,6 +417,21 @@ SableUI::Panel* SableUI::Panel::AddPanel()
 {
 	SableUI_Error("Base node cannot have any children, skipping call");
 	return nullptr;
+}
+
+void SableUI::Panel::CalculateMinBounds()
+{
+	if (m_component == nullptr || m_component->GetRootElement() == nullptr) return;
+	minBounds = { m_component->GetRootElement()->GetMinWidth(), m_component->GetRootElement()->GetMinHeight() };
+
+	minBounds.x = std::max(minBounds.x, 20);
+	minBounds.y = std::max(minBounds.y, 20);
+
+	if (auto* splitter = dynamic_cast<SplitterPanel*>(parent); splitter != nullptr)
+	{
+		minBounds.x += 2 * splitter->bSize;
+		minBounds.y += 2 * splitter->bSize;
+	}
 }
 
 void SableUI::Panel::Update()
