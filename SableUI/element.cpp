@@ -132,6 +132,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->layoutDirection   = info.layoutDirection;
 
     this->onHoverFunc       = info.onHoverFunc;
+    this->onHoverExitFunc   = info.onHoverExitFunc;
 }
 
 void SableUI::Element::Render(int z)
@@ -629,17 +630,22 @@ bool SableUI::Element::el_PropagateComponentStateChanges()
 
 void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
 {
+    bool wasHovered = isHovered;
     isHovered = RectBoundingBox(rect, mousePos);
 
     if (isHovered)
     {
         if (onHoverFunc) onHoverFunc();
+    }
+    else if (wasHovered && !isHovered)
+    {
+        if (onHoverExitFunc) onHoverExitFunc();
+    }
 
-        for (Child& child : children)
-		{
-			Element* el = (Element*)child;
-            el->HandleHoverEvent(mousePos);
-		}
+    for (Child& child : children)
+    {
+        Element* el = (Element*)child;
+        el->HandleHoverEvent(mousePos);
     }
 }
 

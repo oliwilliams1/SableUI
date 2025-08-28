@@ -8,6 +8,7 @@ namespace SableUI
 	struct Texture
 	{
 		Texture() = default;
+		Texture(int width, int height, GLuint m_texID) : m_width(width), m_height(height), m_texID(m_texID) {}
 		~Texture();
 
 		Texture(const Texture&) = delete;

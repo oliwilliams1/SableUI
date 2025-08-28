@@ -13,7 +13,7 @@ public:
         {
             Div(id("child") w(50) h(50))
             {
-                Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50) onHover([&]() { setIsHovered(true); }))
+                Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50) onHover([&]() { setIsHovered(true); }) onHoverExit([&]() { setIsHovered(false); }))
                 {
                     Rect(centerY w(20) h(20) bg(0, 0, 255));
                 }
@@ -44,7 +44,7 @@ public:
     {
         UpdateStyle(rootElement, bg(30, 30, 30));
 
-        Image(m_path, w(width) h(height) centerXY onHover([&]() { setDisplayedText(m_path); }));
+        Image(m_path, w(width) h(height) centerXY onHover([&]() { setDisplayedText(m_path); }) onHoverExit([&]() { setDisplayedText("lorem ipsum"); }));
 
         Div(id("text parent") bg(80, 0, 0))
         {
@@ -69,7 +69,7 @@ public:
 
         Div(w(128) h(160))
         {
-            Div(bg(128, 32, 32) onHover([&]() { setIsHovered(true); }))
+            Div(bg(128, 32, 32) onHover([&]() { setIsHovered(true); }) onHoverExit([&]() { setIsHovered(false); }))
             {
                 Text("Hover to change image, loaded: " + path);
             }

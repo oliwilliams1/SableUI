@@ -111,4 +111,5 @@ namespace SableUI
         this->needsRerender = true; \
     })
 
-#define onHover(callback) .setOnHover(callback)
+#define onHover(callback)       .setOnHover(callback)
+#define onHoverExit(callback)   .setOnHoverExit(callback)

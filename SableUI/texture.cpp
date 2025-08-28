@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cmath>
 #include <chrono>
+#include <map>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -13,6 +14,51 @@
 #include <stb_image_resize2.h>
 
 #include <webp/decode.h>
+
+struct HashTextureData
+{
+    int width = 0;
+    int height = 0;
+    GLuint texID = 0;
+    bool currentlyUsed = true;
+    std::chrono::steady_clock::time_point lastUsed = std::chrono::steady_clock::now();
+};
+
+struct ImageHash
+{
+    char data[16] = { 0 };
+
+    bool operator<(const ImageHash& other) const
+    {
+        return std::memcmp(data, other.data, sizeof(data)) < 0;
+    }
+};
+
+static std::map<ImageHash, HashTextureData> textureCache;
+
+static ImageHash GetImageHash(const std::string& path, int width, int height)
+{
+    // inspired from djb2 hash
+    ImageHash h;
+    unsigned long long hashValue = 5381;
+
+    hashValue = ((hashValue << 5) + hashValue) + width;
+    hashValue = ((hashValue << 5) + hashValue) + height;
+
+    for (char c : path)
+    {
+		hashValue = ((hashValue << 5) + hashValue) + c;
+    }
+
+    std::stringstream ss;
+    ss << std::hex << hashValue;
+    std::string hexHash = ss.str();
+
+    size_t len = std::min(hexHash.length(), sizeof(h.data) - 1);
+    memcpy(h.data, hexHash.c_str(), len);
+    h.data[len] = '\0'; // terminate c-style string
+    return h;
+}
 
 void SableUI::Texture::LoadTexture(const std::string& path)
 {
@@ -69,6 +115,19 @@ void SableUI::Texture::LoadTexture(const std::string& path)
 
 void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, int height)
 {
+    ImageHash hash = GetImageHash(path, width, height);
+
+	auto it = textureCache.find(hash);
+	if (it != textureCache.end())
+	{
+		m_width = it->second.width;
+        m_height = it->second.height;
+		m_texID = it->second.texID;
+        it->second.currentlyUsed = true;
+        it->second.lastUsed = std::chrono::high_resolution_clock::now();
+		return;
+	}
+
     auto start = std::chrono::high_resolution_clock::now();
 
     if (width < 16 || height < 16)
@@ -223,6 +282,8 @@ void SableUI::Texture::LoadTextureOptimised(const std::string& path, int width, 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     SableUI_Log("Texture loading duration: %f seconds", duration.count());
+
+    textureCache[hash] = { m_width, m_height, m_texID };
 }
 
 void SableUI::Texture::GenerateDefaultTexture()
@@ -232,7 +293,7 @@ void SableUI::Texture::GenerateDefaultTexture()
                             0xFF000000, 0xFFFF00FF, 0xFF000000, 0xFFFF00FF,
                             0xFFFF00FF, 0xFF000000, 0xFFFF00FF, 0xFF000000, };
 
-	SetTexture((uint8_t*)pixels, 4, 4, 4);
+    SetTexture((uint8_t*)pixels, 4, 4, 4);
 }
 
 void SableUI::Texture::SetDefaultTexture(GLuint texID)
@@ -288,8 +349,12 @@ void SableUI::Texture::SetTexture(uint8_t* pixels, int width, int height, int ch
 
 SableUI::Texture::~Texture()
 {
-    if (m_texID != 0)
+    for (auto& it : textureCache)
     {
-        glDeleteTextures(1, &m_texID);
+        if (it.second.texID == m_texID)
+        {
+            it.second.currentlyUsed = false;
+            it.second.lastUsed = std::chrono::high_resolution_clock::now();            
+        }
     }
 }
