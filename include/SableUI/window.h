@@ -13,18 +13,6 @@
 
 namespace SableUI
 {
-	enum class MouseState
-	{
-		DOWN = 0x0000,
-		UP = 0x0001
-	};
-
-	struct MouseButtonState
-	{
-		MouseState LMB = MouseState::UP;
-		MouseState RMB = MouseState::UP;
-	};
-
 	class Window
 	{
 	public:
@@ -74,5 +62,6 @@ namespace SableUI
 		GLFWcursor* m_vResizeCursor = nullptr;
 
 		bool mouseMoved = false;
+		bool mouseClickEvent = false;
 	};
 }

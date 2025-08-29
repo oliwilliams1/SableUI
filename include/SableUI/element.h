@@ -11,6 +11,18 @@
 
 namespace SableUI
 {
+	enum class MouseState
+	{
+		DOWN = 0x0000,
+		UP = 0x0001
+	};
+
+	struct MouseButtonState
+	{
+		MouseState LMB = MouseState::UP;
+		MouseState RMB = MouseState::UP;
+	};
+
 	enum class ElementType
 	{
 		UNDEF = 0x0,
@@ -53,39 +65,52 @@ namespace SableUI
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
+		std::function<void()> onPressLMB = nullptr;
+		std::function<void()> onReleaseLMB = nullptr;
+		std::function<void()> onPressRMB = nullptr;
+		std::function<void()> onReleaseRMB = nullptr;
+		std::function<void()> onClick = nullptr;
+		std::function<void()> onSecondaryClick = nullptr;
 
 		// setter functions for macros
-		ElementInfo& setID(const std::string& v) { ID = v; return *this; }
-		ElementInfo& setBgColour(const Colour& v) { bgColour = v; return *this; }
-		ElementInfo& setWidth(int v) { width = v; wType = RectType::FIXED; return *this; }
-		ElementInfo& setHeight(int v) { height = v; hType = RectType::FIXED; return *this; }
-		ElementInfo& setWType(RectType v) { wType = v; return *this; }
-		ElementInfo& setHType(RectType v) { hType = v; return *this; }
+		ElementInfo& setID(const std::string& v)			{ ID = v; return *this; }
+		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
+		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
+		ElementInfo& setHeight(int v)						{ height = v; hType = RectType::FIXED; return *this; }
+		ElementInfo& setWType(RectType v)					{ wType = v; return *this; }
+		ElementInfo& setHType(RectType v)					{ hType = v; return *this; }
 		
-		ElementInfo& setMargin(int v) { marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
-		ElementInfo& setMarginX(int v) { marginLeft = v; marginRight = v; return *this; }
-		ElementInfo& setMarginY(int v) { marginTop = v; marginBottom = v; return *this; }
-		ElementInfo& setMarginTop(int v) { marginTop = v; return *this; }
-		ElementInfo& setMarginBottom(int v) { marginBottom = v; return *this; }
-		ElementInfo& setMarginLeft(int v) { marginLeft = v; return *this; }
-		ElementInfo& setMarginRight(int v) { marginRight = v; return *this; }
+		ElementInfo& setMargin(int v)						{ marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
+		ElementInfo& setMarginX(int v)						{ marginLeft = v; marginRight = v; return *this; }
+		ElementInfo& setMarginY(int v)						{ marginTop = v; marginBottom = v; return *this; }
+		ElementInfo& setMarginTop(int v)					{ marginTop = v; return *this; }
+		ElementInfo& setMarginBottom(int v)					{ marginBottom = v; return *this; }
+		ElementInfo& setMarginLeft(int v)					{ marginLeft = v; return *this; }
+		ElementInfo& setMarginRight(int v)					{ marginRight = v; return *this; }
 		
-		ElementInfo& setPadding(int v) { paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
-		ElementInfo& setPaddingX(int v) { paddingLeft = v; paddingRight = v; return *this; }
-		ElementInfo& setPaddingY(int v) { paddingTop = v; paddingBottom = v; return *this; }
-		ElementInfo& setPaddingTop(int v) { paddingTop = v; return *this; }
-		ElementInfo& setPaddingBottom(int v) { paddingBottom = v; return *this; }
-		ElementInfo& setPaddingLeft(int v) { paddingLeft = v; return *this; }
-		ElementInfo& setPaddingRight(int v) { paddingRight = v; return *this; }
+		ElementInfo& setPadding(int v)						{ paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
+		ElementInfo& setPaddingX(int v)						{ paddingLeft = v; paddingRight = v; return *this; }
+		ElementInfo& setPaddingY(int v)						{ paddingTop = v; paddingBottom = v; return *this; }
+		ElementInfo& setPaddingTop(int v)					{ paddingTop = v; return *this; }
+		ElementInfo& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
+		ElementInfo& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
+		ElementInfo& setPaddingRight(int v)					{ paddingRight = v; return *this; }
 
-		ElementInfo& setCenterX(bool v) { centerX = v; return *this; }
-		ElementInfo& setCenterY(bool v) { centerY = v; return *this; }
-		ElementInfo& setLayoutDirection(LayoutDirection v) { layoutDirection = v; return *this; }
+		ElementInfo& setCenterX(bool v)						{ centerX = v; return *this; }
+		ElementInfo& setCenterY(bool v)						{ centerY = v; return *this; }
+		ElementInfo& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
+		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
-		ElementInfo& setType(ElementType v) { type = v; return *this; }
+		// Event functions
 
-		ElementInfo& setOnHover(const std::function<void()>& func) { onHoverFunc = func; return *this; }
-		ElementInfo& setOnHoverExit(const std::function<void()>& func) { onHoverExitFunc = func; return *this; }
+		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc		= func;	return *this; }
+		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc	= func;	return *this; }
+		ElementInfo& setOnPressLMB(const std::function<void()>& func)		{ onPressLMB		= func;	return *this; }
+		ElementInfo& setOnReleaseLMB(const std::function<void()>& func)		{ onReleaseLMB		= func;	return *this; }
+		ElementInfo& setOnPressRMB(const std::function<void()>& func)		{ onPressRMB		= func;	return *this; }
+		ElementInfo& setOnReleaseRMB(const std::function<void()>& func)		{ onReleaseRMB		= func; return *this; }
+		ElementInfo& onClick(const std::function<void()>& func)				{ onClick			= func; return *this; }
+		ElementInfo& onSecondaryClick(const std::function<void()>& func)	{ onSecondaryClick	= func; return *this; }
 	};
 
 	enum class ChildType
@@ -149,6 +174,15 @@ namespace SableUI
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 
+		std::function<void()> onHoverFunc = nullptr;
+		std::function<void()> onHoverExitFunc = nullptr;
+		std::function<void()> onPressLMB = nullptr;
+		std::function<void()> onReleaseLMB = nullptr;
+		std::function<void()> onPressRMB = nullptr;
+		std::function<void()> onReleaseRMB = nullptr;
+		std::function<void()> onClick = nullptr;
+		std::function<void()> onSecondaryClick = nullptr;
+		
 		// setter functions for macros
 		Element& setID(const std::string& v) { ID = v; return *this; }
 		Element& setBgColour(const Colour& v) { bgColour = v; return *this; }
@@ -182,12 +216,20 @@ namespace SableUI
 		Element& setOnHover(const std::function<void()>& func) { onHoverFunc = func; return *this; }
 		Element& setOnHoverExit(const std::function<void()>& func) { onHoverExitFunc = func; return *this; }
 
+		Element& setOnHover(const std::function<void()>& func) { onHoverFunc = func;	return *this; }
+		Element& setOnHoverExit(const std::function<void()>& func) { onHoverExitFunc = func;	return *this; }
+		Element& setOnPressLMB(const std::function<void()>& func) { onPressLMB = func;	return *this; }
+		Element& setOnReleaseLMB(const std::function<void()>& func) { onReleaseLMB = func;	return *this; }
+		Element& setOnPressRMB(const std::function<void()>& func) { onPressRMB = func;	return *this; }
+		Element& setOnReleaseRMB(const std::function<void()>& func) { onReleaseRMB = func; return *this; }
+		Element& onClick(const std::function<void()>& func) { onClick = func; return *this; }
+		Element& onSecondaryClick(const std::function<void()>& func) { onSecondaryClick = func; return *this; }
+
 		/* internal functions */
 		// event system
 		bool el_PropagateComponentStateChanges();
 		void HandleHoverEvent(const ivec2& mousePos);
-		std::function<void()> onHoverFunc = nullptr;
-		std::function<void()> onHoverExitFunc = nullptr;
+		void HandleMouseClickEvent(const MouseButtonState& mouseState);
 
 		// rendering
 		void Render(int z = 1);

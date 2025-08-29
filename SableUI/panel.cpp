@@ -25,6 +25,16 @@ void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
 	}
 }
 
+void SableUI::BasePanel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
+{
+	if (!isFocused) return;
+
+	for (SableUI::BasePanel* child : children)
+	{
+		child->HandleMouseClickEventPanel(mouseState);
+	}
+}
+
 /* Root node implementation */
 SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
@@ -467,6 +477,11 @@ void SableUI::Panel::HandleHoverEventPanel(const ivec2& mousePos)
 	isFocused = RectBoundingBox(rect, mousePos);
 
 	m_component->GetRootElement()->HandleHoverEvent(mousePos);
+}
+
+void SableUI::Panel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
+{
+	m_component->GetRootElement()->HandleMouseClickEvent(mouseState);
 }
 
 void SableUI::Panel::PropagateComponentStateChanges()

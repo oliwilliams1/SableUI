@@ -649,6 +649,11 @@ void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
     }
 }
 
+void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
+{
+
+}
+
 SableUI::Element::~Element()
 {
     delete drawable;

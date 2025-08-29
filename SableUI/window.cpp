@@ -165,6 +165,8 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 	{
 		instance->m_mouseButtonStates.RMB = MouseState::UP;
 	}
+
+	instance->mouseClickEvent = true;
 }
 
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
@@ -243,7 +245,14 @@ bool SableUI::Window::PollEvents()
 
 	if (mouseMoved)
 	{
+		mouseMoved = false;
 		m_root->HandleHoverEventPanel(m_mousePos);
+	}
+
+	if (mouseClickEvent)
+	{
+		mouseClickEvent = false;
+		m_root->HandleMouseClickEventPanel(m_mouseButtonStates);
 	}
 
 	m_root->PropagateComponentStateChanges();
