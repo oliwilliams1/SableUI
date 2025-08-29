@@ -58,6 +58,10 @@ namespace SableUI
 		Colour bgColour = Colour(128, 128, 128);
 		int width = 0;
 		int height = 0;
+		int minWidth = 0;
+		int maxWidth = 0;
+		int minHeight = 0;
+		int maxHeight = 0;
 		int marginTop = 0;
 		int marginBottom = 0;
 		int marginLeft = 0;
@@ -82,7 +86,12 @@ namespace SableUI
 		ElementInfo& setID(const std::string& v)			{ ID = v; return *this; }
 		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
 		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
+		ElementInfo& setMinWidth(int v)						{ minWidth = v; return *this; }
+		ElementInfo& setMaxWidth(int v)						{ maxWidth = v; return *this; }
 		ElementInfo& setHeight(int v)						{ height = v; hType = RectType::FIXED; return *this; }
+		ElementInfo& setMinHeight(int v)					{ minHeight = v; return *this; }
+		ElementInfo& setMaxHeight(int v)					{ maxHeight = v; return *this; }
+
 		ElementInfo& setWType(RectType v)					{ wType = v; return *this; }
 		ElementInfo& setHType(RectType v)					{ hType = v; return *this; }
 		
@@ -160,6 +169,10 @@ namespace SableUI
 		std::string ID = "";
 		int width = 0;
 		int height = 0;
+		int minWidth = 0;
+		int minHeight = 0;
+		int maxWidth = 0;
+		int maxHeight = 0;
 		int marginTop = 0;
 		int marginBottom = 0;
 		int marginLeft = 0;
@@ -181,32 +194,37 @@ namespace SableUI
 		std::function<void()> m_onSecondaryClickFunc = nullptr;
 		
 		// setter functions for macros
-		Element& setID(const std::string& v) { ID = v; return *this; }
-		Element& setBgColour(const Colour& v) { bgColour = v; return *this; }
-		Element& setWidth(int v) { width = v; wType = RectType::FIXED; return *this; }
-		Element& setHeight(int v) { height = v; hType = RectType::FIXED; return *this; }
-		Element& setWType(RectType v) { wType = v; return *this; }
-		Element& setHType(RectType v) { hType = v; return *this; }
+		Element& setID(const std::string& v)			{ ID = v; return *this; }
+		Element& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
+		Element& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
+		Element& setMinWidth(int v)						{ minWidth = v; return *this; }
+		Element& setMaxWidth(int v)						{ maxWidth = v; return *this; }
+		Element& setHeight(int v)						{ height = v; hType = RectType::FIXED; return *this; }
+		Element& setMinHeight(int v)					{ minHeight = v; return *this; }
+		Element& setMaxHeight(int v)					{ maxHeight = v; return *this; }
+		
+		Element& setWType(RectType v)					{ wType = v; return *this; }
+		Element& setHType(RectType v)					{ hType = v; return *this; }
 
-		Element& setMargin(int v) { marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
-		Element& setMarginX(int v) { marginLeft = v; marginRight = v; return *this; }
-		Element& setMarginY(int v) { marginTop = v; marginBottom = v; return *this; }
-		Element& setMarginTop(int v) { marginTop = v; return *this; }
-		Element& setMarginBottom(int v) { marginBottom = v; return *this; }
-		Element& setMarginLeft(int v) { marginLeft = v; return *this; }
-		Element& setMarginRight(int v) { marginRight = v; return *this; }
+		Element& setMargin(int v)						{ marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
+		Element& setMarginX(int v)						{ marginLeft = v; marginRight = v; return *this; }
+		Element& setMarginY(int v)						{ marginTop = v; marginBottom = v; return *this; }
+		Element& setMarginTop(int v)					{ marginTop = v; return *this; }
+		Element& setMarginBottom(int v)					{ marginBottom = v; return *this; }
+		Element& setMarginLeft(int v)					{ marginLeft = v; return *this; }
+		Element& setMarginRight(int v)					{ marginRight = v; return *this; }
 
-		Element& setPadding(int v) { paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
-		Element& setPaddingX(int v) { paddingLeft = v; paddingRight = v; return *this; }
-		Element& setPaddingY(int v) { paddingTop = v; paddingBottom = v; return *this; }
-		Element& setPaddingTop(int v) { paddingTop = v; return *this; }
-		Element& setPaddingBottom(int v) { paddingBottom = v; return *this; }
-		Element& setPaddingLeft(int v) { paddingLeft = v; return *this; }
-		Element& setPaddingRight(int v) { paddingRight = v; return *this; }
+		Element& setPadding(int v)						{ paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
+		Element& setPaddingX(int v)						{ paddingLeft = v; paddingRight = v; return *this; }
+		Element& setPaddingY(int v)						{ paddingTop = v; paddingBottom = v; return *this; }
+		Element& setPaddingTop(int v)					{ paddingTop = v; return *this; }
+		Element& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
+		Element& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
+		Element& setPaddingRight(int v)					{ paddingRight = v; return *this; }
 
-		Element& setCenterX(bool v) { centerX = v; return *this; }
-		Element& setCenterY(bool v) { centerY = v; return *this; }
-		Element& setLayoutDirection(LayoutDirection v) { layoutDirection = v; return *this; }
+		Element& setCenterX(bool v)						{ centerX = v; return *this; }
+		Element& setCenterY(bool v)						{ centerY = v; return *this; }
+		Element& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 
 		Element& setType(ElementType v) { type = v; return *this; }
 

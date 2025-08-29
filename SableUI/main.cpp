@@ -15,7 +15,7 @@ public:
             {
                 Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50)
                     onHover([&]() { setIsHovered(true); })
-                    onHoverExit([&]() { setIsHovered(false); }));
+                    onHoverExit([&]() { setIsHovered(false); }))
                 {
                     Rect(w(20) h(20) bg(clicks, 0, 255) 
                         onClick([&]() { setClicks(clicks + 40); })
@@ -29,7 +29,7 @@ public:
             }
         }
 
-        Rect(m(15) w_fill h(75) bg(128, 128, 128));
+        Rect(m(15) w_fill minW(250) maxW(300) centerX h(75) bg(128, 128, 128));
         Rect(m(5) w(60) h(60) bg(255, 128, 0));
     }
 
