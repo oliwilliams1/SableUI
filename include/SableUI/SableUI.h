@@ -128,11 +128,13 @@ namespace SableUI
         this->needsRerender = true; \
     })
 
-#define onHover(callback)       .setOnHover(callback)
-#define onHoverExit(callback)   .setOnHoverExit(callback)
+#define onHover(callback)           .setOnHover(callback)
+#define onHoverExit(callback)       .setOnHoverExit(callback)
+#define onClick(callback)           .setOnClick(callback)
+#define onSecondaryClick(callback)  .setOnSecondaryClick(callback)
 
-#define HSplitter()         if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
-#define VSplitter()         if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
+#define HSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+#define VSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
-#define Panel()             SableUI::AddPanel();
-#define PanelWith(T, ...)   SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__);
+#define Panel()                     SableUI::AddPanel();
+#define PanelWith(T, ...)           SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__);

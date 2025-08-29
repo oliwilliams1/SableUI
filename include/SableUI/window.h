@@ -61,7 +61,7 @@ namespace SableUI
 		GLFWcursor* m_hResizeCursor = nullptr;
 		GLFWcursor* m_vResizeCursor = nullptr;
 
-		bool mouseMoved = false;
-		bool mouseClickEvent = false;
+		bool mouseMoved	= false;
+		bool mouseEvent = false;
 	};
 }

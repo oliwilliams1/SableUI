@@ -17,10 +17,20 @@ namespace SableUI
 		UP = 0x0001
 	};
 
+	enum class MouseEvent
+	{
+		NONE = 0x0,
+		CLICK = 0x1,
+		RELEASE = 0x2
+	};
+
 	struct MouseButtonState
 	{
-		MouseState LMB = MouseState::UP;
-		MouseState RMB = MouseState::UP;
+		MouseState LMBState = MouseState::UP;
+		MouseState RMBState = MouseState::UP;
+		MouseEvent LMBEvent = MouseEvent::NONE;
+		MouseEvent RMBEvent = MouseEvent::NONE;
+		ivec2 pos			= ivec2(0, 0);
 	};
 
 	enum class ElementType
@@ -65,12 +75,8 @@ namespace SableUI
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
-		std::function<void()> onPressLMB = nullptr;
-		std::function<void()> onReleaseLMB = nullptr;
-		std::function<void()> onPressRMB = nullptr;
-		std::function<void()> onReleaseRMB = nullptr;
-		std::function<void()> onClick = nullptr;
-		std::function<void()> onSecondaryClick = nullptr;
+		std::function<void()> onClickFunc = nullptr;
+		std::function<void()> onSecondaryClickFunc = nullptr;
 
 		// setter functions for macros
 		ElementInfo& setID(const std::string& v)			{ ID = v; return *this; }
@@ -102,15 +108,10 @@ namespace SableUI
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
 		// Event functions
-
 		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc		= func;	return *this; }
 		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc	= func;	return *this; }
-		ElementInfo& setOnPressLMB(const std::function<void()>& func)		{ onPressLMB		= func;	return *this; }
-		ElementInfo& setOnReleaseLMB(const std::function<void()>& func)		{ onReleaseLMB		= func;	return *this; }
-		ElementInfo& setOnPressRMB(const std::function<void()>& func)		{ onPressRMB		= func;	return *this; }
-		ElementInfo& setOnReleaseRMB(const std::function<void()>& func)		{ onReleaseRMB		= func; return *this; }
-		ElementInfo& onClick(const std::function<void()>& func)				{ onClick			= func; return *this; }
-		ElementInfo& onSecondaryClick(const std::function<void()>& func)	{ onSecondaryClick	= func; return *this; }
+		ElementInfo& setOnClick(const std::function<void()>& func)			{ onClickFunc			= func; return *this; }
+		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
 	};
 
 	enum class ChildType
@@ -174,14 +175,10 @@ namespace SableUI
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 
-		std::function<void()> onHoverFunc = nullptr;
-		std::function<void()> onHoverExitFunc = nullptr;
-		std::function<void()> onPressLMB = nullptr;
-		std::function<void()> onReleaseLMB = nullptr;
-		std::function<void()> onPressRMB = nullptr;
-		std::function<void()> onReleaseRMB = nullptr;
-		std::function<void()> onClick = nullptr;
-		std::function<void()> onSecondaryClick = nullptr;
+		std::function<void()> m_onHoverFunc = nullptr;
+		std::function<void()> m_onHoverExitFunc = nullptr;
+		std::function<void()> m_onClickFunc = nullptr;
+		std::function<void()> m_onSecondaryClickFunc = nullptr;
 		
 		// setter functions for macros
 		Element& setID(const std::string& v) { ID = v; return *this; }
@@ -213,17 +210,10 @@ namespace SableUI
 
 		Element& setType(ElementType v) { type = v; return *this; }
 
-		Element& setOnHover(const std::function<void()>& func) { onHoverFunc = func; return *this; }
-		Element& setOnHoverExit(const std::function<void()>& func) { onHoverExitFunc = func; return *this; }
-
-		Element& setOnHover(const std::function<void()>& func) { onHoverFunc = func;	return *this; }
-		Element& setOnHoverExit(const std::function<void()>& func) { onHoverExitFunc = func;	return *this; }
-		Element& setOnPressLMB(const std::function<void()>& func) { onPressLMB = func;	return *this; }
-		Element& setOnReleaseLMB(const std::function<void()>& func) { onReleaseLMB = func;	return *this; }
-		Element& setOnPressRMB(const std::function<void()>& func) { onPressRMB = func;	return *this; }
-		Element& setOnReleaseRMB(const std::function<void()>& func) { onReleaseRMB = func; return *this; }
-		Element& onClick(const std::function<void()>& func) { onClick = func; return *this; }
-		Element& onSecondaryClick(const std::function<void()>& func) { onSecondaryClick = func; return *this; }
+		Element& setOnHover(const std::function<void()>& func)			{ m_onHoverFunc				= func;	return *this; }
+		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }
+		Element& setOnClick(const std::function<void()>& func)			{ m_onClickFunc				= func; return *this; }
+		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
 
 		/* internal functions */
 		// event system

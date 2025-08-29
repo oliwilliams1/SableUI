@@ -113,26 +113,27 @@ void SableUI::Element::SetRect(const Rect& r)
 
 void SableUI::Element::SetInfo(const ElementInfo& info)
 {
-    this->ID                = info.ID;
-    this->width             = info.width;
-    this->height            = info.height;
-    this->marginTop         = info.marginTop;
-    this->marginBottom      = info.marginBottom;
-    this->marginLeft        = info.marginLeft;
-    this->marginRight       = info.marginRight;
-    this->paddingTop        = info.paddingTop;
-    this->paddingBottom     = info.paddingBottom;
-    this->paddingLeft       = info.paddingLeft;
-    this->paddingRight      = info.paddingRight;
-    this->centerX           = info.centerX;
-    this->centerY           = info.centerY;
-    this->wType             = info.wType;
-    this->hType             = info.hType;
-    this->bgColour          = info.bgColour;
-    this->layoutDirection   = info.layoutDirection;
-
-    this->onHoverFunc       = info.onHoverFunc;
-    this->onHoverExitFunc   = info.onHoverExitFunc;
+    this->ID                        = info.ID;
+    this->width                     = info.width;
+    this->height                    = info.height;
+    this->marginTop                 = info.marginTop;
+    this->marginBottom              = info.marginBottom;
+    this->marginLeft                = info.marginLeft;
+    this->marginRight               = info.marginRight;
+    this->paddingTop                = info.paddingTop;
+    this->paddingBottom             = info.paddingBottom;
+    this->paddingLeft               = info.paddingLeft;
+    this->paddingRight              = info.paddingRight;
+    this->centerX                   = info.centerX;
+    this->centerY                   = info.centerY;
+    this->wType                     = info.wType;
+    this->hType                     = info.hType;
+    this->bgColour                  = info.bgColour;
+    this->layoutDirection           = info.layoutDirection;
+    this->m_onHoverFunc             = info.onHoverFunc;
+    this->m_onHoverExitFunc         = info.onHoverExitFunc;
+    this->m_onClickFunc             = info.onClickFunc;
+    this->m_onSecondaryClickFunc    = info.onSecondaryClickFunc;
 }
 
 void SableUI::Element::Render(int z)
@@ -635,11 +636,11 @@ void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
 
     if (isHovered)
     {
-        if (onHoverFunc) onHoverFunc();
+        if (m_onHoverFunc) m_onHoverFunc();
     }
     else if (wasHovered && !isHovered)
     {
-        if (onHoverExitFunc) onHoverExitFunc();
+        if (m_onHoverExitFunc) m_onHoverExitFunc();
     }
 
     for (Child& child : children)
@@ -651,7 +652,23 @@ void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
 
 void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
 {
+    isHovered = RectBoundingBox(rect, mouseState.pos);
+    if (!isHovered) return;
+    if (mouseState.LMBEvent == MouseEvent::CLICK)
+	{
+		if (m_onClickFunc) m_onClickFunc();
+	}
 
+    if (mouseState.RMBEvent == MouseEvent::CLICK)
+    {
+        if (m_onSecondaryClickFunc) m_onSecondaryClickFunc();
+    }
+
+    for (Child& child : children)
+    {
+        Element* el = (Element*)child;
+		el->HandleMouseClickEvent(mouseState);
+    }
 }
 
 SableUI::Element::~Element()

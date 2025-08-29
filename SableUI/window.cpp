@@ -150,23 +150,29 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 	{
-		instance->m_mouseButtonStates.LMB = MouseState::DOWN;
+		instance->m_mouseButtonStates.LMBState = MouseState::DOWN;
+		instance->m_mouseButtonStates.LMBEvent = MouseEvent::CLICK;
+		instance->mouseEvent = true;
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		instance->m_mouseButtonStates.LMB = MouseState::UP;
+		instance->m_mouseButtonStates.LMBState = MouseState::UP;
+		instance->m_mouseButtonStates.LMBEvent = MouseEvent::RELEASE;
+		instance->mouseEvent = true;
 	}
 
 	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
 	{
-		instance->m_mouseButtonStates.RMB = MouseState::DOWN;
+		instance->m_mouseButtonStates.RMBState = MouseState::DOWN;
+		instance->m_mouseButtonStates.RMBEvent = MouseEvent::CLICK;
+		instance->mouseEvent = true;
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		instance->m_mouseButtonStates.RMB = MouseState::UP;
+		instance->m_mouseButtonStates.RMBState = MouseState::UP;
+		instance->m_mouseButtonStates.RMBEvent = MouseEvent::RELEASE;
+		instance->mouseEvent = true;
 	}
-
-	instance->mouseClickEvent = true;
 }
 
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
@@ -213,7 +219,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 				break;
 			}
 
-			if (!m_resizing && m_mouseButtonStates.LMB == MouseState::DOWN && cursorToSet != m_arrowCursor)
+			if (!m_resizing && m_mouseButtonStates.LMBState == MouseState::DOWN && cursorToSet != m_arrowCursor)
 			{
 				*resCalled = true;
 				Resize(m_mousePos, node);
@@ -231,7 +237,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 		}
 	}
 
-	if (m_mouseButtonStates.LMB != MouseState::DOWN)
+	if (m_mouseButtonStates.LMBState != MouseState::DOWN)
 	{
 		m_resizing = false;
 	}
@@ -243,16 +249,20 @@ bool SableUI::Window::PollEvents()
 {
 	glfwPollEvents();
 
+	m_mouseButtonStates.pos = m_mousePos;
+
 	if (mouseMoved)
 	{
 		mouseMoved = false;
 		m_root->HandleHoverEventPanel(m_mousePos);
 	}
 
-	if (mouseClickEvent)
+	if (mouseEvent)
 	{
-		mouseClickEvent = false;
+		mouseEvent = false;
 		m_root->HandleMouseClickEventPanel(m_mouseButtonStates);
+		m_mouseButtonStates.LMBEvent = MouseEvent::NONE;
+		m_mouseButtonStates.RMBEvent = MouseEvent::NONE;
 	}
 
 	m_root->PropagateComponentStateChanges();
@@ -285,7 +295,7 @@ bool SableUI::Window::PollEvents()
 		{
 			resCalled = false;
 		}
-		if (m_mouseButtonStates.LMB == MouseState::UP)
+		if (m_mouseButtonStates.LMBState == MouseState::UP)
 		{
 			m_resizing = false;
 			m_renderer.ClearStack();

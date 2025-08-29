@@ -27,6 +27,7 @@ void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
 
 void SableUI::BasePanel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
 {
+	isFocused = RectBoundingBox(rect, mouseState.pos);
 	if (!isFocused) return;
 
 	for (SableUI::BasePanel* child : children)
