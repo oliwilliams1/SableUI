@@ -38,6 +38,23 @@ namespace SableUI
         DivScope(DivScope&&) = default;
         DivScope& operator=(DivScope&&) = default;
     };
+
+    struct SplitterScope
+    {
+    public:
+        explicit SplitterScope(const PanelType& type)
+        {
+            SableUI::StartSplitter(type);
+        }
+        ~SplitterScope()
+        {
+            SableUI::EndSplitter();
+        }
+        SplitterScope(const SplitterScope&) = delete;
+        SplitterScope& operator=(const SplitterScope&) = delete;
+        SplitterScope(SplitterScope&&) = default;
+        SplitterScope& operator=(SplitterScope&&) = default;
+    };
 }
 
 /* scoped RAII rect guard api */
@@ -113,3 +130,9 @@ namespace SableUI
 
 #define onHover(callback)       .setOnHover(callback)
 #define onHoverExit(callback)   .setOnHoverExit(callback)
+
+#define HSplitter()         if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+#define VSplitter()         if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
+
+#define Panel()             SableUI::AddPanel();
+#define PanelWith(T, ...)   SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__);

@@ -11,10 +11,11 @@ namespace SableUI
     struct StateSetter
     {
         StateSetter(std::function<void(const T&)> setter) : m_setter(setter) {}
-
         void operator()(const T& value) const { m_setter(value); }
-
         void set(const T& value) const { m_setter(value); }
+
+        StateSetter(const StateSetter& other) = delete;
+        StateSetter& operator=(const StateSetter& other) = delete;
 
     private:
         std::function<void(const T&)> m_setter;

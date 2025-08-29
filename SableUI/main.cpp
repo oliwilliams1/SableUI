@@ -89,43 +89,31 @@ int main(int argc, char** argv)
     Window mainWindow("SableUI Layout Test", 1600, 1000);
     SetContext(&mainWindow);
 
-    if (SplitterPanel* rootHSplitter = StartSplitter(PanelType::HORIZONTAL))
+    HSplitter()
     {
-        if (SplitterPanel* vsplitter1 = StartSplitter(PanelType::VERTICAL))
+        VSplitter()
         {
-            if (SplitterPanel* hsplitter1 = StartSplitter(PanelType::HORIZONTAL))
+            HSplitter()
             {
-                Panel* topLeftComponent = AddPanel()->AttachComponent<TestComponent>(128);
-
-                if (SplitterPanel* vsplitter2 = StartSplitter(PanelType::VERTICAL))
+                PanelWith(TestComponent, 128);
+                VSplitter()
                 {
-                    Panel* nestedTopComponent = AddPanel();
-                    if (SplitterPanel* hsplitter2 = StartSplitter(PanelType::HORIZONTAL))
+                    Panel();
+                    HSplitter()
                     {
-                        Panel* nestedBottomLeftComponent = AddPanel()->AttachComponent<TestComponent>(80);
-                        Panel* nestedBottomRightComponent = AddPanel()->AttachComponent<ImageView>("dirtywork.jpg", 128, 128);
-
-                        EndSplitter(); // HSplitter
+                        PanelWith(TestComponent, 80);
+                        PanelWith(ImageView, "dirtywork.jpg", 128, 128);
                     }
-
-                    EndSplitter(); // VSplitter
                 }
-
-                EndSplitter(); // TopHSplitter
             }
-            Panel* mainBottomComponent = AddPanel()->AttachComponent<HoverImageView>();
+            PanelWith(HoverImageView);
 
-            EndSplitter(); // MainVSplitter
         }
-        if (SplitterPanel* rightVSplitter = StartSplitter(PanelType::VERTICAL))
+        VSplitter()
         {
-            Panel* rightTopComponent = AddPanel();
-            Panel* rightBottomComponent = AddPanel();
-
-            SableUI::EndSplitter(); // RightVSplitter
+            Panel();
+            Panel();
         }
-
-        SableUI::EndSplitter(); // RootHSplitter
     }
 
     while (mainWindow.PollEvents())
