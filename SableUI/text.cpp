@@ -1121,7 +1121,7 @@ GLuint SableUI::GetAtlasTexture()
 }
 
 /* ------------- TEXT BACKEND ------------- */
-int SableUI::Text::SetContent(const std::u32string& str, int maxWidth, int fontSize, float lineSpacingFac)
+int SableUI::Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)

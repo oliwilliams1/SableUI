@@ -179,13 +179,13 @@ SableUI::Element* SableUI::AddText(const std::string& text, const ElementInfo& p
     Element* newText = new Element(s_elementRenderer, ElementType::TEXT);
 
     newText->SetInfo(info);
-    newText->SetText(std::u32string(text.begin(), text.end()));
+    newText->SetText(text.c_str());
     parent->AddChild(newText);
 
     return newText;
 }
 
-SableUI::Element* SableUI::AddTextU32(const std::u32string& text, const ElementInfo& p_info)
+SableUI::Element* SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 {
     SableUI::ElementInfo info = p_info;
 

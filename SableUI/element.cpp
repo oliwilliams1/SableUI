@@ -240,7 +240,7 @@ void SableUI::Element::SetImage(const std::string& path)
     }
 }
 
-void SableUI::Element::SetText(const std::u32string& text, int fontSize, float lineHeight)
+void SableUI::Element::SetText(const SableString& text, int fontSize, float lineHeight)
 {
     if (type != ElementType::TEXT) SableUI_Error("Cannot set text on element not of type text");
 

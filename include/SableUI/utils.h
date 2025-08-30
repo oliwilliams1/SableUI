@@ -1,9 +1,11 @@
 #pragma once
 #include "SableUI/console.h"
-
+#include "SableUI/string.h"
 #include <stdio.h>
 #include <cstdint>
 #include <cmath>
+
+typedef SableUI::String SableString;
 
 namespace SableUI
 {

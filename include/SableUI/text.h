@@ -17,10 +17,10 @@ namespace SableUI
 		Text(const Text&) = delete;
 		Text& operator=(const Text&) = delete;
 
-		int SetContent(const std::u32string& str, int maxWidth, int fontSize = 11, float lineSpacing = 1.15f);
+		int SetContent(const SableString& str, int maxWidth, int fontSize = 11, float lineSpacing = 1.15f);
 		int UpdateMaxWidth(int maxWidth);
-		std::u32string m_content = U"";
-		std::u32string m_actualContent = U"";
+		SableString m_content = U"";
+		SableString m_actualContent = U"";
 		int m_fontSize = 0;
 		int m_maxWidth = 0;
 		int m_lineSpacingPx = 0;

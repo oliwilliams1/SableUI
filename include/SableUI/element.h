@@ -161,7 +161,7 @@ namespace SableUI
 		void AddChild(Element* child);
 		void AddChild(BaseComponent* component);
 		void SetImage(const std::string& path);
-		void SetText(const std::u32string& text, int fontSize = 11, float lineHeight = 1.15f);
+		void SetText(const SableString& text, int fontSize = 11, float lineHeight = 1.15f);
 		int GetMinWidth();
 		int GetMinHeight();
 

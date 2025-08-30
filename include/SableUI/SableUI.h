@@ -17,7 +17,7 @@ namespace SableUI
     Element* AddRect(const ElementInfo& info = {});
     Element* AddImage(const std::string& path, const ElementInfo& info = {});
     Element* AddText(const std::string& text, const ElementInfo& info = {});
-    Element* AddTextU32(const std::u32string& text, const ElementInfo& info = {});
+    Element* AddTextU32(const SableString& text, const ElementInfo& info = {});
 }
 
 namespace SableUI
