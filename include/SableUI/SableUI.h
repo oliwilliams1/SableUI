@@ -63,7 +63,6 @@ namespace SableUI
 #define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__);
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__);
 #define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__);
-#define UpdateStyle(element, ...) &(*element) __VA_ARGS__
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

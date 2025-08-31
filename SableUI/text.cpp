@@ -104,8 +104,8 @@ public:
 	void ResizeTextureArray(int newDepth);
 	GLuint GetAtlasTexture() const { return atlasTextureArray; }
 
-private:
-	FontManager() : isInitialized(false) {}
+	std::map<char_t, Character> characters;
+	bool FindFontRangeForChar(char32_t c, FontRange& outRange);
 
 	void InitFreeType();
 	void ShutdownFreeType();
@@ -114,10 +114,8 @@ private:
 	bool FreeTypeRunning = false;
 
 	std::vector<Atlas> atlases;
-	std::map<char_t, Character> characters;
 
 	void FindFontRanges();
-	bool FindFontRangeForChar(char32_t c, FontRange& outRange);
 	std::vector<FontRange> cachedFontRanges;
 
 	GLuint atlasTextureArray = 0;
@@ -138,6 +136,9 @@ private:
 	bool DeserialiseAtlas(const std::string& filename, Atlas& outAtlas);
 
 	void UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GLenum pixelType) const;
+
+private:
+	FontManager() : isInitialized(false) {}
 };
 
 static FontManager* fontManager = nullptr;
@@ -1150,6 +1151,70 @@ int SableUI::Text::UpdateMaxWidth(int maxWidth)
 
 	int height = fontManager->GetDrawInfo(this);
 	return height;
+}
+
+int SableUI::Text::GetUnwrappedWidth()
+{
+	if (fontManager == nullptr || !fontManager->isInitialized)
+	{
+		FontManager::GetInstance().Initialize();
+	}
+
+	fontManager = &FontManager::GetInstance();
+
+	int maxWidth = 0;
+	int currentLineLength = 0;
+
+	for (char32_t c : m_content)
+	{
+		if (c == U'\n')
+		{
+			maxWidth = std::max(maxWidth, currentLineLength);
+			currentLineLength = 0;
+			continue;
+		}
+
+		char_t charKey = { c, m_fontSize };
+		auto it = fontManager->characters.find(charKey);
+
+		if (it != fontManager->characters.end())
+		{
+			currentLineLength += it->second.advance;
+		}
+		else
+		{
+			FontRange targetRange;
+			if (fontManager->FindFontRangeForChar(c, targetRange))
+			{
+				Atlas newAtlas{};
+				newAtlas.fontSize = m_fontSize;
+				fontManager->LoadFontRange(newAtlas, targetRange);
+				auto newIt = fontManager->characters.find(charKey);
+				if (newIt != fontManager->characters.end())
+				{
+					currentLineLength += newIt->second.advance;
+				}
+			}
+		}
+	}
+
+	maxWidth = std::max(maxWidth, currentLineLength);
+
+	return maxWidth;
+}
+
+int SableUI::Text::GetUnwrappedHeight()
+{
+	int lines = 1;
+	for (char32_t c : m_content)
+	{
+		if (c == U'\n')
+		{
+			lines++;
+		}
+	}
+
+	return lines * m_lineSpacingPx;
 }
 
 void SableUI::InitFontManager()

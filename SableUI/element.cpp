@@ -246,8 +246,7 @@ void SableUI::Element::SetText(const SableString& text, int fontSize, float line
 
     if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
     {
-        int reqHeight = drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight);
-        height = reqHeight;
+        drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight);
     }
     else
     {
@@ -262,7 +261,6 @@ int SableUI::Element::GetMinWidth()
     if (type == ElementType::DIV)
     {
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
-
         if (isVerticalFlow)
         {
             for (Child& child : children)
@@ -282,6 +280,13 @@ int SableUI::Element::GetMinWidth()
             }
         }
     }
+    else if (type == ElementType::TEXT)
+    {
+        if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+        {
+            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetUnwrappedWidth());
+        }
+    }
     else
     {
         calculatedMinWidth = std::max(calculatedMinWidth, width);
@@ -297,7 +302,6 @@ int SableUI::Element::GetMinHeight()
     if (type == ElementType::DIV)
     {
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
-
         if (isVerticalFlow)
         {
             for (Child& child : children)
@@ -315,6 +319,13 @@ int SableUI::Element::GetMinHeight()
                 int childTotalHeight = childElement->GetMinHeight() + childElement->marginTop + childElement->marginBottom;
                 calculatedMinHeight = std::max(calculatedMinHeight, childTotalHeight);
             }
+        }
+    }
+    else if (type == ElementType::TEXT)
+    {
+        if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+        {
+            calculatedMinHeight = std::max(calculatedMinHeight, drText->m_text.GetUnwrappedHeight());
         }
     }
     else
@@ -352,7 +363,7 @@ void SableUI::Element::LayoutChildren()
     // Calculate content area (after padding)
     ivec2 contentAreaPosition = { rect.x + paddingLeft, rect.y + paddingTop };
     ivec2 contentAreaSize = { std::max(0, containerSize.x - paddingLeft - paddingRight),
-                              std::max(0, containerSize.y - paddingTop - paddingBottom) };
+                                     std::max(0, containerSize.y - paddingTop - paddingBottom) };
 
     if (contentAreaSize.x <= 0 || contentAreaSize.y <= 0)
     {
@@ -437,7 +448,31 @@ void SableUI::Element::LayoutChildren()
 
         if (isVerticalFlow)
         {
-            if (childElement->hType == RectType::FIXED)
+            if (childElement->wType == RectType::FIXED)
+            {
+                childContentWidth = childElement->width;
+            }
+            else if (childElement->type == ElementType::TEXT || childElement->wType == RectType::FIT_CONTENT)
+            {
+                childContentWidth = std::max(0, contentAreaSize.x - childMarginWidth);
+            }
+            else
+            {
+                childContentWidth = std::max(0, contentAreaSize.x - childMarginWidth);
+            }
+
+            if (childElement->type == ElementType::TEXT)
+            {
+                if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
+                {
+                    childContentHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                }
+                else
+                {
+                    childContentHeight = childElement->height;
+                }
+            }
+            else if (childElement->hType == RectType::FIXED)
             {
                 childContentHeight = childElement->height;
             }
@@ -454,11 +489,8 @@ void SableUI::Element::LayoutChildren()
                     distributedRemainder++;
                 }
             }
-
             childContentHeight = std::max(childContentHeight, childElement->minHeight);
             childContentHeight = (childElement->maxHeight > 0) ? std::min(childContentHeight, childElement->maxHeight) : childContentHeight;
-            childContentHeight += childElement->paddingTop + childElement->paddingBottom;
-
 
             if (childElement->wType == RectType::FIXED)
             {
@@ -475,7 +507,6 @@ void SableUI::Element::LayoutChildren()
 
             childContentWidth = std::max(childContentWidth, childElement->minWidth);
             childContentWidth = (childElement->maxWidth > 0) ? std::min(childContentWidth, childElement->maxWidth) : childContentWidth;
-            childContentWidth += childElement->paddingLeft + childElement->paddingRight;
         }
         else
         {
@@ -497,11 +528,6 @@ void SableUI::Element::LayoutChildren()
                 }
             }
 
-            childContentWidth = std::max(childContentWidth, childElement->minWidth);
-            childContentWidth = (childElement->maxWidth > 0) ? std::min(childContentWidth, childElement->maxWidth) : childContentWidth;
-            childContentWidth += childElement->paddingLeft + childElement->paddingRight;
-
-
             if (childElement->hType == RectType::FIXED)
             {
                 childContentHeight = childElement->height;
@@ -514,17 +540,24 @@ void SableUI::Element::LayoutChildren()
             {
                 childContentHeight = std::max(0, contentAreaSize.y - childMarginHeight);
             }
-
-            childContentHeight = std::max(childContentHeight, childElement->minHeight);
-            childContentHeight = (childElement->maxHeight > 0) ? std::min(childContentHeight, childElement->maxHeight) : childContentHeight;
-            childContentHeight += childElement->paddingTop + childElement->paddingBottom;
         }
 
         childContentWidth = std::max(0, childContentWidth);
         childContentHeight = std::max(0, childContentHeight);
 
-        int childTotalWidth = childContentWidth + childElement->paddingLeft + childElement->paddingRight + childMarginWidth;
-        int childTotalHeight = childContentHeight + childElement->paddingTop + childElement->paddingBottom + childMarginHeight;
+        if (childElement->type == ElementType::TEXT && isVerticalFlow)
+        {
+            if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
+            {
+                drText->m_text.UpdateMaxWidth(childContentWidth);
+            }
+        }
+
+        childContentWidth += childElement->paddingLeft + childElement->paddingRight;
+        childContentHeight += childElement->paddingTop + childElement->paddingBottom;
+
+        int childTotalWidth = childContentWidth + childMarginWidth;
+        int childTotalHeight = childContentHeight + childMarginHeight;
 
         int childX, childY;
 
@@ -600,14 +633,12 @@ void SableUI::Element::LayoutChildren()
         }
 
         Rect childRect = {
-            childX + childElement->paddingLeft,
-            childY + childElement->paddingTop,
+            childX,
+            childY,
             childContentWidth,
             childContentHeight
         };
 
-        childRect.x = std::max(contentAreaPosition.x, std::min(childRect.x, contentAreaPosition.x + contentAreaSize.x - childRect.w));
-        childRect.y = std::max(contentAreaPosition.y, std::min(childRect.y, contentAreaPosition.y + contentAreaSize.y - childRect.h));
 
         SableUI::Rect childFinalRect = {
             childRect.x,
@@ -620,7 +651,6 @@ void SableUI::Element::LayoutChildren()
         childElement->LayoutChildren();
     }
 }
-
 bool SableUI::Element::el_PropagateComponentStateChanges()
 {
     for (Child& child : children)

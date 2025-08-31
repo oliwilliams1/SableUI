@@ -48,12 +48,10 @@ public:
 
 	void Layout() override
 	{
-		UpdateStyle(rootElement, bg(30, 30, 30));
-
 		std::u32string pathU32 = std::u32string(m_path.begin(), m_path.end());
 
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test ⟡ ↀ 첫 눈에 반한다는 그런 설정"); })
+			onHover([&]() { setText(U"unicode test ⟡ ↀ \n 첫 눈에 반한다는 그런 설정"); })
 			onHoverExit([&]() { setText(U"lorem ipsum"); }));
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
@@ -84,7 +82,7 @@ public:
 				onHover([&]() { setIsHovered(true); })
 				onHoverExit([&]() { setIsHovered(false); }))
 			{
-				Text("Hover to change image, loaded: " + path);
+				Text("Hover to change image,\nloaded: " + path);
 			}
 
 			Image(path, w(128) h(128));
