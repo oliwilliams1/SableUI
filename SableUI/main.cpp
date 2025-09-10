@@ -51,7 +51,7 @@ public:
 		std::u32string pathU32 = std::u32string(m_path.begin(), m_path.end());
 
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test ⟡ ↀ \n 첫 눈에 반한다는 그런 설정"); })
+			onHover([&]() { setText(U"unicode test ⟡ ↀ \n첫 눈에 반한다는 그런 설정"); })
 			onHoverExit([&]() { setText(U"lorem ipsum"); }));
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
@@ -63,7 +63,6 @@ public:
 private:
 	std::string m_path;
 	int width, height;
-	// create own string type to fix?
 	useState(text, setText, SableString, U"lorem ipsum");
 };
 

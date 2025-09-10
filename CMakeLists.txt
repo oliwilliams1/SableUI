@@ -36,11 +36,6 @@ add_subdirectory("vendor/freetype" EXCLUDE_FROM_ALL)
 # Stb
 include_directories("vendor/stb")
 
-# TinyXML2
-file(GLOB_RECURSE TINYXML2_SOURCES "vendor/TinyXML2/*.cpp" "vendor/TinyXML2/*.h")
-add_library(TinyXML2 STATIC ${TINYXML2_SOURCES})
-target_include_directories(TinyXML2 PUBLIC "vendor/TinyXML2")
-
 # libwebp
 set(WEBP_BUILD_ANIM_UTILS   OFF)
 set(WEBP_BUILD_CWEBP        OFF)
@@ -70,7 +65,6 @@ target_link_libraries(SableUI PRIVATE
     ${OPENGL_LIBRARIES}
     glew
     glfw
-    TinyXML2
     freetype
     webp
 )

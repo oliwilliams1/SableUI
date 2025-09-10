@@ -9,7 +9,6 @@
 #include <stack>
 #include <chrono>
 #include <thread>
-#include <tinyxml2.h>
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")

@@ -17,6 +17,3 @@
 [submodule "vendor/libwebp"]
 	path = vendor/libwebp
 	url = https://github.com/webmproject/libwebp
-[submodule "vendor/uni_algo"]
-	path = vendor/uni_algo
-	url = https://github.com/uni-algo/uni-algo
