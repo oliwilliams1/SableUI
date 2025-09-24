@@ -1015,7 +1015,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			}
 
 			if (!token.isSpace && text->m_maxWidth > 0
-				&& (tempCurrentLineX + token.width > text->m_maxWidth) && tempCurrentLineX > 0)
+				&& tempCurrentLineX > 0
+				&& (tempCurrentLineX + token.width > text->m_maxWidth))
 			{
 				tempCursor.x = 0;
 				tempCursor.y += text->m_lineSpacingPx;
@@ -1031,7 +1032,6 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 			}
 		}
 
-		tempLines;
 		height = tempLines * text->m_lineSpacingPx;
 		cursor.y -= height;
 	}
@@ -1052,7 +1052,8 @@ int FontManager::GetDrawInfo(SableUI::Text* text)
 		}
 
 		if (!token.isSpace && text->m_maxWidth > 0
-			&& (currentLineX + token.width > text->m_maxWidth) && currentLineX > 0)
+			&& currentLineX > 0
+			&& (currentLineX + token.width > text->m_maxWidth))
 		{
 			cursor.x = 0;
 			cursor.y += text->m_lineSpacingPx;
@@ -1153,7 +1154,7 @@ int SableUI::Text::UpdateMaxWidth(int maxWidth)
 	return height;
 }
 
-int SableUI::Text::GetUnwrappedWidth()
+int SableUI::Text::GetMinWidth()
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
 	{
@@ -1162,15 +1163,15 @@ int SableUI::Text::GetUnwrappedWidth()
 
 	fontManager = &FontManager::GetInstance();
 
-	int maxWidth = 0;
-	int currentLineLength = 0;
+	int maxWordWidth = 0;
+	int currentWordWidth = 0;
 
 	for (char32_t c : m_content)
 	{
-		if (c == U'\n')
+		if (c == U' ' || c == U'\n' || c == U'\t')
 		{
-			maxWidth = std::max(maxWidth, currentLineLength);
-			currentLineLength = 0;
+			maxWordWidth = std::max(maxWordWidth, currentWordWidth);
+			currentWordWidth = 0;
 			continue;
 		}
 
@@ -1179,7 +1180,7 @@ int SableUI::Text::GetUnwrappedWidth()
 
 		if (it != fontManager->characters.end())
 		{
-			currentLineLength += it->second.advance;
+			currentWordWidth += it->second.advance;
 		}
 		else
 		{
@@ -1192,15 +1193,15 @@ int SableUI::Text::GetUnwrappedWidth()
 				auto newIt = fontManager->characters.find(charKey);
 				if (newIt != fontManager->characters.end())
 				{
-					currentLineLength += newIt->second.advance;
+					currentWordWidth += newIt->second.advance;
 				}
 			}
 		}
 	}
 
-	maxWidth = std::max(maxWidth, currentLineLength);
+	maxWordWidth = std::max(maxWordWidth, currentWordWidth);
 
-	return maxWidth;
+	return maxWordWidth;
 }
 
 int SableUI::Text::GetUnwrappedHeight()

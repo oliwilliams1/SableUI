@@ -19,7 +19,7 @@ namespace SableUI
 
 		int SetContent(const SableString& str, int maxWidth, int fontSize = 11, float lineSpacing = 1.15f);
 		int UpdateMaxWidth(int maxWidth);
-		int GetUnwrappedWidth();
+		int GetMinWidth();
 		int GetUnwrappedHeight();
 		SableString m_content = U"";
 		SableString m_actualContent = U"";

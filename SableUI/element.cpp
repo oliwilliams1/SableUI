@@ -284,7 +284,7 @@ int SableUI::Element::GetMinWidth()
     {
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
-            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetUnwrappedWidth());
+            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetMinWidth());
         }
     }
     else
@@ -323,9 +323,16 @@ int SableUI::Element::GetMinHeight()
     }
     else if (type == ElementType::TEXT)
     {
-        if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+        if (measuredHeight > 0)
         {
-            calculatedMinHeight = std::max(calculatedMinHeight, drText->m_text.GetUnwrappedHeight());
+            calculatedMinHeight = measuredHeight;
+        }
+        else
+        {
+            if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
+            {
+                calculatedMinHeight = std::max(calculatedMinHeight, drText->m_text.GetUnwrappedHeight());
+            }
         }
     }
     else
@@ -340,6 +347,10 @@ void SableUI::Element::LayoutChildren()
 {
     if (type != ElementType::DIV) return;
     if (children.empty()) return;
+
+    bool layoutDirty = false;
+    int totalChildHeight = 0;
+    int totalChildWidth = 0;
 
     rect.w = std::max(rect.w, GetMinWidth());
     rect.h = std::max(rect.h, GetMinHeight());
@@ -465,7 +476,13 @@ void SableUI::Element::LayoutChildren()
             {
                 if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
                 {
-                    childContentHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                    int newHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                    if (newHeight != childElement->height)
+                    {
+                        childElement->height = newHeight;
+                        layoutDirty = true;
+                    }
+                    childContentHeight = newHeight;
                 }
                 else
                 {
@@ -549,9 +566,18 @@ void SableUI::Element::LayoutChildren()
         {
             if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
             {
-                drText->m_text.UpdateMaxWidth(childContentWidth);
+                int newHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                if (newHeight != childElement->height)
+                {
+                    childElement->height = newHeight;
+                    layoutDirty = true;
+                }
+                childContentHeight = newHeight;
+
             }
         }
+
+        childElement->measuredHeight = childContentHeight;
 
         childContentWidth += childElement->paddingLeft + childElement->paddingRight;
         childContentHeight += childElement->paddingTop + childElement->paddingBottom;
@@ -639,6 +665,8 @@ void SableUI::Element::LayoutChildren()
             childContentHeight
         };
 
+        totalChildWidth += childContentWidth + childElement->marginLeft + childElement->marginRight;
+        totalChildHeight += childContentHeight + childElement->marginTop + childElement->marginBottom;
 
         SableUI::Rect childFinalRect = {
             childRect.x,
@@ -650,7 +678,15 @@ void SableUI::Element::LayoutChildren()
         childElement->SetRect(childFinalRect);
         childElement->LayoutChildren();
     }
+
+    if (layoutDirty)
+    {
+        layoutDirty = false;
+        SetRect({ rect.x, rect.y, totalChildWidth + paddingLeft + paddingRight, totalChildHeight + paddingTop + paddingBottom });
+        LayoutChildren();
+    }
 }
+
 bool SableUI::Element::el_PropagateComponentStateChanges()
 {
     for (Child& child : children)

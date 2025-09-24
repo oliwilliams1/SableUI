@@ -113,7 +113,7 @@ void Console::Log(const char* format, const char* file, int line, const char* fu
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    std::string finalMessage = '[' + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
+    std::string finalMessage = time + '[' + std::string(subsystem) + "] " + GetFileLine(file, line) + buffer;
 
     SetConsoleColour(GREEN);
     std::cout << finalMessage << std::endl;

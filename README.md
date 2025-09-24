@@ -1,20 +1,13 @@
 ﻿# INCOMPLETE
 # SableUI
-A high-performance and low-cost UI library inspired by foobar2000's ColumnsUI 
-component-based UI extenstion, written in C++. Windows will be defined in with 
-multiple "nodes", which can be thought of as widgets, each containing unique
-and seperated content from other nodes. Each node can be set as splitters or 
-components, splitters allow multiple children nodes in a certain direction
-and components allow elements to be attached. Think of each "component" node 
-as an html canvas, but much more efficient as no webview enviroments are needed.
-
 SableUI is a modern, low-level and high-performance, application UI framework
-for C++ drawing inspiration from Reacts' dynamic component-based "immediate mode"
+for C++ drawing inspiration from Reacts dynamic component-based "immediate mode"
 gui, tailwinds simple styling, and foobar2000s ColumnsUI panel-based window structure.
 
 ## Features
 - Easy API Usage: Utilising macros etc
 - Hardware Accel: Lightweight, low-level
+- Advanced text rendering with unicode support
 - Cross-plaftform
 
 ### Example Usage

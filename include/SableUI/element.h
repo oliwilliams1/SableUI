@@ -245,6 +245,8 @@ namespace SableUI
 
 		// children handling
 		void LayoutChildren();
+		bool layoutDirty = false;
+		int measuredHeight = 0;
 		std::vector<Child> children;
 
 	private:
