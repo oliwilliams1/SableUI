@@ -58,11 +58,11 @@ namespace SableUI
 }
 
 /* scoped RAII rect guard api */
-#define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__);
+#define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__)
 #define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
-#define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__);
-#define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__);
-#define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__);
+#define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__)
+#define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__)
+#define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__)
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

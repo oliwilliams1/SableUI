@@ -1,6 +1,4 @@
 #include "SableUI/window.h"
-#include "SableUI/shader.h"
-#include "SableUI/text.h"
 
 #include <cstdio>
 #include <iostream>
@@ -684,7 +682,6 @@ SableUI::Window::~Window()
 {
 	DestroyFontManager();
 	DestroyDrawables();
-	DestroyShaders();
 
 	glfwDestroyWindow(m_window);
 	glfwTerminate();

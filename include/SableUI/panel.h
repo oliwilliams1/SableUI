@@ -98,18 +98,7 @@ namespace SableUI
         void CalculateMinBounds() override;
 
         template<typename T, typename... Args>
-        Panel* AttachComponent(Args&&... args)
-        {
-            static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-            if (m_component == nullptr) delete m_component;
-
-            m_component = new T(std::forward<Args>(args)...);
-            m_component->BackendInitialise(m_renderer);
-
-            Update();
-            return this;
-        }
+        Panel* AttachComponent(Args&&... args);
 
         void Update() override;
 
@@ -120,4 +109,18 @@ namespace SableUI
     private:
         BaseComponent* m_component = nullptr;
     };
+
+    template<typename T, typename... Args>
+	inline Panel* Panel::AttachComponent(Args&&... args)
+	{
+        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+        if (m_component == nullptr) delete m_component;
+
+        m_component = new T(std::forward<Args>(args)...);
+        m_component->BackendInitialise(m_renderer);
+
+        Update();
+        return this;
+	}
 }

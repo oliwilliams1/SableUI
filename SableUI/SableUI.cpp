@@ -75,6 +75,11 @@ static SableUI::Renderer* s_elementRenderer = nullptr;
 
 void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement)
 {
+    if (rootElement == nullptr)
+    {
+        SableUI_Error("rootElement is nullptr in SetElementBuilderContext");
+    }
+
     s_elementRenderer = renderer;
     s_elementStack = {};
     if (rootElement)

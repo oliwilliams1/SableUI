@@ -1,5 +1,5 @@
 #pragma once
-#include "SableUI/renderer.h"
+#include "SableUI/element.h"
 #include <functional>
 #include <map>
 #include <any>
@@ -27,11 +27,14 @@ namespace SableUI
     {
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
-        ~BaseComponent() = default;
+        ~BaseComponent();
 
         virtual void Layout() {};
         virtual void OnHover() {};
-        void BackendInitialise(Renderer* renderer);
+        void BackendInitialise(Renderer* renderer, bool isPanelComponent = true);
+
+        template<typename T, typename... Args>
+        void AddComponent(Args&&... args);
 
         Element* GetRootElement();
 
@@ -46,5 +49,16 @@ namespace SableUI
     private:
         Renderer* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
+        std::vector<BaseComponent*> m_componentChildren;
     };
+
+    template<typename T, typename ...Args>
+    inline void BaseComponent::AddComponent(Args && ...args)
+    {
+        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+        T* component = new T(std::forward<Args>(args)...);
+        component->BackendInitialise(m_renderer, false);
+        m_componentChildren.push_back(component);
+    }
 }

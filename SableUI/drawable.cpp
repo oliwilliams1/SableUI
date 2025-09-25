@@ -1,7 +1,6 @@
 #include <memory>
 #include <algorithm>
 #include "SableUI/drawable.h"
-#include "SableUI/renderer.h"
 #include "SableUI/shader.h"
 
 /* rect globals */

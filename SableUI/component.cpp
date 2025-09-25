@@ -6,17 +6,27 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 	m_bgColour = colour;
 }
 
-void SableUI::BaseComponent::BackendInitialise(Renderer* renderer)
+SableUI::BaseComponent::~BaseComponent()
+{
+	for (BaseComponent* comp : m_componentChildren) delete comp;
+	m_componentChildren.clear();
+}
+
+void SableUI::BaseComponent::BackendInitialise(Renderer* renderer, bool isPanelComponent)
 {
 	if (rootElement) delete rootElement;
 
 	m_renderer = renderer;
 	
-	rootElement = new Element(renderer, ElementType::DIV);
-	rootElement->Init(renderer, ElementType::DIV);
-	rootElement->setBgColour(m_bgColour);
+	if (isPanelComponent)
+	{
+		rootElement = new Element(renderer, ElementType::DIV);
+		rootElement->Init(renderer, ElementType::DIV);
+		rootElement->setBgColour(m_bgColour);
 	
-	SetElementBuilderContext(renderer, rootElement);
+		SetElementBuilderContext(renderer, rootElement);
+	}
+
 	Layout();
 }
 

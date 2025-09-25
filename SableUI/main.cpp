@@ -1,5 +1,31 @@
 ﻿#include "SableUI/SableUI.h"
 
+class HoverImageView : public SableUI::BaseComponent
+{
+public:
+	HoverImageView() : SableUI::BaseComponent() {};
+
+	void Layout() override
+	{
+		std::string path = (isHovered) ? "bomb.webp" : "junior.jpg";
+
+		Div(w(128) h_fit)
+		{
+			Div(bg(128, 32, 32)
+				onHover([&]() { setIsHovered(true); })
+				onHoverExit([&]() { setIsHovered(false); }))
+			{
+				Text("Hover to change image,\nloaded: " + path);
+			}
+
+			Image(path, w(128) h(128));
+		}
+	}
+
+private:
+	useState(isHovered, setIsHovered, bool, false);
+};
+
 class TestComponent : public SableUI::BaseComponent
 {
 public:
@@ -27,6 +53,8 @@ public:
 			{
 				Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
 			}
+
+			AddComponent<HoverImageView>();
 
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
@@ -64,32 +92,6 @@ private:
 	std::string m_path;
 	int width, height;
 	useState(text, setText, SableString, U"lorem ipsum");
-};
-
-class HoverImageView : public SableUI::BaseComponent
-{
-public:
-	HoverImageView() : SableUI::BaseComponent() {};
-
-	void Layout() override
-	{
-		std::string path = (isHovered) ? "bomb.webp" : "junior.jpg";
-
-		Div(w(128) h_fit)
-		{
-			Div(bg(128, 32, 32)
-				onHover([&]() { setIsHovered(true); })
-				onHoverExit([&]() { setIsHovered(false); }))
-			{
-				Text("Hover to change image,\nloaded: " + path);
-			}
-
-			Image(path, w(128) h(128));
-		}
-	}
-
-private:
-	useState(isHovered, setIsHovered, bool, false);
 };
 
 int main(int argc, char** argv)

@@ -10,7 +10,6 @@
 #include "SableUI/panel.h"
 #pragma warning(pop)
 
-
 namespace SableUI
 {
 	class Window

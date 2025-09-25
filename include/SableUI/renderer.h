@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "SableUI/drawable.h"
-#include "SableUI/element.h"
 
 namespace SableUI
 {
@@ -16,7 +15,7 @@ namespace SableUI
 	{
 	public:
 		Renderer() {};
-		~Renderer() = default;
+		~Renderer();
 
 		void ClearStack();
 

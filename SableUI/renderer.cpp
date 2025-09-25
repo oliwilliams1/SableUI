@@ -4,6 +4,12 @@
 
 #include "SableUI/renderer.h"
 #include "SableUI/utils.h"
+#include "SableUI/shader.h"
+
+SableUI::Renderer::~Renderer()
+{
+    DestroyShaders();
+}
 
 void SableUI::Renderer::ClearStack()
 {
