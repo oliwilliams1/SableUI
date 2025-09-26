@@ -117,8 +117,8 @@ namespace SableUI
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
 		// Event functions
-		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc		= func;	return *this; }
-		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc	= func;	return *this; }
+		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc			= func;	return *this; }
+		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc		= func;	return *this; }
 		ElementInfo& setOnClick(const std::function<void()>& func)			{ onClickFunc			= func; return *this; }
 		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
 	};

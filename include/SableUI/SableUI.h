@@ -6,6 +6,7 @@ namespace SableUI
 {
     void SetElementBuilderContext(Renderer* renderer, Element* rootElement);
     void SetContext(Window* window);
+    Element* GetCurrentElement();
     
     SplitterPanel* StartSplitter(PanelType orientation);
     void EndSplitter();
@@ -63,6 +64,9 @@ namespace SableUI
 #define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__)
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__)
 #define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__)
+
+#define style(...) SableUI::ElementInfo{} __VA_ARGS__
+#define Component(T, info, ...) AddComponent<T>(__VA_ARGS__)->BackendInitialiseChild(this, style(info))
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

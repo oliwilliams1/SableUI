@@ -11,11 +11,11 @@ public:
 
 		Div(w(128) h_fit)
 		{
-			Div(bg(128, 32, 32)
+			Div(bg(128, 32, 32) p(2)
 				onHover([&]() { setIsHovered(true); })
 				onHoverExit([&]() { setIsHovered(false); }))
 			{
-				Text("Hover to change image,\nloaded: " + path);
+				Text("Hover to change image. Loaded: " + path);
 			}
 
 			Image(path, w(128) h(128));
@@ -54,8 +54,7 @@ public:
 				Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
 			}
 
-			AddComponent<HoverImageView>();
-
+			Component(HoverImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 		Rect(m(5) w(60) h(60) bg(255, 128, 0));

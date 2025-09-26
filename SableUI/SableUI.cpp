@@ -88,6 +88,17 @@ void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement)
     }
 }
 
+SableUI::Element* SableUI::GetCurrentElement()
+{
+	if (s_elementStack.empty())
+	{
+		SableUI_Error("GetCurrentElement() called without a matching SetElementBuilderContext()");
+		return nullptr;
+	}
+
+	return s_elementStack.top();
+}
+
 SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info)
 {
     SableUI::ElementInfo info = p_info;

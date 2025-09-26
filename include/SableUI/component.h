@@ -31,10 +31,11 @@ namespace SableUI
 
         virtual void Layout() {};
         virtual void OnHover() {};
-        void BackendInitialise(Renderer* renderer, bool isPanelComponent = true);
+        void BackendInitialisePanel(Renderer* renderer);
+        void BackendInitialiseChild(BaseComponent* parent, const ElementInfo& info);
 
         template<typename T, typename... Args>
-        void AddComponent(Args&&... args);
+        BaseComponent* AddComponent(Args&&... args);
 
         Element* GetRootElement();
 
@@ -53,12 +54,13 @@ namespace SableUI
     };
 
     template<typename T, typename ...Args>
-    inline void BaseComponent::AddComponent(Args && ...args)
+    inline BaseComponent* BaseComponent::AddComponent(Args && ...args)
     {
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 
         T* component = new T(std::forward<Args>(args)...);
-        component->BackendInitialise(m_renderer, false);
         m_componentChildren.push_back(component);
+
+        return component;
     }
 }

@@ -118,7 +118,7 @@ namespace SableUI
         if (m_component == nullptr) delete m_component;
 
         m_component = new T(std::forward<Args>(args)...);
-        m_component->BackendInitialise(m_renderer);
+        m_component->BackendInitialisePanel(m_renderer);
 
         Update();
         return this;

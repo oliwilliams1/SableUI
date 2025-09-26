@@ -12,22 +12,29 @@ SableUI::BaseComponent::~BaseComponent()
 	m_componentChildren.clear();
 }
 
-void SableUI::BaseComponent::BackendInitialise(Renderer* renderer, bool isPanelComponent)
+void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 {
 	if (rootElement) delete rootElement;
 
 	m_renderer = renderer;
 	
-	if (isPanelComponent)
-	{
-		rootElement = new Element(renderer, ElementType::DIV);
-		rootElement->Init(renderer, ElementType::DIV);
-		rootElement->setBgColour(m_bgColour);
+	rootElement = new Element(renderer, ElementType::DIV);
+	rootElement->Init(renderer, ElementType::DIV);
+	rootElement->setBgColour(m_bgColour);
 	
-		SetElementBuilderContext(renderer, rootElement);
-	}
-
+	SetElementBuilderContext(renderer, rootElement);
 	Layout();
+}
+
+void SableUI::BaseComponent::BackendInitialiseChild(BaseComponent* parent, const ElementInfo& info)
+{
+	if (rootElement) delete rootElement;
+
+	m_renderer = parent->m_renderer;
+
+	StartDiv(info);
+	Layout();
+	EndDiv();
 }
 
 SableUI::Element* SableUI::BaseComponent::GetRootElement()
@@ -38,7 +45,15 @@ SableUI::Element* SableUI::BaseComponent::GetRootElement()
 
 void SableUI::BaseComponent::Rerender()
 {
-	BackendInitialise(m_renderer);
+	if (rootElement) delete rootElement;
+
+	rootElement = new Element(m_renderer, ElementType::DIV);
+	rootElement->Init(m_renderer, ElementType::DIV);
+	rootElement->setBgColour(m_bgColour);
+	
+	SetElementBuilderContext(m_renderer, rootElement);
+	Layout();
+
 	needsRerender = false;
 }
 

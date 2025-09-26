@@ -450,7 +450,7 @@ void SableUI::Panel::Update()
 	if (m_component == nullptr)
 	{
 		m_component = new BaseComponent();
-		m_component->BackendInitialise(m_renderer);
+		m_component->BackendInitialisePanel(m_renderer);
 	}
 
 	SableUI::Rect realRect = rect;
