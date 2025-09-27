@@ -142,13 +142,21 @@ namespace SableUI
 		Child(Element* element) : element(element), type(ChildType::ELEMENT) {}
 		Child(BaseComponent* component) : component(component), type(ChildType::COMPONENT) {}
 
+		~Child()
+		{
+			if (type == ChildType::ELEMENT)
+				delete element;
+			else if (type == ChildType::COMPONENT)
+				delete component;
+		}
+
 		operator SableUI::Element* ();
 	};
 
 	class Element
 	{
 	public:
-		Element() {}
+		Element();
 		Element(Renderer* renderer, ElementType type);
 		~Element();
 
@@ -247,7 +255,7 @@ namespace SableUI
 		void LayoutChildren();
 		bool layoutDirty = false;
 		int measuredHeight = 0;
-		std::vector<Child> children;
+		std::vector<Child*> children;
 
 	private:
 		bool isHovered = false;

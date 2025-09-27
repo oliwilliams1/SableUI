@@ -58,7 +58,6 @@ public:
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 		Rect(m(5) w(60) h(60) bg(255, 128, 0));
-
 	}
 
 private:
@@ -78,7 +77,7 @@ public:
 		std::u32string pathU32 = std::u32string(m_path.begin(), m_path.end());
 
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test ⟡ ↀ 첫 눈에 반한다는 그런 설정"); })
+			onHover([&]() { setText(U"unicode test ⟡ ↀ 안녕하세요, 제 이름은 오리 입니다. 저 는 열일곱 살 입니다. 저는 뉴젠스 좋압니다."); })
 			onHoverExit([&]() { setText(U"lorem ipsum"); }));
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))

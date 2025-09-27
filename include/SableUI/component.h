@@ -38,8 +38,9 @@ namespace SableUI
         BaseComponent* AddComponent(Args&&... args);
 
         Element* GetRootElement();
+        void SetRootElement(Element* element) { rootElement = element; }
 
-        void Rerender();
+        bool Rerender();
 
         bool needsRerender = false;
         bool comp_PropagateComponentStateChanges();

@@ -2,6 +2,8 @@
 #include "SableUI/component.h"
 #define SABLEUI_SUBSYSTEM "SableUI::Element"
 
+static int n_elements = 0;
+
 /* child struct */
 SableUI::Child::operator SableUI::Element* ()
 {
@@ -14,8 +16,14 @@ SableUI::Child::operator SableUI::Element* ()
 	return nullptr;
 }
 
+SableUI::Element::Element()
+{
+    n_elements++;
+}
+
 SableUI::Element::Element(Renderer* renderer, ElementType type)
 {
+    n_elements++;
     Init(renderer, type);
 }
 
@@ -198,9 +206,9 @@ void SableUI::Element::Render(int z)
 			SableUI_Error("Dynamic cast failed");
         }
 
-        for (Child child : children)
+        for (Child* child : children)
         {
-            Element* childElement = (Element*)child;
+            Element* childElement = (Element*)*child;
             childElement->Render(z + 1);
         }
         break;
@@ -216,14 +224,14 @@ void SableUI::Element::AddChild(Element* child)
 {
     if (type != ElementType::DIV) { SableUI_Error("Cannot add child to element not of type div"); return; };
     
-    children.push_back(child);
+    children.emplace_back(new Child(child));
 }
 
 void SableUI::Element::AddChild(BaseComponent* component)
 {
     if (type != ElementType::DIV) { SableUI_Error("Cannot add child to element not of type div"); return; };
 
-    children.push_back(component);
+    children.emplace_back(new Child(component));
 }
 
 void SableUI::Element::SetImage(const std::string& path)
@@ -263,18 +271,18 @@ int SableUI::Element::GetMinWidth()
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
         if (isVerticalFlow)
         {
-            for (Child& child : children)
+            for (Child* child : children)
             {
-                Element* childElement = (Element*)child;
+                Element* childElement = (Element*)*child;
                 int childTotalWidth = childElement->GetMinWidth() + childElement->marginLeft + childElement->marginRight;
                 calculatedMinWidth = std::max(calculatedMinWidth, childTotalWidth);
             }
         }
         else
         {
-            for (Child& child : children)
+            for (Child* child : children)
             {
-                Element* childElement = (Element*)child;
+                Element* childElement = (Element*)*child;
                 int childTotalWidth = childElement->GetMinWidth() + childElement->marginLeft + childElement->marginRight;
                 calculatedMinWidth += childTotalWidth;
             }
@@ -304,18 +312,18 @@ int SableUI::Element::GetMinHeight()
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
         if (isVerticalFlow)
         {
-            for (Child& child : children)
+            for (Child* child : children)
             {
-                Element* childElement = (Element*)child;
+                Element* childElement = (Element*)*child;
                 int childTotalHeight = childElement->GetMinHeight() + childElement->marginTop + childElement->marginBottom;
                 calculatedMinHeight += childTotalHeight;
             }
         }
         else
         {
-            for (Child& child : children)
+            for (Child* child : children)
             {
-                Element* childElement = (Element*)child;
+                Element* childElement = (Element*)*child;
                 int childTotalHeight = childElement->GetMinHeight() + childElement->marginTop + childElement->marginBottom;
                 calculatedMinHeight = std::max(calculatedMinHeight, childTotalHeight);
             }
@@ -362,9 +370,9 @@ void SableUI::Element::LayoutChildren()
     {
         SableUI_Warn("Container has zero or negative size ID: \"%s\"", ID.c_str());
         // Set all children to zero size
-        for (Child& child : children)
+        for (Child* child : children)
         {
-            Element* childElement = (Element*)child;
+            Element* childElement = (Element*)*child;
             childElement->SetRect({ rect.x, rect.y, 0, 0 });
             childElement->LayoutChildren();
         }
@@ -378,9 +386,9 @@ void SableUI::Element::LayoutChildren()
 
     if (contentAreaSize.x <= 0 || contentAreaSize.y <= 0)
     {
-        for (Child& child : children)
+        for (Child* child : children)
         {
-            Element* childElement = (Element*)child;
+            Element* childElement = (Element*)*child;
             childElement->SetRect({ contentAreaPosition.x, contentAreaPosition.y, 0, 0 });
             childElement->LayoutChildren();
         }
@@ -394,9 +402,9 @@ void SableUI::Element::LayoutChildren()
     int totalMarginMainAxis = 0;
     int fillMainAxisCount = 0;
 
-    for (Child& child : children)
+    for (Child* child : children)
     {
-        Element* childElement = (Element*)child;
+        Element* childElement = (Element*)*child;
 
         if (isVerticalFlow)
         {
@@ -448,9 +456,9 @@ void SableUI::Element::LayoutChildren()
 
     int distributedRemainder = 0;
 
-    for (Child& child : children)
+    for (Child* child : children)
     {
-        Element* childElement = (Element*)child;
+        Element* childElement = (Element*)*child;
 
         int childMarginWidth = childElement->marginLeft + childElement->marginRight;
         int childMarginHeight = childElement->marginTop + childElement->marginBottom;
@@ -689,17 +697,26 @@ void SableUI::Element::LayoutChildren()
 
 bool SableUI::Element::el_PropagateComponentStateChanges()
 {
-    for (Child& child : children)
-	{
-		if (child.type == ChildType::COMPONENT)
-		{
-            return child.component->comp_PropagateComponentStateChanges();
-		}
-        if (child.type == ChildType::ELEMENT)
-		{
-			return child.element->el_PropagateComponentStateChanges();
-		}
-        SableUI_Error("Unexpected union behaviour, you've been struck by the sun again");
+    for (Child* child : children)
+    {
+        bool res = false;
+        switch (child->type)
+        {
+        case ChildType::COMPONENT:
+        {
+			res = res || child->component->comp_PropagateComponentStateChanges();
+            break;
+        }
+        case ChildType::ELEMENT:
+        {
+			res = res || child->element->el_PropagateComponentStateChanges();
+            break;
+        }
+        default:
+			SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
+        }
+
+        if (res) return true;
 	}
 
     return false;
@@ -719,9 +736,9 @@ void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
         if (m_onHoverExitFunc) m_onHoverExitFunc();
     }
 
-    for (Child& child : children)
+    for (Child* child : children)
     {
-        Element* el = (Element*)child;
+        Element* el = (Element*)*child;
         el->HandleHoverEvent(mousePos);
     }
 }
@@ -740,30 +757,19 @@ void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
         if (m_onSecondaryClickFunc) m_onSecondaryClickFunc();
     }
 
-    for (Child& child : children)
+    for (Child* child : children)
     {
-        Element* el = (Element*)child;
+        Element* el = (Element*)*child;
 		el->HandleMouseClickEvent(mouseState);
     }
 }
 
 SableUI::Element::~Element()
 {
+    n_elements--;
     delete drawable;
 
-    for (Child& child : children)
-    {
-        if (child.type == ChildType::ELEMENT)
-        {
-            delete child.element;
-        }
-        else if (child.type == ChildType::COMPONENT)
-        {
-            delete child.component;
-        }
-        else
-        {
-            SableUI_Error("Unexpected union behaviour");
-        }
-    }
+    for (Child* child : children) delete child;
+
+    SableUI_Log("Del");
 }

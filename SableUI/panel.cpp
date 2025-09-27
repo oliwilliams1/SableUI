@@ -487,5 +487,11 @@ void SableUI::Panel::HandleMouseClickEventPanel(const MouseButtonState& mouseSta
 
 void SableUI::Panel::PropagateComponentStateChanges()
 {
-	if (m_component->comp_PropagateComponentStateChanges()) Update();
+	if (m_component->comp_PropagateComponentStateChanges())
+	{
+		m_component->Rerender();
+		m_component->GetRootElement()->LayoutChildren();
+		Update();
+		SableUI_Log("Root re-render");
+	}
 }

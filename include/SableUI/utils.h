@@ -234,10 +234,23 @@ namespace SableUI
 		Rect(int x, int y, int w, int h, RectType wType, RectType hType)
 			: x(x), y(y), w(w), h(h), wType(wType), hType(hType) {}
 
-		int x = 0;
-		int y = 0;
-		int w = 0;
-		int h = 0;
+		union
+		{
+			struct
+			{
+				int x;
+				int y;
+				int w;
+				int h;
+			};
+			struct
+			{
+				int xPos;
+				int yPos;
+				int width;
+				int height;
+			};
+		};
 
 		RectType wType = UNDEF;
 		RectType hType = UNDEF;

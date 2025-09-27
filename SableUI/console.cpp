@@ -25,7 +25,6 @@ static void ResetColour()
 
 static Console* s_ConsoleInstance = nullptr;
 
-
 static std::tm getLocalTime() {
 	std::time_t now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::tm now_tm;

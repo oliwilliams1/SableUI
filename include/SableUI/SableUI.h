@@ -12,7 +12,7 @@ namespace SableUI
     void EndSplitter();
     Panel* AddPanel();
     
-    Element* StartDiv(const ElementInfo& info = {});
+    Element* StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
     void EndDiv();
 
     Element* AddRect(const ElementInfo& info = {});

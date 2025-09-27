@@ -99,7 +99,7 @@ SableUI::Element* SableUI::GetCurrentElement()
 	return s_elementStack.top();
 }
 
-SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info)
+SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 {
     SableUI::ElementInfo info = p_info;
 
@@ -113,12 +113,21 @@ SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info)
     }
 
     Element* parent = s_elementStack.top();
+
     Element* newDiv = new Element(s_elementRenderer, ElementType::DIV);
-
     newDiv->SetInfo(info);
-    parent->AddChild(newDiv);
-    s_elementStack.push(newDiv);
 
+    if (child == nullptr)
+    {
+        parent->AddChild(newDiv);
+    }
+    else
+    {
+        child->SetRootElement(newDiv);
+        parent->AddChild(child);
+    }
+
+    s_elementStack.push(newDiv);
     return newDiv;
 }
 
