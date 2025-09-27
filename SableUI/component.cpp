@@ -1,13 +1,16 @@
 #include "SableUI/component.h"
 #include "SableUI/SableUI.h"
 
+static int s_ctr = 0;
 SableUI::BaseComponent::BaseComponent(Colour colour)
 {
+	s_ctr++;
 	m_bgColour = colour;
 }
 
 SableUI::BaseComponent::~BaseComponent()
 {
+	s_ctr--;
 	if (rootElement) delete rootElement;
 }
 

@@ -90,6 +90,7 @@ namespace SableUI
     struct Panel : public BasePanel
     {
         Panel(BasePanel* parent, Renderer* renderer);
+        ~Panel();
 
         void Render() override;
         SplitterPanel* AddSplitter(PanelType type) override;

@@ -16,6 +16,7 @@ namespace SableUI
 	{
 	public:
 		Window(const std::string& title, int width, int height, int x = -1, int y = -1);
+		~Window();
 
 		bool PollEvents();
 		void Draw();
@@ -26,8 +27,6 @@ namespace SableUI
 
 		void RerenderAllNodes();
 		void RecalculateNodes();
-
-		~Window();
 
 		ivec2 m_mousePos = ivec2(0, 0);
 		MouseButtonState m_mouseButtonStates;

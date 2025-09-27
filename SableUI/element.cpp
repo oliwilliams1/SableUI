@@ -4,6 +4,18 @@
 
 static int n_elements = 0;
 
+SableUI::Child::~Child()
+{
+    if (type == ChildType::ELEMENT)
+    {
+        delete element;
+    }
+    else if (type == ChildType::COMPONENT)
+    {
+        delete component;
+    }
+}
+
 /* child struct */
 SableUI::Child::operator SableUI::Element* ()
 {
@@ -227,11 +239,11 @@ void SableUI::Element::AddChild(Element* child)
     children.emplace_back(new Child(child));
 }
 
-void SableUI::Element::AddChild(BaseComponent* component)
+void SableUI::Element::AddChild(Child* child)
 {
     if (type != ElementType::DIV) { SableUI_Error("Cannot add child to element not of type div"); return; };
 
-    children.emplace_back(new Child(component));
+    children.emplace_back(child);
 }
 
 void SableUI::Element::SetImage(const std::string& path)
@@ -770,6 +782,5 @@ SableUI::Element::~Element()
     delete drawable;
 
     for (Child* child : children) delete child;
-
-    SableUI_Log("Del");
+    children.clear();
 }

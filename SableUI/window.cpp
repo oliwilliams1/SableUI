@@ -680,6 +680,7 @@ int SableUI::Window::GetRefreshRate()
 
 SableUI::Window::~Window()
 {
+	delete m_root;
 	DestroyFontManager();
 	DestroyDrawables();
 

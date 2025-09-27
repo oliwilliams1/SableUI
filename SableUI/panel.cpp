@@ -47,9 +47,8 @@ SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(null
 SableUI::RootPanel::~RootPanel()
 {
 	for (SableUI::BasePanel* child : children)
-	{
 		delete child;
-	}
+	children.clear();
 }
 
 void SableUI::RootPanel::Render()
@@ -283,7 +282,6 @@ void SableUI::SplitterPanel::CalculateScales()
 	}
 }
 
-
 void SableUI::SplitterPanel::CalculatePositions()
 {
 	if (children.empty()) return;
@@ -405,9 +403,7 @@ void SableUI::SplitterPanel::Update()
 SableUI::SplitterPanel::~SplitterPanel()
 {
 	for (BasePanel* child : children)
-	{
 		delete child;
-	}
 	children.clear();
 }
 
@@ -416,6 +412,11 @@ static int s_ctr = 0;
 SableUI::Panel::Panel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
 {
 	type = PanelType::BASE;
+}
+
+SableUI::Panel::~Panel()
+{
+	delete m_component;
 }
 
 SableUI::SplitterPanel* SableUI::Panel::AddSplitter(PanelType type)
@@ -492,6 +493,5 @@ void SableUI::Panel::PropagateComponentStateChanges()
 		m_component->Rerender();
 		m_component->GetRootElement()->LayoutChildren();
 		Update();
-		SableUI_Log("Root re-render");
 	}
 }

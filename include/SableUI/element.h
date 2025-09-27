@@ -1,5 +1,4 @@
 #pragma once
-
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -129,29 +128,8 @@ namespace SableUI
 		COMPONENT = 0x1,
 	};
 
+	struct Child;
 	class BaseComponent;
-	struct Child
-	{
-		ChildType type = ChildType::ELEMENT;
-		union
-		{
-			BaseComponent* component;
-			class Element* element;
-		};
-
-		Child(Element* element) : element(element), type(ChildType::ELEMENT) {}
-		Child(BaseComponent* component) : component(component), type(ChildType::COMPONENT) {}
-
-		~Child()
-		{
-			if (type == ChildType::ELEMENT)
-				delete element;
-			else if (type == ChildType::COMPONENT)
-				delete component;
-		}
-
-		operator SableUI::Element* ();
-	};
 
 	class Element
 	{
@@ -167,7 +145,7 @@ namespace SableUI
 		void SetInfo(const ElementInfo& info);
 		void SetRect(const Rect& rect);
 		void AddChild(Element* child);
-		void AddChild(BaseComponent* component);
+		void AddChild(Child* component);
 		void SetImage(const std::string& path);
 		void SetText(const SableString& text, int fontSize = 11, float lineHeight = 1.15f);
 		int GetMinWidth();
@@ -261,5 +239,22 @@ namespace SableUI
 		bool isHovered = false;
 		DrawableBase* drawable = nullptr;
 		Renderer* renderer = nullptr;
+	};
+
+	struct Child
+	{
+		ChildType type = ChildType::ELEMENT;
+		union
+		{
+			BaseComponent* component;
+			Element* element;
+		};
+
+		Child(Element* element) : element(element), type(ChildType::ELEMENT) {}
+		Child(BaseComponent* component) : component(component), type(ChildType::COMPONENT) {}
+
+		~Child();
+
+		operator SableUI::Element* ();
 	};
 }

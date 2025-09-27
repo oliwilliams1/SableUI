@@ -124,7 +124,7 @@ SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* ch
     else
     {
         child->SetRootElement(newDiv);
-        parent->AddChild(child);
+        parent->AddChild(new Child(child));
     }
 
     s_elementStack.push(newDiv);
