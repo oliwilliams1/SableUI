@@ -4,18 +4,21 @@
 #include <string>
 #include <chrono>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
 #include "SableUI/panel.h"
 #pragma warning(pop)
 
+struct GLFWcursor;
+struct GLFWwindow;
+
 namespace SableUI
 {
+	void SableUI_Window_Initalise_GLFW();
+	void SableUI_Window_Terminate_GLFW();
+
 	class Window
 	{
 	public:
-		Window(const std::string& title, int width, int height, int x = -1, int y = -1);
+		Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x = -1, int y = -1);
 		~Window();
 
 		bool PollEvents();
@@ -33,6 +36,9 @@ namespace SableUI
 		ivec2 m_windowSize = ivec2(0, 0);
 
 	private:
+		void InitOpenGL();
+		void InitVulkan();
+
 		int GetRefreshRate();
 		Renderer m_renderer;
 
@@ -46,9 +52,6 @@ namespace SableUI
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
-
-		int CalculateMinimumWidth(BasePanel* node);
-		int CalculateMinimumHeight(BasePanel* node);
 
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;

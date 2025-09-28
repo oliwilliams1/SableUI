@@ -232,3 +232,178 @@ SableUI::Element* SableUI::AddTextU32(const SableString& text, const ElementInfo
 
     return newTextU32;
 }
+
+class App
+{
+public:
+    App(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
+    ~App();
+
+    SableUI::Window* CreateSecondaryWindow(const char* name, int width, int height, int x, int y);
+
+    bool PollEvents();
+    void Render();
+
+    SableUI::Window* m_mainWindow = nullptr;
+    std::vector<SableUI::Window*> m_secondaryWindows;
+};
+
+static App* s_app = nullptr;
+static SableUI::Backend s_backend = SableUI::Backend::UNDEF;
+
+void SableUI::PreInit(int argc, char** argv)
+{
+    if (s_app != nullptr)
+    {
+        SableUI_Runtime_Error("SableUI::PreInit() must be called before SableUI::Initalise()");
+    }
+
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "--opengl") == 0)
+        {
+            s_backend = SableUI::Backend::OpenGL;
+            return;
+        }
+        else if (strcmp(argv[i], "--vulkan") == 0)
+        {
+            s_backend = SableUI::Backend::Vulkan;
+            return;
+        }
+    }
+}
+
+void SableUI::SetBackend(const SableUI::Backend& backend)
+{
+    if (s_app != nullptr)
+    {
+        SableUI_Error("SableUI::SetBackend() must be called before SableUI::Initalise()");
+        return;
+    }
+
+    if (s_backend != SableUI::Backend::UNDEF) return;
+
+    s_backend = backend;
+    SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
+}
+
+SableUI::Window* SableUI::Initialise(const char* name, int width, int height, int x, int y)
+{
+    if (s_app != nullptr)
+    {
+        SableUI_Runtime_Error("SableUI has already been initialised");
+    }
+
+    if (s_backend == SableUI::Backend::UNDEF)
+    {
+        s_backend = SableUI::Backend::OpenGL;
+    }
+
+    s_app = new App(name, width, height, x, y);
+
+    return s_app->m_mainWindow;
+}
+
+void SableUI::Shutdown()
+{
+    if (s_app == nullptr)
+    {
+        SableUI_Runtime_Error("SableUI has not been initialised");
+    }
+
+    delete s_app;
+    s_app = nullptr;
+}
+
+SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
+{
+    if (s_app == nullptr)
+    {
+        SableUI_Runtime_Error("SableUI has not been initialised");
+    }
+
+    return s_app->CreateSecondaryWindow(name, width, height, x, y);
+}
+
+bool SableUI::PollEvents() {
+    if (s_app == nullptr) return false;
+    return s_app->PollEvents();
+}
+
+void SableUI::Render() {
+    if (s_app == nullptr) return;
+    s_app->Render();
+}
+
+/* ------------- APP IMPLEMENTATION ------------- */
+
+App::App(const char* name, int width, int height, int x, int y)
+{
+    SableUI::SableUI_Window_Initalise_GLFW();
+
+    m_mainWindow = new SableUI::Window(s_backend, nullptr, name, width, height, x, y);
+
+    SableUI::InitFontManager();
+    SableUI::InitDrawables();
+    SableUI::SetContext(m_mainWindow);
+}
+
+SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
+{
+    if (m_mainWindow == nullptr) SableUI_Runtime_Error("Cannot create secondary window without main window");
+
+    SableUI::Window* window = new SableUI::Window(s_backend, s_app->m_mainWindow, name, width, height, x, y);
+    m_secondaryWindows.push_back(window);
+    SableUI::SetContext(window);
+    return window;
+}
+
+bool App::PollEvents()
+{
+    if (m_mainWindow == nullptr) return false;
+    if (!m_mainWindow->PollEvents()) return false;
+
+    for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
+    {
+        SableUI::Window* window = *it;
+        if (!window->PollEvents())
+        {
+            delete window;
+            it = m_secondaryWindows.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
+
+    return true;
+}
+
+void App::Render()
+{
+    if (m_mainWindow == nullptr) return;
+
+    m_mainWindow->Draw();
+
+    for (SableUI::Window* window : m_secondaryWindows)
+    {
+        window->Draw();
+    }
+}
+
+App::~App()
+{
+    SableUI::DestroyFontManager();
+    SableUI::DestroyDrawables();
+
+    for (SableUI::Window* window : m_secondaryWindows) delete window;
+    m_secondaryWindows.clear();
+
+    delete m_mainWindow;
+    m_mainWindow = nullptr;
+
+    SableUI::SableUI_Window_Terminate_GLFW();
+
+    SableUI_Log("Shut down successfully");
+}

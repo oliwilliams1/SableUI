@@ -94,10 +94,9 @@ private:
 
 int main(int argc, char** argv)
 {
-	using namespace SableUI;
-
-	Window mainWindow("SableUI Layout Test", 1600, 1000);
-	SetContext(&mainWindow);
+	SableUI::PreInit(argc, argv);
+	//SableUI::SetBackend(SableUI::Backend::Vulkan);
+	SableUI::Initialise("SableUI Test", 1600, 900);
 
 	HSplitter()
 	{
@@ -126,10 +125,15 @@ int main(int argc, char** argv)
 		}
 	}
 
-	while (mainWindow.PollEvents())
+	SableUI::CreateSecondaryWindow();
+	PanelWith(TestComponent, 128);
+
+	while (SableUI::PollEvents())
 	{
-		mainWindow.Draw();
+		SableUI::Render();
 	}
+
+	SableUI::Shutdown();
 
 	return 0;
 }

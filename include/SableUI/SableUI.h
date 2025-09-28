@@ -4,6 +4,17 @@
 /* non-macro user api */
 namespace SableUI
 {
+    void PreInit(int argc, char** argv);
+    void SetBackend(const Backend& backend);
+
+    Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
+    void Shutdown();
+
+    Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
+
+    bool PollEvents();
+    void Render();
+
     void SetElementBuilderContext(Renderer* renderer, Element* rootElement);
     void SetContext(Window* window);
     Element* GetCurrentElement();
@@ -19,10 +30,7 @@ namespace SableUI
     Element* AddImage(const std::string& path, const ElementInfo& info = {});
     Element* AddText(const std::string& text, const ElementInfo& info = {});
     Element* AddTextU32(const SableString& text, const ElementInfo& info = {});
-}
 
-namespace SableUI
-{
     struct DivScope
     {
     public:

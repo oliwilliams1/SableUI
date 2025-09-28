@@ -46,8 +46,7 @@ SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(null
 
 SableUI::RootPanel::~RootPanel()
 {
-	for (SableUI::BasePanel* child : children)
-		delete child;
+	for (SableUI::BasePanel* child : children) delete child;
 	children.clear();
 }
 
