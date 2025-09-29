@@ -4,6 +4,51 @@
 
 static int n_elements = 0;
 
+static std::size_t ComputeHash(const SableUI::VirtualNode* vnode)
+{
+    std::size_t h = 0;
+
+    h ^= std::hash<int>()((int)vnode->type);
+
+    if (vnode->uniqueTextOrPath.size() != 0)
+        h ^= std::hash<std::string>()(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()));
+
+    h ^= std::hash<int>()((int)vnode->info.wType);
+    h ^= std::hash<int>()((int)vnode->info.hType);
+    h ^= std::hash<int>()(vnode->info.minWidth ^ vnode->info.minHeight ^
+        vnode->info.maxWidth    ^ vnode->info.maxHeight ^
+        vnode->info.marginTop   ^ vnode->info.marginBottom ^
+        vnode->info.marginLeft  ^ vnode->info.marginRight ^
+        vnode->info.paddingTop  ^ vnode->info.paddingBottom ^
+        vnode->info.paddingLeft ^ vnode->info.paddingRight);
+
+    h ^= std::hash<int>()((int)vnode->info.layoutDirection);
+
+    return h;
+}
+
+static std::size_t ComputeHash(const SableUI::Element* elem)
+{
+    std::size_t h = 0;
+    h ^= std::hash<int>()((int)elem->type);
+
+    if (elem->uniqueTextOrPath.size() != 0)
+        h ^= std::hash<std::string>()(std::string(elem->uniqueTextOrPath.begin(), elem->uniqueTextOrPath.end()));
+
+    h ^= std::hash<int>()((int)elem->wType);
+    h ^= std::hash<int>()((int)elem->hType);
+    h ^= std::hash<int>()(elem->minWidth ^ elem->minHeight ^
+        elem->maxWidth      ^ elem->maxHeight ^
+        elem->marginTop     ^ elem->marginBottom ^
+        elem->marginLeft    ^ elem->marginRight ^
+        elem->paddingTop    ^ elem->paddingBottom ^
+        elem->paddingLeft   ^ elem->paddingRight);
+
+    h ^= std::hash<int>()((int)elem->layoutDirection);
+
+    return h;
+}
+
 SableUI::Child::~Child()
 {
     if (type == ChildType::ELEMENT)
@@ -133,7 +178,7 @@ void SableUI::Element::SetRect(const Rect& r)
 
 void SableUI::Element::SetInfo(const ElementInfo& info)
 {
-    this->ID                        = info.ID;
+    this->ID                        = info.id;
     this->width                     = info.width;
     this->minWidth                  = info.minWidth;
     this->maxWidth                  = info.maxWidth;
@@ -705,6 +750,84 @@ void SableUI::Element::LayoutChildren()
         SetRect({ rect.x, rect.y, totalChildWidth + paddingLeft + paddingRight, totalChildHeight + paddingTop + paddingBottom });
         LayoutChildren();
     }
+}
+
+#include "SableUI/SableUI.h"
+void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* parent)
+{
+    if (!vnode) return;
+
+    switch (vnode->type)
+    {
+    case ElementType::DIV:
+    {
+        StartDiv(vnode->info, vnode->childComp);
+
+        for (VirtualNode* vchild : vnode->children)
+            BuildRealSubtreeFromVirtual(vchild, nullptr);
+
+        EndDiv();
+        break;
+    }
+
+    case ElementType::RECT:
+    {
+        AddRect(vnode->info);
+        break;
+    }
+
+    case ElementType::TEXT:
+    {
+        AddText(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()), vnode->info);
+        break;
+    }
+
+    case ElementType::TEXT_U32:
+    {
+        AddTextU32(vnode->uniqueTextOrPath, vnode->info);
+        break;
+    }
+
+    case ElementType::IMAGE:
+    {
+        AddImage(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()), vnode->info);
+        break;
+    }
+    }
+}
+
+bool SableUI::Element::Reconcile(VirtualNode* vnode)
+{
+    if (this->type != vnode->type || ComputeHash(this) != ComputeHash(vnode))
+    {
+        for (Child* child : children) delete child;
+        children.clear();
+
+        SetElementBuilderContext(renderer, this, true);
+        BuildRealSubtreeFromVirtual(vnode, this);
+
+        return true;
+    }
+
+    size_t minCount = std::min(children.size(), vnode->children.size());
+    for (size_t i = 0; i < minCount; i++)
+    {
+        Element* el = (Element*)*children[i];
+        el->Reconcile(vnode->children[i]);
+    }
+
+    for (size_t i = minCount; i < vnode->children.size(); i++)
+    {
+        SetElementBuilderContext(renderer, this, true);
+        BuildRealSubtreeFromVirtual(vnode->children[i], this);
+    }
+
+    for (size_t i = vnode->children.size(); i < children.size(); i++) {
+        delete children[i];
+    }
+    children.resize(vnode->children.size());
+
+    return false;
 }
 
 bool SableUI::Element::el_PropagateComponentStateChanges()

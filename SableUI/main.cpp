@@ -1,21 +1,20 @@
 ﻿#include "SableUI/SableUI.h"
 
-class HoverImageView : public SableUI::BaseComponent
+class ToggleImageView : public SableUI::BaseComponent
 {
 public:
-	HoverImageView() : SableUI::BaseComponent() {};
+	ToggleImageView() : SableUI::BaseComponent() {};
 
 	void Layout() override
 	{
-		std::string path = (isHovered) ? "bomb.webp" : "junior.jpg";
+		std::string path = (toggleState) ? "bomb.webp" : "junior.jpg";
 
 		Div(w(128) h_fit)
 		{
 			Div(bg(128, 32, 32) p(2)
-				onHover([&]() { setIsHovered(true); })
-				onHoverExit([&]() { setIsHovered(false); }))
+				onClick([&]() { setToggleState(!toggleState); }))
 			{
-				Text("Hover to change image. Loaded: " + path);
+				Text("Click to change image. Loaded: " + path);
 			}
 
 			Image(path, w(128) h(128));
@@ -23,7 +22,7 @@ public:
 	}
 
 private:
-	useState(isHovered, setIsHovered, bool, false);
+	useState(toggleState, setToggleState, bool, false);
 };
 
 class TestComponent : public SableUI::BaseComponent
@@ -54,7 +53,7 @@ public:
 				Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
 			}
 
-			Component(HoverImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
+			Component(ToggleImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 		Rect(m(5) w(60) h(60) bg(255, 128, 0));
@@ -114,7 +113,7 @@ int main(int argc, char** argv)
 					}
 				}
 			}
-			PanelWith(HoverImageView);
+			PanelWith(ToggleImageView);
 
 		}
 		VSplitter()
@@ -124,8 +123,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-	SableUI::CreateSecondaryWindow();
-	PanelWith(ImageView, "dirtywork.jpg", 160, 160);
+	//SableUI::CreateSecondaryWindow();
+	//PanelWith(ImageView, "dirtywork.jpg", 160, 160);
 
 	while (SableUI::PollEvents())
 	{

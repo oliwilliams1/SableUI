@@ -24,7 +24,7 @@ void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 	rootElement->Init(renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
 
-	SetElementBuilderContext(renderer, rootElement);
+	SetElementBuilderContext(renderer, rootElement, false);
 	Layout();
 }
 
@@ -48,22 +48,21 @@ bool SableUI::BaseComponent::Rerender()
 {
 	Rect oldRect = { rootElement->rect };
 
-	for (Child* child : rootElement->children) delete child;
-	rootElement->children.clear();
-
-	SetElementBuilderContext(m_renderer, rootElement);
+	// Generate virual tree
+	SableUI::SetElementBuilderContext(m_renderer, rootElement, true);
 	Layout();
+	VirtualNode* virtualRoot = SableUI::GetVirtualRootNode();
+
+	rootElement->Reconcile(virtualRoot);
 
 	rootElement->LayoutChildren();
-	rootElement->LayoutChildren(); // dirty fix
+	rootElement->LayoutChildren();
 
-	Rect newRect = { rootElement->rect };
-
-	if (oldRect.w != rootElement->rect.w || oldRect.h != rootElement->rect.h)
+	Rect newRect = rootElement->rect;
+	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
 	needsRerender = false;
-
 	rootElement->Render();
 
 	return false;

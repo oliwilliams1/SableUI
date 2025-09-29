@@ -4,6 +4,9 @@
 /* non-macro user api */
 namespace SableUI
 {
+    struct ElementInfo;
+    class Element;
+
     void PreInit(int argc, char** argv);
     void SetBackend(const Backend& backend);
 
@@ -15,21 +18,29 @@ namespace SableUI
     bool PollEvents();
     void Render();
 
-    void SetElementBuilderContext(Renderer* renderer, Element* rootElement);
+    void SetElementBuilderContext(Renderer* renderer, Element* rootElement, bool isVirtual);
     void SetContext(Window* window);
     Element* GetCurrentElement();
+    VirtualNode* GetVirtualRootNode();
     
     SplitterPanel* StartSplitter(PanelType orientation);
     void EndSplitter();
     Panel* AddPanel();
     
-    Element* StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
-    void EndDiv();
+    void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
+    void EndDivVirtual();
+    void AddRectVirtual(const ElementInfo& info = {});
+	void AddImageVirtual(const std::string& path, const ElementInfo& info = {});
+	void AddTextVirtual(const std::string& text, const ElementInfo& info = {});
+	void AddTextU32Virtual(const SableString& text, const ElementInfo& info = {});
 
-    Element* AddRect(const ElementInfo& info = {});
-    Element* AddImage(const std::string& path, const ElementInfo& info = {});
-    Element* AddText(const std::string& text, const ElementInfo& info = {});
-    Element* AddTextU32(const SableString& text, const ElementInfo& info = {});
+    void StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
+    void EndDiv();
+    void AddRect(const ElementInfo& info = {});
+    void AddImage(const std::string& path, const ElementInfo& info = {});
+    void AddText(const std::string& text, const ElementInfo& info = {});
+    void AddTextU32(const SableString& text, const ElementInfo& info = {});
+
 
     void* GetCurrentContext();
 

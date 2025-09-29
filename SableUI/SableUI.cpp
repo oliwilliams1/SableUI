@@ -1,4 +1,5 @@
 #include "SableUI/SableUI.h"
+#include "SableUI/component.h"
 #include <stack>
 
 /* Panel builder */
@@ -6,12 +7,86 @@ static SableUI::Window* s_currentContext = nullptr;
 static SableUI::BasePanel* s_currentPanel = nullptr;
 static std::stack<SableUI::BasePanel*> s_panelStack;
 
+static std::stack<SableUI::VirtualNode*> s_virtualStack;
+static SableUI::VirtualNode* s_virtualRoot = nullptr;
+static bool s_reconciliationMode = false;
+
 void SableUI::SetContext(SableUI::Window* window)
 {
     s_currentContext = window;
     s_currentPanel = s_currentContext->GetRoot();
 }
 
+/* Virtual node builder */
+void SableUI::StartDivVirtual(const SableUI::ElementInfo& info, SableUI::BaseComponent* child)
+{
+    VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
+
+    auto* vnode = new VirtualNode();
+    vnode->type = ElementType::DIV;
+    vnode->info = info;
+    vnode->childComp = child;
+
+    if (parent) parent->children.push_back(vnode);
+    else s_virtualRoot = vnode;
+
+    s_virtualStack.push(vnode);
+}
+
+void SableUI::EndDivVirtual()
+{
+    if (s_virtualStack.empty()) return;
+    s_virtualStack.pop();
+}
+
+void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
+{
+    VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
+    auto* vnode = new VirtualNode();
+    vnode->type = ElementType::RECT;
+    vnode->info = info;
+
+    if (parent) parent->children.push_back(vnode);
+    else s_virtualRoot = vnode;
+}
+
+void SableUI::AddTextVirtual(const std::string& text, const SableUI::ElementInfo& info)
+{
+    VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
+    auto* vnode = new VirtualNode();
+    vnode->type = ElementType::TEXT;
+    vnode->uniqueTextOrPath = text.c_str();
+    vnode->info = info;
+
+    if (parent) parent->children.push_back(vnode);
+    else s_virtualRoot = vnode;
+}
+
+void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info)
+{
+    VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
+    auto* vnode = new VirtualNode();
+    vnode->type = ElementType::TEXT;
+    vnode->uniqueTextOrPath = text;
+    vnode->info = info;
+
+    if (parent) parent->children.push_back(vnode);
+    else s_virtualRoot = vnode;
+}
+
+void SableUI::AddImageVirtual(const std::string& path, const SableUI::ElementInfo& info)
+{
+    VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
+    auto* vnode = new VirtualNode();
+    vnode->type = ElementType::IMAGE;
+    vnode->uniqueTextOrPath = path.c_str();
+    vnode->info = info;
+
+    if (parent) parent->children.push_back(vnode);
+    else s_virtualRoot = vnode;
+}
+
+/* Splitters & Panels */
 SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 {
     if (s_currentContext == nullptr)
@@ -69,24 +144,40 @@ SableUI::Panel* SableUI::AddPanel()
     return panel;
 }
 
-/* Element builder */
+/* Real Element builder */
 static std::stack<SableUI::Element*> s_elementStack;
 static SableUI::Renderer* s_elementRenderer = nullptr;
 
-void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement)
+void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement, bool isVirtual)
 {
-    if (rootElement == nullptr)
-    {
-        SableUI_Error("rootElement is nullptr in SetElementBuilderContext");
-    }
+    s_reconciliationMode = isVirtual;
 
-    s_elementRenderer = renderer;
-    s_elementStack = {};
-    if (rootElement)
+    if (isVirtual)
     {
+        delete s_virtualRoot;
+        s_virtualStack = std::stack<VirtualNode*>();
+        s_virtualRoot = new VirtualNode();
+        s_virtualStack.push(s_virtualRoot);
+    }
+    else
+    {
+        if (rootElement == nullptr)
+        {
+            SableUI_Error("rootElement is nullptr in SetElementBuilderContext");
+            return;
+        }
+
+        s_elementRenderer = renderer;
+        s_elementStack = std::stack<Element*>();
         s_elementStack.push(rootElement);
     }
 }
+
+SableUI::VirtualNode* SableUI::GetVirtualRootNode()
+{
+    return s_virtualRoot;
+}
+
 
 SableUI::Element* SableUI::GetCurrentElement()
 {
@@ -99,8 +190,9 @@ SableUI::Element* SableUI::GetCurrentElement()
 	return s_elementStack.top();
 }
 
-SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
+void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 {
+    if (s_reconciliationMode) return StartDivVirtual(p_info, child);
     SableUI::ElementInfo info = p_info;
 
     if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
@@ -109,7 +201,7 @@ SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* ch
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
         SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-        return nullptr;
+        return;
     }
 
     Element* parent = s_elementStack.top();
@@ -128,11 +220,11 @@ SableUI::Element* SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* ch
     }
 
     s_elementStack.push(newDiv);
-    return newDiv;
 }
 
 void SableUI::EndDiv()
 {
+    if (s_reconciliationMode) return EndDivVirtual();
     if (s_elementStack.empty())
     {
         SableUI_Error("EndDiv() called without a matching StartDiv()");
@@ -142,8 +234,9 @@ void SableUI::EndDiv()
     s_elementStack.pop();
 }
 
-SableUI::Element* SableUI::AddRect(const ElementInfo& p_info)
+void SableUI::AddRect(const ElementInfo& p_info)
 {
+    if (s_reconciliationMode) return AddRectVirtual(p_info);
     SableUI::ElementInfo info = p_info;
 
     if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
@@ -152,7 +245,7 @@ SableUI::Element* SableUI::AddRect(const ElementInfo& p_info)
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
         SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-        return nullptr;
+        return;
     }
 
     Element* parent = s_elementStack.top();
@@ -160,35 +253,34 @@ SableUI::Element* SableUI::AddRect(const ElementInfo& p_info)
 
     newRect->SetInfo(info);
     parent->AddChild(newRect);
-
-    return newRect;
 }
 
-SableUI::Element* SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
+void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 {
+    if (s_reconciliationMode) return AddImageVirtual(path, p_info);
     SableUI::ElementInfo info = p_info;
 
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
 
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
-	{
-		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-		return nullptr;
-	}
+    {
+        SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
+        return;
+    }
 
     Element* parent = s_elementStack.top();
     Element* newImage = new Element(s_elementRenderer, ElementType::IMAGE);
 
+    newImage->uniqueTextOrPath = path.c_str();
     newImage->SetInfo(info);
 	newImage->SetImage(path);
 	parent->AddChild(newImage);
-
-    return newImage;
 }
 
-SableUI::Element* SableUI::AddText(const std::string& text, const ElementInfo& p_info)
+void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
 {
+    if (s_reconciliationMode) return AddTextVirtual(text, p_info);
     SableUI::ElementInfo info = p_info;
 
     if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
@@ -197,21 +289,21 @@ SableUI::Element* SableUI::AddText(const std::string& text, const ElementInfo& p
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
         SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-        return nullptr;
+        return;
     }
 
     Element* parent = s_elementStack.top();
     Element* newText = new Element(s_elementRenderer, ElementType::TEXT);
 
+    newText->uniqueTextOrPath = text.c_str();
     newText->SetInfo(info);
     newText->SetText(text.c_str());
     parent->AddChild(newText);
-
-    return newText;
 }
 
-SableUI::Element* SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
+void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 {
+    if (s_reconciliationMode) return AddTextU32Virtual(text, p_info);
     SableUI::ElementInfo info = p_info;
 
     if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
@@ -220,17 +312,16 @@ SableUI::Element* SableUI::AddTextU32(const SableString& text, const ElementInfo
     if (s_elementStack.empty() || s_elementRenderer == nullptr)
     {
         SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-        return nullptr;
+        return;
     }
 
     Element* parent = s_elementStack.top();
     Element* newTextU32 = new Element(s_elementRenderer, ElementType::TEXT);
 
+    newTextU32->uniqueTextOrPath = text;
     newTextU32->SetInfo(info);
     newTextU32->SetText(text);
     parent->AddChild(newTextU32);
-
-    return newTextU32;
 }
 
 class App

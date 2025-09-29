@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <any>
+#include <string>
 
 #include "SableUI/utils.h"
 #include "SableUI/renderer.h"
@@ -39,6 +41,7 @@ namespace SableUI
 		IMAGE = 0x2,
 		TEXT = 0x3,
 		DIV = 0x4,
+		TEXT_U32 = 0x5
 	};
 
 	enum class LayoutDirection
@@ -51,7 +54,7 @@ namespace SableUI
 
 	struct ElementInfo
 	{
-		std::string ID;
+		std::string id;
 
 		// attribs
 		Colour bgColour = Colour(128, 128, 128);
@@ -75,6 +78,7 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 		ElementType type = ElementType::UNDEF;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
+		SableString textOrPath = "";
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
@@ -82,7 +86,7 @@ namespace SableUI
 		std::function<void()> onSecondaryClickFunc = nullptr;
 
 		// setter functions for macros
-		ElementInfo& setID(const std::string& v)			{ ID = v; return *this; }
+		ElementInfo& setID(const std::string& v)			{ id = v; return *this; }
 		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
 		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
 		ElementInfo& setMinWidth(int v)						{ minWidth = v; return *this; }
@@ -122,6 +126,19 @@ namespace SableUI
 		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
 	};
 
+	class BaseComponent;
+	struct VirtualNode
+	{
+		ElementType type;
+		std::string key;
+		std::vector<VirtualNode*> children;
+		ElementInfo info;
+		SableString uniqueTextOrPath;
+		BaseComponent* childComp = nullptr;
+
+		std::unordered_map<std::string, std::any> state;
+	};
+
 	enum class ChildType
 	{
 		ELEMENT = 0x0,
@@ -129,7 +146,6 @@ namespace SableUI
 	};
 
 	struct Child;
-	class BaseComponent;
 
 	class Element
 	{
@@ -173,6 +189,7 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
+		SableString uniqueTextOrPath = "";
 
 		std::function<void()> m_onHoverFunc = nullptr;
 		std::function<void()> m_onHoverExitFunc = nullptr;
@@ -220,6 +237,9 @@ namespace SableUI
 		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
 
 		/* internal functions */
+		bool Reconcile(VirtualNode* vnode);
+		void BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* parent);
+
 		// event system
 		bool el_PropagateComponentStateChanges();
 		void HandleHoverEvent(const ivec2& mousePos);
