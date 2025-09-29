@@ -1,12 +1,14 @@
 #include <memory>
+#include <map>
 #include <algorithm>
 #include "SableUI/drawable.h"
 #include "SableUI/shader.h"
+#include "SableUI/window.h"
 
-/* rect globals */
-static GLuint g_rectVAO = 0;
-static GLuint g_rectVBO = 0;
-static GLuint g_rectEBO = 0;
+/* rect globals - now per-context */
+static std::map<void*, SableUI::ContextResources > g_contextResources;
+
+/* shared resources*/
 static GLuint g_shaderProgram = 0;
 static SableUI::Shader g_rShader;
 static GLuint g_rUColourLoc = 0;
@@ -43,28 +45,28 @@ static GLuint GetUniformLocation(SableUI::Shader shader, const char* uniformName
     return location;
 }
 
-void SableUI::InitDrawables()
+SableUI::ContextResources& SableUI::GetContextResources()
 {
-    /* rect init */
-    g_rShader.LoadBasicShaders("shaders/rect.vert", "shaders/rect.frag");
-    g_rShader.Use();
-    g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
-    g_rURectLoc = GetUniformLocation(g_rShader, "uRect");
-    g_rUTexBoolLoc = GetUniformLocation(g_rShader, "uUseTexture");
-    glUniform4f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+    void* ctx = SableUI::GetCurrentContext();
 
-    glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
+    auto it = g_contextResources.find(ctx);
+    if (it != g_contextResources.end())
+    {
+        return it->second;
+    }
 
-    glGenVertexArrays(1, &g_rectVAO);
-    glGenBuffers(1, &g_rectVBO);
-    glGenBuffers(1, &g_rectEBO);
+    SableUI::ContextResources& resources = g_contextResources[ctx];
 
-    glBindVertexArray(g_rectVAO);
+    glGenVertexArrays(1, &resources.rectVAO);
+    glGenBuffers(1, &resources.rectVBO);
+    glGenBuffers(1, &resources.rectEBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, g_rectVBO);
+    glBindVertexArray(resources.rectVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, resources.rectVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(rectVertices), rectVertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_rectEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resources.rectEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
@@ -72,18 +74,46 @@ void SableUI::InitDrawables()
 
     glBindVertexArray(0);
 
-    /* text init */
-    g_tShader.LoadBasicShaders("shaders/text.vert", "shaders/text.frag");
-    g_tTargetSizeLoc = GetUniformLocation(g_tShader, "uTargetSize");
-    g_tPosLoc = GetUniformLocation(g_tShader, "uPos");
-    g_tAtlasLoc = GetUniformLocation(g_tShader, "uAtlas");
+    return resources;
+}
+
+void SableUI::InitDrawables()
+{
+    static bool shadersInitialized = false;
+    if (!shadersInitialized)
+    {
+        g_rShader.LoadBasicShaders("shaders/rect.vert", "shaders/rect.frag");
+        g_rShader.Use();
+        g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
+        g_rURectLoc = GetUniformLocation(g_rShader, "uRect");
+        g_rUTexBoolLoc = GetUniformLocation(g_rShader, "uUseTexture");
+        glUniform4f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+        glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
+
+        g_tShader.LoadBasicShaders("shaders/text.vert", "shaders/text.frag");
+        g_tTargetSizeLoc = GetUniformLocation(g_tShader, "uTargetSize");
+        g_tPosLoc = GetUniformLocation(g_tShader, "uPos");
+        g_tAtlasLoc = GetUniformLocation(g_tShader, "uAtlas");
+
+        shadersInitialized = true;
+    }
+
+    GetContextResources();
 }
 
 void SableUI::DestroyDrawables()
 {
-    glDeleteVertexArrays(1, &g_rectVAO);
-	glDeleteBuffers(1, &g_rectVBO);
-	glDeleteBuffers(1, &g_rectEBO);
+    void* ctx = SableUI::GetCurrentContext();
+
+    auto it = g_contextResources.find(ctx);
+    if (it != g_contextResources.end())
+    {
+        glDeleteVertexArrays(1, &it->second.rectVAO);
+        glDeleteBuffers(1, &it->second.rectVBO);
+        glDeleteBuffers(1, &it->second.rectEBO);
+
+        g_contextResources.erase(it);
+    }
 }
 
 void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
@@ -92,7 +122,7 @@ void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, 
     this->m_colour = colour;
 }
 
-void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
+void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture, SableUI::ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(texture->width));
@@ -106,7 +136,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
     w *= 2.0f;
     h *= 2.0f;
 
-    /* revent negative scale */
+    /* prevent negative scale */
     w = std::max(0.0f, w);
     h = std::max(0.0f, h);
 
@@ -118,7 +148,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture)
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
-    glBindVertexArray(g_rectVAO);
+    glBindVertexArray(res.rectVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -132,89 +162,13 @@ void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colo
     this->m_offsets = segments;
 }
 
-void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture)
+void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture, ContextResources& res)
 {
-    g_rShader.Use();
-    glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
-    glUniform1i(g_rUTexBoolLoc, 0);
-
-    int startX = std::clamp(SableUI::f2i(m_rect.x), 0, texture->width);
-    int startY = std::clamp(SableUI::f2i(m_rect.y), 0, texture->height);
-    int boundWidth = std::clamp(SableUI::f2i(m_rect.w), 0, texture->width - startX);
-    int boundHeight = std::clamp(SableUI::f2i(m_rect.h), 0, texture->height - startY);
-
-    switch (m_type)
-    {
-    case SableUI::PanelType::HORIZONTAL:
-    {
-        for (int offset : m_offsets)
-        {
-            float drawX = startX + static_cast<float>(offset) - m_bSize;
-            float drawWidth = m_bSize * 2;
-
-            if (drawX + drawWidth >= 0 && drawX < texture->width)
-            {
-                float normalizedX = (drawX / static_cast<float>(texture->width));
-                float normalizedY = (startY / static_cast<float>(texture->height));
-                float normalizedW = (drawWidth / static_cast<float>(texture->width));
-                float normalizedH = (boundHeight / static_cast<float>(texture->height));
-
-                normalizedX = normalizedX * 2.0f - 1.0f;
-                normalizedY = normalizedY * 2.0f - 1.0f;
-                normalizedW *= 2.0f;
-                normalizedH *= 2.0f;
-
-                normalizedW = std::max(0.0f, normalizedW);
-                normalizedH = std::max(0.0f, normalizedH);
-
-                normalizedY *= -1.0f;
-                normalizedH *= -1.0f;
-
-                glUniform4f(g_rURectLoc, normalizedX, normalizedY, normalizedW, normalizedH);
-                glBindVertexArray(g_rectVAO);
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            }
-        }
-        break;
-    }
-
-    case SableUI::PanelType::VERTICAL:
-    {
-        for (int offset : m_offsets)
-        {
-            float drawY = startY + static_cast<float>(offset) - m_bSize;
-            float drawHeight = m_bSize * 2;
-
-            if (drawY + drawHeight >= 0 && drawY < texture->height)
-            {
-                float normalizedX = (startX / static_cast<float>(texture->width));
-                float normalizedY = (drawY / static_cast<float>(texture->height));
-                float normalizedW = (boundWidth / static_cast<float>(texture->width));
-                float normalizedH = (drawHeight / static_cast<float>(texture->height));
-
-                normalizedX = normalizedX * 2.0f - 1.0f;
-                normalizedY = normalizedY * 2.0f - 1.0f;
-                normalizedW *= 2.0f;
-                normalizedH *= 2.0f;
-
-                normalizedW = std::max(0.0f, normalizedW);
-                normalizedH = std::max(0.0f, normalizedH);
-
-                normalizedY *= -1.0f;
-                normalizedH *= -1.0f;
-
-                glUniform4f(g_rURectLoc, normalizedX, normalizedY, normalizedW, normalizedH);
-                glBindVertexArray(g_rectVAO);
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            }
-        }
-        break;
-    }
-    }
+    
 }
 
 /* image */
-void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
+void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(renderTarget->width));
@@ -228,7 +182,7 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
     w *= 2.0f;
     h *= 2.0f;
 
-    /* revent negative scale */
+    /* prevent negative scale */
     w = std::max(0.0f, w);
     h = std::max(0.0f, h);
 
@@ -237,16 +191,16 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget)
     h *= -1.0f;
 
     m_texture.Bind();
-    
+
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform1i(g_rUTexBoolLoc, 1);
-    glBindVertexArray(g_rectVAO);
+    glBindVertexArray(res.rectVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 /* text */
-void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget)
+void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
 {
     g_tShader.Use();
     glBindVertexArray(m_text.m_VAO);
@@ -271,103 +225,5 @@ unsigned int SableUI::DrawableBase::GetUUID()
 
 void SableUI::DrawWindowBorder(RenderTarget* target)
 {
-    static int borderWidth = 1;
-
-    g_rShader.Use();
-    glBindVertexArray(g_rectVAO);
-    glUniform4f(g_rUColourLoc, 51.0f / 255.0f, 51.0f / 255.0f, 51.0f / 255.0f, 1.0f);
-
-    // Top
-    {
-        float x = -1.0f;
-        float y = 1.0f;
-        float w = 2.0f;
-        float h = -(borderWidth * 2.0f / target->height);
-
-        float pixelX = 0.0f;
-        float pixelY = 0.0f;
-        float pixelWidth = static_cast<float>(target->width);
-        float pixelHeight = static_cast<float>(borderWidth);
-
-        float ndcX = (pixelX     / static_cast<float>(target->width))   * 2.0f - 1.0f;
-        float ndcY = (pixelY     / static_cast<float>(target->height))  * 2.0f - 1.0f;
-        float ndcW = (pixelWidth / static_cast<float>(target->width))   * 2.0f;
-        float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
-
-        ndcW = std::max(0.0f, ndcW);
-        ndcH = std::max(0.0f, ndcH);
-
-        ndcY *= -1.0f;
-        ndcH *= -1.0f;
-
-        glUniform4f(g_rURectLoc, ndcX, ndcY, ndcW, ndcH);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
-
-    // Bottom
-    {
-        float pixelX = 0.0f;
-        float pixelY = static_cast<float>(target->height) - borderWidth;
-        float pixelWidth = static_cast<float>(target->width);
-        float pixelHeight = static_cast<float>(borderWidth);
-
-        // Convert to NDC
-        float ndcX = (pixelX / static_cast<float>(target->width)) * 2.0f - 1.0f;
-        float ndcY = (pixelY / static_cast<float>(target->height)) * 2.0f - 1.0f;
-        float ndcW = (pixelWidth / static_cast<float>(target->width)) * 2.0f;
-        float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
-
-        ndcW = std::max(0.0f, ndcW);
-        ndcH = std::max(0.0f, ndcH);
-
-        ndcY *= -1.0f;
-        ndcH *= -1.0f;
-
-        glUniform4f(g_rURectLoc, ndcX, ndcY, ndcW, ndcH);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
-
-    // Left
-    {
-        float pixelX = 0.0f;
-        float pixelY = 0.0f;
-        float pixelWidth = static_cast<float>(borderWidth);
-        float pixelHeight = static_cast<float>(target->height);
-
-        float ndcX = (pixelX / static_cast<float>(target->width)) * 2.0f - 1.0f;
-        float ndcY = (pixelY / static_cast<float>(target->height)) * 2.0f - 1.0f;
-        float ndcW = (pixelWidth / static_cast<float>(target->width)) * 2.0f;
-        float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
-
-        ndcW = std::max(0.0f, ndcW);
-        ndcH = std::max(0.0f, ndcH);
-
-        ndcY *= -1.0f;
-        ndcH *= -1.0f;
-
-        glUniform4f(g_rURectLoc, ndcX, ndcY, ndcW, ndcH);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
-
-    // Right
-    {
-        float pixelX = static_cast<float>(target->width) - borderWidth;
-        float pixelY = 0.0f;
-        float pixelWidth = static_cast<float>(borderWidth);
-        float pixelHeight = static_cast<float>(target->height);
-
-        float ndcX = (pixelX / static_cast<float>(target->width)) * 2.0f - 1.0f;
-        float ndcY = (pixelY / static_cast<float>(target->height)) * 2.0f - 1.0f;
-        float ndcW = (pixelWidth / static_cast<float>(target->width)) * 2.0f;
-        float ndcH = (pixelHeight / static_cast<float>(target->height)) * 2.0f;
-
-        ndcW = std::max(0.0f, ndcW);
-        ndcH = std::max(0.0f, ndcH);
-
-        ndcY *= -1.0f;
-        ndcH *= -1.0f;
-
-        glUniform4f(g_rURectLoc, ndcX, ndcY, ndcW, ndcH);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
+    
 }

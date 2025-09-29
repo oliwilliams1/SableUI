@@ -31,6 +31,8 @@ namespace SableUI
     Element* AddText(const std::string& text, const ElementInfo& info = {});
     Element* AddTextU32(const SableString& text, const ElementInfo& info = {});
 
+    void* GetCurrentContext();
+
     struct DivScope
     {
     public:

@@ -19,15 +19,22 @@ namespace SableUI
 		UNDEF = 0xFF
 	};
 
+	struct ContextResources {
+		GLuint rectVAO = 0;
+		GLuint rectVBO = 0;
+		GLuint rectEBO = 0;
+	};
+
 	void InitDrawables();
 	void DestroyDrawables();
 	void DrawWindowBorder(RenderTarget* target);
+	ContextResources& GetContextResources();
 
 	class DrawableBase
 	{
 	public:
 		DrawableBase() { this->uuid = GetUUID(); };
-		virtual void Draw(SableUI::RenderTarget* texture) = 0;
+		virtual void Draw(SableUI::RenderTarget* texture, ContextResources& res) = 0;
 		virtual ~DrawableBase() {};
 
 		void setZ(int z) { this->m_zIndex = z; }
@@ -52,7 +59,7 @@ namespace SableUI
 		void Update(SableUI::Rect& rect, SableUI::Colour colour,
 			float pBSize = 0.0f);
 
-		void Draw(SableUI::RenderTarget* texture) override;
+		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 	};
@@ -69,7 +76,7 @@ namespace SableUI
 		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 
-		void Draw(SableUI::RenderTarget* texture) override;
+		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 0;
@@ -87,7 +94,7 @@ namespace SableUI
 			this->m_rect = rect;
 		}
 		
-		void Draw(SableUI::RenderTarget* texture) override;
+		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		Texture m_texture;
 	};
@@ -100,7 +107,7 @@ namespace SableUI
 
 		void Update(SableUI::Rect& rect) { this->m_rect = rect; };
 
-		void Draw(SableUI::RenderTarget* texture) override;
+		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		Text m_text;
 	};

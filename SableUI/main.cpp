@@ -97,7 +97,6 @@ int main(int argc, char** argv)
 	SableUI::PreInit(argc, argv);
 	//SableUI::SetBackend(SableUI::Backend::Vulkan);
 	SableUI::Initialise("SableUI Test", 1600, 900);
-
 	HSplitter()
 	{
 		VSplitter()
@@ -126,7 +125,7 @@ int main(int argc, char** argv)
 	}
 
 	SableUI::CreateSecondaryWindow();
-	PanelWith(TestComponent, 128);
+	PanelWith(ImageView, "dirtywork.jpg", 160, 160);
 
 	while (SableUI::PollEvents())
 	{

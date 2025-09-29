@@ -31,7 +31,7 @@ void SableUI::Renderer::DirectDrawRect(const Rect& rect, const Colour& colour)
     DrawableRect dr;
     dr.m_rect = rect;
     dr.m_colour = colour;
-    dr.Draw(&renderTarget);
+    dr.Draw(&renderTarget, GetContextResources());
 }
 
 void SableUI::Renderer::EndDirectDraw()
@@ -51,6 +51,8 @@ void SableUI::Renderer::Draw()
 
     if (renderTarget.target == TargetType::TEXTURE) renderTarget.Bind();
 
+    ContextResources& res = GetContextResources();
+
     std::sort(drawStack.begin(), drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
         return a->m_zIndex < b->m_zIndex;
     });
@@ -64,7 +66,7 @@ void SableUI::Renderer::Draw()
         {
             if (drawnUUIDs.find(drawable->uuid) != drawnUUIDs.end()) continue;
             drawnUUIDs.insert(drawable->uuid);
-            drawable->Draw(&renderTarget);
+            drawable->Draw(&renderTarget, res);
         }
     }
 

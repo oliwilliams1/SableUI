@@ -52,6 +52,11 @@ static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 	}
 }
 
+void* SableUI::GetCurrentContext()
+{
+	return static_cast<void*>(glfwGetCurrentContext());
+}
+
 SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x, int y)
 {
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
@@ -95,14 +100,6 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		case Backend::OpenGL:
 		{
 			InitOpenGL();
-
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			glFlush();
-
 			break;
 		}
 		case Backend::Vulkan:
@@ -114,6 +111,13 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 			SableUI_Runtime_Error("unknown backend");
 		}
 	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFlush();
 
 	m_renderer.renderTarget.SetTarget(TargetType::WINDOW);
 	m_renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
@@ -199,6 +203,7 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
+	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
@@ -498,51 +503,45 @@ static void FixHeight(SableUI::BasePanel* panel)
 	}
 }
 
-static void ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* panel, SableUI::BasePanel* root)
+void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* panel, SableUI::BasePanel* root)
 {
-	static SableUI::BasePanel* selectedPanel = nullptr;
-	static SableUI::EdgeType currentEdgeType = SableUI::EdgeType::NONE;
-	static SableUI::Rect oldPanelRect = { 0, 0, 0, 0 };
-	static SableUI::BasePanel* olderSiblingNode = nullptr;
-	static SableUI::Rect olderSiblingOldRect = { 0, 0, 0, 0 };
-	static SableUI::ivec2 prevPos = { 0, 0 };
-	static SableUI::ivec2 totalDelta = { 0, 0 };
+	auto& state = m_resizeState;
 
 	if (panel != nullptr)
 	{
-		selectedPanel = panel;
-		oldPanelRect = panel->rect;
-		prevPos = { 0, 0 };
-		totalDelta = { 0, 0 };
+		state.selectedPanel = panel;
+		state.oldPanelRect = panel->rect;
+		state.prevPos = { 0,0 };
+		state.totalDelta = { 0,0 };
 
 		if (panel->parent == nullptr)
 		{
-			olderSiblingNode = nullptr;
-			olderSiblingOldRect = { 0, 0, 0, 0 };
+			state.olderSiblingNode = nullptr;
+			state.olderSiblingOldRect = { 0,0,0,0 };
 			return;
 		}
 
 		auto& siblings = panel->parent->children;
-		auto it = std::find(siblings.begin(), siblings.end(), selectedPanel);
+		auto it = std::find(siblings.begin(), siblings.end(), state.selectedPanel);
 		if (it != siblings.end() && std::next(it) != siblings.end())
 		{
-			olderSiblingNode = *std::next(it);
-			olderSiblingOldRect = olderSiblingNode->rect;
+			state.olderSiblingNode = *std::next(it);
+			state.olderSiblingOldRect = state.olderSiblingNode->rect;
 		}
 		else
 		{
-			olderSiblingNode = nullptr;
-			olderSiblingOldRect = { 0, 0, 0, 0 };
+			state.olderSiblingNode = nullptr;
+			state.olderSiblingOldRect = { 0,0,0,0 };
 			return;
 		}
 
 		switch (panel->parent->type)
 		{
-		case SableUI::PanelType::HORIZONTAL:
-			currentEdgeType = SableUI::EdgeType::EW_EDGE;
+		case PanelType::HORIZONTAL:
+			state.currentEdgeType = EdgeType::EW_EDGE;
 			break;
-		case SableUI::PanelType::VERTICAL:
-			currentEdgeType = SableUI::EdgeType::NS_EDGE;
+		case PanelType::VERTICAL:
+			state.currentEdgeType = EdgeType::NS_EDGE;
 			break;
 		default:
 			return;
@@ -551,64 +550,64 @@ static void ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* panel, Sable
 		return;
 	}
 
-	totalDelta = totalDelta + deltaPos;
+	state.totalDelta = state.totalDelta + deltaPos;
 
 	{
-		SableUI::ivec2 currentPos = prevPos + deltaPos;
-		SableUI::ivec2 dPos = prevPos - currentPos;
+		SableUI::ivec2 currentPos = state.prevPos + deltaPos;
+		SableUI::ivec2 dPos = state.prevPos - currentPos;
 		if (dPos.x == 0 && dPos.y == 0) return;
-		prevPos = currentPos;
+		state.prevPos = currentPos;
 	}
 
-	if (selectedPanel == nullptr)
+	if (state.selectedPanel == nullptr)
 	{
 		SableUI_Log("No node selected");
 		return;
 	}
 
-	switch (currentEdgeType)
+	switch (state.currentEdgeType)
 	{
 	case SableUI::EdgeType::EW_EDGE:
 	{
-		int width = oldPanelRect.w + totalDelta.x;
-		width = (std::max)(width, selectedPanel->minBounds.x);
+		int width = state.oldPanelRect.w + state.totalDelta.x;
+		width = (std::max)(width, state.selectedPanel->minBounds.x);
 
-		int maxWidth = selectedPanel->parent->rect.w - olderSiblingNode->minBounds.x;
+		int maxWidth = state.selectedPanel->parent->rect.w - state.olderSiblingNode->minBounds.x;
 		width = (std::min)(width, maxWidth);
 
-		int newOlderSiblingWidth = olderSiblingOldRect.w - (width - oldPanelRect.w);
-		newOlderSiblingWidth = (std::max)(newOlderSiblingWidth, olderSiblingNode->minBounds.x);
+		int newOlderSiblingWidth = state.olderSiblingOldRect.w - (width - state.oldPanelRect.w);
+		newOlderSiblingWidth = (std::max)(newOlderSiblingWidth, state.olderSiblingNode->minBounds.x);
 
-		selectedPanel->rect.wType = SableUI::RectType::FIXED;
-		selectedPanel->rect.w = width;
+		state.selectedPanel->rect.wType = SableUI::RectType::FIXED;
+		state.selectedPanel->rect.w = width;
 
-		olderSiblingNode->rect.wType = SableUI::RectType::FILL;
+		state.olderSiblingNode->rect.wType = SableUI::RectType::FILL;
 
-		FixWidth(selectedPanel);
+		FixWidth(state.selectedPanel);
 		break;
 	}
 	case SableUI::EdgeType::NS_EDGE:
 	{
-		int height = oldPanelRect.h + totalDelta.y;
-		height = (std::max)(height, selectedPanel->minBounds.y);
+		int height = state.oldPanelRect.h + state.totalDelta.y;
+		height = (std::max)(height, state.selectedPanel->minBounds.y);
 
-		int maxHeight = selectedPanel->parent->rect.h - olderSiblingNode->minBounds.y;
+		int maxHeight = state.selectedPanel->parent->rect.h - state.olderSiblingNode->minBounds.y;
 		height = (std::min)(height, maxHeight);
 
-		int newOlderSiblingHeight = olderSiblingOldRect.h - (height - oldPanelRect.h);
-		newOlderSiblingHeight = (std::max)(newOlderSiblingHeight, olderSiblingNode->minBounds.y);
+		int newOlderSiblingHeight = state.olderSiblingOldRect.h - (height - state.oldPanelRect.h);
+		newOlderSiblingHeight = (std::max)(newOlderSiblingHeight, state.olderSiblingNode->minBounds.y);
 
-		selectedPanel->rect.hType = SableUI::RectType::FIXED;
-		selectedPanel->rect.h = height;
+		state.selectedPanel->rect.hType = SableUI::RectType::FIXED;
+		state.selectedPanel->rect.h = height;
 
-		olderSiblingNode->rect.hType = SableUI::RectType::FILL;
+		state.olderSiblingNode->rect.hType = SableUI::RectType::FILL;
 
-		FixHeight(selectedPanel);
+		FixHeight(state.selectedPanel);
 		break;
 	}
 	}
 
-	selectedPanel->parent->CalculateScales();
+	state.selectedPanel->parent->CalculateScales();
 }
 
 void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
@@ -697,7 +696,10 @@ int SableUI::Window::GetRefreshRate()
 
 SableUI::Window::~Window()
 {
+	glfwMakeContextCurrent(m_window);
+
 	delete m_root;
+	DestroyDrawables();
 	glfwDestroyWindow(m_window);
 }
 

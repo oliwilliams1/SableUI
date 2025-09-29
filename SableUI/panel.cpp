@@ -70,6 +70,18 @@ void SableUI::RootPanel::Recalculate()
 		child->CalculateScales();
 		child->CalculatePositions();
 		child->CalculateMinBounds();
+
+		if (child->type == PanelType::BASE)
+		{
+			if (SableUI::Panel* panelChild = dynamic_cast<SableUI::Panel*>(child))
+			{
+				panelChild->Update();
+			}
+			else
+			{
+				SableUI_Error("Root child marked as BASE but not a Panel instance.");
+			}
+		}
 	}
 }
 
