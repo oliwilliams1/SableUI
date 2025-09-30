@@ -157,6 +157,9 @@ void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement,
         delete s_virtualRoot;
         s_virtualStack = std::stack<VirtualNode*>();
         s_virtualRoot = new VirtualNode();
+        s_virtualRoot->info = rootElement->GetInfo();
+        s_virtualRoot->type = rootElement->type;
+        s_virtualRoot->uniqueTextOrPath = rootElement->uniqueTextOrPath;
         s_virtualStack.push(s_virtualRoot);
     }
     else

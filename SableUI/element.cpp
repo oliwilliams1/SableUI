@@ -4,51 +4,6 @@
 
 static int n_elements = 0;
 
-static std::size_t ComputeHash(const SableUI::VirtualNode* vnode)
-{
-    std::size_t h = 0;
-
-    h ^= std::hash<int>()((int)vnode->type);
-
-    if (vnode->uniqueTextOrPath.size() != 0)
-        h ^= std::hash<std::string>()(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()));
-
-    h ^= std::hash<int>()((int)vnode->info.wType);
-    h ^= std::hash<int>()((int)vnode->info.hType);
-    h ^= std::hash<int>()(vnode->info.minWidth ^ vnode->info.minHeight ^
-        vnode->info.maxWidth    ^ vnode->info.maxHeight ^
-        vnode->info.marginTop   ^ vnode->info.marginBottom ^
-        vnode->info.marginLeft  ^ vnode->info.marginRight ^
-        vnode->info.paddingTop  ^ vnode->info.paddingBottom ^
-        vnode->info.paddingLeft ^ vnode->info.paddingRight);
-
-    h ^= std::hash<int>()((int)vnode->info.layoutDirection);
-
-    return h;
-}
-
-static std::size_t ComputeHash(const SableUI::Element* elem)
-{
-    std::size_t h = 0;
-    h ^= std::hash<int>()((int)elem->type);
-
-    if (elem->uniqueTextOrPath.size() != 0)
-        h ^= std::hash<std::string>()(std::string(elem->uniqueTextOrPath.begin(), elem->uniqueTextOrPath.end()));
-
-    h ^= std::hash<int>()((int)elem->wType);
-    h ^= std::hash<int>()((int)elem->hType);
-    h ^= std::hash<int>()(elem->minWidth ^ elem->minHeight ^
-        elem->maxWidth      ^ elem->maxHeight ^
-        elem->marginTop     ^ elem->marginBottom ^
-        elem->marginLeft    ^ elem->marginRight ^
-        elem->paddingTop    ^ elem->paddingBottom ^
-        elem->paddingLeft   ^ elem->paddingRight);
-
-    h ^= std::hash<int>()((int)elem->layoutDirection);
-
-    return h;
-}
-
 SableUI::Child::~Child()
 {
     if (type == ChildType::ELEMENT)
@@ -752,8 +707,182 @@ void SableUI::Element::LayoutChildren()
     }
 }
 
+SableUI::ElementInfo SableUI::Element::GetInfo() const
+{
+    ElementInfo info{};
+    info.id = ID;
+    info.bgColour = bgColour;
+    info.width = width;
+    info.height = height;
+    info.minWidth = minWidth;
+    info.maxWidth = maxWidth;
+    info.minHeight = minHeight;
+    info.maxHeight = maxHeight;
+    info.marginTop = marginTop;
+    info.marginBottom = marginBottom;
+    info.marginLeft = marginLeft;
+    info.marginRight = marginRight;
+    info.paddingTop = paddingTop;
+    info.paddingBottom = paddingBottom;
+    info.paddingLeft = paddingLeft;
+    info.paddingRight = paddingRight;
+    info.centerX = centerX;
+    info.centerY = centerY;
+    info.wType = wType;
+    info.hType = hType;
+    info.type = type;
+    info.layoutDirection = layoutDirection;
+    info.uniqueTextOrPath = uniqueTextOrPath;
+
+    info.onHoverFunc = m_onHoverFunc;
+	info.onHoverExitFunc = m_onHoverExitFunc;
+	info.onClickFunc = m_onClickFunc;
+	info.onSecondaryClickFunc = m_onSecondaryClickFunc;
+
+    return info;
+}
+static inline void hash_combine(std::size_t& seed, std::size_t v) {
+    seed ^= v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+}
+
 #include "SableUI/SableUI.h"
-void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* parent)
+static size_t ComputeHash(const SableUI::VirtualNode* vnode)
+{
+    size_t h = 1469598103934665603ULL;
+
+    hash_combine(h, std::hash<int>()((int)vnode->type));
+
+    if (vnode->uniqueTextOrPath.size() != 0)
+    {
+        std::string s(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end());
+        hash_combine(h, std::hash<std::string>()(s));
+    }
+
+    hash_combine(h, std::hash<int>()((int)vnode->info.wType));
+    hash_combine(h, std::hash<int>()((int)vnode->info.hType));
+
+    hash_combine(h, std::hash<int>()(vnode->info.width));
+    hash_combine(h, std::hash<int>()(vnode->info.height));
+    hash_combine(h, std::hash<int>()(vnode->info.minWidth));
+    hash_combine(h, std::hash<int>()(vnode->info.minHeight));
+    hash_combine(h, std::hash<int>()(vnode->info.maxWidth));
+    hash_combine(h, std::hash<int>()(vnode->info.maxHeight));
+
+    hash_combine(h, std::hash<int>()(vnode->info.marginTop));
+    hash_combine(h, std::hash<int>()(vnode->info.marginBottom));
+    hash_combine(h, std::hash<int>()(vnode->info.marginLeft));
+    hash_combine(h, std::hash<int>()(vnode->info.marginRight));
+    hash_combine(h, std::hash<int>()(vnode->info.paddingTop));
+    hash_combine(h, std::hash<int>()(vnode->info.paddingBottom));
+    hash_combine(h, std::hash<int>()(vnode->info.paddingLeft));
+    hash_combine(h, std::hash<int>()(vnode->info.paddingRight));
+
+    hash_combine(h, std::hash<int>()((int)vnode->info.layoutDirection));
+
+    hash_combine(h, std::hash<int>()((vnode->info.bgColour.r << 16) ^ (vnode->info.bgColour.g << 8) ^ vnode->info.bgColour.b));
+
+    return h;
+}
+
+static size_t ComputeHash(const SableUI::Element* elem)
+{
+    size_t h = 1469598103934665603ULL;
+
+    hash_combine(h, std::hash<int>()((int)elem->type));
+
+    if (elem->uniqueTextOrPath.size() != 0)
+    {
+        std::string s(elem->uniqueTextOrPath.begin(), elem->uniqueTextOrPath.end());
+        hash_combine(h, std::hash<std::string>()(s));
+    }
+
+    hash_combine(h, std::hash<int>()((int)elem->wType));
+    hash_combine(h, std::hash<int>()((int)elem->hType));
+
+    hash_combine(h, std::hash<int>()(elem->width));
+    hash_combine(h, std::hash<int>()(elem->height));
+    hash_combine(h, std::hash<int>()(elem->minWidth));
+    hash_combine(h, std::hash<int>()(elem->minHeight));
+    hash_combine(h, std::hash<int>()(elem->maxWidth));
+    hash_combine(h, std::hash<int>()(elem->maxHeight));
+
+    hash_combine(h, std::hash<int>()(elem->marginTop));
+    hash_combine(h, std::hash<int>()(elem->marginBottom));
+    hash_combine(h, std::hash<int>()(elem->marginLeft));
+    hash_combine(h, std::hash<int>()(elem->marginRight));
+    hash_combine(h, std::hash<int>()(elem->paddingTop));
+    hash_combine(h, std::hash<int>()(elem->paddingBottom));
+    hash_combine(h, std::hash<int>()(elem->paddingLeft));
+    hash_combine(h, std::hash<int>()(elem->paddingRight));
+
+    hash_combine(h, std::hash<int>()((int)elem->layoutDirection));
+    hash_combine(h, std::hash<int>()((elem->bgColour.r << 16) ^ (elem->bgColour.g << 8) ^ elem->bgColour.b));
+
+    return h;
+}
+
+bool SableUI::Element::Reconcile(VirtualNode* vnode)
+{
+    if (this->children.size() != vnode->children.size())
+    {
+        for (Child* child : this->children)
+            delete child;
+        this->children.clear();
+
+        SetElementBuilderContext(this->renderer, this, false);
+        BuildRealSubtreeFromVirtual(vnode);
+
+        SableUI_Log("Rebuilding children of element %zu (child count mismatch)", ComputeHash(this));
+        return true;
+    }
+
+    for (size_t i = 0; i < this->children.size(); i++)
+    {
+        Element* childEl = (Element*)*this->children[i];
+        VirtualNode* childVn = vnode->children[i];
+
+        std::size_t childElHash = ComputeHash(childEl);
+        std::size_t childVnHash = ComputeHash(childVn);
+
+        if (childElHash != childVnHash)
+        {
+            for (Child* child : this->children)
+                delete child;
+            this->children.clear();
+
+            SetElementBuilderContext(this->renderer, this, false);
+            BuildRealSubtreeFromVirtual(vnode);
+
+            SableUI_Log("Rebuilding children of element %zu (child hash mismatch)", ComputeHash(this));
+            return true;
+        }
+    }
+
+    bool anyChildChanged = false;
+    for (size_t i = 0; i < this->children.size(); i++)
+    {
+        Element* childEl = (Element*)*this->children[i];
+        VirtualNode* childVn = vnode->children[i];
+
+        bool childChanged = childEl->Reconcile(childVn);
+        if (childChanged)
+            anyChildChanged = true;
+    }
+
+    return anyChildChanged;
+}
+
+void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode)
+{
+    if (!vnode) return;
+
+    for (VirtualNode* vchild : vnode->children)
+    {
+        BuildSingleElementFromVirtual(vchild);
+    }
+}
+
+void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 {
     if (!vnode) return;
 
@@ -763,8 +892,8 @@ void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* 
     {
         StartDiv(vnode->info, vnode->childComp);
 
-        for (VirtualNode* vchild : vnode->children)
-            BuildRealSubtreeFromVirtual(vchild, nullptr);
+        for (VirtualNode* child : vnode->children)
+            BuildSingleElementFromVirtual(child);
 
         EndDiv();
         break;
@@ -778,7 +907,9 @@ void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* 
 
     case ElementType::TEXT:
     {
-        AddText(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()), vnode->info);
+        AddText(std::string(vnode->uniqueTextOrPath.begin(),
+            vnode->uniqueTextOrPath.end()),
+            vnode->info);
         break;
     }
 
@@ -790,44 +921,12 @@ void SableUI::Element::BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* 
 
     case ElementType::IMAGE:
     {
-        AddImage(std::string(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end()), vnode->info);
+        AddImage(std::string(vnode->uniqueTextOrPath.begin(),
+            vnode->uniqueTextOrPath.end()),
+            vnode->info);
         break;
     }
     }
-}
-
-bool SableUI::Element::Reconcile(VirtualNode* vnode)
-{
-    if (this->type != vnode->type || ComputeHash(this) != ComputeHash(vnode))
-    {
-        for (Child* child : children) delete child;
-        children.clear();
-
-        SetElementBuilderContext(renderer, this, true);
-        BuildRealSubtreeFromVirtual(vnode, this);
-
-        return true;
-    }
-
-    size_t minCount = std::min(children.size(), vnode->children.size());
-    for (size_t i = 0; i < minCount; i++)
-    {
-        Element* el = (Element*)*children[i];
-        el->Reconcile(vnode->children[i]);
-    }
-
-    for (size_t i = minCount; i < vnode->children.size(); i++)
-    {
-        SetElementBuilderContext(renderer, this, true);
-        BuildRealSubtreeFromVirtual(vnode->children[i], this);
-    }
-
-    for (size_t i = vnode->children.size(); i < children.size(); i++) {
-        delete children[i];
-    }
-    children.resize(vnode->children.size());
-
-    return false;
 }
 
 bool SableUI::Element::el_PropagateComponentStateChanges()

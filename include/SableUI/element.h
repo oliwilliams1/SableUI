@@ -78,7 +78,7 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 		ElementType type = ElementType::UNDEF;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString textOrPath = "";
+		SableString uniqueTextOrPath = "";
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
@@ -130,13 +130,10 @@ namespace SableUI
 	struct VirtualNode
 	{
 		ElementType type;
-		std::string key;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
 		SableString uniqueTextOrPath;
 		BaseComponent* childComp = nullptr;
-
-		std::unordered_map<std::string, std::any> state;
 	};
 
 	enum class ChildType
@@ -236,9 +233,12 @@ namespace SableUI
 		Element& setOnClick(const std::function<void()>& func)			{ m_onClickFunc				= func; return *this; }
 		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
 
+		ElementInfo GetInfo() const;
+
 		/* internal functions */
 		bool Reconcile(VirtualNode* vnode);
-		void BuildRealSubtreeFromVirtual(VirtualNode* vnode, Element* parent);
+		void BuildRealSubtreeFromVirtual(VirtualNode* vnode);
+		void BuildSingleElementFromVirtual(VirtualNode* vnode);
 
 		// event system
 		bool el_PropagateComponentStateChanges();
