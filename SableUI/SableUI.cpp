@@ -66,7 +66,7 @@ void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
     auto* vnode = new VirtualNode();
-    vnode->type = ElementType::TEXT;
+    vnode->type = ElementType::TEXT_U32;
     vnode->uniqueTextOrPath = text;
     vnode->info = info;
 

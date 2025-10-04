@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace SableUI
 {
@@ -14,6 +15,8 @@ namespace SableUI
 		// Accessors
 		size_t size() const;
 		char32_t operator[](size_t index) const;
+
+		operator std::string() const;
 
 		// Operators
 		String operator+(const String& other) const;

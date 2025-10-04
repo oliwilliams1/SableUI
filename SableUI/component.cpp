@@ -58,8 +58,9 @@ static std::size_t ComputeHash(const SableUI::VirtualNode* vnode)
 	hash_combine(h, std::hash<int>()((int)vnode->type));
 
 	// text/path (if present)
-	if (vnode->uniqueTextOrPath.size() != 0) {
-		std::string s(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end());
+	if (vnode->uniqueTextOrPath.size() != 0)
+	{
+		std::string s = (std::string)(vnode->uniqueTextOrPath);
 		hash_combine(h, std::hash<std::string>()(s));
 	}
 
@@ -98,8 +99,9 @@ static std::size_t ComputeHash(const SableUI::Element* elem)
 
 	hash_combine(h, std::hash<int>()((int)elem->type));
 
-	if (elem->uniqueTextOrPath.size() != 0) {
-		std::string s(elem->uniqueTextOrPath.begin(), elem->uniqueTextOrPath.end());
+	if (elem->uniqueTextOrPath.size() != 0)
+	{
+		std::string s = (std::string)(elem->uniqueTextOrPath);
 		hash_combine(h, std::hash<std::string>()(s));
 	}
 

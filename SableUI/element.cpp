@@ -1,5 +1,7 @@
 #include "SableUI/element.h"
 #include "SableUI/component.h"
+
+#undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Element"
 
 static int n_elements = 0;
@@ -754,7 +756,7 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
 
     if (vnode->uniqueTextOrPath.size() != 0)
     {
-        std::string s(vnode->uniqueTextOrPath.begin(), vnode->uniqueTextOrPath.end());
+        std::string s = (std::string)(vnode->uniqueTextOrPath);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
@@ -792,7 +794,7 @@ static size_t ComputeHash(const SableUI::Element* elem)
 
     if (elem->uniqueTextOrPath.size() != 0)
     {
-        std::string s(elem->uniqueTextOrPath.begin(), elem->uniqueTextOrPath.end());
+        std::string s = (std::string)(elem->uniqueTextOrPath);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
@@ -907,9 +909,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
     case ElementType::TEXT:
     {
-        AddText(std::string(vnode->uniqueTextOrPath.begin(),
-            vnode->uniqueTextOrPath.end()),
-            vnode->info);
+        AddText((std::string)(vnode->uniqueTextOrPath), vnode->info);
         break;
     }
 
@@ -921,9 +921,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
     case ElementType::IMAGE:
     {
-        AddImage(std::string(vnode->uniqueTextOrPath.begin(),
-            vnode->uniqueTextOrPath.end()),
-            vnode->info);
+        AddImage((std::string)(vnode->uniqueTextOrPath), vnode->info);
         break;
     }
     }

@@ -14,6 +14,7 @@
 
 #include "SableUI/text.h"
 
+#undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Text"
 #include "SableUI/console.h"
 

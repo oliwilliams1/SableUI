@@ -93,6 +93,17 @@ size_t SableUI::String::size() const { return m_size; }
 
 char32_t SableUI::String::operator[](size_t index) const { return m_data[index]; }
 
+SableUI::String::operator std::string() const
+{
+	std::string result;
+	result.resize(m_size);
+	for (size_t i = 0; i < m_size; i++)
+	{
+		result[i] = static_cast<char>(m_data[i]);
+	}
+	return result;
+}
+
 SableUI::String::iterator SableUI::String::begin() { return m_data; }
 SableUI::String::iterator SableUI::String::end() { return m_data + m_size; }
 

@@ -5,9 +5,8 @@
 #include <cstdarg>
 #include <cstdio>
 
-#ifndef SABLEUI_SUBSYSTEM
+#undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI"
-#endif
 
 namespace SableUI
 {
@@ -63,8 +62,16 @@ namespace SableUI
     };
 }
 
+#ifdef _DEBUG
 #define SableUI_Log(format, ...)           SableUI::Console::Log(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
 #define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
 #define SableUI_Error(format, ...)         SableUI::Console::Error(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
 #define SableUI_Notify_Error(format, ...)  SableUI::Console::NotifyError(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
 #define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, __FILE__, __LINE__, __func__, SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#else
+#define SableUI_Log(format, ...)           SableUI::Console::Log(format, "", 0, "", SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Warn(format, ...)          SableUI::Console::Warn(format, "", 0, "", SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Error(format, ...)         SableUI::Console::Error(format, "", 0, "", SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Notify_Error(format, ...)  SableUI::Console::NotifyError(format, "", 0, "", SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#define SableUI_Runtime_Error(format, ...) SableUI::Console::RuntimeError(format, "", 0, "", SABLEUI_SUBSYSTEM, ##__VA_ARGS__)
+#endif
