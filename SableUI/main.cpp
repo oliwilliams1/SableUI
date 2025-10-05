@@ -54,6 +54,7 @@ public:
 			}
 
 			Component(ToggleImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
+			Component(ToggleImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 		Rect(m(5) w(60) h(60) bg(255, 128, 0));
@@ -96,6 +97,7 @@ int main(int argc, char** argv)
 	SableUI::PreInit(argc, argv);
 	//SableUI::SetBackend(SableUI::Backend::Vulkan);
 	SableUI::Initialise("SableUI Test", 1600, 900);
+
 	HSplitter()
 	{
 		VSplitter()

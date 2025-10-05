@@ -32,14 +32,14 @@ namespace SableUI
         virtual void Layout() {};
         virtual void OnHover() {};
         void BackendInitialisePanel(Renderer* renderer);
-        void BackendInitialiseChild(BaseComponent* parent, const ElementInfo& info);
+        void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
 
         template<typename T, typename... Args>
         BaseComponent* AddComponent(Args&&... args);
 
         Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
-
+        int GetNumChildren() const { return m_componentChildren.size(); }
         bool Rerender();
 
         bool needsRerender = false;
@@ -49,6 +49,7 @@ namespace SableUI
         Element* rootElement = nullptr;
 
     private:
+        size_t m_hash = 0;
         Renderer* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
         std::vector<BaseComponent*> m_componentChildren;

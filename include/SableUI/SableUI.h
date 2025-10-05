@@ -86,8 +86,9 @@ namespace SableUI
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__)
 #define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__)
 
+#define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
-#define Component(T, info, ...) AddComponent<T>(__VA_ARGS__)->BackendInitialiseChild(this, style(info))
+#define Component(T, info, ...) AddComponent<T>(__VA_ARGS__)->BackendInitialiseChild(STRINGIFY(T), this, style(info))
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)

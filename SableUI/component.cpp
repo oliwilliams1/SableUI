@@ -28,9 +28,27 @@ void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 	Layout();
 }
 
-void SableUI::BaseComponent::BackendInitialiseChild(BaseComponent* parent, const ElementInfo& info)
+static size_t GetHash(int n, const char* name)
+{
+	size_t h = 0;
+
+	for (int i = 0; i < strlen(name); i++)
+		h = (h << (5 + n)) - h + name[i];
+
+	h ^= (n * 0x9e3779b) ^ (n << 15);
+
+	return h;
+}
+
+void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info)
 {
 	if (rootElement) delete rootElement;
+
+	int n = parent->GetNumChildren();
+
+	m_hash = GetHash(n, name);
+
+	SableUI_Log("Hash for %s_%d is %zu", name, n, m_hash);
 
 	m_renderer = parent->m_renderer;
 
