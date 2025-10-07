@@ -10,7 +10,11 @@ namespace SableUI
     template<typename T>
     struct StateSetter
     {
-        StateSetter(std::function<void(const T&)> setter) : m_setter(setter) {}
+        StateSetter(
+            std::function<void(const T&)> setter, 
+            std::function<void()> initialiser)
+            : m_setter(setter) { initialiser(); }
+
         void operator()(const T& value) const { m_setter(value); }
         void set(const T& value) const { m_setter(value); }
 
@@ -23,6 +27,25 @@ namespace SableUI
 
     class Element;
 
+    struct StateBlock
+    {
+        void* start;
+        size_t size;
+        StateBlock(void* start, size_t size) : start(start), size(size) {}
+
+        void operator=(const StateBlock& other)
+        {
+            if (this != &other)
+            {
+                if (other.size != size)
+                {
+                    SableUI_Error("StateBlock size mismatch, potential leak");
+                }
+                std::memcpy(start, other.start, size);
+            }
+        };
+    };
+
     class BaseComponent
     {
     public:
@@ -30,6 +53,7 @@ namespace SableUI
         ~BaseComponent();
 
         virtual void Layout() {};
+        void LayoutWrapper() { m_childCount = 0; Layout(); }
         virtual void OnHover() {};
         void BackendInitialisePanel(Renderer* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
@@ -39,11 +63,15 @@ namespace SableUI
 
         Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
-        int GetNumChildren() const { return m_componentChildren.size(); }
+        int GetNumChildren() const { return m_childCount; }
         bool Rerender();
 
         bool needsRerender = false;
         bool comp_PropagateComponentStateChanges();
+
+        void AddStateBlock(void* start, size_t size) { m_stateBlocks.push_back(StateBlock(start, size)); }
+
+        std::vector<StateBlock> m_stateBlocks; 
 
     protected:
         Element* rootElement = nullptr;
@@ -53,6 +81,7 @@ namespace SableUI
         Renderer* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
         std::vector<BaseComponent*> m_componentChildren;
+        int m_childCount = 0;
     };
 
     template<typename T, typename ...Args>
@@ -62,7 +91,7 @@ namespace SableUI
 
         T* component = new T(std::forward<Args>(args)...);
         m_componentChildren.push_back(component);
-
+        m_childCount++;
         return component;
     }
 }

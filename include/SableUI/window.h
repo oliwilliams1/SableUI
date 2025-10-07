@@ -3,6 +3,7 @@
 #pragma warning(disable : 4005)
 #include <string>
 #include <chrono>
+#include <vector>
 
 #include "SableUI/panel.h"
 #pragma warning(pop)

@@ -149,13 +149,15 @@ namespace SableUI
 
 #define dir(value)      .setLayoutDirection(value)
 
-#define useState(variableName, setterName, T, initialValue) \
-    T variableName = initialValue; \
+#define useState(variableName, setterName, T, initialValue)                             \
+    T variableName = initialValue;                                                      \
     SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>([this](const T& val) { \
-        if (variableName == val) return; \
-        this->variableName = val; \
-        this->needsRerender = true; \
-    })
+        if (variableName == val) return;                                                \
+        this->variableName = val;                                                       \
+        this->needsRerender = true;                                                     \
+    }, [this]() {                                                                       \
+        m_stateBlocks.push_back({ &variableName, sizeof(T) }); })                       \
+
 
 #define onHover(callback)           .setOnHover(callback)
 #define onHoverExit(callback)       .setOnHoverExit(callback)

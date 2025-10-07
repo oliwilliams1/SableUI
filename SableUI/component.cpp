@@ -25,7 +25,7 @@ void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 	rootElement->setBgColour(m_bgColour);
 
 	SetElementBuilderContext(renderer, rootElement, false);
-	Layout();
+	LayoutWrapper();
 }
 
 static size_t GetHash(int n, const char* name)
@@ -50,10 +50,28 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 
 	SableUI_Log("Hash for %s_%d is %zu", name, n, m_hash);
 
+	for (int c = 0; c < n; c++)
+	{
+		BaseComponent* child = parent->m_componentChildren[c];
+		if (child->m_hash == m_hash)
+		{
+			if (child->m_stateBlocks.size() != m_stateBlocks.size())
+			{
+				SableUI_Error("Child %s_%d has a different number of state blocks", name, n);
+				continue;
+			}
+			SableUI_Log("Copying states");
+			for (int i = 0; i < child->m_stateBlocks.size(); i++)
+			{
+				m_stateBlocks[i] = child->m_stateBlocks[i];
+			}
+		}
+	}
+
 	m_renderer = parent->m_renderer;
 
 	StartDiv(info, this);
-	Layout();
+	LayoutWrapper();
 	EndDiv();
 }
 
@@ -70,23 +88,19 @@ static inline void hash_combine(std::size_t& seed, std::size_t v) {
 
 static std::size_t ComputeHash(const SableUI::VirtualNode* vnode)
 {
-	std::size_t h = 1469598103934665603ULL; // FNV offset basis (just a non-zero start)
+	std::size_t h = 1469598103934665603ULL;
 
-	// type
 	hash_combine(h, std::hash<int>()((int)vnode->type));
 
-	// text/path (if present)
 	if (vnode->uniqueTextOrPath.size() != 0)
 	{
 		std::string s = (std::string)(vnode->uniqueTextOrPath);
 		hash_combine(h, std::hash<std::string>()(s));
 	}
 
-	// important info fields (treat them as identity/props)
 	hash_combine(h, std::hash<int>()((int)vnode->info.wType));
 	hash_combine(h, std::hash<int>()((int)vnode->info.hType));
 
-	// combine numeric layout fields
 	hash_combine(h, std::hash<int>()(vnode->info.width));
 	hash_combine(h, std::hash<int>()(vnode->info.height));
 	hash_combine(h, std::hash<int>()(vnode->info.minWidth));
@@ -105,7 +119,6 @@ static std::size_t ComputeHash(const SableUI::VirtualNode* vnode)
 
 	hash_combine(h, std::hash<int>()((int)vnode->info.layoutDirection));
 
-	// you can include bg colour if you want it to affect identity:
 	hash_combine(h, std::hash<int>()((vnode->info.bgColour.r << 16) ^ (vnode->info.bgColour.g << 8) ^ vnode->info.bgColour.b));
 
 	return h;
@@ -190,7 +203,7 @@ bool SableUI::BaseComponent::Rerender()
 
 	// Generate virtual tree
 	SetElementBuilderContext(m_renderer, rootElement, true);
-	Layout();
+	LayoutWrapper();
 	VirtualNode* virtualRoot = SableUI::GetVirtualRootNode();
 
 	std::cout << "------ START ------\n";
