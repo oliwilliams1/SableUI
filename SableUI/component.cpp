@@ -1,5 +1,8 @@
 #include "SableUI/component.h"
 #include "SableUI/SableUI.h"
+#include "SableUI/memory.h"
+
+using namespace SableMemory;
 
 static int s_ctr = 0;
 SableUI::BaseComponent::BaseComponent(Colour colour)
@@ -11,17 +14,17 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 SableUI::BaseComponent::~BaseComponent()
 {
 	s_ctr--;
-	for (BaseComponent* child : m_componentChildren) delete child;
-	if (rootElement) delete rootElement;
+	for (BaseComponent* child : m_componentChildren) SB_delete(child);
+	if (rootElement) SB_delete(rootElement);
 }
 
 void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 {
-	if (rootElement) delete rootElement;
+	if (rootElement) SB_delete(rootElement);
 
 	m_renderer = renderer;
 
-	rootElement = new Element(renderer, ElementType::DIV);
+	rootElement = SB_new<Element>(renderer, ElementType::DIV);
 	rootElement->Init(renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
 
@@ -43,7 +46,7 @@ static size_t GetHash(int n, const char* name)
 
 void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info)
 {
-	if (rootElement) delete rootElement;
+	if (rootElement) SB_delete(rootElement);
 
 	int n = parent->GetNumChildren();
 
@@ -241,7 +244,6 @@ bool SableUI::BaseComponent::comp_PropagateComponentStateChanges()
 		else
 			needsFullRerender = false;
 	}
-
 
 	if (res) needsRerender = true;
 

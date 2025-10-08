@@ -40,12 +40,12 @@ static std::tm getLocalTime() {
 
 void Console::Init()
 {
-	s_ConsoleInstance = new Console();
+    s_ConsoleInstance = new Console();
 }
 
 void Console::Shutdown()
 {
-	delete s_ConsoleInstance;
+    delete s_ConsoleInstance;
 	s_ConsoleInstance = nullptr;
 }
 

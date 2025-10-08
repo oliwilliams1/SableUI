@@ -1,8 +1,10 @@
 #include "SableUI/element.h"
 #include "SableUI/component.h"
+#include "SableUI/memory.h"
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Element"
+using namespace  SableMemory;
 
 static int n_elements = 0;
 
@@ -10,11 +12,11 @@ SableUI::Child::~Child()
 {
     if (type == ChildType::ELEMENT)
     {
-        delete element;
+        SB_delete(element);
     }
     else if (type == ChildType::COMPONENT)
     {
-        delete component;
+        SB_delete(component);
     }
 }
 
@@ -49,19 +51,19 @@ void SableUI::Element::Init(Renderer* renderer, ElementType type)
     switch (type)
     {
     case ElementType::RECT:
-        drawable = new DrawableRect();
+        drawable = SB_new<DrawableRect>();
         break;
 
     case ElementType::IMAGE:
-        drawable = new DrawableImage();
+        drawable = SB_new<DrawableImage>();
         break;
 
     case ElementType::TEXT:
-        drawable = new DrawableText();
+        drawable = SB_new<DrawableText>();
         break;
 
     case ElementType::DIV:
-        drawable = new DrawableRect();
+        drawable = SB_new<DrawableRect>();
         break;
 
     default:
@@ -238,7 +240,7 @@ void SableUI::Element::AddChild(Element* child)
 {
     if (type != ElementType::DIV) { SableUI_Error("Cannot add child to element not of type div"); return; };
     
-    children.emplace_back(new Child(child));
+    children.emplace_back(SB_new<Child>(child));
 }
 
 void SableUI::Element::AddChild(Child* child)
@@ -828,7 +830,7 @@ bool SableUI::Element::Reconcile(VirtualNode* vnode)
     if (this->children.size() != vnode->children.size())
     {
         for (Child* child : this->children)
-            delete child;
+            SB_delete(child);
         this->children.clear();
 
         SetElementBuilderContext(this->renderer, this, false);
@@ -848,7 +850,7 @@ bool SableUI::Element::Reconcile(VirtualNode* vnode)
         if (childElHash != childVnHash)
         {
             for (Child* child : this->children)
-                delete child;
+                SB_delete(child);
             this->children.clear();
 
             SetElementBuilderContext(this->renderer, this, false);
@@ -997,15 +999,15 @@ void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
 SableUI::Element::~Element()
 {
     n_elements--;
-    delete drawable;
+    SB_delete(drawable);
 
-    for (Child* child : children) delete child;
+    for (Child* child : children) SB_delete(child);
     children.clear();
 }
 
 SableUI::VirtualNode::~VirtualNode()
 {
-    delete childComp;
-    for (VirtualNode* child : children) delete child;
+    SB_delete(childComp);
+    for (VirtualNode* child : children) SB_delete(child);
 	children.clear();
 }

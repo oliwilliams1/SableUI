@@ -1,4 +1,5 @@
 #include "SableUI/window.h"
+#include "SableUI/memory.h"
 
 #include <cstdio>
 #include <iostream>
@@ -16,6 +17,8 @@
 #include <windows.h>
 #include <dwmapi.h>
 #endif
+
+using namespace SableMemory;
 
 static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 {
@@ -136,7 +139,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 
-	m_root = new SableUI::RootPanel(&m_renderer, width, height);
+	m_root = SB_new<SableUI::RootPanel>(&m_renderer, width, height);
 }
 
 void SableUI::Window::InitOpenGL()
@@ -698,7 +701,7 @@ SableUI::Window::~Window()
 {
 	glfwMakeContextCurrent(m_window);
 
-	delete m_root;
+	SB_delete(m_root);
 	DestroyDrawables();
 	glfwDestroyWindow(m_window);
 }

@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "SableUI/component.h"
+#include "SableUI/memory.h"
 
 namespace SableUI
 {
@@ -116,9 +117,9 @@ namespace SableUI
 	{
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 
-        if (m_component == nullptr) delete m_component;
+        if (m_component == nullptr) SableMemory::SB_delete(m_component);
 
-        m_component = new T(std::forward<Args>(args)...);
+        m_component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
         m_component->BackendInitialisePanel(m_renderer);
 
         Update();

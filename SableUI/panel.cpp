@@ -1,4 +1,7 @@
 #include "SableUI/panel.h"
+#include "SableUI/memory.h"
+
+using namespace SableMemory;
 
 SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
@@ -46,7 +49,7 @@ SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(null
 
 SableUI::RootPanel::~RootPanel()
 {
-	for (SableUI::BasePanel* child : children) delete child;
+	for (SableUI::BasePanel* child : children) SB_delete(child);
 	children.clear();
 }
 
@@ -92,7 +95,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 		SableUI_Error("Root node cannot have more than one child, dismissing call");
 		return nullptr;
 	}
-	SplitterPanel* node = new SplitterPanel(this, type, m_renderer);
+	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
 	children.push_back(node);
 
 	Recalculate();
@@ -106,7 +109,7 @@ SableUI::Panel* SableUI::RootPanel::AddPanel()
 		SableUI_Error("Root node cannot have more than one child, dismissing call");
 		return nullptr;
 	}
-	Panel* node = new Panel(this, m_renderer);
+	Panel* node = SB_new<Panel>(this, m_renderer);
 	children.push_back(node);
 
 	Recalculate();
@@ -158,7 +161,7 @@ void SableUI::SplitterPanel::Render()
 
 SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 {
-	SplitterPanel* node = new SplitterPanel(this, type, m_renderer);
+	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
 	children.push_back(node);
 
 	FindRoot()->Recalculate();
@@ -167,7 +170,7 @@ SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 
 SableUI::Panel* SableUI::SplitterPanel::AddPanel()
 {
-	Panel* node = new Panel(this, m_renderer);
+	Panel* node = SB_new<Panel>(this, m_renderer);
 	children.push_back(node);
 
 	FindRoot()->Recalculate();
@@ -414,7 +417,7 @@ void SableUI::SplitterPanel::Update()
 SableUI::SplitterPanel::~SplitterPanel()
 {
 	for (BasePanel* child : children)
-		delete child;
+		SB_delete(child);
 	children.clear();
 }
 
@@ -427,7 +430,7 @@ SableUI::Panel::Panel(BasePanel* parent, Renderer* renderer) : BasePanel(parent,
 
 SableUI::Panel::~Panel()
 {
-	delete m_component;
+	SB_delete(m_component);
 }
 
 SableUI::SplitterPanel* SableUI::Panel::AddSplitter(PanelType type)
@@ -461,7 +464,7 @@ void SableUI::Panel::Update()
 {
 	if (m_component == nullptr)
 	{
-		m_component = new BaseComponent();
+		m_component = SB_new<BaseComponent>();
 		m_component->BackendInitialisePanel(m_renderer);
 	}
 

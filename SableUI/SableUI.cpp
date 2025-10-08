@@ -1,5 +1,6 @@
 #include "SableUI/SableUI.h"
 #include "SableUI/component.h"
+#include "SableUI/memory.h"
 #include <stack>
 
 /* Panel builder */
@@ -10,6 +11,8 @@ static std::stack<SableUI::BasePanel*> s_panelStack;
 static std::stack<SableUI::VirtualNode*> s_virtualStack;
 static SableUI::VirtualNode* s_virtualRoot = nullptr;
 static bool s_reconciliationMode = false;
+
+using namespace SableMemory;
 
 void SableUI::SetContext(SableUI::Window* window)
 {
@@ -22,7 +25,7 @@ void SableUI::StartDivVirtual(const SableUI::ElementInfo& info, SableUI::BaseCom
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 
-    auto* vnode = new VirtualNode();
+    auto* vnode = SB_new<VirtualNode>();
     vnode->type = ElementType::DIV;
     vnode->info = info;
     vnode->childComp = child;
@@ -42,7 +45,7 @@ void SableUI::EndDivVirtual()
 void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
-    auto* vnode = new VirtualNode();
+    auto* vnode = SB_new<VirtualNode>();
     vnode->type = ElementType::RECT;
     vnode->info = info;
 
@@ -53,7 +56,7 @@ void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
 void SableUI::AddTextVirtual(const std::string& text, const SableUI::ElementInfo& info)
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
-    auto* vnode = new VirtualNode();
+    auto* vnode = SB_new<VirtualNode>();
     vnode->type = ElementType::TEXT;
     vnode->uniqueTextOrPath = text.c_str();
     vnode->info = info;
@@ -65,7 +68,7 @@ void SableUI::AddTextVirtual(const std::string& text, const SableUI::ElementInfo
 void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info)
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
-    auto* vnode = new VirtualNode();
+    auto* vnode = SB_new<VirtualNode>();
     vnode->type = ElementType::TEXT_U32;
     vnode->uniqueTextOrPath = text;
     vnode->info = info;
@@ -77,7 +80,7 @@ void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info
 void SableUI::AddImageVirtual(const std::string& path, const SableUI::ElementInfo& info)
 {
     VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
-    auto* vnode = new VirtualNode();
+    auto* vnode = SB_new<VirtualNode>();
     vnode->type = ElementType::IMAGE;
     vnode->uniqueTextOrPath = path.c_str();
     vnode->info = info;
@@ -154,9 +157,9 @@ void SableUI::SetElementBuilderContext(Renderer* renderer, Element* rootElement,
 
     if (isVirtual)
     {
-        delete s_virtualRoot;
+        SB_delete(s_virtualRoot);
         s_virtualStack = std::stack<VirtualNode*>();
-        s_virtualRoot = new VirtualNode();
+        s_virtualRoot = SB_new<VirtualNode>();
         s_virtualRoot->info = rootElement->GetInfo();
         s_virtualRoot->type = rootElement->type;
         s_virtualRoot->uniqueTextOrPath = rootElement->uniqueTextOrPath;
@@ -180,7 +183,6 @@ SableUI::VirtualNode* SableUI::GetVirtualRootNode()
 {
     return s_virtualRoot;
 }
-
 
 SableUI::Element* SableUI::GetCurrentElement()
 {
@@ -209,7 +211,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 
     Element* parent = s_elementStack.top();
 
-    Element* newDiv = new Element(s_elementRenderer, ElementType::DIV);
+    Element* newDiv = SB_new<Element>(s_elementRenderer, ElementType::DIV);
     newDiv->SetInfo(info);
 
     if (child == nullptr)
@@ -219,7 +221,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
     else
     {
         child->SetRootElement(newDiv);
-        parent->AddChild(new Child(child));
+        parent->AddChild(SB_new<Child>(child));
     }
 
     s_elementStack.push(newDiv);
@@ -252,7 +254,7 @@ void SableUI::AddRect(const ElementInfo& p_info)
     }
 
     Element* parent = s_elementStack.top();
-    Element* newRect = new Element(s_elementRenderer, ElementType::RECT);
+    Element* newRect = SB_new<Element>(s_elementRenderer, ElementType::RECT);
 
     newRect->SetInfo(info);
     parent->AddChild(newRect);
@@ -273,7 +275,7 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
     }
 
     Element* parent = s_elementStack.top();
-    Element* newImage = new Element(s_elementRenderer, ElementType::IMAGE);
+    Element* newImage = SB_new<Element>(s_elementRenderer, ElementType::IMAGE);
 
     newImage->uniqueTextOrPath = path.c_str();
     newImage->SetInfo(info);
@@ -296,7 +298,7 @@ void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
     }
 
     Element* parent = s_elementStack.top();
-    Element* newText = new Element(s_elementRenderer, ElementType::TEXT);
+    Element* newText = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
 
     newText->uniqueTextOrPath = text.c_str();
     newText->SetInfo(info);
@@ -319,7 +321,7 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
     }
 
     Element* parent = s_elementStack.top();
-    Element* newTextU32 = new Element(s_elementRenderer, ElementType::TEXT);
+    Element* newTextU32 = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
 
     newTextU32->uniqueTextOrPath = text;
     newTextU32->SetInfo(info);
@@ -393,7 +395,7 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
         s_backend = SableUI::Backend::OpenGL;
     }
 
-    s_app = new App(name, width, height, x, y);
+    s_app = SB_new<App>(name, width, height, x, y);
 
     return s_app->m_mainWindow;
 }
@@ -405,7 +407,7 @@ void SableUI::Shutdown()
         SableUI_Runtime_Error("SableUI has not been initialised");
     }
 
-    delete s_app;
+    SB_delete(s_app);
     s_app = nullptr;
 }
 
@@ -433,9 +435,10 @@ void SableUI::Render() {
 
 App::App(const char* name, int width, int height, int x, int y)
 {
+    SableMemory::InitPools();
     SableUI::SableUI_Window_Initalise_GLFW();
 
-    m_mainWindow = new SableUI::Window(s_backend, nullptr, name, width, height, x, y);
+    m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, x, y);
 
     SableUI::InitFontManager();
     SableUI::InitDrawables();
@@ -446,7 +449,7 @@ SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int hei
 {
     if (m_mainWindow == nullptr) SableUI_Runtime_Error("Cannot create secondary window without main window");
 
-    SableUI::Window* window = new SableUI::Window(s_backend, s_app->m_mainWindow, name, width, height, x, y);
+    SableUI::Window* window = SB_new<SableUI::Window>(s_backend, s_app->m_mainWindow, name, width, height, x, y);
     m_secondaryWindows.push_back(window);
     SableUI::SetContext(window);
     return window;
@@ -462,7 +465,7 @@ bool App::PollEvents()
         SableUI::Window* window = *it;
         if (!window->PollEvents())
         {
-            delete window;
+            SB_delete(window);
             it = m_secondaryWindows.erase(it);
         }
         else
@@ -491,13 +494,15 @@ App::~App()
     SableUI::DestroyFontManager();
     SableUI::DestroyDrawables();
 
-    for (SableUI::Window* window : m_secondaryWindows) delete window;
+    for (SableUI::Window* window : m_secondaryWindows) SB_delete(window);
     m_secondaryWindows.clear();
 
-    delete m_mainWindow;
+    SB_delete(m_mainWindow);
     m_mainWindow = nullptr;
 
     SableUI::SableUI_Window_Terminate_GLFW();
+
+    SableMemory::DestroyPools();
 
     SableUI_Log("Shut down successfully");
 }

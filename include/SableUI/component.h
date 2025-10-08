@@ -1,5 +1,6 @@
 #pragma once
 #include "SableUI/element.h"
+#include "SableUI/memory.h"
 #include <functional>
 #include <map>
 #include <any>
@@ -85,12 +86,12 @@ namespace SableUI
         int m_childCount = 0;
     };
 
-    template<typename T, typename ...Args>
-    inline BaseComponent* BaseComponent::AddComponent(Args && ...args)
+    template<typename T, typename... Args>
+    BaseComponent* BaseComponent::AddComponent(Args&&... args)
     {
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 
-        T* component = new T(std::forward<Args>(args)...);
+        T* component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
         m_componentChildren.push_back(component);
         m_childCount++;
         return component;
