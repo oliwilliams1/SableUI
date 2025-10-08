@@ -40,6 +40,7 @@ namespace SableUI
                 if (other.size != size)
                 {
                     SableUI_Error("StateBlock size mismatch, potential leak");
+                    return;
                 }
                 std::memcpy(start, other.start, size);
             }

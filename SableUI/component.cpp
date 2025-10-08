@@ -11,6 +11,7 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 SableUI::BaseComponent::~BaseComponent()
 {
 	s_ctr--;
+	for (BaseComponent* child : m_componentChildren) delete child;
 	if (rootElement) delete rootElement;
 }
 
@@ -48,8 +49,6 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 
 	m_hash = GetHash(n, name);
 
-	SableUI_Log("Hash for %s_%d is %zu", name, n, m_hash);
-
 	for (int c = 0; c < n; c++)
 	{
 		BaseComponent* child = parent->m_componentChildren[c];
@@ -60,7 +59,6 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 				SableUI_Error("Child %s_%d has a different number of state blocks", name, n);
 				continue;
 			}
-			SableUI_Log("Copying states");
 			for (int i = 0; i < child->m_stateBlocks.size(); i++)
 			{
 				m_stateBlocks[i] = child->m_stateBlocks[i];
@@ -161,6 +159,7 @@ static std::size_t ComputeHash(const SableUI::Element* elem)
 	return h;
 }
 
+/*
 #define COLOR_RESET   "\033[0m"
 #define COLOR_ELEMENT  "\033[34m"
 #define COLOR_VNODE    "\033[32m"
@@ -196,6 +195,7 @@ static std::string PrintTree(SableUI::VirtualNode* vnode, int depth = 0)
 	}
 	return ss.str();
 }
+*/
 
 bool SableUI::BaseComponent::Rerender()
 {
@@ -206,10 +206,10 @@ bool SableUI::BaseComponent::Rerender()
 	LayoutWrapper();
 	VirtualNode* virtualRoot = SableUI::GetVirtualRootNode();
 
-	std::cout << "------ START ------\n";
+	/*std::cout << "------ START ------\n";
 	std::cout << PrintTree(rootElement) << "\n";
 	std::cout << PrintTree(virtualRoot) << "\n";
-	std::cout << "------- END -------\n";
+	std::cout << "------- END -------\n";*/
 
 	rootElement->Reconcile(virtualRoot);
 

@@ -15,6 +15,14 @@ SableUI::String::String(const SableUI::String& other) : m_data(nullptr), m_size(
 	}
 }
 
+SableUI::String::String(SableUI::String&& other) noexcept
+	: m_data(other.m_data), m_size(other.m_size)
+{
+	other.m_data = nullptr;
+	other.m_size = 0;
+}
+
+
 SableUI::String::String(const char32_t* str)
 {
 	if (str)
@@ -50,6 +58,21 @@ SableUI::String::String(const char* str)
 		m_data = nullptr;
 		m_size = 0;
 	}
+}
+
+SableUI::String& SableUI::String::operator=(SableUI::String&& other) noexcept
+{
+	if (this != &other)
+	{
+		delete[] m_data;
+
+		m_data = other.m_data;
+		m_size = other.m_size;
+
+		other.m_data = nullptr;
+		other.m_size = 0;
+	}
+	return *this;
 }
 
 SableUI::String& SableUI::String::operator=(const SableUI::String& other)

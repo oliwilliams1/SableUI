@@ -129,6 +129,7 @@ namespace SableUI
 	class BaseComponent;
 	struct VirtualNode
 	{
+		~VirtualNode();
 		ElementType type;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;

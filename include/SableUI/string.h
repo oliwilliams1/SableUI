@@ -19,8 +19,10 @@ namespace SableUI
 		operator std::string() const;
 
 		// Operators
+		String(SableUI::String&& other) noexcept;
 		String operator+(const String& other) const;
 		String& operator=(const String& other);
+		String& operator=(SableUI::String&& other) noexcept;
 		bool operator==(const String& other) const;
 
 		using iterator = char32_t*;

@@ -834,7 +834,6 @@ bool SableUI::Element::Reconcile(VirtualNode* vnode)
         SetElementBuilderContext(this->renderer, this, false);
         BuildRealSubtreeFromVirtual(vnode);
 
-        SableUI_Log("Rebuilding children of element %zu (child count mismatch)", ComputeHash(this));
         return true;
     }
 
@@ -855,7 +854,6 @@ bool SableUI::Element::Reconcile(VirtualNode* vnode)
             SetElementBuilderContext(this->renderer, this, false);
             BuildRealSubtreeFromVirtual(vnode);
 
-            SableUI_Log("Rebuilding children of element %zu (child hash mismatch)", ComputeHash(this));
             return true;
         }
     }
@@ -1003,4 +1001,11 @@ SableUI::Element::~Element()
 
     for (Child* child : children) delete child;
     children.clear();
+}
+
+SableUI::VirtualNode::~VirtualNode()
+{
+    delete childComp;
+    for (VirtualNode* child : children) delete child;
+	children.clear();
 }

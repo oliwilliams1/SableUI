@@ -134,6 +134,5 @@ int main(int argc, char** argv)
 	}
 
 	SableUI::Shutdown();
-
 	return 0;
 }
