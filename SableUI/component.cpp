@@ -14,8 +14,9 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 SableUI::BaseComponent::~BaseComponent()
 {
 	s_ctr--;
-	for (BaseComponent* child : m_componentChildren) SB_delete(child);
+
 	if (rootElement) SB_delete(rootElement);
+	m_componentChildren.clear();
 }
 
 void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
@@ -74,6 +75,8 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 	StartDiv(info, this);
 	LayoutWrapper();
 	EndDiv();
+
+	SableUI_Log("size %d", m_componentChildren.size());
 }
 
 SableUI::Element* SableUI::BaseComponent::GetRootElement()
