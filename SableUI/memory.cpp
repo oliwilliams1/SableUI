@@ -118,6 +118,8 @@ static void Pool_Destroy(DynamicPool* pool)
 static DynamicPool s_elementPool;
 static DynamicPool s_vnodePool;
 static DynamicPool s_componentPool;
+static DynamicPool s_childPool;
+
 static bool s_poolsInit = false;
 
 void SableMemory::InitPools()
@@ -127,6 +129,7 @@ void SableMemory::InitPools()
     Pool_Init(&s_elementPool, sizeof(SableUI::Element), 1000);
     Pool_Init(&s_vnodePool, sizeof(SableUI::VirtualNode), 1000);
     Pool_Init(&s_componentPool, sizeof(SableUI::BaseComponent), 100);
+    Pool_Init(&s_childPool, sizeof(SableUI::Child), 1100);
 
     s_poolsInit = true;
 }
@@ -147,6 +150,10 @@ void* SableMemory::SB_alloc(size_t size)
     {
         return Pool_Alloc(&s_componentPool);
     }
+    else if (size == sizeof(SableUI::Child))
+    {
+        return Pool_Alloc(&s_childPool);
+    }
 
     return std::malloc(size);
 }
@@ -158,6 +165,7 @@ void SableMemory::SB_free(void* ptr)
     if (Pool_Free(&s_elementPool, ptr)) return;
     if (Pool_Free(&s_vnodePool, ptr)) return;
     if (Pool_Free(&s_componentPool, ptr)) return;
+    if (Pool_Free(&s_childPool, ptr)) return;
 
     std::free(ptr);
 }
@@ -169,6 +177,7 @@ void SableMemory::DestroyPools()
     Pool_Destroy(&s_elementPool);
     Pool_Destroy(&s_vnodePool);
     Pool_Destroy(&s_componentPool);
+    Pool_Destroy(&s_childPool);
 
     s_poolsInit = false;
 }

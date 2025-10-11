@@ -4,79 +4,79 @@
 /* non-macro user api */
 namespace SableUI
 {
-    struct ElementInfo;
-    class Element;
+	struct ElementInfo;
+	class Element;
 
-    void PreInit(int argc, char** argv);
-    void SetBackend(const Backend& backend);
+	void PreInit(int argc, char** argv);
+	void SetBackend(const Backend& backend);
 
-    Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
-    void Shutdown();
+	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
+	void Shutdown();
 
-    Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
+	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
 
-    bool PollEvents();
-    void Render();
+	bool PollEvents();
+	void Render();
 
-    void SetElementBuilderContext(Renderer* renderer, Element* rootElement, bool isVirtual);
-    void SetContext(Window* window);
-    Element* GetCurrentElement();
-    VirtualNode* GetVirtualRootNode();
-    
-    SplitterPanel* StartSplitter(PanelType orientation);
-    void EndSplitter();
-    Panel* AddPanel();
-    
-    void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
-    void EndDivVirtual();
-    void AddRectVirtual(const ElementInfo& info = {});
+	void SetElementBuilderContext(Renderer* renderer, Element* rootElement, bool isVirtual);
+	void SetContext(Window* window);
+	Element* GetCurrentElement();
+	VirtualNode* GetVirtualRootNode();
+	
+	SplitterPanel* StartSplitter(PanelType orientation);
+	void EndSplitter();
+	Panel* AddPanel();
+	
+	void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
+	void EndDivVirtual();
+	void AddRectVirtual(const ElementInfo& info = {});
 	void AddImageVirtual(const std::string& path, const ElementInfo& info = {});
 	void AddTextVirtual(const std::string& text, const ElementInfo& info = {});
 	void AddTextU32Virtual(const SableString& text, const ElementInfo& info = {});
 
-    void StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
-    void EndDiv();
-    void AddRect(const ElementInfo& info = {});
-    void AddImage(const std::string& path, const ElementInfo& info = {});
-    void AddText(const std::string& text, const ElementInfo& info = {});
-    void AddTextU32(const SableString& text, const ElementInfo& info = {});
+	void StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
+	void EndDiv();
+	void AddRect(const ElementInfo& info = {});
+	void AddImage(const std::string& path, const ElementInfo& info = {});
+	void AddText(const std::string& text, const ElementInfo& info = {});
+	void AddTextU32(const SableString& text, const ElementInfo& info = {});
 
 
-    void* GetCurrentContext();
+	void* GetCurrentContext();
 
-    struct DivScope
-    {
-    public:
-        explicit DivScope(const SableUI::ElementInfo& info)
-        {
-            SableUI::StartDiv(info);
-        }
-        ~DivScope()
-        {
-            SableUI::EndDiv();
-        }
-        DivScope(const DivScope&) = delete;
-        DivScope& operator=(const DivScope&) = delete;
-        DivScope(DivScope&&) = default;
-        DivScope& operator=(DivScope&&) = default;
-    };
+	struct DivScope
+	{
+	public:
+		explicit DivScope(const SableUI::ElementInfo& info)
+		{
+			SableUI::StartDiv(info);
+		}
+		~DivScope()
+		{
+			SableUI::EndDiv();
+		}
+		DivScope(const DivScope&) = delete;
+		DivScope& operator=(const DivScope&) = delete;
+		DivScope(DivScope&&) = default;
+		DivScope& operator=(DivScope&&) = default;
+	};
 
-    struct SplitterScope
-    {
-    public:
-        explicit SplitterScope(const PanelType& type)
-        {
-            SableUI::StartSplitter(type);
-        }
-        ~SplitterScope()
-        {
-            SableUI::EndSplitter();
-        }
-        SplitterScope(const SplitterScope&) = delete;
-        SplitterScope& operator=(const SplitterScope&) = delete;
-        SplitterScope(SplitterScope&&) = default;
-        SplitterScope& operator=(SplitterScope&&) = default;
-    };
+	struct SplitterScope
+	{
+	public:
+		explicit SplitterScope(const PanelType& type)
+		{
+			SableUI::StartSplitter(type);
+		}
+		~SplitterScope()
+		{
+			SableUI::EndSplitter();
+		}
+		SplitterScope(const SplitterScope&) = delete;
+		SplitterScope& operator=(const SplitterScope&) = delete;
+		SplitterScope(SplitterScope&&) = default;
+		SplitterScope& operator=(SplitterScope&&) = default;
+	};
 }
 
 /* scoped RAII rect guard api */
@@ -94,15 +94,15 @@ namespace SableUI
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
 /*  Box Model
-    /-----------------------------------------\
-    | Margin (Top, Bottom, Left, Right)       |
-    | |------------------------------------ | |
-    | | Padding (Top, Bottom, Left, Right)  | |
-    | | |-------------------------------- | | |
-    | | | Content (rect)                  | | |
-    | | |-------------------------------- | | |
-    | |------------------------------------ | |
-    \-----------------------------------------/ */
+	/-----------------------------------------\
+	| Margin (Top, Bottom, Left, Right)       |
+	| |------------------------------------ | |
+	| | Padding (Top, Bottom, Left, Right)  | |
+	| | |-------------------------------- | | |
+	| | | Content (rect)                  | | |
+	| | |-------------------------------- | | |
+	| |------------------------------------ | |
+	\-----------------------------------------/ */
 
 #define rgb(r, g, b)    SableUI::Colour(r, g, b)
 
@@ -149,15 +149,21 @@ namespace SableUI
 
 #define dir(value)      .setLayoutDirection(value)
 
-#define useState(variableName, setterName, T, initialValue)                             \
-    T variableName = initialValue;                                                      \
-    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>([this](const T& val) { \
-        if (variableName == val) return;                                                \
-        this->variableName = val;                                                       \
-        this->needsRerender = true;                                                     \
-    }, [this]() {                                                                       \
-        m_stateBlocks.push_back({ &variableName, sizeof(T) }); })                       \
-
+#define useState(variableName, setterName, T, initialValue)			\
+	T variableName = initialValue;									\
+	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(	\
+		[this](T const& val) {										\
+			if constexpr (std::is_pointer_v<T>) {					\
+				if (this->variableName == val) return;				\
+			} else {												\
+				if (this->variableName == val) return;				\
+			}														\
+			this->variableName = val;								\
+			this->needsRerender = true;								\
+		},															\
+		[this]() {													\
+			m_stateBlocks.push_back({ &variableName, sizeof(T) });	\
+		})
 
 #define onHover(callback)           .setOnHover(callback)
 #define onHoverExit(callback)       .setOnHoverExit(callback)

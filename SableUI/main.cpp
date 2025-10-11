@@ -1,4 +1,6 @@
 ﻿#include "SableUI/SableUI.h"
+#include "SableUI/components/treeView.h"
+#include "SableUI/components/debugWindow.h"
 
 class ToggleImageView : public SableUI::BaseComponent
 {
@@ -96,7 +98,7 @@ int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
 	//SableUI::SetBackend(SableUI::Backend::Vulkan);
-	SableUI::Initialise("SableUI Test", 1600, 900);
+	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
 
 	HSplitter()
 	{
@@ -125,8 +127,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-	//SableUI::CreateSecondaryWindow();
-	//PanelWith(ImageView, "dirtywork.jpg", 160, 160);
+	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	PanelWith(SableUI::DebugWindowView, mainWindow);
 
 	while (SableUI::PollEvents())
 	{

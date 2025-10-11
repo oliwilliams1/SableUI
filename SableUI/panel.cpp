@@ -10,12 +10,15 @@ SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(pa
 	rect.hType = RectType::FILL;
 }
 
-void SableUI::BasePanel::PropagateComponentStateChanges()
+bool SableUI::BasePanel::PropagateComponentStateChanges()
 {
+	bool res = false;
 	for (SableUI::BasePanel* child : children)
 	{
-		child->PropagateComponentStateChanges();
+		res = res || child->PropagateComponentStateChanges();
 	}
+
+	return res;
 }
 
 void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
@@ -500,12 +503,15 @@ void SableUI::Panel::HandleMouseClickEventPanel(const MouseButtonState& mouseSta
 	m_component->GetRootElement()->HandleMouseClickEvent(mouseState);
 }
 
-void SableUI::Panel::PropagateComponentStateChanges()
+bool SableUI::Panel::PropagateComponentStateChanges()
 {
-	if (m_component->comp_PropagateComponentStateChanges())
+	bool res = false;
+	if (m_component->comp_PropagateComponentStateChanges(&res))
 	{
-		m_component->Rerender();
+		m_component->Rerender(&res);
 		m_component->GetRootElement()->LayoutChildren();
 		Update();
 	}
+
+	return res;
 }

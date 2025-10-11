@@ -242,7 +242,7 @@ namespace SableUI
 		void BuildSingleElementFromVirtual(VirtualNode* vnode);
 
 		// event system
-		bool el_PropagateComponentStateChanges();
+		bool el_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
 		void HandleHoverEvent(const ivec2& mousePos);
 		void HandleMouseClickEvent(const MouseButtonState& mouseState);
 

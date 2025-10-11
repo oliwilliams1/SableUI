@@ -66,10 +66,10 @@ namespace SableUI
         Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
         int GetNumChildren() const { return m_childCount; }
-        bool Rerender();
+        bool Rerender(bool* hasContentsChanged = nullptr);
 
         bool needsRerender = false;
-        bool comp_PropagateComponentStateChanges();
+        bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
 
         void AddStateBlock(void* start, size_t size) { m_stateBlocks.push_back(StateBlock(start, size)); }
 

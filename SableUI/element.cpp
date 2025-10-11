@@ -927,21 +927,21 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
     }
 }
 
-bool SableUI::Element::el_PropagateComponentStateChanges()
+bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChanged)
 {
+    bool res = false;
     for (Child* child : children)
     {
-        bool res = false;
         switch (child->type)
         {
         case ChildType::COMPONENT:
         {
-			res = res || child->component->comp_PropagateComponentStateChanges();
+			res = res || child->component->comp_PropagateComponentStateChanges(hasContentsChanged);
             break;
         }
         case ChildType::ELEMENT:
         {
-			res = res || child->element->el_PropagateComponentStateChanges();
+			res = res || child->element->el_PropagateComponentStateChanges(hasContentsChanged);
             break;
         }
         default:
@@ -951,7 +951,7 @@ bool SableUI::Element::el_PropagateComponentStateChanges()
         if (res) return true;
 	}
 
-    return false;
+    return res;
 }
 
 void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)

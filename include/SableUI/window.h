@@ -51,6 +51,10 @@ namespace SableUI
 		MouseButtonState m_mouseButtonStates;
 		ivec2 m_windowSize = ivec2(0, 0);
 
+		void AddUpdateCallback(std::function<void()> callback)
+			{ onUpdateCallbacks.push_back(callback); }
+		void ClearUpdateCallbacks() { onUpdateCallbacks.clear(); }
+
 	private:
 		void InitOpenGL();
 		void InitVulkan();
@@ -82,5 +86,7 @@ namespace SableUI
 
 		bool mouseMoved	= false;
 		bool mouseEvent = false;
+
+		std::vector<std::function<void()>> onUpdateCallbacks;
 	};
 }
