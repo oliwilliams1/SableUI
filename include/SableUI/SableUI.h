@@ -153,11 +153,7 @@ namespace SableUI
 	T variableName = initialValue;									\
 	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(	\
 		[this](T const& val) {										\
-			if constexpr (std::is_pointer_v<T>) {					\
-				if (this->variableName == val) return;				\
-			} else {												\
-				if (this->variableName == val) return;				\
-			}														\
+			if (this->variableName == val) return;					\
 			this->variableName = val;								\
 			this->needsRerender = true;								\
 		},															\

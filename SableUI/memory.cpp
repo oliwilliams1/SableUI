@@ -1,6 +1,7 @@
 #include "SableUI/memory.h"
 #include "SableUI/element.h"
 #include "SableUI/component.h"
+#include "SableUI/drawable.h"
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
@@ -119,6 +120,9 @@ static DynamicPool s_elementPool;
 static DynamicPool s_vnodePool;
 static DynamicPool s_componentPool;
 static DynamicPool s_childPool;
+static DynamicPool s_drawableRectPool;
+static DynamicPool s_drawableImagePool;
+static DynamicPool s_drawableTextPool;
 
 static bool s_poolsInit = false;
 
@@ -126,10 +130,13 @@ void SableMemory::InitPools()
 {
     if (s_poolsInit) return;
 
-    Pool_Init(&s_elementPool, sizeof(SableUI::Element), 1000);
-    Pool_Init(&s_vnodePool, sizeof(SableUI::VirtualNode), 1000);
+    Pool_Init(&s_elementPool, sizeof(SableUI::Element), 500);
+    Pool_Init(&s_vnodePool, sizeof(SableUI::VirtualNode), 500);
     Pool_Init(&s_componentPool, sizeof(SableUI::BaseComponent), 100);
-    Pool_Init(&s_childPool, sizeof(SableUI::Child), 1100);
+    Pool_Init(&s_childPool, sizeof(SableUI::Child), 600);
+    Pool_Init(&s_drawableRectPool, sizeof(SableUI::DrawableRect), 250);
+	Pool_Init(&s_drawableImagePool, sizeof(SableUI::DrawableImage), 50);
+	Pool_Init(&s_drawableTextPool, sizeof(SableUI::DrawableText), 50);
 
     s_poolsInit = true;
 }
@@ -154,6 +161,18 @@ void* SableMemory::SB_alloc(size_t size)
     {
         return Pool_Alloc(&s_childPool);
     }
+    else if (size == sizeof(SableUI::DrawableRect))
+	{
+		return Pool_Alloc(&s_drawableRectPool);
+	}
+	else if (size == sizeof(SableUI::DrawableImage))
+	{
+		return Pool_Alloc(&s_drawableImagePool);
+	}
+	else if (size == sizeof(SableUI::DrawableText))
+	{
+		return Pool_Alloc(&s_drawableTextPool);
+	}
 
     return std::malloc(size);
 }
@@ -166,6 +185,9 @@ void SableMemory::SB_free(void* ptr)
     if (Pool_Free(&s_vnodePool, ptr)) return;
     if (Pool_Free(&s_componentPool, ptr)) return;
     if (Pool_Free(&s_childPool, ptr)) return;
+    if (Pool_Free(&s_drawableRectPool, ptr)) return;
+	if (Pool_Free(&s_drawableImagePool, ptr)) return;
+	if (Pool_Free(&s_drawableTextPool, ptr)) return;
 
     std::free(ptr);
 }
@@ -178,6 +200,9 @@ void SableMemory::DestroyPools()
     Pool_Destroy(&s_vnodePool);
     Pool_Destroy(&s_componentPool);
     Pool_Destroy(&s_childPool);
+    Pool_Destroy(&s_drawableRectPool);
+	Pool_Destroy(&s_drawableImagePool);
+	Pool_Destroy(&s_drawableTextPool);
 
     s_poolsInit = false;
 }

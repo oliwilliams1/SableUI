@@ -5,10 +5,33 @@
 #include "SableUI/memory.h"
 
 using namespace SableMemory;
+class ImageView2 : public SableUI::BaseComponent
+{
+public:
+	explicit ImageView2(std::string  path, const int width = 128, const int height = 128)
+		: SableUI::BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
+
+	void Layout() override
+	{
+		Image(m_path, w(width) h(height) centerXY
+			onHover([&]() { setText(U"unicode test"); })
+			onHoverExit([&]() { setText(U"lorem ipsum"); }));
+
+		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
+		{
+			TextU32(text, minW(100));
+		}
+	}
+
+private:
+	std::string m_path;
+	int width, height;
+	useState(text, setText, SableString, U"lorem ipsum");
+};
 
 namespace SableUI
 {
-	SableString GetPanelName(BasePanel* panel)
+	inline SableString GetPanelName(BasePanel* panel)
 	{
 		switch (panel->type)
 		{
@@ -56,6 +79,7 @@ namespace SableUI
 			return "text u32";
 			break;
 		default:
+			return "unknown element type";
 			break;
 		}
 	}
@@ -66,11 +90,8 @@ namespace SableUI
 		DebugWindowView(SableUI::Window* window) : SableUI::BaseComponent()
 		{
 			m_window = window;
-			GenerateTreeView(m_window->GetRoot());
-			m_window->AddUpdateCallback([this]() { WindowUpdate(m_window); });
+			GenerateTreeView(window->GetRoot());
 		}
-
-		~DebugWindowView() { if (m_window) m_window->ClearUpdateCallbacks(); }
 
 		TreeNode BuildTreeFromPanel(BasePanel* panel)
 		{
@@ -108,21 +129,19 @@ namespace SableUI
 
 		void GenerateTreeView(BasePanel* root)
 		{
-			rootNode = BuildTreeFromPanel(root);
-		}
-
-		void WindowUpdate(Window* window)
-		{
-			GenerateTreeView(window->GetRoot());
+			//tree = BuildTreeFromPanel(root);
 		}
 
 		void Layout() override
 		{
-			Component(TreeView, bg(32, 32, 32), rootNode);
+			SableUI_Log("Re rendering tree view");
+			Text(std::to_string(n));
+			Component(ImageView2, , "3.png");
 		}
 
 	private:
-		SableUI::Window* m_window = nullptr;
-		TreeNode rootNode;
+		useState(n, setN, int, 0);
+		Window* m_window = nullptr;
+		bool windowUpdated = false;
 	};
 }

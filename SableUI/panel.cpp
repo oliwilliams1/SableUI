@@ -14,9 +14,7 @@ bool SableUI::BasePanel::PropagateComponentStateChanges()
 {
 	bool res = false;
 	for (SableUI::BasePanel* child : children)
-	{
 		res = res || child->PropagateComponentStateChanges();
-	}
 
 	return res;
 }

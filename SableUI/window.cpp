@@ -296,11 +296,7 @@ bool SableUI::Window::PollEvents()
 		m_mouseButtonStates.RMBEvent = MouseEvent::NONE;
 	}
 
-	if (m_root->PropagateComponentStateChanges())
-	{
-		for (std::function<void()> f : onUpdateCallbacks)
-			f();
-	}
+	m_LayoutUpdated = m_root->PropagateComponentStateChanges();
 
 	StepCachedTexturesCleaner();
 

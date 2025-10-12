@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <utility>
+
 #include "SableUI/SableUI.h"
 
 namespace SableUI
@@ -9,23 +11,13 @@ namespace SableUI
 		std::vector<TreeNode> children;
 		bool isExpanded = false;
 
-		bool operator ==(const TreeNode& other) const
-		{
-			if (label != other.label)
-				return false;
-			if (children.size() != other.children.size())
-				return false;
-			for (int i = 0; i < children.size(); i++)
-				if (children[i] != other.children[i])
-					return false;
-			return true;
-		}
+		auto operator<=>(const TreeNode&) const = default;
 	};
 
-	class TreeView : public SableUI::BaseComponent
+	class TreeView final : public SableUI::BaseComponent
 	{
 	public:
-		TreeView(const TreeNode& rootNode) : BaseComponent(), treeData(rootNode) {}
+		explicit TreeView(TreeNode  rootNode) : BaseComponent(), treeData(std::move(rootNode)) {}
 
 		void SetData(const TreeNode& rootNode)
 		{
@@ -35,6 +27,9 @@ namespace SableUI
 
 		void Layout() override
 		{
+			if (!rootElement)
+				return;
+
 			nRow = 0;
 			rootElement->setWType(SableUI::RectType::FILL);
 			RenderNode(treeData, 0);

@@ -1,4 +1,6 @@
-﻿#include "SableUI/SableUI.h"
+﻿#include <utility>
+
+#include "SableUI/SableUI.h"
 #include "SableUI/components/treeView.h"
 #include "SableUI/components/debugWindow.h"
 
@@ -9,7 +11,7 @@ public:
 
 	void Layout() override
 	{
-		std::string path = (toggleState) ? "bomb.webp" : "junior.jpg";
+		std::string path = (toggleState) ? "1.jpg" : "2.png";
 
 		Div(w(128) h_fit)
 		{
@@ -71,13 +73,11 @@ private:
 class ImageView : public SableUI::BaseComponent
 {
 public:
-	ImageView(const std::string& path, int width = 128, int height = 128)
-		: SableUI::BaseComponent(), width(width), height(height), m_path(path) {};
+	explicit ImageView(std::string  path, const int width = 128, const int height = 128)
+		: SableUI::BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
 
 	void Layout() override
 	{
-		std::u32string pathU32 = std::u32string(m_path.begin(), m_path.end());
-
 		Image(m_path, w(width) h(height) centerXY
 			onHover([&]() { setText(U"unicode test ⟡ ↀ 안녕하세요, 제 이름은 오리 입니다. 저 는 열일곱 살 입니다. 저는 뉴젠스 좋압니다."); })
 			onHoverExit([&]() { setText(U"lorem ipsum"); }));
@@ -113,22 +113,18 @@ int main(int argc, char** argv)
 					HSplitter()
 					{
 						PanelWith(TestComponent, 80);
-						PanelWith(ImageView, "dirtywork.jpg", 128, 128);
+						PanelWith(ImageView, "3.png", 128, 128);
 					}
 				}
 			}
 			PanelWith(ToggleImageView);
 
 		}
-		VSplitter()
-		{
-			Panel();
-			Panel();
-		}
+		PanelWith(SableUI::DebugWindowView, mainWindow);
 	}
 
-	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	PanelWith(SableUI::DebugWindowView, mainWindow);
+	// SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	// PanelWith(SableUI::DebugWindowView, mainWindow);
 
 	while (SableUI::PollEvents())
 	{

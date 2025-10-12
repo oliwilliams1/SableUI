@@ -52,10 +52,11 @@ namespace SableUI
     {
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
-        ~BaseComponent();
+
+        virtual ~BaseComponent();
 
         virtual void Layout() {};
-        void LayoutWrapper() { m_childCount = 0; Layout(); }
+        void LayoutWrapper();
         virtual void OnHover() {};
         void BackendInitialisePanel(Renderer* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);

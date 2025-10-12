@@ -127,6 +127,8 @@ void SableUI::EndSplitter()
 
     s_currentPanel = s_panelStack.top();
     s_panelStack.pop();
+    s_currentContext->RecalculateNodes();
+    s_currentContext->RecalculateNodes();
 }
 
 SableUI::Panel* SableUI::AddPanel()
