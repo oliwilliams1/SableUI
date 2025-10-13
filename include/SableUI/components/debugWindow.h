@@ -14,8 +14,8 @@ public:
 	void Layout() override
 	{
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test"); })
-			onHoverExit([&]() { setText(U"lorem ipsum"); }));
+			onHover([&]() { setText(U"unicode test 2"); })
+			onHoverExit([&]() { setText(U"lorem ipsum 2"); }));
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
 		{
@@ -24,9 +24,9 @@ public:
 	}
 
 private:
-	std::string m_path;
+	std::string m_path;  
 	int width, height;
-	useState(text, setText, SableString, U"lorem ipsum");
+	useState(text, setText, SableString, U"lorem ipsum 2");
 };
 
 namespace SableUI
@@ -134,12 +134,13 @@ namespace SableUI
 
 		void Layout() override
 		{
-			SableUI_Log("Re rendering tree view");
-			Text(std::to_string(n));
+			std::string path = (toggleState) ? "1.jpg" : "2.png";
+			TextU32(std::to_string(n).c_str(), onClick([&]() { setN(n + 1); }));
 			Component(ImageView2, , "3.png");
 		}
 
 	private:
+		useState(toggleState, setToggleState, bool, false);
 		useState(n, setN, int, 0);
 		Window* m_window = nullptr;
 		bool windowUpdated = false;

@@ -996,6 +996,17 @@ void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
     }
 }
 
+void SableUI::Element::PropagateCustomUpdates()
+{
+    if (m_customUpdateFunc) m_customUpdateFunc();
+
+	for (Child* child : children)
+	{
+		Element* el = (Element*)*child;
+		el->PropagateCustomUpdates();
+	}
+}
+
 SableUI::Element::~Element()
 {
     n_elements--;
@@ -1007,7 +1018,6 @@ SableUI::Element::~Element()
 
 SableUI::VirtualNode::~VirtualNode()
 {
-    SB_delete(childComp);
     for (VirtualNode* child : children) SB_delete(child);
 	children.clear();
 }

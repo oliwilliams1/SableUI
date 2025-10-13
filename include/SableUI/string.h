@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <cstddef>
+#include <utility>
 
 namespace SableUI
 {
@@ -8,34 +10,35 @@ namespace SableUI
 	public:
 		String();
 		~String();
+
 		String(const String& other);
+		String(String&& other) noexcept;
 		String(const char32_t* str);
 		String(const char* str);
 
-		// Accessors
-		size_t size() const;
-		char32_t operator[](size_t index) const;
+		String& operator=(const String& other);
+		String& operator=(String&& other) noexcept;
+		String operator+(const String& other) const;
+		bool operator==(const String& other) const;
+
+		size_t size() const noexcept { return m_size; }
+		bool empty() const noexcept { return m_size == 0; }
+		char32_t operator[](size_t index) const noexcept { return m_data[index]; }
 
 		operator std::string() const;
-
-		// Operators
-		String(SableUI::String&& other) noexcept;
-		String operator+(const String& other) const;
-		String& operator=(const String& other);
-		String& operator=(SableUI::String&& other) noexcept;
-		bool operator==(const String& other) const;
 
 		using iterator = char32_t*;
 		using const_iterator = const char32_t*;
 
-		iterator begin();
-		iterator end();
-
-		const_iterator begin() const;
-		const_iterator end() const;
+		iterator begin() noexcept { return m_data; }
+		iterator end() noexcept { return m_data + m_size; }
+		const_iterator begin() const noexcept { return m_data; }
+		const_iterator end() const noexcept { return m_data + m_size; }
 
 	private:
-		char32_t* m_data = nullptr;
-		size_t m_size = 0;
+		void clear() noexcept;
+
+		char32_t* m_data;
+		size_t m_size;
 	};
 }

@@ -24,9 +24,7 @@ void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
 	isFocused = RectBoundingBox(rect, mousePos);
 
 	for (SableUI::BasePanel* child : children)
-	{
 		child->HandleHoverEventPanel(mousePos);
-	}
 }
 
 void SableUI::BasePanel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
@@ -35,9 +33,13 @@ void SableUI::BasePanel::HandleMouseClickEventPanel(const MouseButtonState& mous
 	if (!isFocused) return;
 
 	for (SableUI::BasePanel* child : children)
-	{
 		child->HandleMouseClickEventPanel(mouseState);
-	}
+}
+
+void SableUI::BasePanel::PropagateCustomUpdates()
+{
+	for (SableUI::BasePanel* child : children)
+		child->PropagateCustomUpdates();
 }
 
 /* Root node implementation */
@@ -57,9 +59,7 @@ SableUI::RootPanel::~RootPanel()
 void SableUI::RootPanel::Render()
 {
 	for (SableUI::BasePanel* child : children)
-	{
 		child->Render();
-	}
 }
 
 void SableUI::RootPanel::Recalculate()
@@ -152,9 +152,7 @@ void SableUI::SplitterPanel::Render()
 {
 	if (!m_drawableUpToDate) Update();
 	for (SableUI::BasePanel* child : children)
-	{
 		child->Render();
-	}
 
 	m_drawable.m_zIndex = 999;
 	m_renderer->Draw(&m_drawable);
@@ -292,9 +290,7 @@ void SableUI::SplitterPanel::CalculateScales()
 	}
 
 	for (BasePanel* child : children)
-	{
 		child->CalculateScales();
-	}
 }
 
 void SableUI::SplitterPanel::CalculatePositions()
@@ -346,9 +342,7 @@ void SableUI::SplitterPanel::CalculatePositions()
 		bool childPositionChanged = false;
 		child->CalculatePositions();
 		if (childPositionChanged)
-		{
 			toUpdate = true;
-		}
 	}
 
 	if (toUpdate) Update();
@@ -401,13 +395,9 @@ void SableUI::SplitterPanel::Update()
 		child->Update();
 
 		if (type == PanelType::HORIZONTAL)
-		{
 			segments.push_back(child->rect.x - rect.x);
-		}
 		if (type == PanelType::VERTICAL)
-		{
 			segments.push_back(child->rect.y - rect.y);
-		}
 	}
 	
 	m_drawable.Update(rect, m_bColour, type, bSize, segments);
@@ -499,6 +489,11 @@ void SableUI::Panel::HandleHoverEventPanel(const ivec2& mousePos)
 void SableUI::Panel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
 {
 	m_component->GetRootElement()->HandleMouseClickEvent(mouseState);
+}
+
+void SableUI::Panel::PropagateCustomUpdates()
+{
+	m_component->GetRootElement()->PropagateCustomUpdates();
 }
 
 bool SableUI::Panel::PropagateComponentStateChanges()
