@@ -41,7 +41,6 @@ namespace SableUI
 	void AddText(const std::string& text, const ElementInfo& info = {});
 	void AddTextU32(const SableString& text, const ElementInfo& info = {});
 
-
 	void* GetCurrentContext();
 
 	struct DivScope
@@ -104,62 +103,67 @@ namespace SableUI
 	| |------------------------------------ | |
 	\-----------------------------------------/ */
 
-#define rgb(r, g, b)    SableUI::Colour(r, g, b)
+#define rgb(r, g, b) SableUI::Colour(r, g, b)
 
 /* style modifiers */
-#define id(value)       .setID(value)
-#define bg(...)         .setBgColour(SableUI::Colour(__VA_ARGS__))
-#define w(value)        .setWidth(value)
-#define minW(value)     .setMinWidth(value)
-#define maxW(value)     .setMaxWidth(value)
-#define h(value)        .setHeight(value)
-#define minH(value)     .setMinHeight(value)
-#define maxH(value)     .setMaxHeight(value)
-#define w_fill          .setWType(SableUI::RectType::FILL)
-#define h_fill          .setHType(SableUI::RectType::FILL)
-#define w_fixed         .setWType(SableUI::RectType::FIXED)
-#define h_fixed         .setHType(SableUI::RectType::FIXED)
-#define w_fit           .setWType(SableUI::RectType::FIT_CONTENT)
-#define h_fit           .setHType(SableUI::RectType::FIT_CONTENT)
+#define id(value)			.setID(value)
+#define bg(...)				.setBgColour(SableUI::Colour(__VA_ARGS__))
+#define w(value)			.setWidth(value)
+#define minW(value)			.setMinWidth(value)
+#define maxW(value)			.setMaxWidth(value)
+#define h(value)			.setHeight(value)
+#define minH(value)			.setMinHeight(value)
+#define maxH(value)			.setMaxHeight(value)
+#define w_fill				.setWType(SableUI::RectType::FILL)
+#define h_fill				.setHType(SableUI::RectType::FILL)
+#define w_fixed				.setWType(SableUI::RectType::FIXED)
+#define h_fixed				.setHType(SableUI::RectType::FIXED)
+#define w_fit				.setWType(SableUI::RectType::FIT_CONTENT)
+#define h_fit				.setHType(SableUI::RectType::FIT_CONTENT)
 
-#define m(value)        .setMargin(value)
-#define mx(value)       .setMarginX(value)
-#define my(value)       .setMarginY(value)
-#define mt(value)       .setMarginTop(value)
-#define mb(value)       .setMarginBottom(value)
-#define ml(value)       .setMarginLeft(value)
-#define mr(value)       .setMarginRight(value)
+#define m(value)			.setMargin(value)
+#define mx(value)			.setMarginX(value)
+#define my(value)			.setMarginY(value)
+#define mt(value)			.setMarginTop(value)
+#define mb(value)			.setMarginBottom(value)
+#define ml(value)			.setMarginLeft(value)
+#define mr(value)			.setMarginRight(value)
 
-#define p(value)        .setPaddingX(value).setPaddingY(value)
-#define px(value)       .setPaddingX(value)
-#define py(value)       .setPaddingY(value)
-#define pt(value)       .setPaddingTop(value)
-#define pb(value)       .setPaddingBottom(value)
-#define pl(value)       .setPaddingLeft(value)
-#define pr(value)       .setPaddingRight(value)
+#define p(value)			.setPaddingX(value).setPaddingY(value)
+#define px(value)			.setPaddingX(value)
+#define py(value)			.setPaddingY(value)
+#define pt(value)			.setPaddingTop(value)
+#define pb(value)			.setPaddingBottom(value)
+#define pl(value)			.setPaddingLeft(value)
+#define pr(value)			.setPaddingRight(value)
 
-#define centerX         .setCenterX(true)
-#define centerY         .setCenterY(true)
-#define centerXY        .setCenterX(true).setCenterY(true)
+#define fontSize(value)		.setFontSize(value)
+#define lineHeight(value)	.setLineHeight(value)
 
-#define left_right      .setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
-#define right_left      .setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)
-#define up_down         .setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
-#define down_up         .setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
+#define centerX				.setCenterX(true)
+#define centerY				.setCenterY(true)
+#define centerXY			.setCenterX(true).setCenterY(true)
 
-#define dir(value)      .setLayoutDirection(value)
+#define left_right			.setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
+#define right_left			.setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)
+#define up_down				.setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
+#define down_up				.setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
 
-#define useState(variableName, setterName, T, initialValue)			\
-	T variableName = initialValue;									\
-	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(	\
-		[this](T const& val) {										\
-			if (this->variableName == val) return;					\
-			this->variableName = val;								\
-			this->needsRerender = true;								\
-		},															\
-		[this]() {													\
-			m_stateBlocks.push_back({ &variableName, sizeof(T) });	\
-		})
+#define dir(value)			.setLayoutDirection(value)
+
+#define useState(variableName, setterName, T, initialValue)				\
+    T variableName = initialValue;										\
+    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(		\
+        [this](T const& val) {											\
+            if (this->variableName == val) return;						\
+            this->variableName = val;									\
+            this->needsRerender = true;									\
+        });																\
+    struct __StateReg_##variableName {									\
+        __StateReg_##variableName(SableUI::BaseComponent* comp, T* var)	\
+        { comp->RegisterState(var); }									\
+    } __stateReg_##variableName{this, &variableName};
+
 
 #define onHover(callback)           .setOnHover(callback)
 #define onHoverExit(callback)       .setOnHoverExit(callback)

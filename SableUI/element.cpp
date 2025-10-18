@@ -152,6 +152,8 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->paddingBottom             = info.paddingBottom;
     this->paddingLeft               = info.paddingLeft;
     this->paddingRight              = info.paddingRight;
+    this->fontSize                  = info.fontSize;
+    this->lineHeight                = info.lineHeight;
     this->centerX                   = info.centerX;
     this->centerY                   = info.centerY;
     this->wType                     = info.wType;
@@ -264,7 +266,7 @@ void SableUI::Element::SetImage(const std::string& path)
     }
 }
 
-void SableUI::Element::SetText(const SableString& text, int fontSize, float lineHeight)
+void SableUI::Element::SetText(const SableString& text)
 {
     if (type != ElementType::TEXT) SableUI_Error("Cannot set text on element not of type text");
 
@@ -730,6 +732,8 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.paddingBottom = paddingBottom;
     info.paddingLeft = paddingLeft;
     info.paddingRight = paddingRight;
+    info.fontSize = fontSize;
+    info.lineHeight = lineHeight;
     info.centerX = centerX;
     info.centerY = centerY;
     info.wType = wType;
@@ -780,9 +784,10 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
     hash_combine(h, std::hash<int>()(vnode->info.paddingBottom));
     hash_combine(h, std::hash<int>()(vnode->info.paddingLeft));
     hash_combine(h, std::hash<int>()(vnode->info.paddingRight));
+    hash_combine(h, std::hash<int>()(vnode->info.fontSize));
+	hash_combine(h, std::hash<int>()(vnode->info.lineHeight));
 
     hash_combine(h, std::hash<int>()((int)vnode->info.layoutDirection));
-
     hash_combine(h, std::hash<int>()((vnode->info.bgColour.r << 16) ^ (vnode->info.bgColour.g << 8) ^ vnode->info.bgColour.b));
 
     return h;
@@ -818,6 +823,8 @@ static size_t ComputeHash(const SableUI::Element* elem)
     hash_combine(h, std::hash<int>()(elem->paddingBottom));
     hash_combine(h, std::hash<int>()(elem->paddingLeft));
     hash_combine(h, std::hash<int>()(elem->paddingRight));
+    hash_combine(h, std::hash<int>()(elem->fontSize));
+    hash_combine(h, std::hash<int>()(elem->lineHeight));
 
     hash_combine(h, std::hash<int>()((int)elem->layoutDirection));
     hash_combine(h, std::hash<int>()((elem->bgColour.r << 16) ^ (elem->bgColour.g << 8) ^ elem->bgColour.b));

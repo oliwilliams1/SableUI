@@ -11,7 +11,6 @@ String::String() : m_data(nullptr), m_size(0) {}
 
 String::~String()
 {
-	SableUI_Log("Deleting %s", ((std::string)*this).c_str());
 	clear();
 }
 

@@ -135,7 +135,7 @@ namespace SableUI
 		void Layout() override
 		{
 			std::string path = (toggleState) ? "1.jpg" : "2.png";
-			TextU32(std::to_string(n).c_str(), onClick([&]() { setN(n + 1); }));
+			TextU32(std::to_string(n).c_str(), fontSize(32) onClick([&]() { setN(n + 1); }));
 			Component(ImageView2, , "3.png");
 		}
 

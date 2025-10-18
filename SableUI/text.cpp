@@ -229,7 +229,8 @@ void FontManager::FindFontRanges()
 
 	// iterate font/ dir and find .ttf and .otf files
 	std::vector<std::filesystem::path> fontFiles;
-	try {
+	try
+	{
 		for (const auto& entry : std::filesystem::directory_iterator("fonts/"))
 		{
 			if (entry.path().extension() == ".ttf" || entry.path().extension() == ".otf")
@@ -238,8 +239,44 @@ void FontManager::FindFontRanges()
 			}
 		}
 	}
-	catch (const std::filesystem::filesystem_error& e) {
+	catch (const std::filesystem::filesystem_error& e)
+	{
 		SableUI_Error("FontManager: Could not iterate 'fonts/' directory: %s", e.what());
+	}
+
+	// prioritise certain fonts over others
+	// high priority = NotoSans-Regular.ttf
+	// low priority = NotoEmoji-Regular.ttf
+	{
+		auto itSans = std::find_if(fontFiles.begin(), fontFiles.end(), [](const std::filesystem::path& p)
+			{
+				return p.filename() == "NotoSans-Regular.ttf";
+			});
+
+		auto itEmoji = std::find_if(fontFiles.begin(), fontFiles.end(), [](const std::filesystem::path& p)
+			{
+				return p.filename() == "NotoEmoji-Regular.ttf";
+			});
+
+		std::vector<std::filesystem::path> reordered;
+
+		if (itSans != fontFiles.end())
+		{
+			reordered.push_back(*itSans);
+		}
+
+		for (const auto& p : fontFiles)
+		{
+			if (p.filename() != "NotoSans-Regular.ttf" && p.filename() != "NotoEmoji-Regular.ttf")
+				reordered.push_back(p);
+		}
+
+		if (itEmoji != fontFiles.end())
+		{
+			reordered.push_back(*itEmoji);
+		}
+
+		fontFiles = std::move(reordered);
 	}
 
 	// iterate through every char to see if font file has it, collect ranges
@@ -473,7 +510,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		{
 			requiredHeightForPass = atlas.fontSize + ATLAS_PADDING;
 		}
-		else {
+		else
+		{
 			requiredHeightForPass = ATLAS_PADDING + 1;
 		}
 	}

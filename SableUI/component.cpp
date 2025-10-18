@@ -64,18 +64,9 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 	for (int c = 0; c < n; c++)
 	{
 		BaseComponent* child = parent->m_componentChildren[c];
+
 		if (child->m_hash == m_hash)
-		{
-			if (child->m_stateBlocks.size() != m_stateBlocks.size())
-			{
-				SableUI_Error("Child %s_%d has a different number of state blocks", name, n);
-				continue;
-			}
-			for (int i = 0; i < child->m_stateBlocks.size(); i++)
-			{
-				m_stateBlocks[i] = child->m_stateBlocks[i];
-			}
-		}
+			CopyStateFrom(*child);
 	}
 
 	m_renderer = parent->m_renderer;
@@ -109,9 +100,9 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
-	needsRerender = false;
 	rootElement->Render();
 
+	needsRerender = false;
 	return false;
 }
 
@@ -120,17 +111,36 @@ bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasConten
 {
 	bool res = rootElement->el_PropagateComponentStateChanges(hasContentsChanged);
 
-	bool needsFullRerender = false;
 	if (needsRerender)
 	{
 		if (hasContentsChanged) *hasContentsChanged = true;
 		// Does the re-rendering cause the size of root to be changed?
 		// If so, rerender from next significant component
 		if (Rerender(hasContentsChanged))
-			needsFullRerender = true;
+			needsRerender = true;
 		else
-			needsFullRerender = false;
+			needsRerender = false;
 	}
 
-	return needsRerender;
+	if (needsRerender)
+	{
+		needsRerender = false;
+		return true;
+	}
+
+	return false;
+}
+
+void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
+{
+	if (m_stateBlocks.size() != other.m_stateBlocks.size())
+	{
+		SableUI_Runtime_Error("Trying to copy state from component with different number of state variables");
+		return;
+	}
+
+	for (size_t i = 0; i < m_stateBlocks.size(); i++)
+	{
+		m_stateBlocks[i].CopyFrom(other.m_stateBlocks[i]);
+	}
 }

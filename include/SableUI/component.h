@@ -11,10 +11,8 @@ namespace SableUI
     template<typename T>
     struct StateSetter
     {
-        StateSetter(
-            std::function<void(const T&)> setter, 
-            std::function<void()> initialiser)
-            : m_setter(setter) { initialiser(); }
+        StateSetter(std::function<void(const T&)> setter)
+            : m_setter(setter) {};
 
         void operator()(const T& value) const { m_setter(value); }
         void set(const T& value) const { m_setter(value); }
@@ -28,24 +26,26 @@ namespace SableUI
 
     class Element;
 
-    struct StateBlock
+    class StateBlock
     {
-        void* start;
-        size_t size;
-        StateBlock(void* start, size_t size) : start(start), size(size) {}
-
-        void operator=(const StateBlock& other)
+        StateBlock(void* ptr, std::function<void(void*, const void*)> copier) : ptr(ptr), copier(copier) {}
+        
+        void* ptr;
+        std::function<void(void*, const void*)> copier;
+    
+    public:
+        template<typename T>
+        static StateBlock Create(T* variable)
         {
-            if (this != &other)
-            {
-                if (other.size != size)
-                {
-                    SableUI_Error("StateBlock size mismatch, potential leak");
-                    return;
-                }
-                std::memcpy(start, other.start, size);
-            }
-        };
+            return StateBlock(
+                variable, 
+                [](void* dst, const void* src) {
+                    *static_cast<T*>(dst) = *static_cast<const T*>(src);
+                });
+        }
+
+        void CopyFrom(const StateBlock& other) const
+        { copier(ptr, other.ptr); }
     };
 
     class BaseComponent
@@ -72,11 +72,16 @@ namespace SableUI
         bool needsRerender = false;
         bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
 
-        void AddStateBlock(void* start, size_t size) { m_stateBlocks.push_back(StateBlock(start, size)); }
+        template<typename T>
+        void RegisterState(T* variable)
+        {
+            m_stateBlocks.push_back(StateBlock::Create(variable));
+        }
 
-        std::vector<StateBlock> m_stateBlocks; 
+        void CopyStateFrom(const BaseComponent& other);
 
     protected:
+        std::vector<StateBlock> m_stateBlocks;
         Element* rootElement = nullptr;
 
     private:

@@ -72,6 +72,8 @@ namespace SableUI
 		int paddingBottom = 0;
 		int paddingLeft = 0;
 		int paddingRight = 0;
+		int fontSize = 11;
+		float lineHeight = 1.15f;
 		bool centerX = false;
 		bool centerY = false;
 		RectType wType = RectType::FILL;
@@ -114,6 +116,9 @@ namespace SableUI
 		ElementInfo& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
 		ElementInfo& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
 		ElementInfo& setPaddingRight(int v)					{ paddingRight = v; return *this; }
+
+		ElementInfo& setFontSize(int v)						{ fontSize = v; return *this; }
+		ElementInfo& setLineHeight(float v)					{ lineHeight = v; return *this; }
 
 		ElementInfo& setCenterX(bool v)						{ centerX = v; return *this; }
 		ElementInfo& setCenterY(bool v)						{ centerY = v; return *this; }
@@ -163,7 +168,7 @@ namespace SableUI
 		void AddChild(Element* child);
 		void AddChild(Child* component);
 		void SetImage(const std::string& path);
-		void SetText(const SableString& text, int fontSize = 11, float lineHeight = 1.15f);
+		void SetText(const SableString& text);
 		int GetMinWidth();
 		int GetMinHeight();
 
@@ -183,6 +188,8 @@ namespace SableUI
 		int paddingBottom = 0;
 		int paddingLeft = 0;
 		int paddingRight = 0;
+		int fontSize = 0;
+		int lineHeight = 0.0f;
 		bool centerX = false;
 		bool centerY = false;
 		RectType wType = RectType::FILL;
@@ -226,6 +233,9 @@ namespace SableUI
 		Element& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
 		Element& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
 		Element& setPaddingRight(int v)					{ paddingRight = v; return *this; }
+
+		Element& setFontSize(int v)						{ fontSize = v; return *this; }
+		Element& setLineHeight(float v)					{ lineHeight = v; return *this; }
 
 		Element& setCenterX(bool v)						{ centerX = v; return *this; }
 		Element& setCenterY(bool v)						{ centerY = v; return *this; }
