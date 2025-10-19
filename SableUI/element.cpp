@@ -934,6 +934,46 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
     }
 }
 
+void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
+{
+    if (RectBoundingBox(rect, ctx.mousePos))
+    {
+        if (!isHovered && m_onHoverFunc)
+            m_onHoverFunc();
+
+        isHovered = true;
+
+        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT] && m_onClickFunc) 
+            m_onClickFunc();
+
+        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_RIGHT] && m_onSecondaryClickFunc)
+            m_onSecondaryClickFunc();
+    }
+    else
+    {
+        if (isHovered && m_onHoverExitFunc)
+			m_onHoverExitFunc();
+
+        isHovered = false;
+    }
+
+    for (Child* child : children)
+    {
+        switch (child->type)
+        {
+        case ChildType::COMPONENT:
+            child->component->comp_PropagateEvents(ctx);
+			break;
+        case ChildType::ELEMENT:
+            child->element->el_PropagateEvents(ctx);
+			break;
+        default:
+			SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
+            break;
+        }
+    }
+}
+
 bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChanged)
 {
     bool res = false;
@@ -942,15 +982,11 @@ bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChange
         switch (child->type)
         {
         case ChildType::COMPONENT:
-        {
 			res = res || child->component->comp_PropagateComponentStateChanges(hasContentsChanged);
             break;
-        }
         case ChildType::ELEMENT:
-        {
 			res = res || child->element->el_PropagateComponentStateChanges(hasContentsChanged);
             break;
-        }
         default:
 			SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
         }
@@ -959,59 +995,6 @@ bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChange
 	}
 
     return res;
-}
-
-void SableUI::Element::HandleHoverEvent(const ivec2& mousePos)
-{
-    bool wasHovered = isHovered;
-    isHovered = RectBoundingBox(rect, mousePos);
-
-    if (isHovered)
-    {
-        if (m_onHoverFunc) m_onHoverFunc();
-    }
-    else if (wasHovered && !isHovered)
-    {
-        if (m_onHoverExitFunc) m_onHoverExitFunc();
-    }
-
-    for (Child* child : children)
-    {
-        Element* el = (Element*)*child;
-        el->HandleHoverEvent(mousePos);
-    }
-}
-
-void SableUI::Element::HandleMouseClickEvent(const MouseButtonState& mouseState)
-{
-    isHovered = RectBoundingBox(rect, mouseState.pos);
-    if (!isHovered) return;
-    if (mouseState.LMBEvent == MouseEvent::CLICK)
-	{
-		if (m_onClickFunc) m_onClickFunc();
-	}
-
-    if (mouseState.RMBEvent == MouseEvent::CLICK)
-    {
-        if (m_onSecondaryClickFunc) m_onSecondaryClickFunc();
-    }
-
-    for (Child* child : children)
-    {
-        Element* el = (Element*)*child;
-		el->HandleMouseClickEvent(mouseState);
-    }
-}
-
-void SableUI::Element::PropagateCustomUpdates()
-{
-    if (m_customUpdateFunc) m_customUpdateFunc();
-
-	for (Child* child : children)
-	{
-		Element* el = (Element*)*child;
-		el->PropagateCustomUpdates();
-	}
 }
 
 SableUI::Element::~Element()

@@ -70,13 +70,14 @@ namespace SableUI
         bool Rerender(bool* hasContentsChanged = nullptr);
 
         bool needsRerender = false;
+        void comp_PropagateEvents(const UIEventContext& ctx);
         bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
+
+        virtual void OnUpdate(const UIEventContext& ctx) {}; // user override
 
         template<typename T>
         void RegisterState(T* variable)
-        {
-            m_stateBlocks.push_back(StateBlock::Create(variable));
-        }
+            { m_stateBlocks.push_back(StateBlock::Create(variable)); }
 
         void CopyStateFrom(const BaseComponent& other);
 

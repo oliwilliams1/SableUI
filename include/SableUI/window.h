@@ -21,14 +21,15 @@ namespace SableUI
 	{
 		BasePanel* selectedPanel = nullptr;
 		EdgeType currentEdgeType = EdgeType::NONE;
-		Rect oldPanelRect = { 0,0,0,0 };
+		Rect oldPanelRect = { 0, 0, 0, 0 };
 		BasePanel* olderSiblingNode = nullptr;
-		Rect olderSiblingOldRect = { 0,0,0,0 };
-		ivec2 prevPos = { 0,0 };
-		ivec2 totalDelta = { 0,0 };
+		Rect olderSiblingOldRect = { 0, 0, 0, 0 };
+		ivec2 prevPos = { 0, 0 };
+		ivec2 totalDelta = { 0, 0 };
 
-		ivec2 oldPos = { 0,0 };
-		ivec2 pendingDelta = { 0,0 };
+		ivec2 oldPos = { 0, 0 };
+		ivec2 pendingDelta = { 0, 
+			0 };
 	};
 
 	class Window
@@ -47,9 +48,8 @@ namespace SableUI
 		void RerenderAllNodes();
 		void RecalculateNodes();
 
-		ivec2 m_mousePos = ivec2(0, 0);
-		MouseButtonState m_mouseButtonStates;
-		ivec2 m_windowSize = ivec2(0, 0);
+		UIEventContext ctx;
+		ivec2 m_windowSize = { 0, 0 };
 		bool m_LayoutUpdated = true;
 
 	private:
@@ -59,9 +59,10 @@ namespace SableUI
 		int GetRefreshRate();
 		Renderer m_renderer;
 
-		void Resize(ivec2 pos, BasePanel* node = nullptr);
+		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled);
-		void ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* panel, SableUI::BasePanel* root);
+		void Resize(ivec2 pos, BasePanel* panel = nullptr);
+		void ResizeStep(ivec2 deltaPos, BasePanel* panel, BasePanel* root);
 		ResizeState m_resizeState;
 
 		std::chrono::milliseconds m_frameDelay;
@@ -75,13 +76,11 @@ namespace SableUI
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;
 		vec2 windowDPI = vec2(96.0f, 96.0f);
-
+		BasePanel* m_resizingPanel = nullptr;
+		ivec2 m_pendingResizeDelta = { 0, 0 };
 		GLFWcursor* m_currentCursor = nullptr;
 		GLFWcursor* m_arrowCursor = nullptr;
 		GLFWcursor* m_hResizeCursor = nullptr;
 		GLFWcursor* m_vResizeCursor = nullptr;
-
-		bool mouseMoved	= false;
-		bool mouseEvent = false;
 	};
 }

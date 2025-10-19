@@ -1,7 +1,6 @@
 ﻿#include <utility>
 
 #include "SableUI/SableUI.h"
-#include "SableUI/components/treeView.h"
 #include "SableUI/components/debugWindow.h"
 
 class ToggleImageView : public SableUI::BaseComponent
@@ -120,11 +119,11 @@ int main(int argc, char** argv)
 			PanelWith(ToggleImageView);
 
 		}
-		PanelWith(SableUI::DebugWindowView, mainWindow);
+		Panel();
 	}
 
-	// SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	// PanelWith(SableUI::DebugWindowView, mainWindow);
+	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	PanelWith(SableUI::DebugWindowView, mainWindow);
 
 	while (SableUI::PollEvents())
 	{
@@ -134,3 +133,54 @@ int main(int argc, char** argv)
 	SableUI::Shutdown();
 	return 0;
 }
+
+/* TO ADD
+| | vulkan
+| | debug window
+|x| better event system
+
+|x| rect
+	| | rounding
+	| | border
+
+|x| text
+	|x| unicode
+	|x| font size
+	| | custom font family
+	|x| word wrap
+	| | inline style
+	| | colour
+	| | alignment
+	|x| line Height
+	| | truncation
+
+|x| image
+	|x| jpg, jpeg, png, ...
+	|x| webp
+
+|x| div
+| | scroll view
+| | z-stack
+
+| | button
+| | text input
+| | checkbox
+| | slider
+	| | agnostic
+
+| | dropdown
+| | radio
+	| | by selection
+	| | by checkmark
+
+	| | switch
+
+| | tooltip
+| | progress bar
+| | seperator
+| | modal
+| | context menu
+| | tab view
+
+| | render target panel
+*/

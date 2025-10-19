@@ -10,6 +10,12 @@ SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(pa
 	rect.hType = RectType::FILL;
 }
 
+void SableUI::BasePanel::PropagateEvents(const UIEventContext& ctx)
+{
+	for (SableUI::BasePanel* child : children)
+		child->PropagateEvents(ctx);
+}
+
 bool SableUI::BasePanel::PropagateComponentStateChanges()
 {
 	bool res = false;
@@ -17,29 +23,6 @@ bool SableUI::BasePanel::PropagateComponentStateChanges()
 		res = res || child->PropagateComponentStateChanges();
 
 	return res;
-}
-
-void SableUI::BasePanel::HandleHoverEventPanel(const ivec2& mousePos)
-{
-	isFocused = RectBoundingBox(rect, mousePos);
-
-	for (SableUI::BasePanel* child : children)
-		child->HandleHoverEventPanel(mousePos);
-}
-
-void SableUI::BasePanel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
-{
-	isFocused = RectBoundingBox(rect, mouseState.pos);
-	if (!isFocused) return;
-
-	for (SableUI::BasePanel* child : children)
-		child->HandleMouseClickEventPanel(mouseState);
-}
-
-void SableUI::BasePanel::PropagateCustomUpdates()
-{
-	for (SableUI::BasePanel* child : children)
-		child->PropagateCustomUpdates();
 }
 
 /* Root node implementation */
@@ -479,21 +462,9 @@ void SableUI::Panel::Render()
 	m_component->GetRootElement()->Render();
 }
 
-void SableUI::Panel::HandleHoverEventPanel(const ivec2& mousePos)
+void SableUI::Panel::PropagateEvents(const UIEventContext& ctx)
 {
-	isFocused = RectBoundingBox(rect, mousePos);
-
-	m_component->GetRootElement()->HandleHoverEvent(mousePos);
-}
-
-void SableUI::Panel::HandleMouseClickEventPanel(const MouseButtonState& mouseState)
-{
-	m_component->GetRootElement()->HandleMouseClickEvent(mouseState);
-}
-
-void SableUI::Panel::PropagateCustomUpdates()
-{
-	m_component->GetRootElement()->PropagateCustomUpdates();
+	m_component->comp_PropagateEvents(ctx);
 }
 
 bool SableUI::Panel::PropagateComponentStateChanges()

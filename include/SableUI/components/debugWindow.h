@@ -1,37 +1,10 @@
 #pragma once
 #include "SableUI/SableUI.h"
-#include "SableUI/components/treeView.h"
 #include "SableUI/element.h"
-#include "SableUI/memory.h"
-
-using namespace SableMemory;
-class ImageView2 : public SableUI::BaseComponent
-{
-public:
-	explicit ImageView2(std::string  path, const int width = 128, const int height = 128)
-		: SableUI::BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
-
-	void Layout() override
-	{
-		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test 2"); })
-			onHoverExit([&]() { setText(U"lorem ipsum 2"); }));
-
-		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
-		{
-			TextU32(text, minW(100));
-		}
-	}
-
-private:
-	std::string m_path;  
-	int width, height;
-	useState(text, setText, SableString, U"lorem ipsum 2");
-};
 
 namespace SableUI
 {
-	inline SableString GetPanelName(BasePanel* panel)
+	SableString GetPanelName(BasePanel* panel)
 	{
 		switch (panel->type)
 		{
@@ -90,59 +63,31 @@ namespace SableUI
 		DebugWindowView(SableUI::Window* window) : SableUI::BaseComponent()
 		{
 			m_window = window;
-			GenerateTreeView(window->GetRoot());
-		}
-
-		TreeNode BuildTreeFromPanel(BasePanel* panel)
-		{
-			if (panel == nullptr) return TreeNode("Null");
-
-			TreeNode node(GetPanelName(panel));
-
-			for (BasePanel* child : panel->children)
-			{
-				node.children.push_back(BuildTreeFromPanel(child));
-			}
-
-			if (Panel* contentPanel = dynamic_cast<Panel*>(panel))
-			{
-				node.children.push_back(BuildTreeFromElement(contentPanel->GetComponent()->GetRootElement()));
-			}
-
-			return node;
-		}
-
-		TreeNode BuildTreeFromElement(Element* element)
-		{
-			if (element == nullptr) return TreeNode("Null");
-
-			TreeNode node(ElementTypeToString(element->type));
-
-			for (Child* child : element->children)
-			{
-				Element* el = (Element*)*child;
-				node.children.push_back(BuildTreeFromElement(el));
-			}
-
-			return node;
-		}
-
-		void GenerateTreeView(BasePanel* root)
-		{
-			//tree = BuildTreeFromPanel(root);
 		}
 
 		void Layout() override
 		{
-			std::string path = (toggleState) ? "1.jpg" : "2.png";
-			TextU32(std::to_string(n).c_str(), fontSize(32) onClick([&]() { setN(n + 1); }));
-			Component(ImageView2, , "3.png");
+			if (pollingHeartbeat)
+			{
+				Text("Polling heartbeat |x|\n" + std::to_string(n), onClick([&]() { setPollingHeartbeat(!pollingHeartbeat); }));
+			}
+			else
+			{
+				Text("Polling heartbeat | |", onClick([&]() { setPollingHeartbeat(!pollingHeartbeat); }));
+			}
+		}
+
+		void OnUpdate(const UIEventContext& ctx) override
+		{
+			if (pollingHeartbeat)
+			{
+				setN(n + 1);
+			}
 		}
 
 	private:
-		useState(toggleState, setToggleState, bool, false);
+		useState(pollingHeartbeat, setPollingHeartbeat, bool, false);
 		useState(n, setN, int, 0);
 		Window* m_window = nullptr;
-		bool windowUpdated = false;
 	};
 }

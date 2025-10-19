@@ -31,9 +31,7 @@ namespace SableUI
         virtual void CalculateMinBounds() {};
         virtual void Update() {};
 
-        virtual void HandleHoverEventPanel(const ivec2& mousePos);
-        virtual void HandleMouseClickEventPanel(const MouseButtonState& mouseState);
-        virtual void PropagateCustomUpdates();
+        virtual void PropagateEvents(const UIEventContext& ctx);
         virtual bool PropagateComponentStateChanges();
 
         BasePanel* parent = nullptr;
@@ -104,9 +102,7 @@ namespace SableUI
         Panel* AttachComponent(Args&&... args);
         void Update() override;
 
-        void HandleHoverEventPanel(const ivec2& mousePos) override;
-        void HandleMouseClickEventPanel(const MouseButtonState& mouseState) override;
-        void PropagateCustomUpdates() override;
+        void PropagateEvents(const UIEventContext& ctx) override;
         bool PropagateComponentStateChanges() override;
 
         BaseComponent* GetComponent() const { return m_component; }

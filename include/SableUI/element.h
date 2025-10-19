@@ -5,35 +5,12 @@
 #include <string>
 #include <functional>
 #include <any>
-#include <string>
 
-#include "SableUI/utils.h"
+#include "SableUI/events.h"
 #include "SableUI/renderer.h"
 
 namespace SableUI
 {
-	enum class MouseState
-	{
-		DOWN = 0x0000,
-		UP = 0x0001
-	};
-
-	enum class MouseEvent
-	{
-		NONE = 0x0,
-		CLICK = 0x1,
-		RELEASE = 0x2
-	};
-
-	struct MouseButtonState
-	{
-		MouseState LMBState = MouseState::UP;
-		MouseState RMBState = MouseState::UP;
-		MouseEvent LMBEvent = MouseEvent::NONE;
-		MouseEvent RMBEvent = MouseEvent::NONE;
-		ivec2 pos			= ivec2(0, 0);
-	};
-
 	enum class ElementType
 	{
 		UNDEF = 0x0,
@@ -46,8 +23,8 @@ namespace SableUI
 
 	enum class LayoutDirection
 	{
-		UP_DOWN    = 0x0,
-		DOWN_UP    = 0x1,
+		UP_DOWN = 0x0,
+		DOWN_UP = 0x1,
 		LEFT_RIGHT = 0x2,
 		RIGHT_LEFT = 0x3,
 	};
@@ -86,7 +63,6 @@ namespace SableUI
 		std::function<void()> onHoverExitFunc = nullptr;
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
-		std::function<void()> customUpdateFunc = nullptr;
 
 		// setter functions for macros
 		ElementInfo& setID(const std::string& v)			{ id = v; return *this; }
@@ -130,7 +106,6 @@ namespace SableUI
 		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc		= func;	return *this; }
 		ElementInfo& setOnClick(const std::function<void()>& func)			{ onClickFunc			= func; return *this; }
 		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
-		ElementInfo& setCustomUpdate(const std::function<void()>& func)		{ customUpdateFunc		= func; return *this; }
 	};
 
 	class BaseComponent;
@@ -202,9 +177,7 @@ namespace SableUI
 		std::function<void()> m_onHoverExitFunc = nullptr;
 		std::function<void()> m_onClickFunc = nullptr;
 		std::function<void()> m_onSecondaryClickFunc = nullptr;
-		std::function<void()> m_customUpdateFunc = nullptr;
 
-		
 		// setter functions for macros
 		Element& setID(const std::string& v)			{ ID = v; return *this; }
 		Element& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
@@ -247,7 +220,6 @@ namespace SableUI
 		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }
 		Element& setOnClick(const std::function<void()>& func)			{ m_onClickFunc				= func; return *this; }
 		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
-		Element& setCustomUpdate(const std::function<void()>& func)		{ m_customUpdateFunc		= func; return *this; }
 
 		ElementInfo GetInfo() const;
 
@@ -257,10 +229,8 @@ namespace SableUI
 		void BuildSingleElementFromVirtual(VirtualNode* vnode);
 
 		// event system
+		void el_PropagateEvents(const UIEventContext& ctx);
 		bool el_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
-		void HandleHoverEvent(const ivec2& mousePos);
-		void HandleMouseClickEvent(const MouseButtonState& mouseState);
-		void PropagateCustomUpdates();
 
 		// rendering
 		void Render(int z = 1);

@@ -164,8 +164,10 @@ void SableUI::Window::MousePosCallback(GLFWwindow* window, double x, double y)
 		return;
 	}
 
-	instance->m_mousePos = { static_cast<int>(x), static_cast<int>(y) };
-	instance->mouseMoved = true;
+	ivec2 oldPos = instance->ctx.mousePos;
+
+	instance->ctx.mousePos = { static_cast<int>(x), static_cast<int>(y) };
+	instance->ctx.mouseDelta = instance->ctx.mousePos - oldPos;
 }
 
 void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -177,30 +179,19 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 		return;
 	}
 
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-	{
-		instance->m_mouseButtonStates.LMBState = MouseState::DOWN;
-		instance->m_mouseButtonStates.LMBEvent = MouseEvent::CLICK;
-		instance->mouseEvent = true;
-	}
-	else if (action == GLFW_RELEASE)
-	{
-		instance->m_mouseButtonStates.LMBState = MouseState::UP;
-		instance->m_mouseButtonStates.LMBEvent = MouseEvent::RELEASE;
-		instance->mouseEvent = true;
-	}
+	if (button < 0 || button >= SABLE_MAX_MOUSE_BUTTONS) return;
 
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	auto& ctx = instance->ctx;
+
+	if (action == GLFW_PRESS)
 	{
-		instance->m_mouseButtonStates.RMBState = MouseState::DOWN;
-		instance->m_mouseButtonStates.RMBEvent = MouseEvent::CLICK;
-		instance->mouseEvent = true;
+		ctx.mouseDown.set(button, true);
+		ctx.mousePressed.set(button, true);
 	}
 	else if (action == GLFW_RELEASE)
 	{
-		instance->m_mouseButtonStates.RMBState = MouseState::UP;
-		instance->m_mouseButtonStates.RMBEvent = MouseEvent::RELEASE;
-		instance->mouseEvent = true;
+		ctx.mouseDown.set(button, false);
+		ctx.mouseReleased.set(button, true);
 	}
 }
 
@@ -218,96 +209,20 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 
 	instance->m_renderer.renderTarget.Resize(width, height);
-
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
-
 	instance->m_needsStaticRedraw = true;
 }
 
-GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
+void SableUI::Window::HandleResize()
 {
-	if (node == nullptr) return m_arrowCursor;
-
-	GLFWcursor* cursorToSet = m_arrowCursor;
-
-	if (RectBoundingBox(node->rect, m_mousePos) && m_mousePos.x != 0 && m_mousePos.y != 0)
-	{
-		float d1 = DistToEdge(node, m_mousePos);
-
-		if (node->parent != nullptr && d1 < 5.0f)
-		{
-			switch (node->parent->type)
-			{
-			case PanelType::VERTICAL:
-				cursorToSet = m_vResizeCursor;
-				break;
-
-			case PanelType::HORIZONTAL:
-				cursorToSet = m_hResizeCursor;
-				break;
-			}
-
-			if (!m_resizing && m_mouseButtonStates.LMBState == MouseState::DOWN && cursorToSet != m_arrowCursor)
-			{
-				*resCalled = true;
-				Resize(m_mousePos, node);
-				m_resizing = true;
-			}
-		}
-	}
-
-	for (BasePanel* child : node->children)
-	{
-		GLFWcursor* childCursor = CheckResize(child, resCalled);
-		if (childCursor != m_arrowCursor)
-		{
-			cursorToSet = childCursor;
-		}
-	}
-
-	if (m_mouseButtonStates.LMBState != MouseState::DOWN)
-	{
-		m_resizing = false;
-	}
-
-	return cursorToSet;
-}
-
-bool SableUI::Window::PollEvents()
-{
-	glfwMakeContextCurrent(m_window);
-	glfwPollEvents();
-
-	m_mouseButtonStates.pos = m_mousePos;
-
-	if (mouseMoved)
-	{
-		mouseMoved = false;
-		m_root->HandleHoverEventPanel(m_mousePos);
-	}
-
-	if (mouseEvent)
-	{
-		mouseEvent = false;
-		m_root->HandleMouseClickEventPanel(m_mouseButtonStates);
-		m_mouseButtonStates.LMBEvent = MouseEvent::NONE;
-		m_mouseButtonStates.RMBEvent = MouseEvent::NONE;
-	}
-
-	m_root->PropagateCustomUpdates();
-
-	m_LayoutUpdated = m_root->PropagateComponentStateChanges();
-
-	StepCachedTexturesCleaner();
-
 	// static for multiple calls on one resize event (lifetime of static is until mouse up)
 	static bool resCalled = false;
 
 	GLFWcursor* cursorToSet = m_arrowCursor;
 
-	if (DistToEdge(m_root, m_mousePos) > 5.0f)
+	if (DistToEdge(m_root, ctx.mousePos) > 5.0f)
 	{
 		cursorToSet = CheckResize(m_root, &resCalled);
 	}
@@ -322,13 +237,13 @@ bool SableUI::Window::PollEvents()
 	{
 		if (!resCalled && m_currentCursor != m_arrowCursor)
 		{
-			Resize(m_mousePos);
+			Resize(ctx.mousePos);
 		}
 		else
 		{
 			resCalled = false;
 		}
-		if (m_mouseButtonStates.LMBState == MouseState::UP)
+		if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		{
 			m_resizing = false;
 			m_renderer.ClearStack();
@@ -336,6 +251,68 @@ bool SableUI::Window::PollEvents()
 			RerenderAllNodes();
 		}
 	}
+}
+
+GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
+{
+	if (node == nullptr) return m_arrowCursor;
+
+	GLFWcursor* cursorToSet = m_arrowCursor;
+
+	if (RectBoundingBox(node->rect, ctx.mousePos) && ctx.mousePos.x != 0 && ctx.mousePos.y != 0)
+	{
+		float d1 = DistToEdge(node, ctx.mousePos);
+
+		if (node->parent != nullptr && d1 < 5.0f)
+		{
+			switch (node->parent->type)
+			{
+			case PanelType::VERTICAL:
+				cursorToSet = m_vResizeCursor;
+				break;
+
+			case PanelType::HORIZONTAL:
+				cursorToSet = m_hResizeCursor;
+				break;
+			}
+
+			if (!m_resizing && IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
+			{
+				*resCalled = true;
+				Resize(ctx.mousePos, node);
+				m_resizing = true;
+			}
+		}
+	}
+
+	for (BasePanel* child : node->children)
+	{
+		GLFWcursor* childCursor = CheckResize(child, resCalled);
+		if (childCursor != m_arrowCursor)
+		{
+			cursorToSet = childCursor;
+		}
+	}
+
+	if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
+		m_resizing = false;
+
+	return cursorToSet;
+}
+
+bool SableUI::Window::PollEvents()
+{
+	glfwMakeContextCurrent(m_window);
+	glfwPollEvents();
+
+	m_root->PropagateEvents(ctx);
+	m_root->PropagateComponentStateChanges();
+	StepCachedTexturesCleaner();
+
+	HandleResize();
+
+	ctx.mousePressed.reset();
+	ctx.mouseReleased.reset();
 
 	return !glfwWindowShouldClose(m_window);
 }
@@ -539,7 +516,7 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 			state.olderSiblingOldRect = { 0,0,0,0 };
 			return;
 		}
-
+		
 		switch (panel->parent->type)
 		{
 		case PanelType::HORIZONTAL:

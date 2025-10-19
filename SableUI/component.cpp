@@ -107,6 +107,13 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 }
 
 
+void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
+{
+	OnUpdate(ctx);
+
+	rootElement->el_PropagateEvents(ctx);
+}
+
 bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasContentsChanged)
 {
 	bool res = rootElement->el_PropagateComponentStateChanges(hasContentsChanged);
