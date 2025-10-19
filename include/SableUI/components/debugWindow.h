@@ -65,16 +65,40 @@ namespace SableUI
 			m_window = window;
 		}
 
+		void DrawElementTree(Element* element, int depth)
+		{
+			SableString indent = std::string(2 * depth, ' ').c_str();
+			Text(indent + ElementTypeToString(element->type));
+
+			for (Child* child : element->children)
+			{
+				Element* el = (Element*)*child;
+				DrawElementTree(el, depth + 1);
+			}
+		}
+
+		void DrawPanelTree(BasePanel* panel, int depth = 0)
+		{
+			SableString indent = std::string(2 * depth, ' ').c_str();
+			Text(indent + GetPanelName(panel));
+			depth++;
+
+			for (BasePanel* child : panel->children)
+			{
+				DrawPanelTree(child, depth);
+			}
+
+			if (!panel->children.empty()) return;
+
+			if (Panel* p = dynamic_cast<Panel*>(panel))
+			{
+				DrawElementTree(p->GetComponent()->GetRootElement(), depth);
+			}
+		}
+
 		void Layout() override
 		{
-			if (pollingHeartbeat)
-			{
-				Text("Polling heartbeat |x|\n" + std::to_string(n), onClick([&]() { setPollingHeartbeat(!pollingHeartbeat); }));
-			}
-			else
-			{
-				Text("Polling heartbeat | |", onClick([&]() { setPollingHeartbeat(!pollingHeartbeat); }));
-			}
+			DrawPanelTree(m_window->GetRoot());
 		}
 
 		void OnUpdate(const UIEventContext& ctx) override

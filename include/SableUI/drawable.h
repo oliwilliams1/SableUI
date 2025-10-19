@@ -35,7 +35,6 @@ namespace SableUI
 	public:
 		DrawableBase() { this->uuid = GetUUID(); };
 		virtual void Draw(SableUI::RenderTarget* texture, ContextResources& res) = 0;
-		virtual ~DrawableBase() {};
 
 		void setZ(int z) { this->m_zIndex = z; }
 
@@ -51,14 +50,12 @@ namespace SableUI
 	{
 	public:
 		DrawableRect() { this->m_zIndex = 0; };
-		~DrawableRect() {};
 
 		DrawableRect(SableUI::Rect& r, SableUI::Colour colour) 
 			: m_colour(colour) { this->m_rect = r; this->m_zIndex = 0; }
 
 		void Update(SableUI::Rect& rect, SableUI::Colour colour,
 			float pBSize = 0.0f);
-
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
@@ -75,7 +72,6 @@ namespace SableUI
 
 		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
-
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
@@ -88,7 +84,6 @@ namespace SableUI
 	{
 	public:
 		DrawableImage() { this->m_zIndex = 0; };
-		~DrawableImage() {};
 
 		void Update(SableUI::Rect& rect) { 
 			this->m_rect = rect;
@@ -103,10 +98,8 @@ namespace SableUI
 	{
 	public:
 		DrawableText() { this->m_zIndex = 0; };
-		~DrawableText() {};
 
 		void Update(SableUI::Rect& rect) { this->m_rect = rect; };
-
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
 
 		Text m_text;

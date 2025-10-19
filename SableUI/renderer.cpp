@@ -16,6 +16,13 @@ void SableUI::Renderer::ClearStack()
     drawStack.clear();
 }
 
+void SableUI::Renderer::ClearDrawable(DrawableBase* drawable)
+{
+    for (DrawableBase* d : drawStack)
+        if (d == drawable)
+            drawStack.erase(std::remove(drawStack.begin(), drawStack.end(), d), drawStack.end());
+}
+
 void SableUI::Renderer::Draw(DrawableBase* drawable)
 {
     drawStack.push_back(drawable);

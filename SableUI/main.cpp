@@ -138,6 +138,7 @@ int main(int argc, char** argv)
 | | vulkan
 | | debug window
 |x| better event system
+| | make text rerenders more efficient
 
 |x| rect
 	| | rounding

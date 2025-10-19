@@ -18,6 +18,7 @@ namespace SableUI
 		~Renderer();
 
 		void ClearStack();
+		void ClearDrawable(DrawableBase* drawable);
 
 		void Draw(DrawableBase* drawable);
 		void Draw();

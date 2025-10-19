@@ -1000,6 +1000,7 @@ bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChange
 SableUI::Element::~Element()
 {
     n_elements--;
+    renderer->ClearDrawable(drawable);
     SB_delete(drawable);
 
     for (Child* child : children) SB_delete(child);
