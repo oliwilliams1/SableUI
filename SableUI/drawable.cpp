@@ -116,6 +116,62 @@ void SableUI::DestroyDrawables()
     }
 }
 
+// ============================================================================
+// DrawableBase
+// ============================================================================
+static int s_drawableBaseCount = 0;
+
+SableUI::DrawableBase::DrawableBase()
+{
+    s_drawableBaseCount++;
+    this->uuid = GetUUID();
+}
+
+SableUI::DrawableBase::~DrawableBase()
+{
+    s_drawableBaseCount--;
+}
+
+int SableUI::DrawableBase::GetNumInstances()
+{
+    return s_drawableBaseCount;
+}
+
+unsigned int SableUI::DrawableBase::GetUUID()
+{
+    static unsigned int s_nextUUID = 0;
+    return s_nextUUID++;
+}
+
+// ============================================================================
+// DrawableRect
+// ============================================================================
+static int s_drawableRectCount = 0;
+
+SableUI::DrawableRect::DrawableRect()
+{
+    s_drawableRectCount++;
+    this->m_zIndex = 0;
+}
+
+SableUI::DrawableRect::DrawableRect(SableUI::Rect& r, SableUI::Colour colour)
+    : m_colour(colour)
+{
+    s_drawableRectCount++;
+    this->m_rect = r;
+    this->m_zIndex = 0;
+}
+
+SableUI::DrawableRect::~DrawableRect()
+{
+    s_drawableRectCount--;
+}
+
+int SableUI::DrawableRect::GetNumInstances()
+{
+    return s_drawableRectCount;
+}
+
 void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
 {
     this->m_rect = rect;
@@ -152,8 +208,38 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture, SableUI::Contex
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
-                                       float pBSize, const std::vector<int>& segments)
+// ============================================================================
+// DrawableSplitter
+// ============================================================================
+static int s_drawableSplitterCount = 0;
+
+SableUI::DrawableSplitter::DrawableSplitter()
+{
+    s_drawableSplitterCount++;
+    this->m_zIndex = 1;
+}
+
+SableUI::DrawableSplitter::DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour)
+    : m_colour(colour)
+{
+    s_drawableSplitterCount++;
+    this->m_zIndex = 999;
+    this->m_rect = r;
+}
+
+SableUI::DrawableSplitter::~DrawableSplitter()
+{
+    s_drawableSplitterCount--;
+    m_offsets.clear();
+}
+
+int SableUI::DrawableSplitter::GetNumInstances()
+{
+    return s_drawableSplitterCount;
+}
+
+void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type,
+    float pBSize, const std::vector<int>& segments)
 {
     this->m_rect = rect;
     this->m_colour = colour;
@@ -164,10 +250,30 @@ void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colo
 
 void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture, ContextResources& res)
 {
-    
+
 }
 
-/* image */
+// ============================================================================
+// DrawableImage
+// ============================================================================
+static int s_drawableImageCount = 0;
+
+SableUI::DrawableImage::DrawableImage()
+{
+    s_drawableImageCount++;
+    this->m_zIndex = 0;
+}
+
+SableUI::DrawableImage::~DrawableImage()
+{
+    s_drawableImageCount--;
+}
+
+int SableUI::DrawableImage::GetNumInstances()
+{
+    return s_drawableImageCount;
+}
+
 void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
@@ -199,7 +305,27 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextRe
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-/* text */
+// ============================================================================
+// DrawableText
+// ============================================================================
+static int s_drawableTextCount = 0;
+
+SableUI::DrawableText::DrawableText()
+{
+    s_drawableTextCount++;
+    this->m_zIndex = 0;
+}
+
+SableUI::DrawableText::~DrawableText()
+{
+    s_drawableTextCount--;
+}
+
+int SableUI::DrawableText::GetNumInstances()
+{
+    return s_drawableTextCount;
+}
+
 void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
 {
     g_tShader.Use();
@@ -215,12 +341,6 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextRes
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
     glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-static unsigned int s_nextUUID = 0;
-unsigned int SableUI::DrawableBase::GetUUID()
-{
-    return s_nextUUID++;
 }
 
 void SableUI::DrawWindowBorder(RenderTarget* target)

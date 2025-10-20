@@ -8,13 +8,16 @@ namespace SableUI
 	class String
 	{
 	public:
-		String();
-		~String();
+		String() noexcept;
+		~String() noexcept;
 
 		String(const String& other);
 		String(String&& other) noexcept;
 		String(const char32_t* str);
 		String(const char* str);
+		String(const std::string& str);
+
+		static int GetNumInstances();
 
 		String& operator=(const String& other);
 		String& operator=(String&& other) noexcept;

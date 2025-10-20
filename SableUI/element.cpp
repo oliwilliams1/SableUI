@@ -7,6 +7,7 @@
 using namespace  SableMemory;
 
 static int n_elements = 0;
+static int n_vElements = 0;
 
 SableUI::Child::~Child()
 {
@@ -1007,8 +1008,24 @@ SableUI::Element::~Element()
     children.clear();
 }
 
+SableUI::VirtualNode::VirtualNode()
+{
+    n_vElements++;
+}
+
 SableUI::VirtualNode::~VirtualNode()
 {
+    n_vElements--;
     for (VirtualNode* child : children) SB_delete(child);
 	children.clear();
+}
+
+int SableUI::Element::GetNumInstances()
+{
+    return n_elements;
+}
+
+int SableUI::VirtualNode::GetNumInstances()
+{
+	return n_vElements;
 }

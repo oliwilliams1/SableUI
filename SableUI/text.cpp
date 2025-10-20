@@ -100,7 +100,7 @@ public:
 	bool Initialize();
 	void Shutdown();
 	bool isInitialized = false;
-	int GetDrawInfo(SableUI::Text* text);
+	int GetDrawInfo(SableUI::_Text* text);
 
 	void ResizeTextureArray(int newDepth);
 	GLuint GetAtlasTexture() const { return atlasTextureArray; }
@@ -942,7 +942,7 @@ struct TextToken {
 	std::vector<Character> charDataList;
 };
 
-int FontManager::GetDrawInfo(SableUI::Text* text)
+int FontManager::GetDrawInfo(SableUI::_Text* text)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -1162,7 +1162,7 @@ GLuint SableUI::GetAtlasTexture()
 }
 
 /* ------------- TEXT BACKEND ------------- */
-int SableUI::Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac)
+int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -1179,7 +1179,7 @@ int SableUI::Text::SetContent(const SableString& str, int maxWidth, int fontSize
 	return height;
 }
 
-int SableUI::Text::UpdateMaxWidth(int maxWidth)
+int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -1193,7 +1193,7 @@ int SableUI::Text::UpdateMaxWidth(int maxWidth)
 	return height;
 }
 
-int SableUI::Text::GetMinWidth()
+int SableUI::_Text::GetMinWidth()
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
 	{
@@ -1243,7 +1243,7 @@ int SableUI::Text::GetMinWidth()
 	return maxWordWidth;
 }
 
-int SableUI::Text::GetUnwrappedHeight()
+int SableUI::_Text::GetUnwrappedHeight()
 {
 	int lines = 1;
 	for (char32_t c : m_content)
@@ -1270,7 +1270,9 @@ void SableUI::DestroyFontManager()
 	FontManager::GetInstance().Shutdown();
 }
 
-SableUI::Text::Text()
+static int s_textOGL = 0;
+
+SableUI::_Text::_Text()
 {
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
@@ -1289,12 +1291,19 @@ SableUI::Text::Text()
 	glEnableVertexAttribArray(1);
 
 	glBindVertexArray(0);
+	s_textOGL++;
 }
 
-SableUI::Text::~Text()
+SableUI::_Text::~_Text()
 {
 	glDeleteVertexArrays(1, &m_VAO);
 	glDeleteBuffers(1, &m_VBO);
 	glDeleteBuffers(1, &m_EBO);
 	m_VAO = 0; m_VBO = 0; m_EBO = 0;
+	s_textOGL--;
+}
+
+int SableUI::_Text::GetNumInstances()
+{
+	return s_textOGL;
 }

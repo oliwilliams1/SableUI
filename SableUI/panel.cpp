@@ -396,7 +396,7 @@ SableUI::SplitterPanel::~SplitterPanel()
 }
 
 /* Base Node Implementation */
-static int s_ctr = 0;
+static int s_numComponents = 0;
 SableUI::Panel::Panel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
 {
 	type = PanelType::BASE;

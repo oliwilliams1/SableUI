@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-
 #include "SableUI/renderTarget.h"
 #include "SableUI/texture.h"
 #include "SableUI/text.h"
@@ -9,7 +8,6 @@
 namespace SableUI
 {
 	class Renderer;
-
 	enum class PanelType
 	{
 		ROOTNODE = 0x00,
@@ -33,15 +31,14 @@ namespace SableUI
 	class DrawableBase
 	{
 	public:
-		DrawableBase() { this->uuid = GetUUID(); };
+		DrawableBase();
+		virtual ~DrawableBase();
+		static int GetNumInstances();
 		virtual void Draw(SableUI::RenderTarget* texture, ContextResources& res) = 0;
-
 		void setZ(int z) { this->m_zIndex = z; }
-
 		int m_zIndex = 0;
 		SableUI::Rect m_rect = { 0, 0, 0, 0 };
 		unsigned int uuid = 0;
-
 	private:
 		unsigned int GetUUID();
 	};
@@ -49,31 +46,25 @@ namespace SableUI
 	class DrawableRect : public DrawableBase
 	{
 	public:
-		DrawableRect() { this->m_zIndex = 0; };
-
-		DrawableRect(SableUI::Rect& r, SableUI::Colour colour) 
-			: m_colour(colour) { this->m_rect = r; this->m_zIndex = 0; }
-
-		void Update(SableUI::Rect& rect, SableUI::Colour colour,
-			float pBSize = 0.0f);
+		DrawableRect();
+		DrawableRect(SableUI::Rect& r, SableUI::Colour colour);
+		~DrawableRect();
+		static int GetNumInstances();
+		void Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize = 0.0f);
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
-
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 	};
 
 	class DrawableSplitter : public DrawableBase
 	{
 	public:
-		DrawableSplitter() { this->m_zIndex = 1; };
-		~DrawableSplitter() { m_offsets.clear(); };
-
-		DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour) 
-			: m_colour(colour) { this->m_zIndex = 999; this->m_rect = r; }
-
-		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type, 
+		DrawableSplitter();
+		DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour);
+		~DrawableSplitter();
+		static int GetNumInstances();
+		void Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type,
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
-
 		SableUI::Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 0;
 		std::vector<int> m_offsets;
@@ -83,25 +74,22 @@ namespace SableUI
 	class DrawableImage : public DrawableBase
 	{
 	public:
-		DrawableImage() { this->m_zIndex = 0; };
-
-		void Update(SableUI::Rect& rect) { 
-			this->m_rect = rect;
-		}
-		
+		DrawableImage();
+		~DrawableImage();
+		static int GetNumInstances();
+		void Update(SableUI::Rect& rect) { this->m_rect = rect; }
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
-
 		Texture m_texture;
 	};
 
 	class DrawableText : public DrawableBase
 	{
 	public:
-		DrawableText() { this->m_zIndex = 0; };
-
+		DrawableText();
+		~DrawableText();
+		static int GetNumInstances();
 		void Update(SableUI::Rect& rect) { this->m_rect = rect; };
 		void Draw(SableUI::RenderTarget* texture, ContextResources& res) override;
-
-		Text m_text;
+		_Text m_text;
 	};
 }

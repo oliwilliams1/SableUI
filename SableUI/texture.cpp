@@ -15,6 +15,8 @@
 
 #include <webp/decode.h>
 
+static int s_numTextures = 0;
+
 struct HashTextureData
 {
     int width = 0;
@@ -347,6 +349,11 @@ void SableUI::Texture::SetTexture(uint8_t* pixels, int width, int height, int ch
     m_height = height;
 }
 
+SableUI::Texture::Texture()
+{
+    s_numTextures++;
+}
+
 SableUI::Texture::~Texture()
 {
     for (auto& it : textureCache)
@@ -357,6 +364,12 @@ SableUI::Texture::~Texture()
             it.second.lastUsed = std::chrono::high_resolution_clock::now();            
         }
     }
+    s_numTextures--;
+}
+
+int SableUI::Texture::GetNumInstances()
+{
+    return s_numTextures;
 }
 
 int iterations = 0;

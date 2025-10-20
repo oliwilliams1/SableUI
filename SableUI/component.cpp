@@ -4,19 +4,24 @@
 
 using namespace SableMemory;
 
-static int s_ctr = 0;
+static int s_numComponents = 0;
 SableUI::BaseComponent::BaseComponent(Colour colour)
 {
-	s_ctr++;
+	s_numComponents++;
 	m_bgColour = colour;
 }
 
 SableUI::BaseComponent::~BaseComponent()
 {
-	s_ctr--;
+	s_numComponents--;
 
 	if (rootElement) SB_delete(rootElement);
 	m_componentChildren.clear();
+}
+
+int SableUI::BaseComponent::GenNumInstances()
+{
+	return s_numComponents;
 }
 
 void SableUI::BaseComponent::LayoutWrapper()

@@ -6,26 +6,41 @@
 #include <stdexcept>
 
 using namespace SableUI;
+static int s_numComponents = 0;
 
-String::String() : m_data(nullptr), m_size(0) {}
+String::String() noexcept : m_data(nullptr), m_size(0) { s_numComponents++; }
 
-String::~String()
+String::~String() noexcept
 {
+	s_numComponents--;
 	clear();
 }
 
 void String::clear() noexcept
 {
-	if (m_data)
-	{
-		delete[] m_data;
-		m_data = nullptr;
-		m_size = 0;
-	}
+	delete[] m_data;
+	m_data = nullptr;
+	m_size = 0;
+}
+
+int SableUI::String::GetNumInstances()
+{
+	return s_numComponents;
+}
+
+SableUI::String::String(const std::string& str)
+{
+	s_numComponents++;
+	m_size = str.size();
+	m_data = new char32_t[m_size + 1];
+	for (size_t i = 0; i < m_size; ++i)
+		m_data[i] = static_cast<char32_t>(str[i]);
+	m_data[m_size] = U'\0';
 }
 
 String::String(const String& other) : m_data(nullptr), m_size(0)
 {
+	s_numComponents++;
 	if (other.m_data && other.m_size > 0)
 	{
 		m_size = other.m_size;
@@ -37,12 +52,15 @@ String::String(const String& other) : m_data(nullptr), m_size(0)
 String::String(String&& other) noexcept
 	: m_data(other.m_data), m_size(other.m_size)
 {
+	if (this != &other) s_numComponents++;
+
 	other.m_data = nullptr;
 	other.m_size = 0;
 }
 
 String::String(const char32_t* str) : m_data(nullptr), m_size(0)
 {
+	s_numComponents++;
 	if (str)
 	{
 		size_t len = 0;
@@ -56,6 +74,7 @@ String::String(const char32_t* str) : m_data(nullptr), m_size(0)
 
 String::String(const char* str) : m_data(nullptr), m_size(0)
 {
+	s_numComponents++;
 	if (str)
 	{
 		size_t len = std::strlen(str);

@@ -67,7 +67,7 @@ namespace SableUI
 
 		void DrawElementTree(Element* element, int depth)
 		{
-			SableString indent = std::string(2 * depth, ' ').c_str();
+			SableString indent = std::string(2 * depth, ' ');
 			Text(indent + ElementTypeToString(element->type));
 
 			for (Child* child : element->children)
@@ -79,7 +79,7 @@ namespace SableUI
 
 		void DrawPanelTree(BasePanel* panel, int depth = 0)
 		{
-			SableString indent = std::string(2 * depth, ' ').c_str();
+			SableString indent = std::string(2 * depth, ' ');
 			Text(indent + GetPanelName(panel));
 			depth++;
 
@@ -98,7 +98,33 @@ namespace SableUI
 
 		void Layout() override
 		{
-			DrawPanelTree(m_window->GetRoot());
+			if (pollingHeartbeat)
+			{
+				Text("Polling heartbest |x|", onClick([&]() { setPollingHeartbeat(false); }));
+				Text(std::to_string(n));
+			}
+			else
+			{
+				Text("Polling heartbest | |", onClick([&]() { setPollingHeartbeat(true); }));
+			}
+
+			Text("Open/close mem diagnostings", onClick([&]() { setMemoryDebugger(!memoryDebugger); }));
+			if (memoryDebugger)
+			{
+				Text("Components: " + std::to_string(BaseComponent::GenNumInstances()));
+				Text("Elements: " + std::to_string(Element::GetNumInstances()));
+				Text("Virtual Elements: " + std::to_string(VirtualNode::GetNumInstances()));
+				Text("Drawable Base: " + std::to_string(DrawableBase::GetNumInstances()));
+				Text("Drawable Text: " + std::to_string(DrawableText::GetNumInstances()));
+				Text("Drawable Rect: " + std::to_string(DrawableRect::GetNumInstances()));
+				Text("Drawable Splitter: " + std::to_string(DrawableSplitter::GetNumInstances()));
+				Text("Drawable Image: " + std::to_string(DrawableImage::GetNumInstances()));
+				Text("Text: " + std::to_string(_Text::GetNumInstances()));
+				Text("Textures: " + std::to_string(Texture::GetNumInstances()));
+				Text("Strings: " + std::to_string(String::GetNumInstances()));
+			}
+
+			//DrawPanelTree(m_window->GetRoot());
 		}
 
 		void OnUpdate(const UIEventContext& ctx) override
@@ -110,7 +136,8 @@ namespace SableUI
 		}
 
 	private:
-		useState(pollingHeartbeat, setPollingHeartbeat, bool, false);
+		useState(pollingHeartbeat, setPollingHeartbeat, bool, true);
+		useState(memoryDebugger, setMemoryDebugger, bool, false);
 		useState(n, setN, int, 0);
 		Window* m_window = nullptr;
 	};

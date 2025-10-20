@@ -111,7 +111,11 @@ namespace SableUI
 	class BaseComponent;
 	struct VirtualNode
 	{
+		VirtualNode();
 		~VirtualNode();
+
+		static int GetNumInstances();
+
 		ElementType type;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
@@ -133,6 +137,8 @@ namespace SableUI
 		Element();
 		Element(Renderer* renderer, ElementType type);
 		~Element();
+
+		static int GetNumInstances();
 
 		ElementType type = ElementType::UNDEF;
 		

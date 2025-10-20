@@ -9,13 +9,14 @@ namespace SableUI
 
 	struct Texture
 	{
-		Texture() = default;
+		Texture();
 		Texture(int width, int height, GLuint m_texID) : m_width(width), m_height(height), m_texID(m_texID) {}
 		~Texture();
 
 		Texture(const Texture&) = delete;
 		Texture& operator=(const Texture&) = delete;
 
+		static int GetNumInstances();
 		void LoadTexture(const std::string& path);
 		void LoadTextureOptimised(const std::string& path, int width = -1, int height = -1);
 		void SetDefaultTexture(GLuint texID);
