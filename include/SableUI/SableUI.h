@@ -25,7 +25,7 @@ namespace SableUI
 	
 	SplitterPanel* StartSplitter(PanelType orientation);
 	void EndSplitter();
-	Panel* AddPanel();
+	ContentPanel* AddPanel();
 	
 	void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
 	void EndDivVirtual();

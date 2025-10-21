@@ -90,7 +90,7 @@ namespace SableUI
 
 			if (!panel->children.empty()) return;
 
-			if (Panel* p = dynamic_cast<Panel*>(panel))
+			if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
 			{
 				DrawElementTree(p->GetComponent()->GetRootElement(), depth);
 			}
@@ -111,14 +111,21 @@ namespace SableUI
 			Text("Open/close mem diagnostings", onClick([&]() { setMemoryDebugger(!memoryDebugger); }));
 			if (memoryDebugger)
 			{
+				Text("Base Panels: " + std::to_string(BasePanel::GetNumInstances()));
+				Text("Root Panels: " + std::to_string(RootPanel::GetNumInstances()));
+				Text("Splitter Panels: " + std::to_string(SplitterPanel::GetNumInstances()));
+				Text("Content Panels: " + std::to_string(ContentPanel::GetNumInstances()));
+
 				Text("Components: " + std::to_string(BaseComponent::GenNumInstances()));
 				Text("Elements: " + std::to_string(Element::GetNumInstances()));
 				Text("Virtual Elements: " + std::to_string(VirtualNode::GetNumInstances()));
+
 				Text("Drawable Base: " + std::to_string(DrawableBase::GetNumInstances()));
 				Text("Drawable Text: " + std::to_string(DrawableText::GetNumInstances()));
 				Text("Drawable Rect: " + std::to_string(DrawableRect::GetNumInstances()));
 				Text("Drawable Splitter: " + std::to_string(DrawableSplitter::GetNumInstances()));
 				Text("Drawable Image: " + std::to_string(DrawableImage::GetNumInstances()));
+
 				Text("Text: " + std::to_string(_Text::GetNumInstances()));
 				Text("Textures: " + std::to_string(Texture::GetNumInstances()));
 				Text("Strings: " + std::to_string(String::GetNumInstances()));

@@ -14,17 +14,19 @@
 namespace SableUI
 {
     struct SplitterPanel;
-    struct Panel;
+    struct ContentPanel;
 
     struct BasePanel
     {
         BasePanel(BasePanel* parent, Renderer* renderer);
-        virtual ~BasePanel() = default;
+        virtual ~BasePanel();
+        static int GetNumInstances();
+
         virtual void Render() = 0;
         virtual void Recalculate() {};
 
         virtual SplitterPanel* AddSplitter(PanelType type) = 0;
-        virtual Panel* AddPanel() = 0;
+        virtual ContentPanel* AddPanel() = 0;
 
         virtual void CalculateScales() {};
         virtual void CalculatePositions() {};
@@ -52,13 +54,14 @@ namespace SableUI
     {
         RootPanel(Renderer* renderer, int w, int h);
         ~RootPanel();
+        static int GetNumInstances();
 
         void Resize(int w, int h);
         void Render() override;
         void Recalculate() override;
 
         SplitterPanel* AddSplitter(PanelType type) override;
-        Panel* AddPanel() override;
+        ContentPanel* AddPanel() override;
 
         void CalculateScales() override;
         void CalculatePositions() override;
@@ -68,11 +71,12 @@ namespace SableUI
     {
         SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer);
         ~SplitterPanel();
+        static int GetNumInstances();
 
         void Render() override;
 
         SplitterPanel* AddSplitter(PanelType type) override;
-        Panel* AddPanel() override;
+        ContentPanel* AddPanel() override;
 
         void CalculateScales() override;
         void CalculatePositions() override;
@@ -87,19 +91,20 @@ namespace SableUI
         Colour m_bColour = { 51, 51, 51 };
     };
 
-    struct Panel : public BasePanel
+    struct ContentPanel : public BasePanel
     {
-        Panel(BasePanel* parent, Renderer* renderer);
-        ~Panel();
+        ContentPanel(BasePanel* parent, Renderer* renderer);
+        ~ContentPanel();
+        static int GetNumInstances();
 
         void Render() override;
         SplitterPanel* AddSplitter(PanelType type) override;
-        Panel* AddPanel() override;
+        ContentPanel* AddPanel() override;
 
         void CalculateMinBounds() override;
 
         template<typename T, typename... Args>
-        Panel* AttachComponent(Args&&... args);
+        ContentPanel* AttachComponent(Args&&... args);
         void Update() override;
 
         void PropagateEvents(const UIEventContext& ctx) override;
@@ -112,7 +117,7 @@ namespace SableUI
     };
 
     template<typename T, typename... Args>
-	inline Panel* Panel::AttachComponent(Args&&... args)
+	inline ContentPanel* ContentPanel::AttachComponent(Args&&... args)
 	{
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 

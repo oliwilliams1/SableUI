@@ -129,7 +129,7 @@ void SableUI::EndSplitter()
     s_panelStack.pop();
 }
 
-SableUI::Panel* SableUI::AddPanel()
+SableUI::ContentPanel* SableUI::AddPanel()
 {
     if (s_currentContext == nullptr)
     {
@@ -143,7 +143,7 @@ SableUI::Panel* SableUI::AddPanel()
         return nullptr;
     }
 
-    SableUI::Panel* panel = s_currentPanel->AddPanel();
+    SableUI::ContentPanel* panel = s_currentPanel->AddPanel();
     return panel;
 }
 

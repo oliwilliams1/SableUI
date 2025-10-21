@@ -29,6 +29,11 @@ void SableUI::BaseComponent::LayoutWrapper()
 	m_childCount = 0;
 	Layout();
 
+	if (m_componentChildren.size() > static_cast<size_t>(m_childCount))
+		for (size_t i = m_childCount; i < m_componentChildren.size(); ++i)
+			if (m_componentChildren[i])
+				SB_delete(m_componentChildren[i]);
+
 	m_componentChildren.resize(m_childCount);
 }
 

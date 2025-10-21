@@ -3,11 +3,24 @@
 
 using namespace SableMemory;
 
+static int s_basePanelCount = 0;
 SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
 {
 	type = PanelType::BASE;
 	rect.wType = RectType::FILL;
 	rect.hType = RectType::FILL;
+	
+	s_basePanelCount++;
+}
+
+SableUI::BasePanel::~BasePanel()
+{
+	s_basePanelCount--;
+}
+
+int SableUI::BasePanel::GetNumInstances()
+{
+	return s_basePanelCount;
 }
 
 void SableUI::BasePanel::PropagateEvents(const UIEventContext& ctx)
@@ -25,16 +38,27 @@ bool SableUI::BasePanel::PropagateComponentStateChanges()
 	return res;
 }
 
-/* Root node implementation */
+
+// ============================================================================
+// Root Panel
+// ============================================================================
+static int s_rootPanelCount = 0;
 SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
+	s_rootPanelCount++;
 	type = PanelType::ROOTNODE;
 	rect.w = w;
 	rect.h = h;
 }
 
+int SableUI::RootPanel::GetNumInstances()
+{
+	return s_rootPanelCount;
+}
+
 SableUI::RootPanel::~RootPanel()
 {
+	s_rootPanelCount--;
 	for (SableUI::BasePanel* child : children) SB_delete(child);
 	children.clear();
 }
@@ -60,7 +84,7 @@ void SableUI::RootPanel::Recalculate()
 
 		if (child->type == PanelType::BASE)
 		{
-			if (SableUI::Panel* panelChild = dynamic_cast<SableUI::Panel*>(child))
+			if (SableUI::ContentPanel* panelChild = dynamic_cast<SableUI::ContentPanel*>(child))
 			{
 				panelChild->Update();
 			}
@@ -86,14 +110,14 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 	return node;
 }
 
-SableUI::Panel* SableUI::RootPanel::AddPanel()
+SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
 {
 	if (children.size() > 0)
 	{
 		SableUI_Error("Root node cannot have more than one child, dismissing call");
 		return nullptr;
 	}
-	Panel* node = SB_new<Panel>(this, m_renderer);
+	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
 	children.push_back(node);
 
 	Recalculate();
@@ -125,10 +149,20 @@ void SableUI::RootPanel::Resize(int w, int h)
 	rect.h = h;
 }
 
-/* Splitter node implementation */
-SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer) : BasePanel(parent, renderer)
+// ============================================================================
+// Splitter Panel
+// ============================================================================
+static int s_splitterPanelCount = 0;
+SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer) 
+	: BasePanel(parent, renderer)
 {
+	s_splitterPanelCount++;
 	this->type = type;
+}
+
+int SableUI::SplitterPanel::GetNumInstances()
+{
+	return s_splitterPanelCount;
 }
 
 void SableUI::SplitterPanel::Render()
@@ -150,9 +184,9 @@ SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 	return node;
 }
 
-SableUI::Panel* SableUI::SplitterPanel::AddPanel()
+SableUI::ContentPanel* SableUI::SplitterPanel::AddPanel()
 {
-	Panel* node = SB_new<Panel>(this, m_renderer);
+	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
 	children.push_back(node);
 
 	FindRoot()->Recalculate();
@@ -393,33 +427,44 @@ SableUI::SplitterPanel::~SplitterPanel()
 	for (BasePanel* child : children)
 		SB_delete(child);
 	children.clear();
+
+	s_splitterPanelCount--;
 }
 
-/* Base Node Implementation */
-static int s_numComponents = 0;
-SableUI::Panel::Panel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
+// ============================================================================
+// Root Panel
+// ============================================================================
+static int s_panelCount = 0; 
+SableUI::ContentPanel::ContentPanel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
 {
+	s_panelCount++;
 	type = PanelType::BASE;
 }
 
-SableUI::Panel::~Panel()
+SableUI::ContentPanel::~ContentPanel()
 {
 	SB_delete(m_component);
+	s_panelCount--;
 }
 
-SableUI::SplitterPanel* SableUI::Panel::AddSplitter(PanelType type)
+int SableUI::ContentPanel::GetNumInstances()
+{
+	return s_panelCount;
+}
+
+SableUI::SplitterPanel* SableUI::ContentPanel::AddSplitter(PanelType type)
 {
 	SableUI_Error("Base node cannot have any children, skipping call");
 	return nullptr;
 }
 
-SableUI::Panel* SableUI::Panel::AddPanel()
+SableUI::ContentPanel* SableUI::ContentPanel::AddPanel()
 {
 	SableUI_Error("Base node cannot have any children, skipping call");
 	return nullptr;
 }
 
-void SableUI::Panel::CalculateMinBounds()
+void SableUI::ContentPanel::CalculateMinBounds()
 {
 	if (m_component == nullptr || m_component->GetRootElement() == nullptr) return;
 	minBounds = { m_component->GetRootElement()->GetMinWidth(), m_component->GetRootElement()->GetMinHeight() };
@@ -434,7 +479,7 @@ void SableUI::Panel::CalculateMinBounds()
 	}
 }
 
-void SableUI::Panel::Update()
+void SableUI::ContentPanel::Update()
 {
 	if (m_component == nullptr)
 	{
@@ -457,17 +502,17 @@ void SableUI::Panel::Update()
 	m_component->GetRootElement()->Render();
 }
 
-void SableUI::Panel::Render()
+void SableUI::ContentPanel::Render()
 {
 	m_component->GetRootElement()->Render();
 }
 
-void SableUI::Panel::PropagateEvents(const UIEventContext& ctx)
+void SableUI::ContentPanel::PropagateEvents(const UIEventContext& ctx)
 {
 	m_component->comp_PropagateEvents(ctx);
 }
 
-bool SableUI::Panel::PropagateComponentStateChanges()
+bool SableUI::ContentPanel::PropagateComponentStateChanges()
 {
 	bool res = false;
 	if (m_component->comp_PropagateComponentStateChanges(&res))

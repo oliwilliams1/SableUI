@@ -72,7 +72,7 @@ private:
 class ImageView : public SableUI::BaseComponent
 {
 public:
-	explicit ImageView(std::string  path, const int width = 128, const int height = 128)
+	ImageView(std::string  path, const int width = 128, const int height = 128)
 		: SableUI::BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
 
 	void Layout() override
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 	| | by selection
 	| | by checkmark
 
-	| | switch
+| | switch
 
 | | tooltip
 | | progress bar
