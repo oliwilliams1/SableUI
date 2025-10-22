@@ -161,6 +161,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->hType                     = info.hType;
     this->bgColour                  = info.bgColour;
     this->layoutDirection           = info.layoutDirection;
+    this->textColour                = info.textColour;
     this->m_onHoverFunc             = info.onHoverFunc;
     this->m_onHoverExitFunc         = info.onHoverExitFunc;
     this->m_onClickFunc             = info.onClickFunc;
@@ -273,6 +274,7 @@ void SableUI::Element::SetText(const SableString& text)
 
     if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
     {
+        drText->m_text.m_colour = textColour;
         drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight);
     }
     else
@@ -717,36 +719,36 @@ void SableUI::Element::LayoutChildren()
 SableUI::ElementInfo SableUI::Element::GetInfo() const
 {
     ElementInfo info{};
-    info.id = ID;
-    info.bgColour = bgColour;
-    info.width = width;
-    info.height = height;
-    info.minWidth = minWidth;
-    info.maxWidth = maxWidth;
-    info.minHeight = minHeight;
-    info.maxHeight = maxHeight;
-    info.marginTop = marginTop;
-    info.marginBottom = marginBottom;
-    info.marginLeft = marginLeft;
-    info.marginRight = marginRight;
-    info.paddingTop = paddingTop;
-    info.paddingBottom = paddingBottom;
-    info.paddingLeft = paddingLeft;
-    info.paddingRight = paddingRight;
-    info.fontSize = fontSize;
-    info.lineHeight = lineHeight;
-    info.centerX = centerX;
-    info.centerY = centerY;
-    info.wType = wType;
-    info.hType = hType;
-    info.type = type;
-    info.layoutDirection = layoutDirection;
-    info.uniqueTextOrPath = uniqueTextOrPath;
-
-    info.onHoverFunc = m_onHoverFunc;
-	info.onHoverExitFunc = m_onHoverExitFunc;
-	info.onClickFunc = m_onClickFunc;
-	info.onSecondaryClickFunc = m_onSecondaryClickFunc;
+    info.id                     = ID;
+    info.bgColour               = bgColour;
+    info.width                  = width;
+    info.height                 = height;
+    info.minWidth               = minWidth;
+    info.maxWidth               = maxWidth;
+    info.minHeight              = minHeight;
+    info.maxHeight              = maxHeight;
+    info.marginTop              = marginTop;
+    info.marginBottom           = marginBottom;
+    info.marginLeft             = marginLeft;
+    info.marginRight            = marginRight;
+    info.paddingTop             = paddingTop;
+    info.paddingBottom          = paddingBottom;
+    info.paddingLeft            = paddingLeft;
+    info.paddingRight           = paddingRight;
+    info.fontSize               = fontSize;
+    info.lineHeight             = lineHeight;
+    info.centerX                = centerX;
+    info.centerY                = centerY;
+    info.wType                  = wType;
+    info.hType                  = hType;
+    info.type                   = type;
+    info.layoutDirection        = layoutDirection;
+    info.uniqueTextOrPath       = uniqueTextOrPath;
+    info.textColour             = textColour;
+    info.onHoverFunc            = m_onHoverFunc;
+	info.onHoverExitFunc        = m_onHoverExitFunc;
+	info.onClickFunc            = m_onClickFunc;
+	info.onSecondaryClickFunc   = m_onSecondaryClickFunc;
 
     return info;
 }
@@ -787,6 +789,8 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
     hash_combine(h, std::hash<int>()(vnode->info.paddingRight));
     hash_combine(h, std::hash<int>()(vnode->info.fontSize));
 	hash_combine(h, std::hash<int>()(vnode->info.lineHeight));
+    hash_combine(h, std::hash<int>()(vnode->info.textColour.r + vnode->info.textColour.g
+                                    + vnode->info.textColour.b + vnode->info.textColour.a));
 
     hash_combine(h, std::hash<int>()((int)vnode->info.layoutDirection));
     hash_combine(h, std::hash<int>()((vnode->info.bgColour.r << 16) ^ (vnode->info.bgColour.g << 8) ^ vnode->info.bgColour.b));
@@ -826,6 +830,8 @@ static size_t ComputeHash(const SableUI::Element* elem)
     hash_combine(h, std::hash<int>()(elem->paddingRight));
     hash_combine(h, std::hash<int>()(elem->fontSize));
     hash_combine(h, std::hash<int>()(elem->lineHeight));
+    hash_combine(h, std::hash<int>()(elem->textColour.r + elem->textColour.g
+                                    + elem->textColour.b + elem->textColour.a));
 
     hash_combine(h, std::hash<int>()((int)elem->layoutDirection));
     hash_combine(h, std::hash<int>()((elem->bgColour.r << 16) ^ (elem->bgColour.g << 8) ^ elem->bgColour.b));

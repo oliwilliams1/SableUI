@@ -149,6 +149,8 @@ namespace SableUI
 #define up_down				.setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
 #define down_up				.setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
 
+#define textColour(...)		.setTextColour(SableUI::Colour(__VA_ARGS__))
+
 #define dir(value)			.setLayoutDirection(value)
 
 #define useState(variableName, setterName, T, initialValue)				\
@@ -163,7 +165,6 @@ namespace SableUI
         __StateReg_##variableName(SableUI::BaseComponent* comp, T* var)	\
         { comp->RegisterState(var); }									\
     } __stateReg_##variableName{this, &variableName};
-
 
 #define onHover(callback)           .setOnHover(callback)
 #define onHoverExit(callback)       .setOnHoverExit(callback)

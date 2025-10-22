@@ -2,8 +2,10 @@
 
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec3 aUV;
+layout (location = 2) in uint aColour;
 
 out vec3 UV;
+out vec4 colour;
 
 uniform vec2 uTargetSize;
 uniform vec2 uPos;
@@ -15,4 +17,11 @@ void main()
 	pos.y *= -1.0;
 	gl_Position = vec4(pos, 0.0, 1.0);
 	UV = aUV;
+
+	colour = vec4(
+        float((aColour >> 24) & 0xFFu) / 255.0,
+        float((aColour >> 16) & 0xFFu) / 255.0,
+        float((aColour >> 8)  & 0xFFu) / 255.0,
+        float((aColour      ) & 0xFFu) / 255.0
+    );
 }

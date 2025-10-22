@@ -53,7 +53,7 @@ namespace SableUI
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
         virtual ~BaseComponent();
-        static int GenNumInstances();
+        static int GetNumInstances();
 
         virtual void Layout() {};
         void LayoutWrapper();

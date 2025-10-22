@@ -17,7 +17,7 @@ public:
 			Div(bg(128, 32, 32) p(2)
 				onClick([&]() { setToggleState(!toggleState); }))
 			{
-				Text("Click to change image. Loaded: " + path);
+				Text("Click to change image. Loaded: " + path, textColour(0, 0, 0));
 			}
 
 			Image(path, w(128) h(128));

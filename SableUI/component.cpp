@@ -19,7 +19,7 @@ SableUI::BaseComponent::~BaseComponent()
 	m_componentChildren.clear();
 }
 
-int SableUI::BaseComponent::GenNumInstances()
+int SableUI::BaseComponent::GetNumInstances()
 {
 	return s_numComponents;
 }
