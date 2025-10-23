@@ -36,6 +36,9 @@ void SableUI::SetFontDPI(const vec2& dpi)
 	s_dpi = dpi;
 }
 
+// ============================================================================
+// Font Range & Font Pack counters
+// ============================================================================
 static int s_fontRangeCount = 0;
 SableUI::FontRange::FontRange()
 {
@@ -116,6 +119,9 @@ int SableUI::FontPack::GetNumInstances()
 	return s_fontPackCount;
 }
 
+// ============================================================================
+// Data types
+// ============================================================================
 struct FontPackHint {
 	std::string filename;
 	char32_t rangeStart;
@@ -123,7 +129,68 @@ struct FontPackHint {
 	int priority;
 };
 
-static const std::vector<FontPackHint> FONT_PACK_HINTS = {
+struct FontRangeHash {
+	char data[16] = { 0 };
+
+	std::string ToString() const
+	{
+		return std::string(reinterpret_cast<const char*>(data));
+	}
+};
+
+struct Character {
+	Character() = default;
+	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::vec2 bearing,
+		uint16_t advance, uint16_t layer)
+		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
+
+	SableUI::u16vec2 pos = SableUI::u16vec2(0);
+	SableUI::u16vec2 size = SableUI::u16vec2(0);
+	SableUI::vec2 bearing = SableUI::vec2(0);
+	float advance = 0;
+	uint16_t layer = 0;
+};
+
+struct Atlas {
+	SableUI::FontRange range;
+	bool isLoadedFromCache = false;
+	int fontSize = 0;
+	Atlas() = default;
+};
+
+enum class FontType : uint8_t {
+	Regular = 0,
+	Bold,
+	Italic,
+	BoldItalic,
+	Light,
+	LightItalic
+};
+
+struct char_t {
+	char32_t c = 0;
+	int fontSize = 0;
+	FontType fontType = FontType::Regular;
+
+	bool operator<(const char_t& other) const {
+		if (c != other.c) return c < other.c;
+		return fontSize < other.fontSize;
+	}
+};
+
+// ============================================================================
+// Data
+// ============================================================================
+static std::map<FontType, std::string> directory = {
+	{ FontType::Regular, "Regular" },
+	{ FontType::Bold, "Bold" },
+	{ FontType::Italic, "Italic" },
+	{ FontType::BoldItalic, "Bold Italic" },
+	{ FontType::Light, "Light" },
+	{ FontType::LightItalic, "Light Italic" },
+};
+
+static const std::vector<FontPackHint> FONT_PACK_HINTS_REGULAR = {
 	// Latin
 	{"NotoSans-Regular.ttf", 0x0000, 0x024F, 1},
 	{"NotoSans-Regular.ttf", 0x1E00, 0x1EFF, 1},
@@ -166,46 +233,81 @@ static const std::vector<FontPackHint> FONT_PACK_HINTS = {
 	{"NotoEmoji-Regular.ttf", 0x2600, 0x26FF, 99},
 };
 
+static const std::vector<FontPackHint> FONT_PACK_HINTS_BOLD = {
+	// Latin
+	{"NotoSans-Bold.ttf", 0x0000, 0x024F, 1},
+	{"NotoSans-Bold.ttf", 0x1E00, 0x1EFF, 1},
 
-struct FontRangeHash {
-	char data[16] = { 0 };
+	// Common symbols
+	{"NotoSansSymbols-Bold.ttf", 0x2000, 0x206F, 2},
+	{"NotoSansSymbols-Bold.ttf", 0x2100, 0x214F, 2},
+	{"NotoSansSymbols-Bold.ttf", 0x2190, 0x21FF, 2},
+	{"NotoSansSymbols-Bold.ttf", 0x2300, 0x23FF, 2},
+	{"NotoSansSymbols-Bold.ttf", 0x2600, 0x26FF, 2},
+	{"NotoSansSymbols-Bold.ttf", 0x2700, 0x27BF, 2},
 
-	std::string ToString() const
-	{
-		return std::string(reinterpret_cast<const char*>(data));
-	}
+	// CJK
+	{"NotoSansJP-Bold.ttf", 0x3040, 0x309F, 3}, // Hiragana
+	{"NotoSansJP-Bold.ttf", 0x30A0, 0x30FF, 3}, // Katakana
+	{"NotoSansSC-Bold.ttf", 0x4E00, 0x9FFF, 4}, // CJK Unified
+	{"NotoSansHK-Bold.ttf", 0x3400, 0x4DBF, 4}, // CJK Extension A
+	{"NotoSansKR-Bold.ttf", 0xAC00, 0xD7AF, 5}, // Hangul
+
+	// Devanagari
+	{"NotoSansDevanagari-Bold.ttf", 0x0900, 0x097F, 6},
+
+	// Thai
+	{"NotoSansThai-Bold.ttf", 0x0E00, 0x0E7F, 7},
 };
 
-struct Character {
-	Character() = default;
-	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::vec2 bearing,
-		uint16_t advance, uint16_t layer)
-		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
-
-	SableUI::u16vec2 pos = SableUI::u16vec2(0);
-	SableUI::u16vec2 size = SableUI::u16vec2(0);
-	SableUI::vec2 bearing = SableUI::vec2(0);
-	float advance = 0;
-	uint16_t layer = 0;
+static const std::vector<FontPackHint> FONT_PACK_HINTS_BOLD_ITALIC = {
+	// Latin
+	{"NotoSans-BoldItalic.ttf", 0x0000, 0x024F, 1},
+	{"NotoSans-BoldItalic.ttf", 0x1E00, 0x1EFF, 1},
 };
 
-struct Atlas {
-	SableUI::FontRange range;
-	bool isLoadedFromCache = false;
-	int fontSize = 0;
-	Atlas() = default;
+static const std::vector<FontPackHint> FONT_PACK_HINTS_ITALIC = {
+	// Latin
+	{"NotoSans-Italic.ttf", 0x0000, 0x024F, 1},
+	{"NotoSans-Italic.ttf", 0x1E00, 0x1EFF, 1},
 };
 
-struct char_t {
-	char32_t c = 0;
-	int fontSize = 0;
+static const std::vector<FontPackHint> FONT_PACK_HINTS_LIGHT = {
+	// Latin
+	{"NotoSans-Light.ttf", 0x0000, 0x024F, 1},
+	{"NotoSans-Light.ttf", 0x1E00, 0x1EFF, 1},
 
-	bool operator<(const char_t& other) const {
-		if (c != other.c) return c < other.c;
-		return fontSize < other.fontSize;
-	}
+	// Common symbols
+	{"NotoSansSymbols-Light.ttf", 0x2000, 0x206F, 2},
+	{"NotoSansSymbols-Light.ttf", 0x2100, 0x214F, 2},
+	{"NotoSansSymbols-Light.ttf", 0x2190, 0x21FF, 2},
+	{"NotoSansSymbols-Light.ttf", 0x2300, 0x23FF, 2},
+	{"NotoSansSymbols-Light.ttf", 0x2600, 0x26FF, 2},
+	{"NotoSansSymbols-Light.ttf", 0x2700, 0x27BF, 2},
+
+	// CJK
+	{"NotoSansJP-Light.ttf", 0x3040, 0x309F, 3}, // Hiragana
+	{"NotoSansJP-Light.ttf", 0x30A0, 0x30FF, 3}, // Katakana
+	{"NotoSansSC-Light.ttf", 0x4E00, 0x9FFF, 4}, // CJK Unified
+	{"NotoSansHK-Light.ttf", 0x3400, 0x4DBF, 4}, // CJK Extension A
+	{"NotoSansKR-Light.ttf", 0xAC00, 0xD7AF, 5}, // Hangul
+
+	// Devanagari
+	{"NotoSansDevanagari-Light.ttf", 0x0900, 0x097F, 6},
+
+	// Thai
+	{"NotoSansThai-Light.ttf", 0x0E00, 0x0E7F, 7},
 };
 
+static const std::vector<FontPackHint> FONT_PACK_HINTS_LIGHT_ITALIC = {
+	// Latin
+	{"NotoSans-LightItalic.ttf", 0x0000, 0x024F, 1},
+	{"NotoSans-LightItalic.ttf", 0x1E00, 0x1EFF, 1},
+};
+
+// ============================================================================
+// FontManager
+// ============================================================================
 class FontManager {
 public:
 	static FontManager& GetInstance();
@@ -220,6 +322,7 @@ public:
 	void Shutdown();
 	bool isInitialized = false;
 	int GetDrawInfo(SableUI::_Text* text);
+	int GetMinWidth(SableUI::_Text* text);
 	
 	void InitFreeType();
 	void ShutdownFreeType();
@@ -265,6 +368,12 @@ private:
 	FontManager() : isInitialized(false) {}
 
 	std::chrono::steady_clock::time_point lastDecayCheck;
+	FontType currentFontType = FontType::Regular;
+	std::string GetCurrentFontDirectory() const;
+	const std::vector<FontPackHint>& GetCurrentFontPackHints();
+	std::string GetPrimaryFontFilename() const;
+
+	bool SetStyleChar(char32_t c);
 };
 
 static FontManager* fontManager = nullptr;
@@ -345,6 +454,62 @@ void FontManager::ShutdownFreeType()
 		FT_Done_FreeType(ft_library);
 		ft_library = nullptr;
 		FreeTypeRunning = false;
+	}
+}
+
+std::string FontManager::GetCurrentFontDirectory() const
+{
+	auto it = directory.find(currentFontType);
+	if (it != directory.end())
+	{
+		return "fonts/" + it->second;
+	}
+	return "fonts/Regular";
+}
+
+const std::vector<FontPackHint>& FontManager::GetCurrentFontPackHints()
+{
+	switch (currentFontType)
+	{
+	case FontType::Bold:        return FONT_PACK_HINTS_BOLD;
+	case FontType::Italic:      return FONT_PACK_HINTS_ITALIC;
+	case FontType::BoldItalic:  return FONT_PACK_HINTS_BOLD_ITALIC;
+	case FontType::Light:       return FONT_PACK_HINTS_LIGHT;
+	case FontType::LightItalic: return FONT_PACK_HINTS_LIGHT_ITALIC;
+	case FontType::Regular:
+	default:                    return FONT_PACK_HINTS_REGULAR;
+	}
+}
+
+std::string FontManager::GetPrimaryFontFilename() const
+{
+	switch (currentFontType)
+	{
+	case FontType::Bold:        return "NotoSans-Bold.ttf";
+	case FontType::Italic:      return "NotoSans-Italic.ttf";
+	case FontType::BoldItalic:  return "NotoSans-BoldItalic.ttf";
+	case FontType::Light:       return "NotoSans-Light.ttf";
+	case FontType::LightItalic: return "NotoSans-LightItalic.ttf";
+	case FontType::Regular:
+	default:                    return "NotoSans-Regular.ttf";
+	}
+}
+
+bool FontManager::SetStyleChar(char32_t c)
+{
+	switch (static_cast<SableUI::StyleTag>(c))
+	{
+	case SableUI::StyleTag::BoldStart:        currentFontType = FontType::Bold;         return true;
+	case SableUI::StyleTag::BoldEnd:          currentFontType = FontType::Regular;      return true;
+	case SableUI::StyleTag::ItalicStart:      currentFontType = FontType::Italic;       return true;
+	case SableUI::StyleTag::ItalicEnd:        currentFontType = FontType::Regular;      return true;
+	case SableUI::StyleTag::BoldItalicStart:  currentFontType = FontType::BoldItalic;   return true;
+	case SableUI::StyleTag::BoldItalicEnd:    currentFontType = FontType::Regular;      return true;
+	case SableUI::StyleTag::LightStart:       currentFontType = FontType::Light;        return true;
+	case SableUI::StyleTag::LightEnd:         currentFontType = FontType::Regular;      return true;
+	case SableUI::StyleTag::LightItalicStart: currentFontType = FontType::LightItalic;  return true;
+	case SableUI::StyleTag::LightItalicEnd:   currentFontType = FontType::Regular;      return true;
+	default: return false;
 	}
 }
 
@@ -466,7 +631,9 @@ std::string FontManager::SuggestFontPackForChar(char32_t c)
 	std::string bestMatch;
 	int bestPriority = 999;
 
-	for (const auto& hint : FONT_PACK_HINTS)
+	const std::vector<FontPackHint>& hints = GetCurrentFontPackHints();
+
+	for (const auto& hint : hints)
 	{
 		if (c >= hint.rangeStart && c <= hint.rangeEnd)
 		{
@@ -483,6 +650,9 @@ std::string FontManager::SuggestFontPackForChar(char32_t c)
 
 bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 {
+	if (SableUI::StyleTag::BoldStart <= static_cast<SableUI::StyleTag>(c)
+		&& SableUI::StyleTag::LightItalicEnd >= static_cast<SableUI::StyleTag>(c)) return false;
+
 	auto now = std::chrono::steady_clock::now();
 	if (std::chrono::duration_cast<std::chrono::seconds>(now - lastDecayCheck).count() >= 1)
 	{
@@ -490,8 +660,13 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		lastDecayCheck = now;
 	}
 
+	std::string currentFontDir = GetCurrentFontDirectory();
+
 	for (auto& pack : cachedFontPacks)
 	{
+		if (pack.fontPath.find(currentFontDir) == std::string::npos)
+			continue;
+
 		for (const auto& range : pack.fontRanges)
 		{
 			if (c >= range.start && c <= range.end)
@@ -507,13 +682,16 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 
 	if (!suggestedFont.empty())
 	{
-		SableUI_Log("Character U+%04X not found, trying suggested font: %s",
-			static_cast<unsigned int>(c), suggestedFont.c_str());
+		SableUI_Log("Character U+%04X not found in %s style, trying suggested font: %s",
+			static_cast<unsigned int>(c), directory[currentFontType].c_str(), suggestedFont.c_str());
 
-		if (LoadFontPackByFilename("fonts/Regular", suggestedFont))
+		if (LoadFontPackByFilename(currentFontDir, suggestedFont))
 		{
 			for (auto& pack : cachedFontPacks)
 			{
+				if (pack.fontPath.find(currentFontDir) == std::string::npos)
+					continue;
+
 				for (const auto& range : pack.fontRanges)
 				{
 					if (c >= range.start && c <= range.end)
@@ -527,28 +705,27 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		}
 	}
 
-	SableUI_Log("Character U+%04X not in suggested font, scanning all fonts...",
-		static_cast<unsigned int>(c));
+	SableUI_Log("Character U+%04X not in suggested font for %s, trying style fonts...",
+		static_cast<unsigned int>(c), directory[currentFontType].c_str());
 
-	std::vector<std::string> allFonts = {
-		"NotoSansMath-Regular.ttf",
-		"NotoSansSymbols-Regular.ttf",
-		"NotoSansSymbols2-Regular.ttf",
-		"NotoSansJP-Regular.ttf",
-		"NotoSansSC-Regular.ttf",
-		"NotoSansHK-Regular.ttf",
-		"NotoSansKR-Regular.ttf",
-		"NotoSansDevanagari-Regular.ttf",
-		"NotoSansThai-Regular.ttf",
-		"NotoEmoji-Regular.ttf"
-	};
+	std::vector<std::string> styleFonts;
 
-	for (const auto& fontFile : allFonts)
+	const std::vector<FontPackHint>& hints = GetCurrentFontPackHints();
+	for (const auto& hint : hints)
+	{
+		if (std::find(styleFonts.begin(), styleFonts.end(), hint.filename) == styleFonts.end())
+		{
+			styleFonts.push_back(hint.filename);
+		}
+	}
+
+	for (const auto& fontFile : styleFonts)
 	{
 		bool alreadyLoaded = false;
 		for (const auto& pack : cachedFontPacks)
 		{
-			if (pack.fontPath.find(fontFile) != std::string::npos)
+			if (pack.fontPath.find(fontFile) != std::string::npos &&
+				pack.fontPath.find(currentFontDir) != std::string::npos)
 			{
 				alreadyLoaded = true;
 				break;
@@ -558,11 +735,12 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		if (alreadyLoaded)
 			continue;
 
-		if (LoadFontPackByFilename("fonts/Regular", fontFile))
+		if (LoadFontPackByFilename(currentFontDir, fontFile))
 		{
 			for (auto& pack : cachedFontPacks)
 			{
-				if (pack.fontPath.find(fontFile) != std::string::npos)
+				if (pack.fontPath.find(fontFile) != std::string::npos &&
+					pack.fontPath.find(currentFontDir) != std::string::npos)
 				{
 					for (const auto& range : pack.fontRanges)
 					{
@@ -570,8 +748,9 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 						{
 							outRange = range;
 							pack.lastConsumed = std::chrono::steady_clock::now();
-							SableUI_Log("Found character U+%04X in %s",
-								static_cast<unsigned int>(c), fontFile.c_str());
+							SableUI_Log("Found character U+%04X in %s (%s style)",
+								static_cast<unsigned int>(c), fontFile.c_str(),
+								directory[currentFontType].c_str());
 							return true;
 						}
 					}
@@ -580,7 +759,21 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		}
 	}
 
-	SableUI_Warn("Character U+%04X not found in any font pack", static_cast<unsigned int>(c));
+	// If still not found and not in Regular, fall back to Regular style
+	if (currentFontType != FontType::Regular)
+	{
+		SableUI_Log("Character U+%04X not found in %s style, falling back to Regular",
+			static_cast<unsigned int>(c), directory[currentFontType].c_str());
+
+		FontType previousType = currentFontType;
+		currentFontType = FontType::Regular;
+		bool found = FindFontRangeForChar(c, outRange);
+		currentFontType = previousType;
+		return found;
+	}
+
+	SableUI_Warn("Character U+%04X not found in any font pack for %s style",
+		static_cast<unsigned int>(c), directory[currentFontType].c_str());
 	return false;
 }
 
@@ -874,7 +1067,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 				static_cast<uint16_t>(atlasCursor.y / ATLAS_HEIGHT)
 			);
 
-			char_t ct = { c, atlas.fontSize };
+			char_t ct = { c, atlas.fontSize, currentFontType };
 			characters[ct] = emptyChar;
 			charsForSerialization[c] = emptyChar;
 
@@ -909,7 +1102,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			SableUI_Error("Atlas overflow during glyph rendering (glyph too tall/misplaced for remaining space)! Char: U+%04X. Corrupt?",
 				static_cast<unsigned int>(c));
 
-			char_t ct = { c, atlas.fontSize };
+			char_t ct = { c, atlas.fontSize, currentFontType };
 			characters[ct] = Character(
 				atlasCursor,
 				size,
@@ -944,7 +1137,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			}
 		}
 
-		char_t ct = { c, atlas.fontSize };
+		char_t ct = { c, atlas.fontSize, currentFontType };
 		characters[ct] = Character(
 			atlasCursor,
 			size,
@@ -1335,7 +1528,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 			character.pos.y = character.pos.y + initialAtlasYForDeserialisedPass;
 			character.layer = static_cast<uint16_t>(character.pos.y / ATLAS_HEIGHT);
 
-			char_t key = { charCode, outAtlas.fontSize };
+			char_t key = { charCode, outAtlas.fontSize, currentFontType };
 			characters[key] = character;
 		}
 
@@ -1417,14 +1610,26 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	std::vector<TextToken> tokens;
 	TextToken currentToken;
 
-	/* wordwrapping */
+	currentFontType = FontType::Regular;
+
+	/* tokenization with style tracking */
 	for (char32_t c : text->m_content)
 	{
+		if (SetStyleChar(c))
+		{
+			if (!currentToken.content.empty())
+			{
+				tokens.push_back(currentToken);
+				currentToken = TextToken{};
+			}
+			continue;
+		}
+
 		if (c == U'\n')
 		{
 			if (!currentToken.content.empty())
 				tokens.push_back(currentToken);
-			
+
 			TextToken newlineToken;
 			newlineToken.isNewline = true;
 			tokens.push_back(newlineToken);
@@ -1433,13 +1638,48 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 		}
 
 		Character charData;
-		char_t charKey = { c, text->m_fontSize };
+		char_t charKey = { c, text->m_fontSize, currentFontType };
+
+		std::string compositeKey = std::to_string(c) + "_" +
+			std::to_string(text->m_fontSize) + "_" +
+			std::to_string(static_cast<int>(currentFontType));
+
 		auto it = characters.find(charKey);
+
+		bool needsReload = false;
 		if (it != characters.end())
 		{
-			charData = it->second;
+			std::string currentFontDir = GetCurrentFontDirectory();
+			bool foundInStyle = false;
+
+			for (const auto& atlas : atlases)
+			{
+				if (atlas.fontSize == text->m_fontSize &&
+					atlas.range.fontPath.find(currentFontDir) != std::string::npos)
+				{
+					if (c >= atlas.range.start && c <= atlas.range.end)
+					{
+						foundInStyle = true;
+						break;
+					}
+				}
+			}
+
+			if (!foundInStyle)
+			{
+				needsReload = true;
+			}
+			else
+			{
+				charData = it->second;
+			}
 		}
 		else
+		{
+			needsReload = true;
+		}
+
+		if (needsReload)
 		{
 			SableUI::FontRange targetRange;
 			if (FindFontRangeForChar(c, targetRange))
@@ -1455,14 +1695,15 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 				}
 				else
 				{
-					SableUI_Warn("Could not find character U+%04X with font size %d even after attempting to load its range. Using empty glyph.",
-						c, text->m_fontSize);
+					SableUI_Warn("Could not find character U+%04X with font size %d in %s style even after loading. Using empty glyph.",
+						c, text->m_fontSize, directory[currentFontType].c_str());
 					charData = Character{};
 				}
 			}
 			else
 			{
-				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph.", c);
+				SableUI_Warn("Could not find font range for character U+%04X in %s style. Using empty glyph.",
+					c, directory[currentFontType].c_str());
 				charData = Character{};
 			}
 		}
@@ -1476,7 +1717,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			}
 			if (currentToken.content.empty() || !currentToken.isSpace)
 				currentToken.isSpace = true;
-			
+
 			currentToken.content.push_back(c);
 			currentToken.width += charData.advance;
 			currentToken.charDataList.push_back(charData);
@@ -1501,6 +1742,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	}
 
 	SableUI::vec2 cursor{};
+	currentFontType = FontType::Regular;
 
 	/* calc top left position via line height */
 	{
@@ -1571,7 +1813,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 			float x = std::round(cursor.x + charData.bearing.x);
 			float y = std::round(cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize));
-			
+
 			float w = static_cast<float>(charData.size.x) / 3.0f;
 			float h = static_cast<float>(charData.size.y);
 
@@ -1608,13 +1850,58 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text->m_EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-				 indices.data(), GL_STATIC_DRAW);
+		indices.data(), GL_STATIC_DRAW);
 
 	text->indiciesSize = indices.size();
 
 	glBindVertexArray(0);
 
 	return height;
+}
+
+int FontManager::GetMinWidth(SableUI::_Text* text)
+{
+	int maxWordWidth = 0;
+	int currentWordWidth = 0;
+
+	for (char32_t c : text->m_content)
+	{
+		if (c == U' ' || c == U'\n' || c == U'\t')
+		{
+			maxWordWidth = std::max(maxWordWidth, currentWordWidth);
+			currentWordWidth = 0;
+			continue;
+		}
+
+		SetStyleChar(c);
+
+		char_t charKey = { c, text->m_fontSize, currentFontType };
+		auto it = characters.find(charKey);
+
+		if (it != characters.end())
+		{
+			currentWordWidth += it->second.advance;
+		}
+		else
+		{
+			SableUI::FontRange targetRange;
+			if (FindFontRangeForChar(c, targetRange))
+			{
+				Atlas newAtlas{};
+				newAtlas.fontSize = text->m_fontSize;
+				fontManager->LoadFontRange(newAtlas, targetRange);
+				auto newIt = fontManager->characters.find(charKey);
+				if (newIt != fontManager->characters.end())
+				{
+					currentWordWidth += newIt->second.advance;
+				}
+			}
+		}
+	}
+
+	currentFontType = FontType::Regular;
+
+	return std::max(maxWordWidth, currentWordWidth);
 }
 
 GLuint SableUI::GetAtlasTexture()
@@ -1625,7 +1912,9 @@ GLuint SableUI::GetAtlasTexture()
 	return FontManager::GetInstance().GetAtlasTexture();
 }
 
-/* ------------- TEXT BACKEND ------------- */
+// ============================================================================
+// Text Backend
+// ============================================================================
 int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac)
 {
 	// Ensure FontManager is initialized
@@ -1660,45 +1949,7 @@ int SableUI::_Text::GetMinWidth()
 
 	fontManager = &FontManager::GetInstance();
 
-	int maxWordWidth = 0;
-	int currentWordWidth = 0;
-
-	for (char32_t c : m_content)
-	{
-		if (c == U' ' || c == U'\n' || c == U'\t')
-		{
-			maxWordWidth = std::max(maxWordWidth, currentWordWidth);
-			currentWordWidth = 0;
-			continue;
-		}
-
-		char_t charKey = { c, m_fontSize };
-		auto it = fontManager->characters.find(charKey);
-
-		if (it != fontManager->characters.end())
-		{
-			currentWordWidth += it->second.advance;
-		}
-		else
-		{
-			FontRange targetRange;
-			if (fontManager->FindFontRangeForChar(c, targetRange))
-			{
-				Atlas newAtlas{};
-				newAtlas.fontSize = m_fontSize;
-				fontManager->LoadFontRange(newAtlas, targetRange);
-				auto newIt = fontManager->characters.find(charKey);
-				if (newIt != fontManager->characters.end())
-				{
-					currentWordWidth += newIt->second.advance;
-				}
-			}
-		}
-	}
-
-	maxWordWidth = std::max(maxWordWidth, currentWordWidth);
-
-	return maxWordWidth;
+	return fontManager->GetMinWidth(this);
 }
 
 int SableUI::_Text::GetUnwrappedHeight()

@@ -38,6 +38,23 @@ SableUI::String::String(const std::string& str)
 	m_data[m_size] = U'\0';
 }
 
+String String::wrap(StyleTag start, StyleTag end) const {
+	String result;
+	result.m_size = m_size + 2;
+	result.m_data = new char32_t[result.m_size + 1];
+	result.m_data[0] = static_cast<char32_t>(start);
+	std::copy(m_data, m_data + m_size, result.m_data + 1);
+	result.m_data[result.m_size - 1] = static_cast<char32_t>(end);
+	result.m_data[result.m_size] = U'\0';
+	return result;
+}
+
+String String::bold() const { return wrap(StyleTag::BoldStart, StyleTag::BoldEnd); };
+String String::italic()	const { return wrap(StyleTag::ItalicStart, StyleTag::ItalicEnd); };
+String String::boldItalic()	const { return wrap(StyleTag::BoldItalicStart, StyleTag::BoldItalicEnd); };
+String String::light() const { return wrap(StyleTag::LightStart, StyleTag::LightEnd); };
+String String::lightItalic()const { return wrap(StyleTag::LightItalicStart, StyleTag::LightItalicEnd); };
+
 String::String(const String& other) : m_data(nullptr), m_size(0)
 {
 	s_numComponents++;

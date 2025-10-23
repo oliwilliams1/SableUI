@@ -79,7 +79,7 @@ public:
 	{
 		Image(m_path, w(width) h(height) centerXY
 			onHover([&]() { setText(U"unicode test ⟡ ↀ 안녕하세요, 제 이름은 오리 입니다. 저 는 열일곱 살 입니다. 저는 뉴젠스 좋압니다."); })
-			onHoverExit([&]() { setText(U"lorem ipsum"); }));
+			onHoverExit([&]() { setText(U"lorem " + SableString(U"ipsum").bold()); }));
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
 		{
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
 	| | custom font family
 	|x| word wrap
 	| | inline style
-	| | colour
+	|x| colour
 	| | alignment
 	|x| line Height
 	| | truncation
