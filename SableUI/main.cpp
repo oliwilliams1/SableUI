@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 	|x| font size
 	| | custom font family
 	|x| word wrap
-	| | inline style
+	|x| inline style
 	|x| colour
 	| | alignment
 	|x| line Height

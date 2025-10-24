@@ -174,7 +174,8 @@ struct char_t {
 
 	bool operator<(const char_t& other) const {
 		if (c != other.c) return c < other.c;
-		return fontSize < other.fontSize;
+		if (fontSize != other.fontSize) return fontSize < other.fontSize;
+		return fontType < other.fontType;
 	}
 };
 
@@ -346,7 +347,7 @@ public:
 	int atlasDepth = MIN_ATLAS_DEPTH;
 	SableUI::u16vec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 
-	std::set<std::pair<SableUI::FontRange, int>> loadedAtlasKeys;
+	std::set<std::tuple<SableUI::FontRange, int, FontType>> loadedAtlasKeys;
 
 	FontRangeHash GetAtlasHash(const SableUI::FontRange& range, int fontSize);
 	FT_Face GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
@@ -834,22 +835,16 @@ void FontManager::UnloadInactiveFontPacks()
 			auto keyIt = loadedAtlasKeys.begin();
 			while (keyIt != loadedAtlasKeys.end())
 			{
-				if (keyIt->first.fontPath == fontPathToRemove)
-				{
+				if (std::get<0>(*keyIt).fontPath == fontPathToRemove)
 					keyIt = loadedAtlasKeys.erase(keyIt);
-				}
 				else
-				{
-					++keyIt;
-				}
+					keyIt++;
 			}
 
 			it = cachedFontPacks.erase(it);
 		}
 		else
-		{
-			++it;
-		}
+			it++;
 	}
 }
 
@@ -1551,7 +1546,7 @@ void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
 {
 	atlas.range = range;
 
-	std::pair<SableUI::FontRange, int> currentAtlasKey = { range, atlas.fontSize };
+	std::tuple<SableUI::FontRange, int, FontType> currentAtlasKey = { range, atlas.fontSize, currentFontType };
 	if (loadedAtlasKeys.count(currentAtlasKey))
 	{
 		SableUI_Log("Atlas for range U+%04X - U+%04X (size %i) already loaded. Skipping.",
