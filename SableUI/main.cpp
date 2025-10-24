@@ -83,7 +83,7 @@ public:
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
 		{
-			TextU32(text, minW(100) justify_center);
+			TextU32(text, minW(100) justify_center maxH(20));
 		}
 	}
 
@@ -153,6 +153,7 @@ int main(int argc, char** argv)
 	|x| alignment
 	|x| line Height
 	| | truncation
+	| | unload inactive font packs
 
 |x| image
 	|x| jpg, jpeg, png, ...

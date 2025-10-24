@@ -56,7 +56,7 @@ namespace SableUI
 		_Text(const _Text&) = delete;
 		_Text& operator=(const _Text&) = delete;
 
-		int SetContent(const SableString& str, int maxWidth, int fontSize = 11,
+		int SetContent(const SableString& str, int maxWidth, int fontSize = 11, int maxHeight = -1,
 			float lineSpacing = 1.15f, TextJustification justification = TextJustification::Left);
 		int UpdateMaxWidth(int maxWidth);
 		int GetMinWidth();
@@ -66,6 +66,7 @@ namespace SableUI
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_fontSize = 0;
 		int m_maxWidth = 0;
+		int m_maxHeight = 0;
 		int m_lineSpacingPx = 0;
 		TextJustification m_justify = TextJustification::Left;
 

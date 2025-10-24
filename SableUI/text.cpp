@@ -1638,13 +1638,9 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 		Character charData;
 		char_t charKey = { c, text->m_fontSize, currentFontType };
 
-		std::string compositeKey = std::to_string(c) + "_" +
-			std::to_string(text->m_fontSize) + "_" +
-			std::to_string(static_cast<int>(currentFontType));
-
 		auto it = characters.find(charKey);
-
 		bool needsReload = false;
+
 		if (it != characters.end())
 		{
 			std::string currentFontDir = GetCurrentFontDirectory();
@@ -1669,9 +1665,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 				charData = it->second;
 		}
 		else
-		{
 			needsReload = true;
-		}
 
 		if (needsReload)
 		{
@@ -1686,18 +1680,9 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 				if (it != characters.end())
 					charData = it->second;
 				else
-				{
-					SableUI_Warn("Could not find character U+%04X with font size %d in %s style even after loading. Using empty glyph.",
-						c, text->m_fontSize, directory[currentFontType].c_str());
 					charData = Character{};
-				}
 			}
-			else
-			{
-				SableUI_Warn("Could not find font range for character U+%04X in %s style. Using empty glyph.",
-					c, directory[currentFontType].c_str());
-				charData = Character{};
-			}
+			else charData = Character{};
 		}
 
 		if (std::iswspace(static_cast<wint_t>(c)))
@@ -1734,11 +1719,17 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	SableUI::vec2 cursor{};
 	currentFontType = FontType::Regular;
 
-	/* pass 1 */
+	/* ---------- PASS 1: line breaking ---------- */
 	std::vector<std::vector<TextToken>> lines;
 	std::vector<TextToken> currentLine;
 	float currentLineWidth = 0.0f;
 	int totalLines = 1;
+
+	int maxVisibleLines = (text->m_maxHeight != 0)
+		? std::max(1, text->m_maxHeight / text->m_lineSpacingPx)
+		: INT_MAX;
+
+	bool truncated = false;
 
 	for (const TextToken& token : tokens)
 	{
@@ -1748,6 +1739,12 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			currentLine.clear();
 			currentLineWidth = 0;
 			totalLines++;
+
+			if (totalLines > maxVisibleLines)
+			{
+				truncated = true;
+				break;
+			}
 			continue;
 		}
 
@@ -1759,18 +1756,75 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			currentLine.clear();
 			currentLineWidth = 0;
 			totalLines++;
+
+			if (totalLines > maxVisibleLines)
+			{
+				truncated = true;
+				break;
+			}
 		}
 
 		currentLine.push_back(token);
 		currentLineWidth += token.width;
 	}
-	if (!currentLine.empty())
+
+	if (!currentLine.empty() && !truncated)
 		lines.push_back(currentLine);
 
-	height = totalLines * text->m_lineSpacingPx;
+	if (truncated && !lines.empty())
+	{
+		std::vector<TextToken>& lastLine = lines.back();
+
+		std::u32string ellipsis = U"...";
+		TextToken ellipsisToken;
+		ellipsisToken.isSpace = false;
+
+		for (char32_t c : ellipsis)
+		{
+			char_t charKey = { c, text->m_fontSize, FontType::Regular };
+			auto it = characters.find(charKey);
+			if (it == characters.end())
+			{
+				SableUI::FontRange targetRange;
+				if (FindFontRangeForChar(c, targetRange))
+				{
+					Atlas newAtlas{};
+					newAtlas.fontSize = text->m_fontSize;
+					LoadFontRange(newAtlas, targetRange);
+					it = characters.find(charKey);
+				}
+			}
+
+			Character charData{};
+			if (it != characters.end())
+				charData = it->second;
+
+			ellipsisToken.content.push_back(c);
+			ellipsisToken.width += charData.advance;
+			ellipsisToken.charDataList.push_back(charData);
+		}
+
+		float lineWidth = 0.0f;
+		for (auto& t : lastLine)
+			lineWidth += t.width;
+
+		while (!lastLine.empty() && lineWidth + ellipsisToken.width > text->m_maxWidth)
+		{
+			TextToken& back = lastLine.back();
+			lineWidth -= back.width;
+			lastLine.pop_back();
+		}
+
+		lastLine.push_back(ellipsisToken);
+
+		while ((int)lines.size() > maxVisibleLines)
+			lines.pop_back();
+	}
+
+	height = static_cast<int>(lines.size()) * text->m_lineSpacingPx;
 	cursor.y -= height;
 
-	/* pass 2 */
+	/* ---------- PASS 2: vertex build ---------- */
 	unsigned int currentGlyphOffset = 0;
 
 	for (const auto& line : lines)
@@ -1790,9 +1844,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			case SableUI::TextJustification::Right:
 				xOffset = (text->m_maxWidth - lineWidth);
 				break;
-			case SableUI::TextJustification::Left:
 			default:
-				xOffset = 0.0f;
 				break;
 			}
 		}
@@ -1819,10 +1871,10 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 				float layerIndex = static_cast<float>(charData.layer);
 
-				vertices.push_back(Vertex{ {x, y},           {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x + w, y},       {uTopRight,   vBottomLeft, layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x + w, y + h},   {uTopRight,   vTopRight,   layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x, y + h},       {uBottomLeft, vTopRight,   layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x, y}, {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x + w, y}, {uTopRight, vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x + w, y + h}, {uTopRight, vTopRight, layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x, y + h}, {uBottomLeft, vTopRight, layerIndex}, text->m_colour });
 
 				unsigned int offset = currentGlyphOffset * 4;
 				indices.push_back(offset);
@@ -1908,7 +1960,7 @@ GLuint SableUI::GetAtlasTexture()
 // ============================================================================
 // Text Backend
 // ============================================================================
-int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac, TextJustification justify)
+int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, int maxHeight, float lineSpacingFac, TextJustification justify)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -1918,6 +1970,7 @@ int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSiz
 	m_fontSize = fontSize;
 	m_lineSpacingPx = fontSize * lineSpacingFac;
 	m_maxWidth = maxWidth;
+	m_maxHeight = maxHeight;
 	m_justify = justify;
 
 	int height = fontManager->GetDrawInfo(this);
