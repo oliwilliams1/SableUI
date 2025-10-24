@@ -162,6 +162,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->bgColour                  = info.bgColour;
     this->layoutDirection           = info.layoutDirection;
     this->textColour                = info.textColour;
+    this->textJustification         = info.textJustification;
     this->m_onHoverFunc             = info.onHoverFunc;
     this->m_onHoverExitFunc         = info.onHoverExitFunc;
     this->m_onClickFunc             = info.onClickFunc;
@@ -275,7 +276,7 @@ void SableUI::Element::SetText(const SableString& text)
     if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
     {
         drText->m_text.m_colour = textColour;
-        drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight);
+        drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, lineHeight, textJustification);
     }
     else
     {
@@ -745,6 +746,7 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.layoutDirection        = layoutDirection;
     info.uniqueTextOrPath       = uniqueTextOrPath;
     info.textColour             = textColour;
+    info.textJustification      = textJustification;
     info.onHoverFunc            = m_onHoverFunc;
 	info.onHoverExitFunc        = m_onHoverExitFunc;
 	info.onClickFunc            = m_onClickFunc;

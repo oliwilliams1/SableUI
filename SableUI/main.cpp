@@ -83,14 +83,14 @@ public:
 
 		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
 		{
-			TextU32(text, minW(100));
+			TextU32(text, minW(100) justify_center);
 		}
 	}
 
 private:
 	std::string m_path;
 	int width, height;
-	useState(text, setText, SableString, U"lorem ipsum");
+	useState(text, setText, SableString, U"lorem " + SableString(U"ipsum").bold());
 };
 
 int main(int argc, char** argv)
@@ -147,11 +147,10 @@ int main(int argc, char** argv)
 |x| text
 	|x| unicode
 	|x| font size
-	| | custom font family
 	|x| word wrap
 	|x| inline style
 	|x| colour
-	| | alignment
+	|x| alignment
 	|x| line Height
 	| | truncation
 

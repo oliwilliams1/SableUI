@@ -150,6 +150,9 @@ namespace SableUI
 #define down_up				.setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
 
 #define textColour(...)		.setTextColour(SableUI::Colour(__VA_ARGS__))
+#define justify_left		.setJustification(SableUI::TextJustification::Left)
+#define justify_center		.setJustification(SableUI::TextJustification::Center)
+#define justify_right		.setJustification(SableUI::TextJustification::Right)
 
 #define dir(value)			.setLayoutDirection(value)
 

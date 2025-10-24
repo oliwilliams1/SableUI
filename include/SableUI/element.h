@@ -59,6 +59,7 @@ namespace SableUI
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath = "";
 		Colour textColour = { 255, 255, 255, 255 };
+		TextJustification textJustification = TextJustification::Left;
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
@@ -103,6 +104,7 @@ namespace SableUI
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
 		ElementInfo& setTextColour(const Colour& v)			{ textColour = v; return *this; }
+		ElementInfo& setJustification(TextJustification v)	{ textJustification = v; return *this; }
 
 		// Event functions
 		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc			= func;	return *this; }
@@ -182,6 +184,7 @@ namespace SableUI
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath = "";
 		Colour textColour = { 255, 255, 255, 255 };
+		TextJustification textJustification = TextJustification::Left;
 
 		std::function<void()> m_onHoverFunc = nullptr;
 		std::function<void()> m_onHoverExitFunc = nullptr;
@@ -226,6 +229,7 @@ namespace SableUI
 		Element& setType(ElementType v)					{ type = v; return *this; }
 
 		Element& setTextColour(const Colour& v)			{ textColour = v; return *this; }
+		Element& setJustification(TextJustification v)	{ textJustification = v; return *this; }
 
 		Element& setOnHover(const std::function<void()>& func)			{ m_onHoverFunc				= func;	return *this; }
 		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }

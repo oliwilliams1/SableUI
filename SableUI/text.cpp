@@ -17,6 +17,7 @@
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Text"
 #include "SableUI/console.h"
+#include <corecrt.h>
 
 constexpr int ATLAS_WIDTH = 512;
 constexpr int ATLAS_HEIGHT = 512;
@@ -1589,7 +1590,7 @@ struct Vertex {
 };
 
 struct TextToken {
-	std::u32string content = U"";
+	std::u32string content;
 	float width = 0.0f;
 	bool isSpace = false;
 	bool isNewline = false;
@@ -1598,6 +1599,8 @@ struct TextToken {
 
 int FontManager::GetDrawInfo(SableUI::_Text* text)
 {
+	SableUI::TextJustification currentJustification = text->m_justify;
+
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	int height = 0;
@@ -1607,7 +1610,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 	currentFontType = FontType::Regular;
 
-	/* tokenization with style tracking */
+	/* tokenisation with style tracking */
 	for (char32_t c : text->m_content)
 	{
 		if (SetStyleChar(c))
@@ -1661,13 +1664,9 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			}
 
 			if (!foundInStyle)
-			{
 				needsReload = true;
-			}
 			else
-			{
 				charData = it->second;
-			}
 		}
 		else
 		{
@@ -1685,9 +1684,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 				it = characters.find(charKey);
 				if (it != characters.end())
-				{
 					charData = it->second;
-				}
 				else
 				{
 					SableUI_Warn("Could not find character U+%04X with font size %d in %s style even after loading. Using empty glyph.",
@@ -1732,111 +1729,114 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	}
 
 	if (!currentToken.content.empty())
-	{
 		tokens.push_back(currentToken);
-	}
 
 	SableUI::vec2 cursor{};
 	currentFontType = FontType::Regular;
 
-	/* calc top left position via line height */
-	{
-		int tempLines = 1;
-		SableUI::vec2 tempCursor{};
-		float tempCurrentLineX = 0.0f;
+	/* pass 1 */
+	std::vector<std::vector<TextToken>> lines;
+	std::vector<TextToken> currentLine;
+	float currentLineWidth = 0.0f;
+	int totalLines = 1;
 
-		for (const TextToken& token : tokens)
-		{
-			if (token.isNewline)
-			{
-				tempCursor.x = 0;
-				tempCursor.y += text->m_lineSpacingPx;
-				tempLines++;
-				tempCurrentLineX = 0.0f;
-				continue;
-			}
-
-			if (!token.isSpace && text->m_maxWidth > 0
-				&& tempCurrentLineX > 0
-				&& (tempCurrentLineX + token.width > text->m_maxWidth))
-			{
-				tempCursor.x = 0;
-				tempCursor.y += text->m_lineSpacingPx;
-				tempLines++;
-				tempCurrentLineX = 0.0f;
-			}
-
-			for (size_t i = 0; i < token.content.length(); i++)
-			{
-				const Character& charData = token.charDataList[i];
-				tempCursor.x += charData.advance;
-				tempCurrentLineX += charData.advance;
-			}
-		}
-
-		height = tempLines * text->m_lineSpacingPx;
-		cursor.y -= height;
-	}
-
-	float currentLineX = 0.0f;
-	unsigned int currentGlyphOffset = 0;
-	int lines = 1;
 	for (const TextToken& token : tokens)
 	{
 		if (token.isNewline)
 		{
-			cursor.x = 0;
-			cursor.y += text->m_lineSpacingPx;
-			lines++;
-			currentLineX = 0.0f;
+			lines.push_back(currentLine);
+			currentLine.clear();
+			currentLineWidth = 0;
+			totalLines++;
 			continue;
 		}
 
-		if (!token.isSpace && text->m_maxWidth > 0
-			&& currentLineX > 0
-			&& (currentLineX + token.width > text->m_maxWidth))
+		if (!token.isSpace && text->m_maxWidth > 0 &&
+			currentLineWidth > 0 &&
+			(currentLineWidth + token.width > text->m_maxWidth))
 		{
-			cursor.x = 0;
-			cursor.y += text->m_lineSpacingPx;
-			lines++;
-			currentLineX = 0.0f;
+			lines.push_back(currentLine);
+			currentLine.clear();
+			currentLineWidth = 0;
+			totalLines++;
 		}
 
-		for (size_t i = 0; i < token.content.length(); i++)
+		currentLine.push_back(token);
+		currentLineWidth += token.width;
+	}
+	if (!currentLine.empty())
+		lines.push_back(currentLine);
+
+	height = totalLines * text->m_lineSpacingPx;
+	cursor.y -= height;
+
+	/* pass 2 */
+	unsigned int currentGlyphOffset = 0;
+
+	for (const auto& line : lines)
+	{
+		float lineWidth = 0.0f;
+		for (const auto& token : line)
+			lineWidth += token.width;
+
+		float xOffset = 0.0f;
+		if (text->m_maxWidth > 0)
 		{
-			const Character& charData = token.charDataList[i];
-
-			float x = std::round(cursor.x + charData.bearing.x);
-			float y = std::round(cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize));
-
-			float w = static_cast<float>(charData.size.x) / 3.0f;
-			float h = static_cast<float>(charData.size.y);
-
-			float uBottomLeft = static_cast<float>(charData.pos.x) / ATLAS_WIDTH;
-			float vBottomLeft = static_cast<float>(charData.pos.y % ATLAS_HEIGHT) / ATLAS_HEIGHT;
-
-			float uTopRight = uBottomLeft + (static_cast<float>(charData.size.x) / ATLAS_WIDTH);
-			float vTopRight = vBottomLeft + (static_cast<float>(charData.size.y) / ATLAS_HEIGHT);
-
-			float layerIndex = static_cast<float>(charData.layer);
-
-			vertices.push_back(Vertex{ {x, y},           {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
-			vertices.push_back(Vertex{ {x + w, y},       {uTopRight,   vBottomLeft, layerIndex}, text->m_colour });
-			vertices.push_back(Vertex{ {x + w, y + h},   {uTopRight,   vTopRight,   layerIndex}, text->m_colour });
-			vertices.push_back(Vertex{ {x, y + h},       {uBottomLeft, vTopRight,   layerIndex}, text->m_colour });
-
-			unsigned int offset = currentGlyphOffset * 4;
-			indices.push_back(offset);
-			indices.push_back(offset + 1);
-			indices.push_back(offset + 2);
-			indices.push_back(offset);
-			indices.push_back(offset + 2);
-			indices.push_back(offset + 3);
-
-			cursor.x += charData.advance;
-			currentLineX += charData.advance;
-			currentGlyphOffset++;
+			switch (currentJustification)
+			{
+			case SableUI::TextJustification::Center:
+				xOffset = (text->m_maxWidth - lineWidth) / 2.0f;
+				break;
+			case SableUI::TextJustification::Right:
+				xOffset = (text->m_maxWidth - lineWidth);
+				break;
+			case SableUI::TextJustification::Left:
+			default:
+				xOffset = 0.0f;
+				break;
+			}
 		}
+
+		cursor.x = xOffset;
+
+		for (const auto& token : line)
+		{
+			for (size_t i = 0; i < token.content.length(); i++)
+			{
+				const Character& charData = token.charDataList[i];
+
+				float x = std::round(cursor.x + charData.bearing.x);
+				float y = std::round(cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize));
+
+				float w = static_cast<float>(charData.size.x) / 3.0f;
+				float h = static_cast<float>(charData.size.y);
+
+				float uBottomLeft = static_cast<float>(charData.pos.x) / ATLAS_WIDTH;
+				float vBottomLeft = static_cast<float>(charData.pos.y % ATLAS_HEIGHT) / ATLAS_HEIGHT;
+
+				float uTopRight = uBottomLeft + (static_cast<float>(charData.size.x) / ATLAS_WIDTH);
+				float vTopRight = vBottomLeft + (static_cast<float>(charData.size.y) / ATLAS_HEIGHT);
+
+				float layerIndex = static_cast<float>(charData.layer);
+
+				vertices.push_back(Vertex{ {x, y},           {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x + w, y},       {uTopRight,   vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x + w, y + h},   {uTopRight,   vTopRight,   layerIndex}, text->m_colour });
+				vertices.push_back(Vertex{ {x, y + h},       {uBottomLeft, vTopRight,   layerIndex}, text->m_colour });
+
+				unsigned int offset = currentGlyphOffset * 4;
+				indices.push_back(offset);
+				indices.push_back(offset + 1);
+				indices.push_back(offset + 2);
+				indices.push_back(offset);
+				indices.push_back(offset + 2);
+				indices.push_back(offset + 3);
+
+				cursor.x += charData.advance;
+				currentGlyphOffset++;
+			}
+		}
+		cursor.y += text->m_lineSpacingPx;
 	}
 
 	glBindVertexArray(text->m_VAO);
@@ -1844,13 +1844,11 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text->m_EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-		indices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
 	text->indiciesSize = indices.size();
 
 	glBindVertexArray(0);
-
 	return height;
 }
 
@@ -1910,7 +1908,7 @@ GLuint SableUI::GetAtlasTexture()
 // ============================================================================
 // Text Backend
 // ============================================================================
-int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac)
+int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, float lineSpacingFac, TextJustification justify)
 {
 	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
@@ -1920,6 +1918,7 @@ int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSiz
 	m_fontSize = fontSize;
 	m_lineSpacingPx = fontSize * lineSpacingFac;
 	m_maxWidth = maxWidth;
+	m_justify = justify;
 
 	int height = fontManager->GetDrawInfo(this);
 	return height;
