@@ -19,9 +19,9 @@ void main()
 	UV = aUV;
 
 	colour = vec4(
-        float((aColour >> 24) & 0xFFu) / 255.0,
-        float((aColour >> 16) & 0xFFu) / 255.0,
+        float((aColour      ) & 0xFFu) / 255.0,
         float((aColour >> 8)  & 0xFFu) / 255.0,
-        float((aColour      ) & 0xFFu) / 255.0
+        float((aColour >> 16) & 0xFFu) / 255.0,
+        float((aColour >> 24) & 0xFFu) / 255.0
     );
 }

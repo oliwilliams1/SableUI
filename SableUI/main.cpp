@@ -56,8 +56,8 @@ public:
 				Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
 			}
 
-			Component(ToggleImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
-			Component(ToggleImageView, w_fit h_fit p(5) bg(rgb(0, 0, 0)));
+			Component(ToggleImageView, w_fit h_fit p(5));
+			Component(ToggleImageView, w_fit h_fit p(5));
 		}
 		Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 		Rect(m(5) w(60) h(60) bg(255, 128, 0));
@@ -93,6 +93,53 @@ private:
 	useState(text, setText, SableString, U"lorem " + SableString(U"ipsum").bold());
 };
 
+class ConsoleView : public SableUI::BaseComponent
+{
+public:
+	ConsoleView() : SableUI::BaseComponent() {};
+
+	void Layout() override
+	{
+		rootElement->setPadding(4);
+
+		Text("Console", fontSize(24));
+
+		for (const SableUI::LogData& logData : SableUI::Console::m_Logs)
+		{
+			SableUI::Colour logColour = rgb(255, 255, 255);
+
+			switch (logData.type)
+			{
+			case SableUI::LogType::SBUI_LOG:
+				logColour = rgb(0, 255, 0);
+				break;
+			case SableUI::LogType::SBUI_WARNING:
+				logColour = rgb(255, 255, 0);
+				break;
+			case SableUI::LogType::SBUI_ERROR:
+				logColour = rgb(255, 0, 0);
+				break;
+			default:
+				logColour = rgb(255, 255, 255);
+				break;
+			}
+
+			Text(logData.message, textColour(logColour));
+		}
+	}
+
+	void OnUpdate(const SableUI::UIEventContext& ctx) override
+	{
+		if (nLogs != SableUI::Console::m_Logs.size())
+		{
+			setNlogs(SableUI::Console::m_Logs.size());
+		}
+	}
+
+private:
+	useState(nLogs, setNlogs, int, 0);
+};
+
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
@@ -116,14 +163,14 @@ int main(int argc, char** argv)
 					}
 				}
 			}
-			PanelWith(ToggleImageView);
+			PanelWith(ConsoleView);
 
 		}
 		Panel();
 	}
 
-	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	PanelWith(SableUI::DebugWindowView, mainWindow);
+	//SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	//PanelWith(SableUI::DebugWindowView, mainWindow);
 
 	while (SableUI::PollEvents())
 	{
@@ -152,8 +199,9 @@ int main(int argc, char** argv)
 	|x| colour
 	|x| alignment
 	|x| line Height
-	| | truncation
+	|x| truncation
 	| | unload inactive font packs
+	| | black text
 
 |x| image
 	|x| jpg, jpeg, png, ...
@@ -165,6 +213,9 @@ int main(int argc, char** argv)
 
 | | button
 | | text input
+	| | ctrl+z
+	| | unicode input
+
 | | checkbox
 | | slider
 	| | agnostic

@@ -104,6 +104,7 @@ namespace SableUI
 	\-----------------------------------------/ */
 
 #define rgb(r, g, b) SableUI::Colour(r, g, b)
+#define rgba(r, g, b, a) SableUI::Colour(r, g, b, a)
 
 /* style modifiers */
 #define id(value)			.setID(value)

@@ -527,7 +527,7 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 
 	if (!std::filesystem::exists(fontPath))
 	{
-		SableUI_Error("Font file not found: %s", fontPath.string().c_str());
+		SableUI_Runtime_Error("Font file not found: %s", fontPath.string().c_str());
 		return false;
 	}
 
@@ -684,49 +684,54 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 
 	if (!suggestedFont.empty())
 	{
-		SableUI_Log("Character U+%04X not found in %s style, trying suggested font: %s",
-			static_cast<unsigned int>(c), directory[currentFontType].c_str(), suggestedFont.c_str());
-
-		if (LoadFontPackByFilename(currentFontDir, suggestedFont))
+		bool needsLoading = true;
+		for (const auto& pack : cachedFontPacks)
 		{
-			for (auto& pack : cachedFontPacks)
+			if (pack.fontPath.find(suggestedFont) != std::string::npos &&
+				pack.fontPath.find(currentFontDir) != std::string::npos)
 			{
-				if (pack.fontPath.find(currentFontDir) == std::string::npos)
-					continue;
+				needsLoading = false;
+				break;
+			}
+		}
 
-				for (const auto& range : pack.fontRanges)
+		if (needsLoading)
+		{
+			if (LoadFontPackByFilename(currentFontDir, suggestedFont))
+			{
+				for (auto& pack : cachedFontPacks)
 				{
-					if (c >= range.start && c <= range.end)
+					if (pack.fontPath.find(currentFontDir) == std::string::npos)
+						continue;
+
+					for (const auto& range : pack.fontRanges)
 					{
-						outRange = range;
-						pack.lastConsumed = std::chrono::steady_clock::now();
-						return true;
+						if (c >= range.start && c <= range.end)
+						{
+							outRange = range;
+							pack.lastConsumed = std::chrono::steady_clock::now();
+							return true;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	SableUI_Log("Character U+%04X not in suggested font for %s, trying style fonts...",
-		static_cast<unsigned int>(c), directory[currentFontType].c_str());
-
-	std::vector<std::string> styleFonts;
-
 	const std::vector<FontPackHint>& hints = GetCurrentFontPackHints();
+	std::set<std::string> triedFonts;
+	if (!suggestedFont.empty())
+		triedFonts.insert(suggestedFont);
+
 	for (const auto& hint : hints)
 	{
-		if (std::find(styleFonts.begin(), styleFonts.end(), hint.filename) == styleFonts.end())
-		{
-			styleFonts.push_back(hint.filename);
-		}
-	}
+		if (triedFonts.count(hint.filename))
+			continue;
 
-	for (const auto& fontFile : styleFonts)
-	{
 		bool alreadyLoaded = false;
 		for (const auto& pack : cachedFontPacks)
 		{
-			if (pack.fontPath.find(fontFile) != std::string::npos &&
+			if (pack.fontPath.find(hint.filename) != std::string::npos &&
 				pack.fontPath.find(currentFontDir) != std::string::npos)
 			{
 				alreadyLoaded = true;
@@ -737,11 +742,13 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		if (alreadyLoaded)
 			continue;
 
-		if (LoadFontPackByFilename(currentFontDir, fontFile))
+		triedFonts.insert(hint.filename);
+
+		if (LoadFontPackByFilename(currentFontDir, hint.filename))
 		{
 			for (auto& pack : cachedFontPacks)
 			{
-				if (pack.fontPath.find(fontFile) != std::string::npos &&
+				if (pack.fontPath.find(hint.filename) != std::string::npos &&
 					pack.fontPath.find(currentFontDir) != std::string::npos)
 				{
 					for (const auto& range : pack.fontRanges)
@@ -750,9 +757,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 						{
 							outRange = range;
 							pack.lastConsumed = std::chrono::steady_clock::now();
-							SableUI_Log("Found character U+%04X in %s (%s style)",
-								static_cast<unsigned int>(c), fontFile.c_str(),
-								directory[currentFontType].c_str());
 							return true;
 						}
 					}
@@ -761,24 +765,37 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		}
 	}
 
-	// If still not found and not in Regular, fall back to Regular style
 	if (currentFontType != FontType::Regular)
 	{
-		SableUI_Log("Character U+%04X not found in %s style, falling back to Regular",
-			static_cast<unsigned int>(c), directory[currentFontType].c_str());
-
 		FontType previousType = currentFontType;
 		currentFontType = FontType::Regular;
-		bool found = FindFontRangeForChar(c, outRange);
+
+		std::string regularFontDir = GetCurrentFontDirectory();
+		for (auto& pack : cachedFontPacks)
+		{
+			if (pack.fontPath.find(regularFontDir) == std::string::npos)
+				continue;
+
+			for (const auto& range : pack.fontRanges)
+			{
+				if (c >= range.start && c <= range.end)
+				{
+					outRange = range;
+					pack.lastConsumed = std::chrono::steady_clock::now();
+					currentFontType = previousType;
+					return true;
+				}
+			}
+		}
+
 		currentFontType = previousType;
-		return found;
 	}
 
 	SableUI_Warn("Character U+%04X not found in any font pack for %s style",
 		static_cast<unsigned int>(c), directory[currentFontType].c_str());
+
 	return false;
 }
-
 void FontManager::UnloadInactiveFontPacks()
 {
 	auto now = std::chrono::steady_clock::now();
@@ -1051,7 +1068,9 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LCD);
 
 		FT_GlyphSlot glyph = face->glyph;
-		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width, (uint16_t)glyph->bitmap.rows };
+		int bitmapWidthBytes = glyph->bitmap.width;
+		int displayWidth = (bitmapWidthBytes + 2) / 3;
+		SableUI::u16vec2 size = { static_cast<uint16_t>(displayWidth), (uint16_t)glyph->bitmap.rows };
 
 		if (size.x == 0 || size.y == 0)
 		{
@@ -1113,21 +1132,20 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		for (int y = 0; y < size.y; y++)
 		{
-			for (int x = 0; x < size.x; x++)
+			uint8_t* srcRow = glyph->bitmap.buffer + static_cast<size_t>(y) * glyph->bitmap.pitch;
+			for (int dx = 0; dx < displayWidth; dx++)
 			{
-				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH +
-					(atlasCursor.x + static_cast<size_t>(x))) * 3;
+				size_t srcIndex = static_cast<size_t>(dx) * 3;
+				size_t destX = atlasCursor.x + static_cast<size_t>(dx);
+				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + destX) * 3;
 
 				if (pixelIndexInAtlasPixels + 2 < static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3)
 				{
 					if (glyph->bitmap.buffer)
 					{
-						atlasPixels[pixelIndexInAtlasPixels + 0] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
-							glyph->bitmap.pitch + x];
-						atlasPixels[pixelIndexInAtlasPixels + 1] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
-							glyph->bitmap.pitch + x + 1];
-						atlasPixels[pixelIndexInAtlasPixels + 2] = glyph->bitmap.buffer[static_cast<size_t>(y) * 
-							glyph->bitmap.pitch + x + 2];
+						atlasPixels[pixelIndexInAtlasPixels + 0] = srcRow[srcIndex + 0];
+						atlasPixels[pixelIndexInAtlasPixels + 1] = srcRow[srcIndex + 1];
+						atlasPixels[pixelIndexInAtlasPixels + 2] = srcRow[srcIndex + 2];
 					}
 				}
 			}
@@ -1860,7 +1878,7 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 				float x = std::round(cursor.x + charData.bearing.x);
 				float y = std::round(cursor.y - charData.bearing.y + static_cast<float>(text->m_fontSize));
 
-				float w = static_cast<float>(charData.size.x) / 3.0f;
+				float w = static_cast<float>(charData.size.x);
 				float h = static_cast<float>(charData.size.y);
 
 				float uBottomLeft = static_cast<float>(charData.pos.x) / ATLAS_WIDTH;

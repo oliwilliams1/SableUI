@@ -54,11 +54,12 @@ namespace SableUI
         static void NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
         static void RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
 
+        static inline std::vector<LogData> m_Logs;
+    
     private:
         Console();
 
         static std::string EnumToString(LogType type);
-        static inline std::vector<LogData> m_Logs;
     };
 }
 

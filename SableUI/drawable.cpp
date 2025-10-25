@@ -4,6 +4,7 @@
 #include "SableUI/drawable.h"
 #include "SableUI/shader.h"
 #include "SableUI/window.h"
+#include "SableUI/generated/shaders.h"
 
 /* rect globals - now per-context */
 static std::map<void*, SableUI::ContextResources > g_contextResources;
@@ -82,7 +83,7 @@ void SableUI::InitDrawables()
     static bool shadersInitialized = false;
     if (!shadersInitialized)
     {
-        g_rShader.LoadBasicShaders("shaders/rect.vert", "shaders/rect.frag");
+        g_rShader.LoadBasicShaders(rect_vert, rect_frag);
         g_rShader.Use();
         g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
         g_rURectLoc = GetUniformLocation(g_rShader, "uRect");
@@ -90,7 +91,7 @@ void SableUI::InitDrawables()
         glUniform4f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
         glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
 
-        g_tShader.LoadBasicShaders("shaders/text.vert", "shaders/text.frag");
+        g_tShader.LoadBasicShaders(text_vert, text_frag);
         g_tTargetSizeLoc = GetUniformLocation(g_tShader, "uTargetSize");
         g_tPosLoc = GetUniformLocation(g_tShader, "uPos");
         g_tAtlasLoc = GetUniformLocation(g_tShader, "uAtlas");
@@ -338,9 +339,7 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextRes
 
     glUniform1i(g_tAtlasLoc, 0);
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
     glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void SableUI::DrawWindowBorder(RenderTarget* target)
