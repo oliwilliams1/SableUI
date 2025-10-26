@@ -146,7 +146,7 @@ namespace SableUI
 				Text("Font Ranges: " + std::to_string(FontRange::GetNumInstances()));
 			}
 
-			//DrawPanelTree(m_window->GetRoot());
+			DrawPanelTree(m_window->GetRoot());
 		}
 
 		void OnUpdate(const UIEventContext& ctx) override

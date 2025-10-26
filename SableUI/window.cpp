@@ -6,8 +6,6 @@
 #include <functional>
 #include <algorithm>
 #include <stack>
-#include <chrono>
-#include <thread>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -60,101 +58,9 @@ void* SableUI::GetCurrentContext()
 	return static_cast<void*>(glfwGetCurrentContext());
 }
 
-SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x, int y)
-{
-	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
-	m_windowSize = ivec2(width, height);
-
-	if (primary == nullptr)
-	{
-		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-	}
-	else
-	{
-		// Share resources
-		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
-	}
-
-	glfwMakeContextCurrent(m_window);
-	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
-
-#ifdef _WIN32
-	// Enable immersive darkmode on windows via api 
-	HWND hwnd = FindWindowA(NULL, title.c_str());
-
-	BOOL dark_mode = true;
-	DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
-
-	ShowWindow(hwnd, SW_HIDE);
-	ShowWindow(hwnd, SW_SHOW);
-#endif
-
-	int refreshRate = GetRefreshRate();
-	if (refreshRate == -1) refreshRate = 60;
-	// Set internal max hz to display refresh rate
-	SetMaxFPS(refreshRate);
-
-	if (primary == nullptr)
-	{
-		switch (backend)
-		{
-		case Backend::OpenGL:
-		{
-			InitOpenGL();
-			break;
-		}
-		case Backend::Vulkan:
-		{
-			SableUI_Runtime_Error("Vulkan backend is not implemented");
-			break;
-		}
-		default:
-			SableUI_Runtime_Error("unknown backend");
-		}
-	}
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glFlush();
-
-	m_renderer.renderTarget.SetTarget(TargetType::WINDOW);
-	m_renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
-
-	if (m_root != nullptr)
-	{
-		SableUI_Error("Root node already created!");
-		return;
-	}
-
-	m_arrowCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-	m_hResizeCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-	m_vResizeCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
-
-	glfwSetCursorPosCallback(m_window, MousePosCallback);
-	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
-	glfwSetWindowSizeCallback(m_window, ResizeCallback);
-
-	m_root = SB_new<SableUI::RootPanel>(&m_renderer, width, height);
-}
-
-void SableUI::Window::InitOpenGL()
-{
-	SableUI_Log("Using OpenGL backend");
-
-	// init after window is cleared
-	GLenum res = glewInit();
-	if (GLEW_OK != res)
-	{
-		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
-	}
-}
-
-/* callbacks */
+// ============================================================================
+// Callbacks
+// ============================================================================
 void SableUI::Window::MousePosCallback(GLFWwindow* window, double x, double y)
 {
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -213,6 +119,98 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
 	instance->m_needsStaticRedraw = true;
+}
+
+// ============================================================================
+// Window
+// ============================================================================
+SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x, int y)
+{
+	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+	m_windowSize = ivec2(width, height);
+
+	if (primary == nullptr)
+	{
+		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+	}
+	else
+	{
+		// Share resources
+		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
+
+#ifdef _WIN32
+	// Enable immersive darkmode on windows via api 
+	HWND hwnd = FindWindowA(NULL, title.c_str());
+
+	BOOL dark_mode = true;
+	DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark_mode, sizeof(dark_mode));
+
+	ShowWindow(hwnd, SW_HIDE);
+	ShowWindow(hwnd, SW_SHOW);
+#endif
+
+	if (primary == nullptr)
+	{
+		switch (backend)
+		{
+		case Backend::OpenGL:
+		{
+			InitOpenGL();
+			break;
+		}
+		case Backend::Vulkan:
+		{
+			SableUI_Runtime_Error("Vulkan backend is not implemented");
+			break;
+		}
+		default:
+			SableUI_Runtime_Error("unknown backend");
+		}
+	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFlush();
+
+	m_renderer.renderTarget.SetTarget(TargetType::WINDOW);
+	m_renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
+
+	if (m_root != nullptr)
+	{
+		SableUI_Error("Root node already created!");
+		return;
+	}
+
+	m_arrowCursor = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+	m_hResizeCursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+	m_vResizeCursor = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+
+	glfwSetCursorPosCallback(m_window, MousePosCallback);
+	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
+	glfwSetWindowSizeCallback(m_window, ResizeCallback);
+
+	m_root = SB_new<SableUI::RootPanel>(&m_renderer, width, height);
+}
+
+void SableUI::Window::InitOpenGL()
+{
+	SableUI_Log("Using OpenGL backend");
+
+	// init after window is cleared
+	GLenum res = glewInit();
+	if (GLEW_OK != res)
+	{
+		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
+	}
 }
 
 void SableUI::Window::HandleResize()
@@ -309,6 +307,13 @@ bool SableUI::Window::PollEvents()
 	m_root->PropagateComponentStateChanges();
 	StepCachedTexturesCleaner();
 
+	cleanupTextCounter++;
+	if (cleanupTextCounter >= 500)
+	{
+		SableUI::CleanupTextCache(10);
+		cleanupTextCounter = 0;
+	}
+
 	HandleResize();
 
 	ctx.mousePressed.reset();
@@ -325,7 +330,6 @@ void SableUI::Window::Draw()
 	{
 		SableUI_Error("OpenGL error: %s", gluErrorString(err));
 	}
-	auto frameStart = std::chrono::system_clock::now();
 
 #ifdef _WIN32
 	MSG msg;
@@ -342,19 +346,6 @@ void SableUI::Window::Draw()
 
 	/* flush drawable stack & render to screen */
 	m_renderer.Draw();
-
-	/* ensure application doesnt run faster than desired fps */
-	auto frameTime = std::chrono::system_clock::now() - frameStart;
-
-	if (frameTime < m_frameDelay)
-	{
-		std::this_thread::sleep_for(m_frameDelay - frameTime);
-	}
-}
-
-inline void SableUI::Window::SetMaxFPS(int fps)
-{
-	m_frameDelay = std::chrono::milliseconds(1000 / fps);
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -379,6 +370,9 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
+// ============================================================================
+// Node calculations
+// ============================================================================
 static void FixWidth(SableUI::BasePanel* panel)
 {
 	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE) {
@@ -633,47 +627,6 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	m_root->Recalculate();
 
 	oldPos = pos;
-}
-
-int SableUI::Window::GetRefreshRate()
-{
-	GLFWmonitor* monitor = glfwGetWindowMonitor(m_window);
-	if (!monitor)
-	{
-		int xpos, ypos;
-		glfwGetWindowPos(m_window, &xpos, &ypos);
-		monitor = glfwGetPrimaryMonitor();
-		int monitorCount;
-		GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-
-		for (int i = 0; i < monitorCount; i++)
-		{
-			const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
-			if (xpos >= mode->width && xpos < mode->width + mode->width &&
-				ypos >= mode->height && ypos < mode->height + mode->height)
-			{
-				monitor = monitors[i];
-				break;
-			}
-		}
-
-		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-		int widthMM, heightMM;
-		glfwGetMonitorPhysicalSize(monitor, &widthMM, &heightMM);
-
-		windowDPI.x = (mode->width / static_cast<float>(widthMM)) * 25.4f;
-		windowDPI.y = (mode->height / static_cast<float>(heightMM)) * 25.4f;
-	}
-
-	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-	if (mode)
-	{
-		return mode->refreshRate;
-	}
-	else
-	{
-		return -1;
-	}
 }
 
 SableUI::Window::~Window()

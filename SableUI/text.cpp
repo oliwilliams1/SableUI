@@ -1,3 +1,5 @@
+#include "SableUI/text.h"
+
 #include <filesystem>
 #include <map>
 #include <algorithm>
@@ -7,16 +9,19 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <tuple>
+#include <utility>
+#include <string>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_LCD_FILTER_H
 
-#include "SableUI/text.h"
-
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Text"
 #include "SableUI/console.h"
+#include "SableUI/window.h"
+
 #include <corecrt.h>
 
 constexpr int ATLAS_WIDTH = 512;
@@ -68,6 +73,13 @@ int SableUI::FontRange::GetNumInstances()
 	return s_fontRangeCount;
 }
 
+bool SableUI::FontRange::operator<(const FontRange& other) const
+{
+	if (start != other.start) return start < other.start;
+	if (end != other.end) return end < other.end;
+	return fontPath < other.fontPath;
+}
+
 static int s_fontPackCount = 0;
 SableUI::FontPack::FontPack()
 {
@@ -75,14 +87,13 @@ SableUI::FontPack::FontPack()
 }
 
 SableUI::FontPack::FontPack(const FontPack& other)
-	: fontPath(other.fontPath), lastConsumed(other.lastConsumed), fontRanges(other.fontRanges)
+	: fontPath(other.fontPath), fontRanges(other.fontRanges)
 {
 	s_fontPackCount++;
 }
 
 SableUI::FontPack::FontPack(FontPack&& other) noexcept
 	: fontPath(std::move(other.fontPath)),
-	lastConsumed(std::move(other.lastConsumed)),
 	fontRanges(std::move(other.fontRanges))
 {
 	s_fontPackCount++;
@@ -93,7 +104,6 @@ SableUI::FontPack& SableUI::FontPack::operator=(const FontPack& other)
 	if (this != &other)
 	{
 		fontPath = other.fontPath;
-		lastConsumed = other.lastConsumed;
 		fontRanges = other.fontRanges;
 	}
 	return *this;
@@ -104,7 +114,6 @@ SableUI::FontPack& SableUI::FontPack::operator=(FontPack&& other) noexcept
 	if (this != &other)
 	{
 		fontPath = std::move(other.fontPath);
-		lastConsumed = std::move(other.lastConsumed);
 		fontRanges = std::move(other.fontRanges);
 	}
 	return *this;
@@ -135,7 +144,7 @@ struct FontRangeHash {
 
 	std::string ToString() const
 	{
-		return std::string(reinterpret_cast<const char*>(data));
+		return reinterpret_cast<const char*>(data);
 	}
 };
 
@@ -339,8 +348,6 @@ public:
 	std::vector<Atlas> atlases;
 	std::vector<SableUI::FontPack> cachedFontPacks;
 	void LoadFontPack(const std::string& fontFilename);
-	void UnloadInactiveFontPacks();
-	void MarkFontPackUsed(const std::string& fontPath);
 	std::string SuggestFontPackForChar(char32_t c);
 	bool LoadFontPackByFilename(const std::string& fontDir, const std::string& filename);
 
@@ -537,7 +544,6 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 	{
 		if (pack.fontPath == fontPathStr)
 		{
-			pack.lastConsumed = std::chrono::steady_clock::now();
 			SableUI_Log("Font pack already loaded: %s", filename.c_str());
 			return true;
 		}
@@ -567,7 +573,6 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 
 	newPack = SableUI::FontPack();
 	newPack.fontPath = fontPathStr;
-	newPack.lastConsumed = std::chrono::steady_clock::now();
 
 	FT_ULong charcode = 0;
 	FT_UInt glyphIndex = 0;
@@ -616,18 +621,6 @@ void FontManager::LoadFontPack(const std::string& fontFilename)
 	LoadFontPackByFilename("fonts/Regular", fontFilename);
 }
 
-void FontManager::MarkFontPackUsed(const std::string& fontPath)
-{
-	for (auto& pack : cachedFontPacks)
-	{
-		if (pack.fontPath == fontPath)
-		{
-			pack.lastConsumed = std::chrono::steady_clock::now();
-			return;
-		}
-	}
-}
-
 std::string FontManager::SuggestFontPackForChar(char32_t c)
 {
 	std::string bestMatch;
@@ -657,10 +650,7 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 
 	auto now = std::chrono::steady_clock::now();
 	if (std::chrono::duration_cast<std::chrono::seconds>(now - lastDecayCheck).count() >= 1)
-	{
-		UnloadInactiveFontPacks();
 		lastDecayCheck = now;
-	}
 
 	std::string currentFontDir = GetCurrentFontDirectory();
 
@@ -674,7 +664,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 			if (c >= range.start && c <= range.end)
 			{
 				outRange = range;
-				pack.lastConsumed = std::chrono::steady_clock::now();
 				return true;
 			}
 		}
@@ -709,7 +698,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 						if (c >= range.start && c <= range.end)
 						{
 							outRange = range;
-							pack.lastConsumed = std::chrono::steady_clock::now();
 							return true;
 						}
 					}
@@ -756,7 +744,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 						if (c >= range.start && c <= range.end)
 						{
 							outRange = range;
-							pack.lastConsumed = std::chrono::steady_clock::now();
 							return true;
 						}
 					}
@@ -781,7 +768,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 				if (c >= range.start && c <= range.end)
 				{
 					outRange = range;
-					pack.lastConsumed = std::chrono::steady_clock::now();
 					currentFontType = previousType;
 					return true;
 				}
@@ -795,75 +781,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		static_cast<unsigned int>(c), directory[currentFontType].c_str());
 
 	return false;
-}
-void FontManager::UnloadInactiveFontPacks()
-{
-	auto now = std::chrono::steady_clock::now();
-	auto decayDuration = std::chrono::seconds(FONT_PACK_DECAY);
-
-	auto it = cachedFontPacks.begin();
-	while (it != cachedFontPacks.end())
-	{
-		if (it->fontPath.find("NotoSans-Regular.ttf") != std::string::npos)
-		{
-			it++;
-			continue;
-		}
-
-		auto timeSinceLastUse = std::chrono::duration_cast<std::chrono::seconds>(now - it->lastConsumed);
-
-		if (timeSinceLastUse >= decayDuration)
-		{
-			SableUI_Log("Unloading inactive font pack: %s (unused for %lld seconds)",
-				it->fontPath.c_str(), timeSinceLastUse.count());
-
-			std::string fontPathToRemove = it->fontPath;
-
-			auto charIt = characters.begin();
-			while (charIt != characters.end())
-			{
-				bool belongsToFont = false;
-				for (const auto& atlas : atlases)
-				{
-					if (atlas.range.fontPath == fontPathToRemove)
-					{
-						belongsToFont = true;
-						break;
-					}
-				}
-
-				if (belongsToFont)
-				{
-					charIt = characters.erase(charIt);
-				}
-				else
-				{
-					++charIt;
-				}
-			}
-
-			atlases.erase(
-				std::remove_if(atlases.begin(), atlases.end(),
-					[&fontPathToRemove](const Atlas& atlas) {
-						return atlas.range.fontPath == fontPathToRemove;
-					}),
-				atlases.end()
-			);
-
-			auto keyIt = loadedAtlasKeys.begin();
-			while (keyIt != loadedAtlasKeys.end())
-			{
-				if (std::get<0>(*keyIt).fontPath == fontPathToRemove)
-					keyIt = loadedAtlasKeys.erase(keyIt);
-				else
-					keyIt++;
-			}
-
-			it = cachedFontPacks.erase(it);
-		}
-		else
-			it++;
-	}
 }
 
 void FontManager::ResizeTextureArray(int newDepth)
@@ -1320,8 +1237,6 @@ bool FontManager::DeserialiseFontPack(const std::string& fontFilename, SableUI::
 			outPack.fontRanges.push_back(range);
 		}
 
-		outPack.lastConsumed = std::chrono::steady_clock::now();
-
 		file.close();
 
 		if (!file)
@@ -1601,6 +1516,9 @@ void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
 	loadedAtlasKeys.insert(currentAtlasKey);
 }
 
+// ============================================================================
+// Font Rendering
+// ============================================================================
 struct Vertex {
 	SableUI::vec2 pos;
 	SableUI::vec3 uv; // uv.x and uv.y for texture coordinates, uv.z for layer
@@ -1976,13 +1894,289 @@ GLuint SableUI::GetAtlasTexture()
 }
 
 // ============================================================================
+// Text GPU Cache
+// ============================================================================
+bool SableUI::TextCacheKey::operator==(const TextCacheKey& other) const
+{
+	return contentHash == other.contentHash &&
+		maxWidth == other.maxWidth &&
+		fontSize == other.fontSize &&
+		maxHeight == other.maxHeight &&
+		lineSpacingPx == other.lineSpacingPx &&
+		justify == other.justify;
+}
+
+
+SableUI::CachedTextBuffer::CachedTextBuffer()
+	: VAO(0), VBO(0), EBO(0), indicesSize(0), height(0), refCount(0),
+	lastUsed(std::chrono::steady_clock::now())
+{
+	context = SableUI::GetCurrentContext();
+}
+
+std::size_t SableUI::TextCacheKeyHash::operator()(const TextCacheKey& key) const
+{
+	std::size_t h1 = std::hash<uint64_t>()(key.contentHash);
+	std::size_t h2 = std::hash<int>()(key.maxWidth);
+	std::size_t h3 = std::hash<int>()(key.fontSize);
+	std::size_t h4 = std::hash<int>()(key.maxHeight);
+	std::size_t h5 = std::hash<int>()(key.lineSpacingPx);
+	std::size_t h6 = std::hash<int>()(static_cast<int>(key.justify));
+
+	return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5);
+}
+
+SableUI::TextCache& SableUI::TextCache::GetInstance()
+{
+	static TextCache instance;
+	return instance;
+}
+
+uint64_t SableUI::TextCache::HashString(const SableString& str)
+{
+	uint64_t hash = 14695981039346656037ULL;
+	for (char32_t c : str)
+	{
+		hash ^= static_cast<uint64_t>(c);
+		hash *= 1099511628211ULL;
+	}
+	return hash;
+}
+
+SableUI::CachedTextBuffer* SableUI::TextCache::Acquire(const TextCacheKey& key, _Text* text)
+{
+	auto it = m_cache.find(key);
+
+	if (it != m_cache.end())
+	{
+		it->second.refCount++;
+		it->second.lastUsed = std::chrono::steady_clock::now();
+		return &it->second;
+	}
+
+	return CreateBuffer(key, text);
+}
+
+void SableUI::TextCache::Release(const TextCacheKey& key) {
+	auto it = m_cache.find(key);
+
+	if (it != m_cache.end())
+	{
+		it->second.refCount--;
+		it->second.lastUsed = std::chrono::steady_clock::now();
+
+		if (it->second.refCount < 0)
+			it->second.refCount = 0;
+	}
+}
+
+void SableUI::TextCache::CleanupUnused(int secondsThreshold)
+{
+	auto now = std::chrono::steady_clock::now();
+
+	std::vector<TextCacheKey> toRemove;
+
+	void* currentContext = SableUI::GetCurrentContext();
+
+	for (auto& pair : m_cache)
+	{
+		if (pair.second.refCount <= 0)
+		{
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+				now - pair.second.lastUsed).count();
+
+			if (elapsed >= secondsThreshold && pair.second.context == currentContext)
+				toRemove.push_back(pair.first);
+		}
+	}
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	for (const auto& key : toRemove)
+	{
+		auto it = m_cache.find(key);
+		if (it != m_cache.end())
+		{
+			DeleteBuffer(it->second);
+			m_cache.erase(it);
+		}
+	}
+}
+
+void SableUI::TextCache::Shutdown()
+{
+	for (auto& pair : m_cache)
+		DeleteBuffer(pair.second);
+
+	m_cache.clear();
+}
+
+SableUI::CachedTextBuffer* SableUI::TextCache::CreateBuffer(const TextCacheKey& key, _Text* text)
+{
+	CachedTextBuffer buffer;
+
+	glGenVertexArrays(1, &buffer.VAO);
+	glBindVertexArray(buffer.VAO);
+
+	glGenBuffers(1, &buffer.VBO);
+	glGenBuffers(1, &buffer.EBO);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer.VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.EBO);
+
+	// Position attribute (layout 0, 2 floats)
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// UV + Layer attribute (layout 1, 3 floats)
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(vec2)));
+	glEnableVertexAttribArray(1);
+
+	// Colour (layout 2, uint32_t)
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(sizeof(vec2) + sizeof(vec3)));
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+
+	text->m_VAO = buffer.VAO;
+	text->m_VBO = buffer.VBO;
+	text->m_EBO = buffer.EBO;
+
+	buffer.height = fontManager->GetDrawInfo(text);
+	buffer.indicesSize = text->indiciesSize;
+	buffer.refCount = 1;
+	buffer.lastUsed = std::chrono::steady_clock::now();
+
+	m_cache[key] = buffer;
+
+	return &m_cache[key];
+}
+
+void SableUI::TextCache::DeleteBuffer(CachedTextBuffer& buffer)
+{
+	if (buffer.VAO != 0)
+	{
+		glDeleteVertexArrays(1, &buffer.VAO);
+		buffer.VAO = 0;
+	}
+	if (buffer.VBO != 0)
+	{
+		glDeleteBuffers(1, &buffer.VBO);
+		buffer.VBO = 0;
+	}
+	if (buffer.EBO != 0)
+	{
+		glDeleteBuffers(1, &buffer.EBO);
+		buffer.EBO = 0;
+	}
+}
+
+
+// ============================================================================
 // Text Backend
 // ============================================================================
-int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize, int maxHeight, float lineSpacingFac, TextJustification justify)
+static int s_textOGL = 0;
+
+SableUI::_Text::_Text()
+	: m_VAO(0), m_VBO(0), m_EBO(0), indiciesSize(0), m_hasCachedBuffer(false)
+	{ s_textOGL++; }
+
+SableUI::_Text::~_Text()
 {
-	// Ensure FontManager is initialized
+	ReleaseCache();
+	s_textOGL--;
+}
+
+SableUI::_Text::_Text(_Text&& other) noexcept
+	: m_content(std::move(other.m_content)),
+	m_actualContent(std::move(other.m_actualContent)),
+	m_colour(other.m_colour),
+	m_fontSize(other.m_fontSize),
+	m_maxWidth(other.m_maxWidth),
+	m_maxHeight(other.m_maxHeight),
+	m_lineSpacingPx(other.m_lineSpacingPx),
+	m_justify(other.m_justify),
+	m_fontTextureID(other.m_fontTextureID),
+	m_VAO(other.m_VAO),
+	m_VBO(other.m_VBO),
+	m_EBO(other.m_EBO),
+	indiciesSize(other.indiciesSize),
+	m_cacheKey(other.m_cacheKey),
+	m_hasCachedBuffer(other.m_hasCachedBuffer)
+{
+
+	other.m_hasCachedBuffer = false;
+	other.m_VAO = 0;
+	other.m_VBO = 0;
+	other.m_EBO = 0;
+	s_textOGL++;
+}
+
+SableUI::_Text& SableUI::_Text::operator=(_Text&& other) noexcept
+{
+	if (this != &other)
+	{
+		ReleaseCache();
+
+		m_content = std::move(other.m_content);
+		m_actualContent = std::move(other.m_actualContent);
+		m_colour = other.m_colour;
+		m_fontSize = other.m_fontSize;
+		m_maxWidth = other.m_maxWidth;
+		m_maxHeight = other.m_maxHeight;
+		m_lineSpacingPx = other.m_lineSpacingPx;
+		m_justify = other.m_justify;
+		m_fontTextureID = other.m_fontTextureID;
+		m_VAO = other.m_VAO;
+		m_VBO = other.m_VBO;
+		m_EBO = other.m_EBO;
+		indiciesSize = other.indiciesSize;
+		m_cacheKey = other.m_cacheKey;
+		m_hasCachedBuffer = other.m_hasCachedBuffer;
+
+		other.m_hasCachedBuffer = false;
+		other.m_VAO = 0;
+		other.m_VBO = 0;
+		other.m_EBO = 0;
+	}
+
+	return *this;
+}
+
+void SableUI::_Text::ReleaseCache()
+{
+	if (m_hasCachedBuffer)
+	{
+		TextCache::GetInstance().Release(m_cacheKey);
+		m_hasCachedBuffer = false;
+	}
+
+	m_VAO = 0;
+	m_VBO = 0;
+	m_EBO = 0;
+	indiciesSize = 0;
+}
+
+SableUI::TextCacheKey SableUI::_Text::GenerateCacheKey() const
+{
+	TextCacheKey key{};
+	key.contentHash = TextCache::HashString(m_content);
+	key.maxWidth = m_maxWidth;
+	key.fontSize = m_fontSize;
+	key.maxHeight = m_maxHeight;
+	key.lineSpacingPx = m_lineSpacingPx;
+	key.justify = m_justify;
+	return key;
+}
+
+int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize,
+	int maxHeight, float lineSpacingFac, TextJustification justify)
+{
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
+
+	ReleaseCache();
 
 	m_content = str;
 	m_fontSize = fontSize;
@@ -1991,20 +2185,54 @@ int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSiz
 	m_maxHeight = maxHeight;
 	m_justify = justify;
 
-	int height = fontManager->GetDrawInfo(this);
-	return height;
+	m_cacheKey = GenerateCacheKey();
+
+	CachedTextBuffer* cached = TextCache::GetInstance().Acquire(m_cacheKey, this);
+
+	if (cached)
+	{
+		m_VAO = cached->VAO;
+		m_VBO = cached->VBO;
+		m_EBO = cached->EBO;
+		indiciesSize = cached->indicesSize;
+		m_hasCachedBuffer = true;
+		return cached->height;
+	}
+
+	return 0;
 }
 
 int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 {
-	// Ensure FontManager is initialized
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
 
+	if (m_maxWidth == maxWidth && m_hasCachedBuffer)
+	{
+		auto it = TextCache::GetInstance().m_cache.find(m_cacheKey);
+		if (it != TextCache::GetInstance().m_cache.end())
+			return it->second.height;
+	}
+
+	ReleaseCache();
+
 	m_maxWidth = maxWidth;
 
-	int height = fontManager->GetDrawInfo(this);
-	return height;
+	m_cacheKey = GenerateCacheKey();
+
+	CachedTextBuffer* cached = TextCache::GetInstance().Acquire(m_cacheKey, this);
+
+	if (cached)
+	{
+		m_VAO = cached->VAO;
+		m_VBO = cached->VBO;
+		m_EBO = cached->EBO;
+		indiciesSize = cached->indicesSize;
+		m_hasCachedBuffer = true;
+		return cached->height;
+	}
+
+	return 0;
 }
 
 int SableUI::_Text::GetMinWidth()
@@ -2021,65 +2249,30 @@ int SableUI::_Text::GetUnwrappedHeight()
 {
 	int lines = 1;
 	for (char32_t c : m_content)
-	{
 		if (c == U'\n')
-		{
 			lines++;
-		}
-	}
 
 	return lines * m_lineSpacingPx;
+}
+
+int SableUI::_Text::GetNumInstances()
+{
+	return s_textOGL;
+}
+
+void SableUI::DestroyFontManager()
+{
+	TextCache::GetInstance().Shutdown();
+	FontManager::GetInstance().Shutdown();
+}
+
+void SableUI::CleanupTextCache(int secondsThreshold)
+{
+	TextCache::GetInstance().CleanupUnused(secondsThreshold);
 }
 
 void SableUI::InitFontManager()
 {
 	if (fontManager == nullptr)
 		FontManager::GetInstance().Initialize();
-}
-
-void SableUI::DestroyFontManager()
-{
-	FontManager::GetInstance().Shutdown();
-}
-
-static int s_textOGL = 0;
-
-SableUI::_Text::_Text()
-{
-	glGenVertexArrays(1, &m_VAO);
-	glBindVertexArray(m_VAO);
-
-	glGenBuffers(1, &m_VBO);
-	glGenBuffers(1, &m_EBO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-
-	// Position attribute (layout 0, 2 floats) - 8 bytes
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	// UV + Layer attribute (layout 1, 3 floats) - 12 bytes
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(vec2)));
-	glEnableVertexAttribArray(1);
-
-	// Colour (layout 2, uint32_t) - 4 bytes
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(sizeof(vec2) + sizeof(vec3)));
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(0);
-	s_textOGL++;
-}
-
-SableUI::_Text::~_Text()
-{
-	glDeleteVertexArrays(1, &m_VAO);
-	glDeleteBuffers(1, &m_VBO);
-	glDeleteBuffers(1, &m_EBO);
-	m_VAO = 0; m_VBO = 0; m_EBO = 0;
-	s_textOGL--;
-}
-
-int SableUI::_Text::GetNumInstances()
-{
-	return s_textOGL;
 }

@@ -39,7 +39,7 @@ public:
 
 		Div(dir(direction) bg(255, 0, 0))
 		{
-			Div(id("child") w(50) h(50))
+			Div(ID("child") w(50) h(50))
 			{
 				Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50)
 					onHover([&]() { setIsHovered(true); })
@@ -81,7 +81,7 @@ public:
 			onHover([&]() { setText(U"unicode test ⟡ ↀ 안녕하세요, 제 이름은 오리 입니다. 저 는 열일곱 살 입니다. 저는 뉴젠스 좋압니다."); })
 			onHoverExit([&]() { setText(U"lorem " + SableString(U"ipsum").bold()); }));
 
-		Div(id("text parent") bg(80, 0, 0) h_fit p(5))
+		Div(ID("text parent") bg(80, 0, 0) h_fit p(5))
 		{
 			TextU32(text, minW(100) justify_center maxH(20));
 		}
@@ -169,8 +169,8 @@ int main(int argc, char** argv)
 		Panel();
 	}
 
-	//SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	//PanelWith(SableUI::DebugWindowView, mainWindow);
+	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	PanelWith(SableUI::DebugWindowView, mainWindow);
 
 	while (SableUI::PollEvents())
 	{

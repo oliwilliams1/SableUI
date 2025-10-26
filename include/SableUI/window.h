@@ -28,8 +28,7 @@ namespace SableUI
 		ivec2 totalDelta = { 0, 0 };
 
 		ivec2 oldPos = { 0, 0 };
-		ivec2 pendingDelta = { 0, 
-			0 };
+		ivec2 pendingDelta = { 0, 0 };
 	};
 
 	class Window
@@ -41,7 +40,6 @@ namespace SableUI
 		bool PollEvents();
 		void Draw();
 		bool m_needsStaticRedraw = false;
-		void SetMaxFPS(int fps);
 
 		RootPanel* GetRoot();
 
@@ -56,7 +54,6 @@ namespace SableUI
 		void InitOpenGL();
 		void InitVulkan();
 
-		int GetRefreshRate();
 		Renderer m_renderer;
 
 		void HandleResize();
@@ -65,7 +62,6 @@ namespace SableUI
 		void ResizeStep(ivec2 deltaPos, BasePanel* panel, BasePanel* root);
 		ResizeState m_resizeState;
 
-		std::chrono::milliseconds m_frameDelay;
 		RootPanel* m_root = nullptr;
 		bool m_resizing = false;
 
@@ -82,5 +78,7 @@ namespace SableUI
 		GLFWcursor* m_arrowCursor = nullptr;
 		GLFWcursor* m_hResizeCursor = nullptr;
 		GLFWcursor* m_vResizeCursor = nullptr;
+
+		int cleanupTextCounter = 0;
 	};
 }

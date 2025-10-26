@@ -11,9 +11,9 @@ namespace SableUI
 	void SetBackend(const Backend& backend);
 
 	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
-	void Shutdown();
-
+	void SetMaxFPS(int fps);
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
+	void Shutdown();
 
 	bool PollEvents();
 	void Render();
@@ -22,7 +22,7 @@ namespace SableUI
 	void SetContext(Window* window);
 	Element* GetCurrentElement();
 	VirtualNode* GetVirtualRootNode();
-	
+
 	SplitterPanel* StartSplitter(PanelType orientation);
 	void EndSplitter();
 	ContentPanel* AddPanel();
@@ -40,8 +40,6 @@ namespace SableUI
 	void AddImage(const std::string& path, const ElementInfo& info = {});
 	void AddText(const std::string& text, const ElementInfo& info = {});
 	void AddTextU32(const SableString& text, const ElementInfo& info = {});
-
-	void* GetCurrentContext();
 
 	struct DivScope
 	{
@@ -107,7 +105,7 @@ namespace SableUI
 #define rgba(r, g, b, a) SableUI::Colour(r, g, b, a)
 
 /* style modifiers */
-#define id(value)			.setID(value)
+#define ID(value)			.setID(value)
 #define bg(...)				.setBgColour(SableUI::Colour(__VA_ARGS__))
 #define w(value)			.setWidth(value)
 #define minW(value)			.setMinWidth(value)
