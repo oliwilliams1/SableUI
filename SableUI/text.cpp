@@ -777,9 +777,6 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 		currentFontType = previousType;
 	}
 
-	SableUI_Warn("Character U+%04X not found in any font pack for %s style",
-		static_cast<unsigned int>(c), directory[currentFontType].c_str());
-
 	return false;
 }
 
@@ -965,7 +962,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		ResizeTextureArray(newDepth);
 	}
 
-	uint8_t* atlasPixels = new uint8_t[static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3];
+	auto atlasPixels = new uint8_t[static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3];
 	std::memset(atlasPixels, 0, static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3);
 
 	currentRowHeight = 0;
@@ -1905,7 +1902,6 @@ bool SableUI::TextCacheKey::operator==(const TextCacheKey& other) const
 		lineSpacingPx == other.lineSpacingPx &&
 		justify == other.justify;
 }
-
 
 SableUI::CachedTextBuffer::CachedTextBuffer()
 	: VAO(0), VBO(0), EBO(0), indicesSize(0), height(0), refCount(0),

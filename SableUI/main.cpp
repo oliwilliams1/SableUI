@@ -185,7 +185,7 @@ int main(int argc, char** argv)
 | | vulkan
 | | debug window
 |x| better event system
-| | make text rerenders more efficient
+|x| make text rerenders more efficient
 
 |x| rect
 	| | rounding
@@ -200,8 +200,7 @@ int main(int argc, char** argv)
 	|x| alignment
 	|x| line Height
 	|x| truncation
-	| | unload inactive font packs
-	| | black text
+	|x| black text
 
 |x| image
 	|x| jpg, jpeg, png, ...

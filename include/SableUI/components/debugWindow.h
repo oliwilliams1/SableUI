@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "SableUI/SableUI.h"
 #include "SableUI/element.h"
 
@@ -8,24 +8,12 @@ namespace SableUI
 	{
 		switch (panel->type)
 		{
-		case SableUI::PanelType::BASE:
-			return "content panel";
-			break;
-		case SableUI::PanelType::HORIZONTAL:
-			return "h-splitter";
-			break;
-		case SableUI::PanelType::VERTICAL:
-			return "v-splitter";
-			break;
-		case SableUI::PanelType::UNDEF:
-			return "undefined panel type";
-			break;
-		case SableUI::PanelType::ROOTNODE:
-			return "root";
-			break;
-		default:
-			return "unknown panel type";
-			break;
+		case SableUI::PanelType::BASE: return "content panel";
+		case SableUI::PanelType::HORIZONTAL: return "h-splitter";
+		case SableUI::PanelType::VERTICAL: return "v-splitter";
+		case SableUI::PanelType::UNDEF: return "undefined panel type";
+		case SableUI::PanelType::ROOTNODE: return "root";
+		default: return "unknown panel type";
 		}
 	}
 
@@ -33,29 +21,38 @@ namespace SableUI
 	{
 		switch (type)
 		{
-		case SableUI::ElementType::UNDEF:
-			return "undefined element";
-			break;
-		case SableUI::ElementType::RECT:
-			return "rect";
-			break;
-		case SableUI::ElementType::IMAGE:
-			return "image";
-			break;
-		case SableUI::ElementType::TEXT:
-			return "text";
-			break;
-		case SableUI::ElementType::DIV:
-			return "div";
-			break;
-		case SableUI::ElementType::TEXT_U32:
-			return "text u32";
-			break;
-		default:
-			return "unknown element type";
-			break;
+		case SableUI::ElementType::UNDEF: return "undefined element";
+		case SableUI::ElementType::RECT: return "rect";
+		case SableUI::ElementType::IMAGE: return "image";
+		case SableUI::ElementType::TEXT: return "text";
+		case SableUI::ElementType::DIV: return "div";
+		case SableUI::ElementType::TEXT_U32: return "text u32";
+		default: return "unknown element type";
 		}
 	}
+
+	struct TreeNode
+	{
+		SableString name;
+		std::vector<TreeNode> children;
+		bool isExpanded = true;
+
+		friend bool operator==(const TreeNode& a, const TreeNode& b)
+		{
+			if (a.name != b.name) return false;
+			bool res = a.children.size() == b.children.size();
+			if (!res) return false;
+			for (int i = 0; i < a.children.size(); i++)
+				if (a.children[i] != b.children[i]) return false;
+
+			return true;
+		}
+
+		friend bool operator!=(const TreeNode& a, const TreeNode& b)
+		{
+			return !(a == b);
+		}
+	};
 
 	class DebugWindowView : public SableUI::BaseComponent
 	{
@@ -65,52 +62,60 @@ namespace SableUI
 			m_window = window;
 		}
 
-		void DrawElementTree(Element* element, int depth)
+		TreeNode GenerateElementTree(Element* element)
 		{
-			SableString indent = std::string(2 * depth, ' ');
-			Text(indent + ElementTypeToString(element->type));
+			TreeNode node;
+			node.name = ElementTypeToString(element->type);
 
 			for (Child* child : element->children)
 			{
 				Element* el = (Element*)*child;
-				DrawElementTree(el, depth + 1);
+				node.children.push_back(GenerateElementTree(el));
 			}
+			return node;
 		}
 
-		void DrawPanelTree(BasePanel* panel, int depth = 0)
+		TreeNode GeneratePanelTree(BasePanel* panel)
 		{
-			SableString indent = std::string(2 * depth, ' ');
-			Text(indent + GetPanelName(panel));
-			depth++;
+			TreeNode node;
+			node.name = GetPanelName(panel);
 
 			for (BasePanel* child : panel->children)
-			{
-				DrawPanelTree(child, depth);
-			}
+				node.children.push_back(GeneratePanelTree(child));
 
-			if (!panel->children.empty()) return;
+			if (panel->children.empty())
+				if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
+					node.children.push_back(GenerateElementTree(p->GetComponent()->GetRootElement()));
 
-			if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
+			return node;
+		}
+
+		void DrawTreeNode(TreeNode& node, int depth)
+		{
+			SableString indent = std::string(2 * depth, ' ');
+
+			SableString prefix;
+			if (!node.children.empty())
+				prefix = node.isExpanded ? U"\u25BE " : U"\u25B8 ";
+			else
+				prefix = "    ";
+
+			TextU32(indent + prefix + node.name, onClick([&]() {
+				node.isExpanded = !node.isExpanded;
+				needsRerender = true;
+			}));
+
+			if (node.isExpanded)
 			{
-				DrawElementTree(p->GetComponent()->GetRootElement(), depth);
+				for (TreeNode& child : node.children)
+					DrawTreeNode(child, depth + 1);
 			}
 		}
 
 		void Layout() override
 		{
 			rootElement->setPadding(4);
-			if (pollingHeartbeat)
-			{
-				Text("Polling heartbest |x|", onClick([&]() { setPollingHeartbeat(false); }));
-				Text(std::to_string(n));
-			}
-			else
-			{
-				Text("Polling heartbest | |", onClick([&]() { setPollingHeartbeat(true); }));
-			}
-			Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
-			Text("Open/close mem diagnostings", onClick([&]() { setMemoryDebugger(!memoryDebugger); }));
+			Text("Open/close mem diagnostics", onClick([&]() { setMemoryDebugger(!memoryDebugger); }));
 
 			if (memoryDebugger)
 			{
@@ -121,13 +126,11 @@ namespace SableUI
 				Text("Content Panels: " + std::to_string(ContentPanel::GetNumInstances()));
 
 				Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
 				Text("Components: " + std::to_string(BaseComponent::GetNumInstances()));
 				Text("Elements: " + std::to_string(Element::GetNumInstances()));
 				Text("Virtual Elements: " + std::to_string(VirtualNode::GetNumInstances()));
 
 				Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
 				Text("Drawable Base: " + std::to_string(DrawableBase::GetNumInstances()));
 				Text("Drawable Text: " + std::to_string(DrawableText::GetNumInstances()));
 				Text("Drawable Rect: " + std::to_string(DrawableRect::GetNumInstances()));
@@ -135,32 +138,43 @@ namespace SableUI
 				Text("Drawable Image: " + std::to_string(DrawableImage::GetNumInstances()));
 
 				Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
 				Text("Text: " + std::to_string(_Text::GetNumInstances()));
 				Text("Textures: " + std::to_string(Texture::GetNumInstances()));
 				Text("Strings: " + std::to_string(String::GetNumInstances()));
 
 				Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
 				Text("Font Packs: " + std::to_string(FontPack::GetNumInstances()));
 				Text("Font Ranges: " + std::to_string(FontRange::GetNumInstances()));
 			}
 
-			DrawPanelTree(m_window->GetRoot());
+			Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
+			Text("Panel/Element Tree Snapshot:");
+			DrawTreeNode(rootNode, 0);
 		}
 
 		void OnUpdate(const UIEventContext& ctx) override
 		{
-			if (pollingHeartbeat)
-			{
-				setN(n + 1);
-			}
+			TreeNode newRoot = GeneratePanelTree(m_window->GetRoot());
+
+			PreserveExpandedState(rootNode, newRoot);
+
+			if (newRoot != rootNode)
+				setRootNode(std::move(newRoot));
 		}
 
 	private:
-		useState(pollingHeartbeat, setPollingHeartbeat, bool, true);
+		void PreserveExpandedState(const TreeNode& oldNode, TreeNode& newNode)
+		{
+			if (oldNode.name == newNode.name)
+				newNode.isExpanded = oldNode.isExpanded;
+
+			for (size_t i = 0; i < newNode.children.size(); ++i)
+				if (i < oldNode.children.size())
+					PreserveExpandedState(oldNode.children[i], newNode.children[i]);
+		}
+
 		useState(memoryDebugger, setMemoryDebugger, bool, false);
-		useState(n, setN, int, 0);
+		useState(rootNode, setRootNode, TreeNode, {});
 		Window* m_window = nullptr;
 	};
 }
