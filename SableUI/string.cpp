@@ -53,7 +53,32 @@ String String::bold() const { return wrap(StyleTag::BoldStart, StyleTag::BoldEnd
 String String::italic()	const { return wrap(StyleTag::ItalicStart, StyleTag::ItalicEnd); };
 String String::boldItalic()	const { return wrap(StyleTag::BoldItalicStart, StyleTag::BoldItalicEnd); };
 String String::light() const { return wrap(StyleTag::LightStart, StyleTag::LightEnd); };
-String String::lightItalic()const { return wrap(StyleTag::LightItalicStart, StyleTag::LightItalicEnd); };
+String String::lightItalic()const { return wrap(StyleTag::LightItalicStart, StyleTag::LightItalicEnd); }
+
+String SableUI::String::Format(const char* format, ...)
+{
+	String result;
+
+	va_list args_copy;
+	va_list args;
+	va_start(args, format);
+	va_copy(args_copy, args);
+	int narrow_size = std::vsnprintf(nullptr, 0, format, args_copy);
+	va_end(args_copy);
+
+	if (narrow_size < 0)
+	{
+		va_end(args);
+		return String();
+	}
+
+	std::string narrow_buffer(narrow_size, '\0');
+	std::vsnprintf(narrow_buffer.data(), static_cast<size_t>(narrow_size) + 1, format, args);
+	va_end(args);
+	result = String(narrow_buffer);
+
+	return result;
+}
 
 String::String(const String& other) : m_data(nullptr), m_size(0)
 {

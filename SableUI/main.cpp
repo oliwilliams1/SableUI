@@ -1,7 +1,7 @@
 ﻿#include <utility>
 
 #include "SableUI/SableUI.h"
-#include "SableUI/components/debugWindow.h"
+#include "SableUI/components/debugComponents.h"
 
 class ToggleImageView : public SableUI::BaseComponent
 {
@@ -104,24 +104,19 @@ public:
 
 		Text("Console", fontSize(24));
 
-		for (const SableUI::LogData& logData : SableUI::Console::m_Logs)
+		int nLogs = SableUI::Console::m_Logs.size();
+
+		for (int i = std::max(nLogs - 18, 0); i < nLogs; i++)
 		{
+			const auto& logData = SableUI::Console::m_Logs[i];
 			SableUI::Colour logColour = rgb(255, 255, 255);
 
 			switch (logData.type)
 			{
-			case SableUI::LogType::SBUI_LOG:
-				logColour = rgb(0, 255, 0);
-				break;
-			case SableUI::LogType::SBUI_WARNING:
-				logColour = rgb(255, 255, 0);
-				break;
-			case SableUI::LogType::SBUI_ERROR:
-				logColour = rgb(255, 0, 0);
-				break;
-			default:
-				logColour = rgb(255, 255, 255);
-				break;
+			case SableUI::LogType::SBUI_LOG: logColour = rgb(0, 255, 0); break;
+			case SableUI::LogType::SBUI_WARNING: logColour = rgb(255, 255, 0); break;
+			case SableUI::LogType::SBUI_ERROR: logColour = rgb(255, 0, 0); break;
+			default: logColour = rgb(255, 255, 255); break;
 			}
 
 			Text(logData.message, textColour(logColour));
@@ -145,6 +140,7 @@ int main(int argc, char** argv)
 	SableUI::PreInit(argc, argv);
 	//SableUI::SetBackend(SableUI::Backend::Vulkan);
 	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
+	SableUI::SetMaxFPS(60);
 
 	HSplitter()
 	{
@@ -170,7 +166,11 @@ int main(int argc, char** argv)
 	}
 
 	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	PanelWith(SableUI::DebugWindowView, mainWindow);
+	VSplitter()
+	{
+		PanelWith(SableUI::ElementTreeView, mainWindow);
+		PanelWith(SableUI::PropertiesView);
+	}
 
 	while (SableUI::PollEvents())
 	{

@@ -166,12 +166,13 @@ namespace SableUI
     struct __StateReg_##variableName {									\
         __StateReg_##variableName(SableUI::BaseComponent* comp, T* var)	\
         { comp->RegisterState(var); }									\
-    } __stateReg_##variableName{this, &variableName};
+    } __stateReg_##variableName{this, &variableName}
 
 #define onHover(callback)           .setOnHover(callback)
 #define onHoverExit(callback)       .setOnHoverExit(callback)
 #define onClick(callback)           .setOnClick(callback)
 #define onSecondaryClick(callback)  .setOnSecondaryClick(callback)
+#define onDoubleClick(callback)		.setOnDoubleClick(callback)
 
 #define HSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
 #define VSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)

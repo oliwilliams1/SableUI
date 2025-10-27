@@ -153,10 +153,10 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->paddingBottom             = info.paddingBottom;
     this->paddingLeft               = info.paddingLeft;
     this->paddingRight              = info.paddingRight;
-    this->fontSize                  = info.fontSize;
-    this->lineHeight                = info.lineHeight;
-    this->centerX                   = info.centerX;
-    this->centerY                   = info.centerY;
+    this->fontSize                  = info._fontSize;
+    this->lineHeight                = info._lineHeight;
+    this->centerX                   = info._centerX;
+    this->centerY                   = info._centerY;
     this->wType                     = info.wType;
     this->hType                     = info.hType;
     this->bgColour                  = info.bgColour;
@@ -167,6 +167,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->m_onHoverExitFunc         = info.onHoverExitFunc;
     this->m_onClickFunc             = info.onClickFunc;
     this->m_onSecondaryClickFunc    = info.onSecondaryClickFunc;
+    this->m_onDoubleClickFunc       = info.onDoubleClickFunc;
 }
 
 void SableUI::Element::Render(int z)
@@ -390,7 +391,7 @@ void SableUI::Element::LayoutChildren()
 
     if (containerSize.x <= 0 || containerSize.y <= 0)
     {
-        SableUI_Warn("Container has zero or negative size ID: \"%s\"", ID.c_str());
+        SableUI_Warn("Container has zero or negative size ID: \"%s\"", ((std::string)ID).c_str());
         // Set all children to zero size
         for (Child* child : children)
         {
@@ -736,10 +737,10 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.paddingBottom          = paddingBottom;
     info.paddingLeft            = paddingLeft;
     info.paddingRight           = paddingRight;
-    info.fontSize               = fontSize;
-    info.lineHeight             = lineHeight;
-    info.centerX                = centerX;
-    info.centerY                = centerY;
+    info._fontSize               = fontSize;
+    info._lineHeight             = lineHeight;
+    info._centerX                = centerX;
+    info._centerY                = centerY;
     info.wType                  = wType;
     info.hType                  = hType;
     info.type                   = type;
@@ -747,10 +748,6 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.uniqueTextOrPath       = uniqueTextOrPath;
     info.textColour             = textColour;
     info.textJustification      = textJustification;
-    info.onHoverFunc            = m_onHoverFunc;
-	info.onHoverExitFunc        = m_onHoverExitFunc;
-	info.onClickFunc            = m_onClickFunc;
-	info.onSecondaryClickFunc   = m_onSecondaryClickFunc;
 
     return info;
 }
@@ -789,8 +786,8 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
     hash_combine(h, std::hash<int>()(vnode->info.paddingBottom));
     hash_combine(h, std::hash<int>()(vnode->info.paddingLeft));
     hash_combine(h, std::hash<int>()(vnode->info.paddingRight));
-    hash_combine(h, std::hash<int>()(vnode->info.fontSize));
-	hash_combine(h, std::hash<int>()(vnode->info.lineHeight));
+    hash_combine(h, std::hash<int>()(vnode->info._fontSize));
+	hash_combine(h, std::hash<int>()(vnode->info._lineHeight));
     hash_combine(h, std::hash<int>()(vnode->info.textColour.r + vnode->info.textColour.g
                                     + vnode->info.textColour.b + vnode->info.textColour.a));
 
@@ -957,6 +954,9 @@ void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
 
         if (ctx.mousePressed[SABLE_MOUSE_BUTTON_RIGHT] && m_onSecondaryClickFunc)
             m_onSecondaryClickFunc();
+
+        if (ctx.mouseDoubleClicked[SABLE_MOUSE_BUTTON_LEFT] && m_onDoubleClickFunc)
+            m_onDoubleClickFunc();
     }
     else
     {

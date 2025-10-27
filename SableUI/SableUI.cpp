@@ -352,6 +352,12 @@ public:
 
 	SableUI::Window* m_mainWindow = nullptr;
 	std::vector<SableUI::Window*> m_secondaryWindows;
+
+	std::chrono::milliseconds m_frameDuration = std::chrono::milliseconds(16);
+
+private:
+	using clock = std::chrono::high_resolution_clock;
+	std::chrono::time_point<clock> m_nextFrameTime = clock::now();
 };
 
 static App* s_app = nullptr;
@@ -410,6 +416,17 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 	return s_app->m_mainWindow;
 }
 
+void SableUI::SetMaxFPS(int fps)
+{
+	if (s_app == nullptr)
+	{
+		SableUI_Runtime_Error("SableUI has not been initialised");
+		return;
+	}
+
+	s_app->m_frameDuration = std::chrono::milliseconds(1000 / fps);
+}
+
 void SableUI::Shutdown()
 {
 	if (s_app == nullptr)
@@ -419,6 +436,9 @@ void SableUI::Shutdown()
 
 	SB_delete(s_app);
 	s_app = nullptr;
+	
+	SableMemory::DestroyPools();
+	SableUI_Log("Shut down successfully");
 }
 
 SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
@@ -487,7 +507,15 @@ bool App::PollEvents()
 
 void App::Render()
 {
-	if (m_mainWindow == nullptr) return;
+	if (m_mainWindow == nullptr)
+		return;
+
+	auto now = clock::now();
+
+	if (now < m_nextFrameTime)
+		std::this_thread::sleep_until(m_nextFrameTime);
+
+	m_nextFrameTime = clock::now() + m_frameDuration;
 
 	m_mainWindow->Draw();
 
@@ -507,8 +535,4 @@ App::~App()
 	m_mainWindow = nullptr;
 
 	SableUI::SableUI_Window_Terminate_GLFW();
-
-	SableMemory::DestroyPools();
-
-	SableUI_Log("Shut down successfully");
 }

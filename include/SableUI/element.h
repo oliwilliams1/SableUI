@@ -31,7 +31,7 @@ namespace SableUI
 
 	struct ElementInfo
 	{
-		std::string id;
+		SableString id;
 
 		// attribs
 		Colour bgColour = Colour(128, 128, 128);
@@ -49,10 +49,10 @@ namespace SableUI
 		int paddingBottom = 0;
 		int paddingLeft = 0;
 		int paddingRight = 0;
-		int fontSize = 11;
-		float lineHeight = 1.15f;
-		bool centerX = false;
-		bool centerY = false;
+		int _fontSize = 11;
+		float _lineHeight = 1.15f;
+		bool _centerX = false;
+		bool _centerY = false;
 		RectType wType = RectType::FILL;
 		RectType hType = RectType::FILL;
 		ElementType type = ElementType::UNDEF;
@@ -65,9 +65,10 @@ namespace SableUI
 		std::function<void()> onHoverExitFunc = nullptr;
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
-
+		std::function<void()> onDoubleClickFunc = nullptr;
+		
 		// setter functions for macros
-		ElementInfo& setID(const std::string& v)			{ id = v; return *this; }
+		ElementInfo& setID(const SableString& v)			{ id = v; return *this; }
 		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
 		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
 		ElementInfo& setMinWidth(int v)						{ minWidth = v; return *this; }
@@ -95,11 +96,11 @@ namespace SableUI
 		ElementInfo& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
 		ElementInfo& setPaddingRight(int v)					{ paddingRight = v; return *this; }
 
-		ElementInfo& setFontSize(int v)						{ fontSize = v; return *this; }
-		ElementInfo& setLineHeight(float v)					{ lineHeight = v; return *this; }
+		ElementInfo& setFontSize(int v)						{ _fontSize = v; return *this; }
+		ElementInfo& setLineHeight(float v)					{ _lineHeight = v; return *this; }
 
-		ElementInfo& setCenterX(bool v)						{ centerX = v; return *this; }
-		ElementInfo& setCenterY(bool v)						{ centerY = v; return *this; }
+		ElementInfo& setCenterX(bool v)						{ _centerX = v; return *this; }
+		ElementInfo& setCenterY(bool v)						{ _centerY = v; return *this; }
 		ElementInfo& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
@@ -111,6 +112,7 @@ namespace SableUI
 		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc		= func;	return *this; }
 		ElementInfo& setOnClick(const std::function<void()>& func)			{ onClickFunc			= func; return *this; }
 		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
+		ElementInfo& setOnDoubleClick(const std::function<void()>& func)	{ onDoubleClickFunc = func; return *this; }
 	};
 
 	class BaseComponent;
@@ -159,7 +161,7 @@ namespace SableUI
 		int GetMinHeight();
 
 		// user defined
-		std::string ID = "";
+		SableString ID;
 		int width = 0;
 		int height = 0;
 		int minWidth = 0;
@@ -182,7 +184,7 @@ namespace SableUI
 		RectType hType = RectType::FILL;
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString uniqueTextOrPath = "";
+		SableString uniqueTextOrPath;
 		Colour textColour = { 255, 255, 255, 255 };
 		TextJustification textJustification = TextJustification::Left;
 
@@ -190,9 +192,10 @@ namespace SableUI
 		std::function<void()> m_onHoverExitFunc = nullptr;
 		std::function<void()> m_onClickFunc = nullptr;
 		std::function<void()> m_onSecondaryClickFunc = nullptr;
+		std::function<void()> m_onDoubleClickFunc = nullptr;
 
 		// setter functions for macros
-		Element& setID(const std::string& v)			{ ID = v; return *this; }
+		Element& setID(const SableString& v)			{ ID = v; return *this; }
 		Element& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
 		Element& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
 		Element& setMinWidth(int v)						{ minWidth = v; return *this; }
@@ -235,6 +238,7 @@ namespace SableUI
 		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }
 		Element& setOnClick(const std::function<void()>& func)			{ m_onClickFunc				= func; return *this; }
 		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
+		Element& setOnDoubleClick(const std::function<void()>& func)	{ m_onDoubleClickFunc		= func; return *this; }
 
 		ElementInfo GetInfo() const;
 

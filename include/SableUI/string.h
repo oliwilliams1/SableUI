@@ -37,6 +37,7 @@ namespace SableUI
 		String boldItalic() const;
 		String light() const;
 		String lightItalic() const;
+		static String Format(const char* format, ...);
 
 		static int GetNumInstances();
 

@@ -62,7 +62,7 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		int SetContent(const SableString& str, int maxWidth, int fontSize = 11, int maxHeight = -1,
+		int SetContent(const SableString& str, int maxWidth, int fontSize = 10, int maxHeight = -1,
 			float lineSpacing = 1.15f, TextJustification justification = TextJustification::Left);
 		
 		int UpdateMaxWidth(int maxWidth);

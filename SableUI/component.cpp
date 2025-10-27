@@ -49,6 +49,8 @@ void SableUI::BaseComponent::BackendInitialisePanel(Renderer* renderer)
 
 	SetElementBuilderContext(renderer, rootElement, false);
 	LayoutWrapper();
+
+	rootElement->LayoutChildren();
 }
 
 static size_t GetHash(int n, const char* name)

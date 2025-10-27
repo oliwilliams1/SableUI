@@ -4,6 +4,7 @@
 #include <string>
 #include <chrono>
 #include <vector>
+#include <array>
 
 #include "SableUI/panel.h"
 #pragma warning(pop)
@@ -80,5 +81,11 @@ namespace SableUI
 		GLFWcursor* m_vResizeCursor = nullptr;
 
 		int cleanupTextCounter = 0;
+
+		static constexpr double DOUBLE_CLICK_TIME = 0.3;
+		static constexpr int DOUBLE_CLICK_MAX_DIST = 5;
+
+		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
+		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 	};
 }

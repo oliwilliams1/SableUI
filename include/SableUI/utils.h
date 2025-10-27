@@ -232,6 +232,7 @@ namespace SableUI
 
 	struct Rect
 	{
+		Rect() : x(0), y(0), w(0), h(0) {}
 		Rect(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
 		Rect(int x, int y, int w, int h, RectType wType, RectType hType)
 			: x(x), y(y), w(w), h(h), wType(wType), hType(hType) {}
@@ -261,9 +262,8 @@ namespace SableUI
 			return x != other.x || y != other.y || w != other.w || h != other.h;
 		}
 
-		void print() const
-		{
-			printf("x: %i, y: %i, w: %i, h: %i\n", x, y, w, h);
+		SableString ToString() const {
+			return SableString::Format("{ x: %d, y: %d, width: %d, height: %d }", x, y, w, h);
 		}
 	};
 

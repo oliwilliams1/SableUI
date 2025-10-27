@@ -93,6 +93,25 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 	{
 		ctx.mouseDown.set(button, true);
 		ctx.mousePressed.set(button, true);
+
+		double currentTime = glfwGetTime();
+		double timeSinceLastClick = currentTime - instance->m_lastClickTime[button];
+
+		ivec2 currentPos = instance->ctx.mousePos;
+		ivec2 lastPos = instance->m_lastClickPos[button];
+		int distanceMoved = std::abs(currentPos.x - lastPos.x) + std::abs(currentPos.y - lastPos.y);
+
+		if (timeSinceLastClick < instance->DOUBLE_CLICK_TIME &&
+			distanceMoved < instance->DOUBLE_CLICK_MAX_DIST)
+		{
+			ctx.mouseDoubleClicked.set(button, true);
+			instance->m_lastClickTime[button] = 0.0;
+		}
+		else
+		{
+			instance->m_lastClickTime[button] = currentTime;
+			instance->m_lastClickPos[button] = currentPos;
+		}
 	}
 	else if (action == GLFW_RELEASE)
 	{
@@ -100,7 +119,6 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 		ctx.mouseReleased.set(button, true);
 	}
 }
-
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
 	glfwMakeContextCurrent(window);
@@ -318,6 +336,7 @@ bool SableUI::Window::PollEvents()
 
 	ctx.mousePressed.reset();
 	ctx.mouseReleased.reset();
+	ctx.mouseDoubleClicked.reset();
 
 	return !glfwWindowShouldClose(m_window);
 }

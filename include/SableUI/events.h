@@ -162,6 +162,7 @@ namespace SableUI
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseDown;
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mousePressed;
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseReleased;
+		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseDoubleClicked;
 
 		std::bitset<SABLE_MAX_KEYS> keyDown;
 		std::bitset<SABLE_MAX_KEYS> keyPressed;
