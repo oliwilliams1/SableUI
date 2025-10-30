@@ -568,9 +568,6 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 		return false;
 	}
 
-	FT_Set_Pixel_Sizes(face, 0, 12);
-	FT_Set_Char_Size(face, 0, 12 * 64, s_dpi.x, s_dpi.y);
-
 	newPack = SableUI::FontPack();
 	newPack.fontPath = fontPathStr;
 
@@ -851,7 +848,7 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 	auto it = currentLoadedFaces.find(fontPathForAtlas);
 	if (it != currentLoadedFaces.end())
 	{
-		if (it->second->size->metrics.x_ppem / 64 != fontSize)
+		if (it->second->size->metrics.x_ppem != fontSize)
 		{
 			FT_Set_Pixel_Sizes(it->second, 0, fontSize);
 		}
@@ -896,13 +893,11 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if (!face) continue;
 
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
-		FT_Set_Char_Size(face, 0, atlas.fontSize * 64, s_dpi.x, s_dpi.y);
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
-		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT | FT_LOAD_TARGET_LCD)) continue;
+		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
 
 		FT_GlyphSlot glyph = face->glyph;
-
 		FT_Render_Glyph(glyph, FT_RENDER_MODE_LCD);
 
 		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width, (uint16_t)glyph->bitmap.rows };
@@ -977,8 +972,10 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		FT_Face face = GetFontForChar(c, atlas.fontSize, atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
+		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
+
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
-		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT | FT_LOAD_TARGET_LCD)) continue;
+		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
 		FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LCD);
 
 		FT_GlyphSlot glyph = face->glyph;
@@ -2067,7 +2064,6 @@ void SableUI::TextCache::DeleteBuffer(CachedTextBuffer& buffer)
 		buffer.EBO = 0;
 	}
 }
-
 
 // ============================================================================
 // Text Backend
