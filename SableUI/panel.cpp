@@ -4,7 +4,7 @@
 using namespace SableMemory;
 
 static int s_basePanelCount = 0;
-SableUI::BasePanel::BasePanel(BasePanel* parent, Renderer* renderer) : parent(parent), m_renderer(renderer)
+SableUI::BasePanel::BasePanel(BasePanel* parent, sRenderer* renderer) : parent(parent), m_renderer(renderer)
 {
 	type = PanelType::BASE;
 	rect.wType = RectType::FILL;
@@ -43,7 +43,7 @@ bool SableUI::BasePanel::PropagateComponentStateChanges()
 // Root Panel
 // ============================================================================
 static int s_rootPanelCount = 0;
-SableUI::RootPanel::RootPanel(Renderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
+SableUI::RootPanel::RootPanel(sRenderer* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
 	s_rootPanelCount++;
 	type = PanelType::ROOTNODE;
@@ -153,7 +153,7 @@ void SableUI::RootPanel::Resize(int w, int h)
 // Splitter Panel
 // ============================================================================
 static int s_splitterPanelCount = 0;
-SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, Renderer* renderer) 
+SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, sRenderer* renderer)
 	: BasePanel(parent, renderer)
 {
 	s_splitterPanelCount++;
@@ -435,7 +435,7 @@ SableUI::SplitterPanel::~SplitterPanel()
 // Root Panel
 // ============================================================================
 static int s_panelCount = 0; 
-SableUI::ContentPanel::ContentPanel(BasePanel* parent, Renderer* renderer) : BasePanel(parent, renderer)
+SableUI::ContentPanel::ContentPanel(BasePanel* parent, sRenderer* renderer) : BasePanel(parent, renderer)
 {
 	s_panelCount++;
 	type = PanelType::BASE;

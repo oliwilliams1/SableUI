@@ -5,9 +5,10 @@
 #include "SableUI/shader.h"
 #include "SableUI/window.h"
 #include "SableUI/generated/shaders.h"
+#include "SableUI/renderer.h"
 
 /* rect globals - now per-context */
-static std::map<void*, SableUI::ContextResources > g_contextResources;
+static std::map<void*, SableUI::ContextResources> g_contextResources;
 
 /* shared resources*/
 static GLuint g_shaderProgram = 0;
@@ -340,9 +341,4 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextRes
     glUniform1i(g_tAtlasLoc, 0);
 
     glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
-}
-
-void SableUI::DrawWindowBorder(RenderTarget* target)
-{
-    
 }

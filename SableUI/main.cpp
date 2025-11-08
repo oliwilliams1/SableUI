@@ -10,7 +10,7 @@ public:
 
 	void Layout() override
 	{
-		std::string path = (toggleState) ? "1.jpg" : "2.png";
+		std::string path = (toggleState) ? "1.jpg" : "2.webp";
 
 		Div(w(128) h_fit)
 		{

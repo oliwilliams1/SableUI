@@ -1,35 +1,38 @@
 #pragma once
 
-#include <GL/glew.h>
 #include <string>
+#include <memory>
+#include <chrono>
 
 namespace SableUI
 {
-	void StepCachedTexturesCleaner();
+    void StepCachedTexturesCleaner();
 
-	struct Texture
-	{
-		Texture();
-		Texture(int width, int height, GLuint m_texID) : m_width(width), m_height(height), m_texID(m_texID) {}
-		~Texture();
+    struct CachedGpuTexture;
+    struct Texture
+    {
+        Texture();
+        Texture(int width, int height, uint32_t texID);
+        ~Texture();
 
-		Texture(const Texture&) = delete;
-		Texture& operator=(const Texture&) = delete;
+        Texture(const Texture&) = delete;
+        Texture& operator=(const Texture&) = delete;
 
-		static int GetNumInstances();
-		void LoadTexture(const std::string& path);
-		void LoadTextureOptimised(const std::string& path, int width = -1, int height = -1);
-		void SetDefaultTexture(GLuint texID);
-		void Bind() const;
-		
-		int m_width = -1;
-		int m_height = -1;
+        static int GetNumInstances();
 
-	private:
-		void SetTexture(uint8_t* pixels, int width, int height, int channels);
-		GLuint m_texID = 0;
+        void LoadTexture(const std::string& path);
+        void LoadTextureOptimised(const std::string& path, int width = -1, int height = -1);
 
-		void GenerateDefaultTexture();
-		GLuint m_defaultTexID = 0;
-	};
-};
+        void SetDefaultTexture(uint32_t texID);
+        void Bind();
+
+        int m_width = -1;
+        int m_height = -1;
+
+    private:
+        void GenerateDefaultTexture();
+
+        uint32_t m_defaultTexID = 0;
+        std::shared_ptr<CachedGpuTexture> m_cachedGpu;
+    };
+}

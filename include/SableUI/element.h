@@ -6,8 +6,8 @@
 #include <functional>
 #include <any>
 
-#include "SableUI/events.h"
 #include "SableUI/renderer.h"
+#include "SableUI/events.h"
 
 namespace SableUI
 {
@@ -142,7 +142,7 @@ namespace SableUI
 	{
 	public:
 		Element();
-		Element(Renderer* renderer, ElementType type);
+		Element(sRenderer* renderer, ElementType type);
 		~Element();
 
 		static int GetNumInstances();
@@ -150,7 +150,7 @@ namespace SableUI
 		ElementType type = ElementType::UNDEF;
 		
 		// functions for engine
-		void Init(Renderer* renderer, ElementType type);
+		void Init(sRenderer* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
 		void SetRect(const Rect& rect);
 		void AddChild(Element* child);
@@ -264,7 +264,7 @@ namespace SableUI
 	private:
 		bool isHovered = false;
 		DrawableBase* drawable = nullptr;
-		Renderer* renderer = nullptr;
+		sRenderer* renderer = nullptr;
 	};
 
 	struct Child

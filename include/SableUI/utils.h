@@ -11,8 +11,6 @@ namespace SableUI
 {
 	inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 
-	enum class Backend { UNDEF, OpenGL, Vulkan };
-
 	struct uvec2
 	{
 		unsigned int x;

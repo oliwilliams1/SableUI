@@ -1,3 +1,4 @@
+#include "SableUI/renderer.h"
 #include "SableUI/window.h"
 #include "SableUI/memory.h"
 
@@ -7,7 +8,6 @@
 #include <algorithm>
 #include <stack>
 
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
@@ -130,9 +130,9 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	}
 
 	instance->m_windowSize = ivec2(width, height);
-	glViewport(0, 0, width, height);
+	instance->m_renderer.Viewport(0, 0, width, height);
 
-	instance->m_renderer.renderTarget.Resize(width, height);
+	instance->m_renderer.m_renderTarget.Resize(width, height);
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
@@ -179,7 +179,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		{
 		case Backend::OpenGL:
 		{
-			InitOpenGL();
+			m_renderer.InitOpenGL();
 			break;
 		}
 		case Backend::Vulkan:
@@ -192,15 +192,14 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		}
 	}
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glClearColor(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	m_renderer.SetBlending(true);
+	m_renderer.SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_renderer.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	glFlush();
+	m_renderer.Flush();
 
-	m_renderer.renderTarget.SetTarget(TargetType::WINDOW);
-	m_renderer.renderTarget.Resize(m_windowSize.x, m_windowSize.y);
+	m_renderer.m_renderTarget.SetTarget(RenderTargetType::Window);
+	m_renderer.m_renderTarget.Resize(m_windowSize.x, m_windowSize.y);
 
 	if (m_root != nullptr)
 	{
@@ -217,18 +216,6 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(&m_renderer, width, height);
-}
-
-void SableUI::Window::InitOpenGL()
-{
-	SableUI_Log("Using OpenGL backend");
-
-	// init after window is cleared
-	GLenum res = glewInit();
-	if (GLEW_OK != res)
-	{
-		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
-	}
 }
 
 void SableUI::Window::HandleResize()
@@ -262,7 +249,7 @@ void SableUI::Window::HandleResize()
 		if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		{
 			m_resizing = false;
-			m_renderer.ClearStack();
+			m_renderer.ClearDrawableStack();
 			RecalculateNodes();
 			RerenderAllNodes();
 		}
@@ -344,11 +331,7 @@ bool SableUI::Window::PollEvents()
 void SableUI::Window::Draw()
 {
 	glfwMakeContextCurrent(m_window);
-	GLenum err;
-	while ((err = glGetError()) != GL_NO_ERROR)
-	{
-		SableUI_Error("OpenGL error: %s", gluErrorString(err));
-	}
+	m_renderer.CheckErrors();
 
 #ifdef _WIN32
 	MSG msg;
@@ -374,9 +357,9 @@ SableUI::RootPanel* SableUI::Window::GetRoot()
 
 void SableUI::Window::RerenderAllNodes()
 {
-	m_renderer.ClearStack();
+	m_renderer.ClearDrawableStack();
 
-	glClear(GL_COLOR_BUFFER_BIT);
+	m_renderer.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
 	m_root->Render();
 
@@ -642,7 +625,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	}
 
 	// Clear accumulated draw calls from resize steps
-	m_renderer.ClearStack();
+	m_renderer.ClearDrawableStack();
 	m_root->Recalculate();
 
 	oldPos = pos;

@@ -58,7 +58,7 @@ namespace SableUI
         virtual void Layout() {};
         void LayoutWrapper();
         virtual void OnHover() {};
-        void BackendInitialisePanel(Renderer* renderer);
+        void BackendInitialisePanel(sRenderer* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
 
         template<typename T, typename... Args>
@@ -87,7 +87,7 @@ namespace SableUI
 
     private:
         size_t m_hash = 0;
-        Renderer* m_renderer = nullptr;
+        sRenderer* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
         std::vector<BaseComponent*> m_componentChildren;
         int m_childCount = 0;

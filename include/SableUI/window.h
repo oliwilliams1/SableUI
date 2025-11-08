@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 
+#include "SableUI/renderer.h"
 #include "SableUI/panel.h"
 #pragma warning(pop)
 
@@ -52,10 +53,7 @@ namespace SableUI
 		bool m_LayoutUpdated = true;
 
 	private:
-		void InitOpenGL();
-		void InitVulkan();
-
-		Renderer m_renderer;
+		sRenderer m_renderer;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled);
