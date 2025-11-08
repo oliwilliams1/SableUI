@@ -336,7 +336,8 @@ void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextRes
     glUniform2f(g_tPosLoc, m_rect.x, m_rect.y + m_rect.h);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, GetAtlasTexture());
+    
+    BindTextAtlasTexture();
 
     glUniform1i(g_tAtlasLoc, 0);
 

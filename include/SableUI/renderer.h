@@ -88,17 +88,54 @@ namespace SableUI
 		std::vector<DrawableBase*> m_drawStack;
 	};
 
-	struct GpuTexture
+	struct GpuTexture2D
 	{
 	public:
-		~GpuTexture();
+		~GpuTexture2D();
 		void Bind() const;
 		void Unbind() const;
-		void SetData(uint8_t* pixels, int width, int height, int channels);
-		bool ResizeDepth(int newDepth);
+		void SetData(const uint8_t* pixels, int width, int height, int channels);
+
+	private:
+		int m_width = 0, m_height = 0;
+		uint32_t m_textureID = 0;
+	};
+
+	struct GpuTexture2DArray
+	{
+	public:
+		GpuTexture2DArray() = default;
+		~GpuTexture2DArray();
+		void Bind() const;
+		void Unbind() const;
+		void Init(int width, int height, int depth);
+		void Resize(int newDepth);
+		void SubImage(int xOffset, int yOffset, int zOffset, int width, int height,
+			int depth, const uint8_t* pixels);
+		void CopyImageSubData(const GpuTexture2DArray& src, int srcX, int srcY, int srcZ,
+			int dstX, int dstY, int dstZ, int width, int height, int depth);
+
+		uint32_t m_textureID = 0;
+
+		GpuTexture2DArray(GpuTexture2DArray&& other) noexcept;
+		GpuTexture2DArray& operator=(GpuTexture2DArray&& other) noexcept;
+		GpuTexture2DArray(const GpuTexture2DArray&) = delete;
+		GpuTexture2DArray& operator=(const GpuTexture2DArray&) = delete;
 
 	private:
 		int m_width = 0, m_height = 0, m_depth = 0;
-		uint32_t m_textureID = 0;
+	};
+
+	struct GpuObject
+	{
+	public:
+		GpuObject();
+		~GpuObject();
+
+	private:
+		uint32_t m_VAO;
+		uint32_t m_VBO;
+		uint32_t m_EBO;
+		uint32_t indicesSize;
 	};
 }

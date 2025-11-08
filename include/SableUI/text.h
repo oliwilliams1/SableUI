@@ -130,7 +130,7 @@ namespace SableUI
 		void DeleteBuffer(CachedTextBuffer& buffer);
 	};
 
-	GLuint GetAtlasTexture();
+	void BindTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);
 	void CleanupTextCache(int secondsThreshold);
 	void InitFontManager();

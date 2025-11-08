@@ -18,7 +18,7 @@
 #include FT_LCD_FILTER_H
 
 #undef SABLEUI_SUBSYSTEM
-#define SABLEUI_SUBSYSTEM "SableUI::Text"
+#define SABLEUI_SUBSYSTEM "Text"
 #include "SableUI/console.h"
 #include "SableUI/window.h"
 
@@ -340,7 +340,7 @@ public:
 	FT_Library ft_library = nullptr;
 
 	void ResizeTextureArray(int newDepth);
-	GLuint GetAtlasTexture() const { return atlasTextureArray; }
+	void BindTextAtlasTexture() { atlasTextureArray.Bind(); }
 
 	std::map<char_t, Character> characters;
 	bool FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange);
@@ -351,7 +351,7 @@ public:
 	std::string SuggestFontPackForChar(char32_t c);
 	bool LoadFontPackByFilename(const std::string& fontDir, const std::string& filename);
 
-	GLuint atlasTextureArray = 0;
+	SableUI::GpuTexture2DArray atlasTextureArray;
 	int atlasDepth = MIN_ATLAS_DEPTH;
 	SableUI::u16vec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 
@@ -364,14 +364,14 @@ public:
 	void LoadFontRange(Atlas& atlas, const SableUI::FontRange& range);
 
 	void SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
-		const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType, int initialYOffset);
+		const std::map<char32_t, Character>& charsToSerialise, int initialYOffset);
 	bool DeserialiseAtlas(const std::string& filename, Atlas& outAtlas);
 
 	bool SerialiseFontPack(const SableUI::FontPack& pack);
 	bool DeserialiseFontPack(const std::string& fontFilename, SableUI::FontPack& outPack);
 	std::string GetFontPackCacheFilename(const std::string& fontFilename);
 
-	void UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GLenum pixelType) const;
+	void UploadAtlasToGPU(int height, int initialY, uint8_t* pixels);
 
 private:
 	FontManager() : isInitialized(false) {}
@@ -404,15 +404,8 @@ bool FontManager::Initialize()
 	SableUI_Log("FontManager initialized");
 	isInitialized = true;
 
-	glGenTextures(1, &atlasTextureArray);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, atlasTextureArray);
-
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// init (w, h, d)
+	atlasTextureArray.Init(ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH);
 
 	atlasDepth = MIN_ATLAS_DEPTH;
 	fontManager = &GetInstance();
@@ -431,9 +424,6 @@ bool FontManager::Initialize()
 void FontManager::Shutdown()
 {
 	if (!isInitialized) return;
-
-	glDeleteTextures(1, &atlasTextureArray);
-	atlasTextureArray = 0;
 
 	atlases.clear();
 	characters.clear();
@@ -786,28 +776,16 @@ void FontManager::ResizeTextureArray(int newDepth)
 		return;
 	}
 
-	GLuint newTextureArray = 0;
-	glGenTextures(1, &newTextureArray);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
-
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, ATLAS_WIDTH, ATLAS_HEIGHT, newDepth);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	/* copy old texture to new, with new depth */
-	GLuint oldAtlasTextureArray = atlasTextureArray;
-	glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
-		newTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+	SableUI::GpuTexture2DArray newAtlasTextureArray;
+	newAtlasTextureArray.Init(ATLAS_WIDTH, ATLAS_HEIGHT, newDepth);
+	newAtlasTextureArray.CopyImageSubData(atlasTextureArray, 0, 0, 0, 0, 0, 0,
 		ATLAS_WIDTH, ATLAS_HEIGHT, atlasDepth);
 
-	glDeleteTextures(1, &oldAtlasTextureArray);
-	atlasTextureArray = newTextureArray;
+	atlasTextureArray = std::move(newAtlasTextureArray);
 	atlasDepth = newDepth;
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
+	
+	newAtlasTextureArray.Unbind();
+} // newAtlasTextureArray will be destroyed
 
 FontRangeHash FontManager::GetAtlasHash(const SableUI::FontRange& range, int fontSize)
 {
@@ -1075,10 +1053,10 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		atlasCursor.x += size.x + ATLAS_PADDING;
 	}
 
-	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels, GL_RGB);
+	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels);
 
 	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass,
-		charsForSerialization, GL_RGB, initialAtlasYForRenderPass);
+		charsForSerialization, initialAtlasYForRenderPass);
 
 	delete[] atlasPixels;
 
@@ -1252,9 +1230,9 @@ bool FontManager::DeserialiseFontPack(const std::string& fontFilename, SableUI::
 	}
 }
 
-void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GLenum pixelType) const
+void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels)
 {
-	glBindTexture(GL_TEXTURE_2D_ARRAY, atlasTextureArray);
+	atlasTextureArray.Bind();
 
 	int currentUploadY = 0;
 	while (currentUploadY < height)
@@ -1269,19 +1247,18 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels, GL
 		if (heightToUpload <= 0) break;
 
 		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) *
-											   ATLAS_WIDTH * (pixelType == GL_RGB ? 3 : 1));
+											   ATLAS_WIDTH * 3);
 
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, yOffsetInTargetLayer, targetLayer,
-			ATLAS_WIDTH, heightToUpload, 1, pixelType, GL_UNSIGNED_BYTE, chunkPixels);
+		atlasTextureArray.SubImage(0, yOffsetInTargetLayer, targetLayer, ATLAS_WIDTH, heightToUpload, 1, chunkPixels);
 
 		currentUploadY += heightToUpload;
 	}
 
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	atlasTextureArray.Unbind();
 }
 
 void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
-	const std::map<char32_t, Character>& charsToSerialise, GLenum pixelType, int initialYOffset)
+	const std::map<char32_t, Character>& charsToSerialise, int initialYOffset)
 {
 	FontRangeHash atlasHash = GetAtlasHash(atlas.range, atlas.fontSize);
 	std::string directory = "cache/";
@@ -1315,12 +1292,10 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 
 	file.write(reinterpret_cast<const char*>(&width), sizeof(int));
 	file.write(reinterpret_cast<const char*>(&height), sizeof(int));
-	file.write(reinterpret_cast<const char*>(&pixelType), sizeof(GLenum));
 	file.write(reinterpret_cast<const char*>(&initialYOffset), sizeof(int));
 
-
 	/* main content */
-	size_t bytesPerPixel = (pixelType == GL_RGB ? 3 : 1);
+	size_t bytesPerPixel = 3;
 	size_t pxArraySize = static_cast<size_t>(width) * height * bytesPerPixel;
 	file.write(reinterpret_cast<const char*>(pixels), pxArraySize * sizeof(uint8_t));
 
@@ -1385,8 +1360,6 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 		int cachedHeight{};
 		file.read(reinterpret_cast<char*>(&cachedWidth), sizeof(int));
 		file.read(reinterpret_cast<char*>(&cachedHeight), sizeof(int));
-		GLenum cachedPixelType{};
-		file.read(reinterpret_cast<char*>(&cachedPixelType), sizeof(GLenum));
 		int originalInitialYOffset{};
 		file.read(reinterpret_cast<char*>(&originalInitialYOffset), sizeof(int));
 
@@ -1398,16 +1371,9 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 			file.close();
 			return false;
 		}
-		if (cachedPixelType != GL_RGB)
-		{
-			SableUI_Warn("Cached atlas pixel format mismatch for %s. Expected GL_RGB, got %u. Regenerating.",
-				filename.c_str(), cachedPixelType);
-			file.close();
-			return false;
-		}
 
 		/* main content */
-		size_t bytesPerPixel = (cachedPixelType == GL_RGB ? 3 : 1);
+		size_t bytesPerPixel = 3;
 		size_t pxArraySize = static_cast<size_t>(cachedWidth) * cachedHeight * bytesPerPixel;
 		std::unique_ptr<uint8_t[]> pixels_buffer = std::make_unique<uint8_t[]>(pxArraySize);
 		file.read(reinterpret_cast<char*>(pixels_buffer.get()), pxArraySize * sizeof(uint8_t));
@@ -1427,7 +1393,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 		if (requiredDepthForDeserialization > atlasDepth)
 			ResizeTextureArray(requiredDepthForDeserialization);
 
-		UploadAtlasToGPU(cachedHeight, initialAtlasYForDeserialisedPass, pixels_buffer.get(), cachedPixelType);
+		UploadAtlasToGPU(cachedHeight, initialAtlasYForDeserialisedPass, pixels_buffer.get());
 
 		atlasCursor.y += cachedHeight + ATLAS_PADDING;
 
@@ -1879,12 +1845,12 @@ int FontManager::GetMinWidth(SableUI::_Text* text)
 	return std::max(maxWordWidth, currentWordWidth);
 }
 
-GLuint SableUI::GetAtlasTexture()
+void SableUI::BindTextAtlasTexture()
 {
 	if (!FontManager::GetInstance().isInitialized)
 		FontManager::GetInstance().Initialize();
 	
-	return FontManager::GetInstance().GetAtlasTexture();
+	return FontManager::GetInstance().BindTextAtlasTexture();
 }
 
 // ============================================================================

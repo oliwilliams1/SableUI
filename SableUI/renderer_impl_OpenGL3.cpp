@@ -225,20 +225,19 @@ void SableUI::RenderTarget::Bind() const
 }
 
 // ============================================================================
-// Texture
+// Texture2D
 // ============================================================================
-
-void GpuTexture::Bind() const
+void GpuTexture2D::Bind() const
 {
 	glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
-void GpuTexture::Unbind() const
+void GpuTexture2D::Unbind() const
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void GpuTexture::SetData(uint8_t* pixels, int width, int height, int channels)
+void GpuTexture2D::SetData(const uint8_t* pixels, int width, int height, int channels)
 {
 	if (m_textureID == 0)
 		glGenTextures(1, (GLuint*)&m_textureID);
@@ -278,7 +277,121 @@ void GpuTexture::SetData(uint8_t* pixels, int width, int height, int channels)
 	m_height = height;
 }
 
-GpuTexture::~GpuTexture()
+GpuTexture2D::~GpuTexture2D()
+{
+	glDeleteTextures(1, &m_textureID);
+}
+
+// ============================================================================
+// Texture2DArray
+// ============================================================================
+void GpuTexture2DArray::Bind() const
+{
+	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureID);
+}
+
+void GpuTexture2DArray::Unbind() const
+{
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+void SableUI::GpuTexture2DArray::Init(int width, int height, int depth)
+{
+	if (m_textureID == 0)
+		glGenTextures(1, &m_textureID);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureID);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, width, height, depth);
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+void SableUI::GpuTexture2DArray::Resize(int newDepth)
+{
+	if (newDepth <= m_depth)
+	{
+		SableUI_Warn("Trying to resize texture array to a smaller or same depth (old: %i, new: %i)",
+			m_depth, newDepth);
+		return;
+	}
+
+	GLuint newTextureArray = 0;
+	glGenTextures(1, &newTextureArray);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
+
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, m_width, m_height, newDepth);
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	/* copy old texture to new, with new depth */
+	GLuint oldAtlasTextureArray = m_textureID;
+	glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+		newTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+		m_width, m_height, m_depth);
+
+	glDeleteTextures(1, &oldAtlasTextureArray);
+	m_textureID = newTextureArray;
+	m_depth = newDepth;
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+void SableUI::GpuTexture2DArray::SubImage(int xOffset, int yOffset, int zOffset,
+	int width, int height, int depth, const uint8_t* pixels)
+{
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, xOffset, yOffset, zOffset,
+		width, height, depth, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+}
+
+void SableUI::GpuTexture2DArray::CopyImageSubData(const GpuTexture2DArray& src,
+	int srcX, int srcY, int srcZ, int dstX,
+	int dstY, int dstZ, int width, int height, int depth)
+{
+	glCopyImageSubData(src.m_textureID, GL_TEXTURE_2D_ARRAY, 0,
+		srcX, srcY, srcZ, m_textureID, GL_TEXTURE_2D_ARRAY, 0,\
+		dstX, dstY, dstZ, width, height, depth);
+}
+
+SableUI::GpuTexture2DArray::GpuTexture2DArray(GpuTexture2DArray&& other) noexcept
+	: m_textureID(other.m_textureID)
+	, m_width(other.m_width)
+	, m_height(other.m_height)
+	, m_depth(other.m_depth)
+{
+	other.m_textureID = 0;
+	other.m_width = 0;
+	other.m_height = 0;
+	other.m_depth = 0;
+}
+
+GpuTexture2DArray& SableUI::GpuTexture2DArray::operator=(GpuTexture2DArray&& other) noexcept
+{
+	if (this != &other)
+	{
+		if (m_textureID != 0)
+		{
+			glDeleteTextures(1, &m_textureID);
+		}
+
+		m_textureID = other.m_textureID;
+		m_width = other.m_width;
+		m_height = other.m_height;
+		m_depth = other.m_depth;
+
+		other.m_textureID = 0;
+		other.m_width = 0;
+		other.m_height = 0;
+		other.m_depth = 0;
+	}
+	return *this;
+}
+
+SableUI::GpuTexture2DArray::~GpuTexture2DArray()
 {
 	glDeleteTextures(1, &m_textureID);
 }

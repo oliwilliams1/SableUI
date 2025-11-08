@@ -24,7 +24,7 @@ using namespace SableUI;
 
 struct SableUI::CachedGpuTexture
 {
-    GpuTexture gpu;
+    GpuTexture2D gpu;
     int width = 0;
     int height = 0;
     bool inUse = true;
