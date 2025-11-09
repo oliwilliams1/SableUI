@@ -18,7 +18,7 @@ namespace SableUI
 
     struct BasePanel
     {
-        BasePanel(BasePanel* parent, sRenderer* renderer);
+        BasePanel(BasePanel* parent, RendererBackend* renderer);
         virtual ~BasePanel();
         static int GetNumInstances();
 
@@ -44,7 +44,7 @@ namespace SableUI
 
     protected:
         ivec2 mousePos = { 0, 0 };
-        sRenderer* m_renderer = nullptr;
+        RendererBackend* m_renderer = nullptr;
         SableUI::BasePanel* FindRoot();
 
         bool isFocused = true;
@@ -52,7 +52,7 @@ namespace SableUI
 
     struct RootPanel : public BasePanel
     {
-        RootPanel(sRenderer* renderer, int w, int h);
+        RootPanel(RendererBackend* renderer, int w, int h);
         ~RootPanel();
         static int GetNumInstances();
 
@@ -69,7 +69,7 @@ namespace SableUI
 
     struct SplitterPanel : public BasePanel
     {
-        SplitterPanel(BasePanel* parent, PanelType type, sRenderer* renderer);
+        SplitterPanel(BasePanel* parent, PanelType type, RendererBackend* renderer);
         ~SplitterPanel();
         static int GetNumInstances();
 
@@ -93,7 +93,7 @@ namespace SableUI
 
     struct ContentPanel : public BasePanel
     {
-        ContentPanel(BasePanel* parent, sRenderer* renderer);
+        ContentPanel(BasePanel* parent, RendererBackend* renderer);
         ~ContentPanel();
         static int GetNumInstances();
 

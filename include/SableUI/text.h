@@ -70,12 +70,12 @@ namespace SableUI
 		int GetUnwrappedHeight();
 
 		SableString m_content;
-		SableString m_actualContent;
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_fontSize = 0;
 		int m_maxWidth = 0;
 		int m_maxHeight = 0;
 		int m_lineSpacingPx = 0;
+		int m_cachedHeight = 0;
 		TextJustification m_justify = TextJustification::Left;
 
 		GLuint m_fontTextureID = 0;
@@ -112,6 +112,7 @@ namespace SableUI
 	class TextCache {
 	public:
 		static TextCache& GetInstance();
+		static int GetNumInstances();
 
 		CachedTextBuffer* Acquire(const TextCacheKey& key, _Text* text);
 		void Release(const TextCacheKey& key);

@@ -53,7 +53,7 @@ namespace SableUI
 		bool m_LayoutUpdated = true;
 
 	private:
-		sRenderer m_renderer;
+		RendererBackend* m_renderer = nullptr;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled);

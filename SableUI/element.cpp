@@ -38,13 +38,13 @@ SableUI::Element::Element()
     n_elements++;
 }
 
-SableUI::Element::Element(sRenderer* renderer, ElementType type)
+SableUI::Element::Element(RendererBackend* renderer, ElementType type)
 {
     n_elements++;
     Init(renderer, type);
 }
 
-void SableUI::Element::Init(sRenderer* renderer, ElementType type)
+void SableUI::Element::Init(RendererBackend* renderer, ElementType type)
 {
     this->renderer = renderer;
     this->type = type;

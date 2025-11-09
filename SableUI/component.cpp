@@ -37,7 +37,7 @@ void SableUI::BaseComponent::LayoutWrapper()
 	m_componentChildren.resize(m_childCount);
 }
 
-void SableUI::BaseComponent::BackendInitialisePanel(sRenderer* renderer)
+void SableUI::BaseComponent::BackendInitialisePanel(RendererBackend* renderer)
 {
 	if (rootElement) SB_delete(rootElement);
 

@@ -136,31 +136,33 @@ void SableUI::ElementTreeView::Layout()
 	if (memoryDebugger)
 	{
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Base Panels: " + std::to_string(BasePanel::GetNumInstances()));
-		Text("Root Panels: " + std::to_string(RootPanel::GetNumInstances()));
-		Text("Splitter Panels: " + std::to_string(SplitterPanel::GetNumInstances()));
-		Text("Content Panels: " + std::to_string(ContentPanel::GetNumInstances()));
+		Text("Base Panels: "		+ std::to_string(BasePanel::GetNumInstances()));
+		Text("Root Panels: "		+ std::to_string(RootPanel::GetNumInstances()));
+		Text("Splitter Panels: "	+ std::to_string(SplitterPanel::GetNumInstances()));
+		Text("Content Panels: "		+ std::to_string(ContentPanel::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Components: " + std::to_string(BaseComponent::GetNumInstances()));
-		Text("Elements: " + std::to_string(Element::GetNumInstances()));
-		Text("Virtual Elements: " + std::to_string(VirtualNode::GetNumInstances()));
+		Text("Components: "			+ std::to_string(BaseComponent::GetNumInstances()));
+		Text("Elements: "			+ std::to_string(Element::GetNumInstances()));
+		Text("Virtual Elements: "	+ std::to_string(VirtualNode::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Drawable Base: " + std::to_string(DrawableBase::GetNumInstances()));
-		Text("Drawable Text: " + std::to_string(DrawableText::GetNumInstances()));
-		Text("Drawable Rect: " + std::to_string(DrawableRect::GetNumInstances()));
-		Text("Drawable Splitter: " + std::to_string(DrawableSplitter::GetNumInstances()));
-		Text("Drawable Image: " + std::to_string(DrawableImage::GetNumInstances()));
+		Text("Drawable Base: "		+ std::to_string(DrawableBase::GetNumInstances()));
+		Text("Drawable Text: "		+ std::to_string(DrawableText::GetNumInstances()));
+		Text("Drawable Rect: "		+ std::to_string(DrawableRect::GetNumInstances()));
+		Text("Drawable Splitter: "	+ std::to_string(DrawableSplitter::GetNumInstances()));
+		Text("Drawable Image: "		+ std::to_string(DrawableImage::GetNumInstances()));
+		Text("GPU Objects: "		+ std::to_string(GpuObject::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Text: " + std::to_string(_Text::GetNumInstances()));
-		Text("Textures: " + std::to_string(Texture::GetNumInstances()));
-		Text("Strings: " + std::to_string(String::GetNumInstances()));
+		Text("Text: "				+ std::to_string(_Text::GetNumInstances()));
+		Text("Textures: "			+ std::to_string(Texture::GetNumInstances()));
+		Text("Strings: "			+ std::to_string(String::GetNumInstances()));
+		Text("Text Cache: "			+ std::to_string(TextCache::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Font Packs: " + std::to_string(FontPack::GetNumInstances()));
-		Text("Font Ranges: " + std::to_string(FontRange::GetNumInstances()));
+		Text("Font Packs: "			+ std::to_string(FontPack::GetNumInstances()));
+		Text("Font Ranges: "		+ std::to_string(FontRange::GetNumInstances()));
 	}
 
 	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));

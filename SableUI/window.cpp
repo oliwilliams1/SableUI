@@ -130,9 +130,9 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	}
 
 	instance->m_windowSize = ivec2(width, height);
-	instance->m_renderer.Viewport(0, 0, width, height);
+	instance->m_renderer->Viewport(0, 0, width, height);
 
-	instance->m_renderer.m_renderTarget.Resize(width, height);
+	instance->m_renderer->m_renderTarget.Resize(width, height);
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
@@ -173,33 +173,16 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
-	if (primary == nullptr)
-	{
-		switch (backend)
-		{
-		case Backend::OpenGL:
-		{
-			m_renderer.InitOpenGL();
-			break;
-		}
-		case Backend::Vulkan:
-		{
-			SableUI_Runtime_Error("Vulkan backend is not implemented");
-			break;
-		}
-		default:
-			SableUI_Runtime_Error("unknown backend");
-		}
-	}
+	m_renderer = RendererBackend::Create(backend);
 
-	m_renderer.SetBlending(true);
-	m_renderer.SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-	m_renderer.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	m_renderer->SetBlending(true);
+	m_renderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	m_renderer.Flush();
+	m_renderer->Flush();
 
-	m_renderer.m_renderTarget.SetTarget(RenderTargetType::Window);
-	m_renderer.m_renderTarget.Resize(m_windowSize.x, m_windowSize.y);
+	m_renderer->m_renderTarget.SetTarget(RenderTargetType::Window);
+	m_renderer->m_renderTarget.Resize(m_windowSize.x, m_windowSize.y);
 
 	if (m_root != nullptr)
 	{
@@ -215,7 +198,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 
-	m_root = SB_new<SableUI::RootPanel>(&m_renderer, width, height);
+	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
 }
 
 void SableUI::Window::HandleResize()
@@ -249,7 +232,7 @@ void SableUI::Window::HandleResize()
 		if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		{
 			m_resizing = false;
-			m_renderer.ClearDrawableStack();
+			m_renderer->ClearDrawableStack();
 			RecalculateNodes();
 			RerenderAllNodes();
 		}
@@ -331,7 +314,7 @@ bool SableUI::Window::PollEvents()
 void SableUI::Window::Draw()
 {
 	glfwMakeContextCurrent(m_window);
-	m_renderer.CheckErrors();
+	m_renderer->CheckErrors();
 
 #ifdef _WIN32
 	MSG msg;
@@ -347,7 +330,7 @@ void SableUI::Window::Draw()
 #endif
 
 	/* flush drawable stack & render to screen */
-	m_renderer.Draw();
+	m_renderer->Draw();
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -357,9 +340,9 @@ SableUI::RootPanel* SableUI::Window::GetRoot()
 
 void SableUI::Window::RerenderAllNodes()
 {
-	m_renderer.ClearDrawableStack();
+	m_renderer->ClearDrawableStack();
 
-	m_renderer.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
 	m_root->Render();
 
@@ -625,7 +608,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	}
 
 	// Clear accumulated draw calls from resize steps
-	m_renderer.ClearDrawableStack();
+	m_renderer->ClearDrawableStack();
 	m_root->Recalculate();
 
 	oldPos = pos;
@@ -634,9 +617,10 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 SableUI::Window::~Window()
 {
 	glfwMakeContextCurrent(m_window);
-
 	SB_delete(m_root);
 	DestroyDrawables();
+
+	SB_delete(m_renderer);
 	glfwDestroyWindow(m_window);
 }
 

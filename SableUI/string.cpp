@@ -196,3 +196,20 @@ String::operator std::string() const
 	}
 	return result;
 }
+
+void SableUI::String::push_back(char32_t c)
+{
+	char32_t* newData = new char32_t[m_size + 2];
+
+	if (m_data)
+		std::copy(m_data, m_data + m_size, newData);
+
+	newData[m_size] = c;
+
+	newData[m_size + 1] = U'\0';
+
+	delete[] m_data;
+
+	m_data = newData;
+	m_size += 1;
+}

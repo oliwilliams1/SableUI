@@ -78,19 +78,30 @@ public:
 	void Layout() override
 	{
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setText(U"unicode test ⟡ ↀ 안녕하세요, 제 이름은 오리 입니다. 저 는 열일곱 살 입니다. 저는 뉴젠스 좋압니다."); })
-			onHoverExit([&]() { setText(U"lorem " + SableString(U"ipsum").bold()); }));
+			onHover([&]() { setState(false); })
+			onHoverExit([&]() { setState(true); }));
 
-		Div(ID("text parent") bg(80, 0, 0) h_fit p(5))
+		if (state)
 		{
-			TextU32(text, minW(100) justify_center maxH(20));
+			Div(ID("text parent") bg(80, 0, 0) h_fit p(5))
+			{
+				TextU32("lorem ipsum", minW(100) justify_center maxH(20));
+			}
+		}
+		else
+		{
+			Div(w_fill h_fill bg(128, 128, 255) p(5))
+			{
+				Rect(w(10) h(10) centerXY bg(0, 255, 0));
+			}
+			Image(m_path, w(width) h(height) centerXY);
 		}
 	}
 
 private:
 	std::string m_path;
 	int width, height;
-	useState(text, setText, SableString, U"lorem " + SableString(U"ipsum").bold());
+	useState(state, setState, bool, true);
 };
 
 class ConsoleView : public SableUI::BaseComponent

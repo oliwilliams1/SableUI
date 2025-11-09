@@ -15,15 +15,15 @@ namespace SableUI
 		UNDEF = 0xFF
 	};
 
+	struct GpuObject;
 	struct ContextResources {
-		GLuint rectVAO = 0;
-		GLuint rectVBO = 0;
-		GLuint rectEBO = 0;
+		GpuObject* rectObject = nullptr;
 	};
 
 	void InitDrawables();
 	void DestroyDrawables();
-	ContextResources& GetContextResources();
+	class RendererBackend;
+	ContextResources& GetContextResources(RendererBackend* backend);
 
 	struct RenderTarget;
 	class DrawableBase

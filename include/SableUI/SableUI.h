@@ -18,7 +18,7 @@ namespace SableUI
 	bool PollEvents();
 	void Render();
 
-	void SetElementBuilderContext(sRenderer* renderer, Element* rootElement, bool isVirtual);
+	void SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual);
 	void SetContext(Window* window);
 	Element* GetCurrentElement();
 	VirtualNode* GetVirtualRootNode();

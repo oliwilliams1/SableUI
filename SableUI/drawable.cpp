@@ -7,18 +7,20 @@
 #include "SableUI/generated/shaders.h"
 #include "SableUI/renderer.h"
 
+using namespace SableUI;
+
 /* rect globals - now per-context */
 static std::map<void*, SableUI::ContextResources> g_contextResources;
 
 /* shared resources*/
 static GLuint g_shaderProgram = 0;
-static SableUI::Shader g_rShader;
+static Shader g_rShader;
 static GLuint g_rUColourLoc = 0;
 static GLuint g_rURectLoc = 0;
 static GLuint g_rUTexBoolLoc = 0;
 
 /* text globals */
-static SableUI::Shader g_tShader;
+static Shader g_tShader;
 static GLuint g_tTargetSizeLoc = 0;
 static GLuint g_tPosLoc = 0;
 static GLuint g_tAtlasLoc = 0;
@@ -36,7 +38,7 @@ Vertex rectVertices[] = {
 
 unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
-static GLuint GetUniformLocation(SableUI::Shader shader, const char* uniformName)
+static GLuint GetUniformLocation(Shader shader, const char* uniformName)
 {
     shader.Use();
     GLuint location = glGetUniformLocation(shader.m_shaderProgram, uniformName);
@@ -47,9 +49,9 @@ static GLuint GetUniformLocation(SableUI::Shader shader, const char* uniformName
     return location;
 }
 
-SableUI::ContextResources& SableUI::GetContextResources()
+ContextResources& SableUI::GetContextResources(RendererBackend* backend)
 {
-    void* ctx = SableUI::GetCurrentContext();
+    void* ctx = GetCurrentContext();
 
     auto it = g_contextResources.find(ctx);
     if (it != g_contextResources.end())
@@ -57,24 +59,17 @@ SableUI::ContextResources& SableUI::GetContextResources()
         return it->second;
     }
 
-    SableUI::ContextResources& resources = g_contextResources[ctx];
+    ContextResources& resources = g_contextResources[ctx];
 
-    glGenVertexArrays(1, &resources.rectVAO);
-    glGenBuffers(1, &resources.rectVBO);
-    glGenBuffers(1, &resources.rectEBO);
-
-    glBindVertexArray(resources.rectVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, resources.rectVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(rectVertices), rectVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resources.rectEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
+    VertexLayout layout;
+    layout.Add(0, VertexFormat::Float2);
+    resources.rectObject = backend->CreateGpuObject(
+        rectVertices, 
+        sizeof(rectVertices) / sizeof(Vertex),
+        indices, 
+        sizeof(indices) / sizeof(unsigned int), 
+        layout
+    );
 
     return resources;
 }
@@ -99,8 +94,6 @@ void SableUI::InitDrawables()
 
         shadersInitialized = true;
     }
-
-    GetContextResources();
 }
 
 void SableUI::DestroyDrawables()
@@ -110,9 +103,7 @@ void SableUI::DestroyDrawables()
     auto it = g_contextResources.find(ctx);
     if (it != g_contextResources.end())
     {
-        glDeleteVertexArrays(1, &it->second.rectVAO);
-        glDeleteBuffers(1, &it->second.rectVBO);
-        glDeleteBuffers(1, &it->second.rectEBO);
+        SableMemory::SB_delete(it->second.rectObject);
 
         g_contextResources.erase(it);
     }
@@ -123,23 +114,23 @@ void SableUI::DestroyDrawables()
 // ============================================================================
 static int s_drawableBaseCount = 0;
 
-SableUI::DrawableBase::DrawableBase()
+DrawableBase::DrawableBase()
 {
     s_drawableBaseCount++;
     this->uuid = GetUUID();
 }
 
-SableUI::DrawableBase::~DrawableBase()
+DrawableBase::~DrawableBase()
 {
     s_drawableBaseCount--;
 }
 
-int SableUI::DrawableBase::GetNumInstances()
+int DrawableBase::GetNumInstances()
 {
     return s_drawableBaseCount;
 }
 
-unsigned int SableUI::DrawableBase::GetUUID()
+unsigned int DrawableBase::GetUUID()
 {
     static unsigned int s_nextUUID = 0;
     return s_nextUUID++;
@@ -150,13 +141,13 @@ unsigned int SableUI::DrawableBase::GetUUID()
 // ============================================================================
 static int s_drawableRectCount = 0;
 
-SableUI::DrawableRect::DrawableRect()
+DrawableRect::DrawableRect()
 {
     s_drawableRectCount++;
     this->m_zIndex = 0;
 }
 
-SableUI::DrawableRect::DrawableRect(SableUI::Rect& r, SableUI::Colour colour)
+DrawableRect::DrawableRect(Rect& r, Colour colour)
     : m_colour(colour)
 {
     s_drawableRectCount++;
@@ -164,23 +155,23 @@ SableUI::DrawableRect::DrawableRect(SableUI::Rect& r, SableUI::Colour colour)
     this->m_zIndex = 0;
 }
 
-SableUI::DrawableRect::~DrawableRect()
+DrawableRect::~DrawableRect()
 {
     s_drawableRectCount--;
 }
 
-int SableUI::DrawableRect::GetNumInstances()
+int DrawableRect::GetNumInstances()
 {
     return s_drawableRectCount;
 }
 
-void SableUI::DrawableRect::Update(SableUI::Rect& rect, SableUI::Colour colour, float pBSize)
+void DrawableRect::Update(Rect& rect, Colour colour, float pBSize)
 {
     this->m_rect = rect;
     this->m_colour = colour;
 }
 
-void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture, SableUI::ContextResources& res)
+void DrawableRect::Draw(RenderTarget* texture, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(texture->width));
@@ -206,8 +197,7 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture, SableUI::Contex
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
-    glBindVertexArray(res.rectVAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    res.rectObject->Draw();
 }
 
 // ============================================================================
@@ -215,13 +205,13 @@ void SableUI::DrawableRect::Draw(SableUI::RenderTarget* texture, SableUI::Contex
 // ============================================================================
 static int s_drawableSplitterCount = 0;
 
-SableUI::DrawableSplitter::DrawableSplitter()
+DrawableSplitter::DrawableSplitter()
 {
     s_drawableSplitterCount++;
     this->m_zIndex = 1;
 }
 
-SableUI::DrawableSplitter::DrawableSplitter(SableUI::Rect& r, SableUI::Colour colour)
+DrawableSplitter::DrawableSplitter(Rect& r, Colour colour)
     : m_colour(colour)
 {
     s_drawableSplitterCount++;
@@ -229,18 +219,18 @@ SableUI::DrawableSplitter::DrawableSplitter(SableUI::Rect& r, SableUI::Colour co
     this->m_rect = r;
 }
 
-SableUI::DrawableSplitter::~DrawableSplitter()
+DrawableSplitter::~DrawableSplitter()
 {
     s_drawableSplitterCount--;
     m_offsets.clear();
 }
 
-int SableUI::DrawableSplitter::GetNumInstances()
+int DrawableSplitter::GetNumInstances()
 {
     return s_drawableSplitterCount;
 }
 
-void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colour, SableUI::PanelType type,
+void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
     float pBSize, const std::vector<int>& segments)
 {
     this->m_rect = rect;
@@ -250,7 +240,7 @@ void SableUI::DrawableSplitter::Update(SableUI::Rect& rect, SableUI::Colour colo
     this->m_offsets = segments;
 }
 
-void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture, ContextResources& res)
+void DrawableSplitter::Draw(RenderTarget* texture, ContextResources& res)
 {
 
 }
@@ -260,23 +250,23 @@ void SableUI::DrawableSplitter::Draw(SableUI::RenderTarget* texture, ContextReso
 // ============================================================================
 static int s_drawableImageCount = 0;
 
-SableUI::DrawableImage::DrawableImage()
+DrawableImage::DrawableImage()
 {
     s_drawableImageCount++;
     this->m_zIndex = 0;
 }
 
-SableUI::DrawableImage::~DrawableImage()
+DrawableImage::~DrawableImage()
 {
     s_drawableImageCount--;
 }
 
-int SableUI::DrawableImage::GetNumInstances()
+int DrawableImage::GetNumInstances()
 {
     return s_drawableImageCount;
 }
 
-void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
+void DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(renderTarget->width));
@@ -303,8 +293,7 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextRe
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform1i(g_rUTexBoolLoc, 1);
-    glBindVertexArray(res.rectVAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    res.rectObject->Draw();
 }
 
 // ============================================================================
@@ -312,23 +301,23 @@ void SableUI::DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextRe
 // ============================================================================
 static int s_drawableTextCount = 0;
 
-SableUI::DrawableText::DrawableText()
+DrawableText::DrawableText()
 {
     s_drawableTextCount++;
     this->m_zIndex = 0;
 }
 
-SableUI::DrawableText::~DrawableText()
+DrawableText::~DrawableText()
 {
     s_drawableTextCount--;
 }
 
-int SableUI::DrawableText::GetNumInstances()
+int DrawableText::GetNumInstances()
 {
     return s_drawableTextCount;
 }
 
-void SableUI::DrawableText::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
+void DrawableText::Draw(RenderTarget* renderTarget, ContextResources& res)
 {
     g_tShader.Use();
     glBindVertexArray(m_text.m_VAO);

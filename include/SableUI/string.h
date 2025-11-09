@@ -54,6 +54,7 @@ namespace SableUI
 
 		using iterator = char32_t*;
 		using const_iterator = const char32_t*;
+		void push_back(char32_t);
 
 		iterator begin() noexcept { return m_data; }
 		iterator end() noexcept { return m_data + m_size; }

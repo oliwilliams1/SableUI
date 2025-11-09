@@ -142,7 +142,7 @@ namespace SableUI
 	{
 	public:
 		Element();
-		Element(sRenderer* renderer, ElementType type);
+		Element(RendererBackend* renderer, ElementType type);
 		~Element();
 
 		static int GetNumInstances();
@@ -150,7 +150,7 @@ namespace SableUI
 		ElementType type = ElementType::UNDEF;
 		
 		// functions for engine
-		void Init(sRenderer* renderer, ElementType type);
+		void Init(RendererBackend* renderer, ElementType type);
 		void SetInfo(const ElementInfo& info);
 		void SetRect(const Rect& rect);
 		void AddChild(Element* child);
@@ -264,7 +264,7 @@ namespace SableUI
 	private:
 		bool isHovered = false;
 		DrawableBase* drawable = nullptr;
-		sRenderer* renderer = nullptr;
+		RendererBackend* renderer = nullptr;
 	};
 
 	struct Child

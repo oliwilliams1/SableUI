@@ -1,5 +1,6 @@
 #pragma once
 #include "SableUI/drawable.h"
+#include <algorithm>
 
 namespace SableUI
 {
@@ -30,8 +31,67 @@ namespace SableUI
 		void Update() const;
 	};
 
+	// Object
+	enum class VertexFormat : uint16_t
+	{
+		Float1,
+		Float2,
+		Float3,
+		Float4,
+		UInt8_4,
+		UInt16_2,
+		UInt16_4
+	};
+
+	constexpr uint32_t FormatSize(VertexFormat format)
+	{
+		switch (format)
+		{
+		case VertexFormat::Float1: return 4;
+		case VertexFormat::Float2: return 8;
+		case VertexFormat::Float3: return 12;
+		case VertexFormat::Float4: return 16;
+		case VertexFormat::UInt8_4: return 4;
+		case VertexFormat::UInt16_2: return 4;
+		case VertexFormat::UInt16_4: return 8;
+		}
+		return 0;
+	}
+
+	struct VertexAttribute
+	{
+		uint16_t offset;
+		VertexFormat format;
+	};
+
+	struct VertexLayout
+	{
+		std::vector<VertexAttribute> attributes;
+		uint32_t stride = 0;
+
+		void Add(uint16_t offset, VertexFormat format)
+		{
+			attributes.push_back({ offset, format });
+			stride = std::max(stride, offset + FormatSize(format));
+		}
+	};
+
+	class RendererBackend;
+	struct GpuObject
+	{
+		static int GetNumInstances();
+		~GpuObject();
+		RendererBackend* m_context = nullptr;
+		uint32_t m_handle;
+		uint32_t numVertices;
+		uint32_t numIndices;
+		VertexLayout layout;
+
+		void Draw() const;
+	};
+
 	// Renderer
-	enum class Backend { UNDEF, OpenGL, Vulkan };
+	enum class Backend { UNDEF, OpenGL, Vulkan, DirectX, Metal };
 
 	enum class BlendFactor
 	{
@@ -52,38 +112,43 @@ namespace SableUI
 		SrcAlphaSaturate
 	};
 
-	struct RenderTarget;
-	class sRenderer
+	class RendererBackend
 	{
 	public:
-		~sRenderer() = default;
-		void InitOpenGL();
+		static RendererBackend* Create(Backend backend);
+		~RendererBackend() = default;
+		virtual void Initalise() = 0;
+		virtual void Clear(float r, float g, float b, float a) = 0;
+		virtual void Viewport(int x, int y, int width, int height) = 0;
+		virtual void SetBlending(bool enabled) = 0;
+		virtual void SetBlendFunction(BlendFactor src, BlendFactor dst) = 0;
+		virtual void Flush() = 0;
+		virtual void CheckErrors() = 0;
+		
+		virtual void ClearDrawableStack() = 0;
+		virtual void ClearDrawable(const DrawableBase* drawable) = 0;
+		virtual void Draw(DrawableBase* drawable) = 0;
+		virtual void Draw() = 0;
+		virtual void Draw(const GpuObject* obj) = 0;
+		virtual void StartDirectDraw() = 0;
+		virtual void DirectDrawRect(const Rect& rect, const Colour& color) = 0;
+		virtual void EndDirectDraw() = 0;
 
-		void Clear(float r, float g, float b, float a);
-		void Viewport(int x, int y, int width, int height);
-		void SetBlending(bool enabled);
-		void SetBlendFunction(BlendFactor src, BlendFactor dst);
-		void Flush();
-
-		void CheckErrors();
-
-	public:
-		void ClearDrawableStack();
-		void ClearDrawable(DrawableBase* drawable);
-
-		void Draw(DrawableBase* drawable);
-		void Draw();
-
-		void StartDirectDraw();
-		void DirectDrawRect(const Rect& rect, const Colour& color);
-		void EndDirectDraw();
+		virtual GpuObject* CreateGpuObject(
+			const void* vertices, uint32_t numVertices,
+			const uint32_t* indices, uint32_t numIndices,
+			const VertexLayout& layout) = 0;
+		virtual void DestroyGpuObject(GpuObject* obj) = 0;
 
 		RenderTarget m_renderTarget;
 	
-	private:
+	protected:
+		uint32_t AllocateHandle();
+		void FreeHandle(uint32_t handle);
+		uint32_t m_nextHandle = 0;
+		std::vector<uint32_t> m_freeHandles;
 		Backend m_backend = Backend::UNDEF;
 
-	private:
 		bool m_directDraw = false;
 		std::vector<DrawableBase*> m_drawStack;
 	};
@@ -126,16 +191,19 @@ namespace SableUI
 		int m_width = 0, m_height = 0, m_depth = 0;
 	};
 
-	struct GpuObject
+	inline uint32_t RendererBackend::AllocateHandle()
 	{
-	public:
-		GpuObject();
-		~GpuObject();
+		if (!m_freeHandles.empty())
+		{
+			uint32_t handle = m_freeHandles.back();
+			m_freeHandles.pop_back();
+			return handle;
+		}
+		return m_nextHandle++;
+	}
 
-	private:
-		uint32_t m_VAO;
-		uint32_t m_VBO;
-		uint32_t m_EBO;
-		uint32_t indicesSize;
-	};
+	inline void RendererBackend::FreeHandle(uint32_t handle)
+	{
+		m_freeHandles.push_back(handle);
+	}
 }

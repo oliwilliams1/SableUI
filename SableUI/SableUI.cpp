@@ -156,9 +156,9 @@ SableUI::ContentPanel* SableUI::AddPanel()
 // Real Element Builder
 // ============================================================================
 static std::stack<SableUI::Element*> s_elementStack;
-static SableUI::sRenderer* s_elementRenderer = nullptr;
+static SableUI::RendererBackend* s_elementRenderer = nullptr;
 
-void SableUI::SetElementBuilderContext(sRenderer* renderer, Element* rootElement, bool isVirtual)
+void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual)
 {
 	s_reconciliationMode = isVirtual;
 
