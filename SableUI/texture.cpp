@@ -82,7 +82,7 @@ Texture::~Texture()
     if (m_cachedGpu)
     {
         m_cachedGpu->inUse = false;
-        m_cachedGpu->lastUsed = std::chrono::high_resolution_clock::now();
+        m_cachedGpu->lastUsed = std::chrono::steady_clock::now();
     }
     s_numTextures--;
 }
@@ -152,7 +152,7 @@ void Texture::LoadTextureOptimised(const std::string& path, int width, int heigh
     {
         m_cachedGpu = it->second;
         m_cachedGpu->inUse = true;
-        m_cachedGpu->lastUsed = std::chrono::high_resolution_clock::now();
+        m_cachedGpu->lastUsed = std::chrono::steady_clock::now();
         m_width = m_cachedGpu->width;
         m_height = m_cachedGpu->height;
         return;
@@ -247,7 +247,7 @@ void Texture::LoadTextureOptimised(const std::string& path, int width, int heigh
     tex->gpu.SetData(finalPixels, loadedWidth, loadedHeight, targetChannels);
     tex->width = loadedWidth;
     tex->height = loadedHeight;
-    tex->lastUsed = std::chrono::high_resolution_clock::now();
+    tex->lastUsed = std::chrono::steady_clock::now();
 
     textureCache[hash] = tex;
     m_cachedGpu = tex;
@@ -294,7 +294,7 @@ void SableUI::StepCachedTexturesCleaner()
     if (iterations++ < 500) return;
     iterations = 0;
 
-    auto now = std::chrono::high_resolution_clock::now();
+    auto now = std::chrono::steady_clock::now();
     std::vector<ImageHash> toDelete;
 
     for (auto& [hash, tex] : textureCache)

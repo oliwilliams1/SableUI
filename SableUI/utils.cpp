@@ -1,6 +1,7 @@
 #include "SableUI/utils.h"
 #include <algorithm>
 #include <sstream>
+#include <cstring>
 
 bool SableUI::RectBoundingBox(Rect r, ivec2 p)
 {

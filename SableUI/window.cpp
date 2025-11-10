@@ -139,6 +139,19 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->m_needsStaticRedraw = true;
 }
 
+void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
+{
+	glfwMakeContextCurrent(window);
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance)
+	{
+		SableUI_Runtime_Error("Could not get window instance");
+		return;
+	}
+
+	instance->m_needsRefresh = true;
+}
+
 // ============================================================================
 // Window
 // ============================================================================
@@ -197,6 +210,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetCursorPosCallback(m_window, MousePosCallback);
 	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
+	glfwSetWindowRefreshCallback(m_window, WindowRefreshCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
 }
@@ -290,6 +304,14 @@ bool SableUI::Window::PollEvents()
 {
 	glfwMakeContextCurrent(m_window);
 	glfwPollEvents();
+
+	if (m_needsRefresh)
+	{
+		RecalculateNodes();
+		RerenderAllNodes();
+		m_needsStaticRedraw = true;
+		m_needsRefresh = false;
+	}
 
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();

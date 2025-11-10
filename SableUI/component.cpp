@@ -1,6 +1,7 @@
 #include "SableUI/component.h"
 #include "SableUI/SableUI.h"
 #include "SableUI/memory.h"
+#include <cstring>
 
 using namespace SableMemory;
 

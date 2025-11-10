@@ -87,8 +87,12 @@ static GLenum BlendFactorToOpenGLEnum(BlendFactor factor)
 	}
 }
 
+bool glewInitalised = false;
 void OpenGL3Backend::Initalise()
 {
+	if (glewInitalised)
+		return;
+
 	SableUI_Log("Using OpenGL backend");
 
 	// init after window is cleared

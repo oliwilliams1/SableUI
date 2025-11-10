@@ -3,6 +3,7 @@
 #include "SableUI/memory.h"
 #include <stack>
 #include <thread>
+#include <cstring>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;

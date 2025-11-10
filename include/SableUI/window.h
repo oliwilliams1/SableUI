@@ -42,6 +42,7 @@ namespace SableUI
 		bool PollEvents();
 		void Draw();
 		bool m_needsStaticRedraw = false;
+		bool m_needsRefresh = false;
 
 		RootPanel* GetRoot();
 
@@ -50,7 +51,6 @@ namespace SableUI
 
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
-		bool m_LayoutUpdated = true;
 
 	private:
 		RendererBackend* m_renderer = nullptr;
@@ -67,6 +67,7 @@ namespace SableUI
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
+		static void WindowRefreshCallback(GLFWwindow* window);
 
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;

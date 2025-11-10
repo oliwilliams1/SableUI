@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cstring>
 
 #include "SableUI/shader.h"
 #include "SableUI/console.h"

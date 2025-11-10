@@ -12,6 +12,7 @@
 #include <tuple>
 #include <utility>
 #include <string>
+#include <cstring>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -21,8 +22,6 @@
 #define SABLEUI_SUBSYSTEM "Text"
 #include "SableUI/console.h"
 #include "SableUI/window.h"
-
-#include <corecrt.h>
 
 constexpr int ATLAS_WIDTH = 512;
 constexpr int ATLAS_HEIGHT = 512;
@@ -567,7 +566,7 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 	charcode = FT_Get_First_Char(face, &glyphIndex);
 	if (glyphIndex != 0)
 	{
-		SableUI::FontRange currentRange = { charcode, charcode, fontPathStr };
+		SableUI::FontRange currentRange = { (char32_t)charcode, (char32_t)charcode, fontPathStr };
 		char32_t previousChar = charcode;
 		int contiguousCount = 1;
 
@@ -585,10 +584,10 @@ bool FontManager::LoadFontPackByFilename(const std::string& fontDir, const std::
 				else
 				{
 					newPack.fontRanges.push_back(currentRange);
-					currentRange = { charcode, charcode, fontPathStr };
+					currentRange = { (char32_t)charcode, (char32_t)charcode, fontPathStr };
 					contiguousCount = 1;
 				}
-				previousChar = charcode;
+				previousChar = (char32_t)charcode;
 			}
 		}
 		newPack.fontRanges.push_back(currentRange);

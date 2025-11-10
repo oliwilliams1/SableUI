@@ -166,7 +166,7 @@ int main(int argc, char** argv)
 					HSplitter()
 					{
 						PanelWith(TestComponent, 80);
-						PanelWith(ImageView, "3.png", 128, 128);
+						PanelWith(ImageView, "3.jpg", 128, 128);
 					}
 				}
 			}

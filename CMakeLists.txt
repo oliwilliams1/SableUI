@@ -98,4 +98,8 @@ target_link_libraries(SableUI PRIVATE
 	webp
 )
 
+if(UNIX)
+	target_link_libraries(SableUI PRIVATE GL)
+endif()
+
 target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/include/SableUI/generated")
