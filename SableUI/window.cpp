@@ -307,9 +307,9 @@ bool SableUI::Window::PollEvents()
 
 	if (m_needsRefresh)
 	{
+		m_renderer->ClearDrawableStack();
 		RecalculateNodes();
 		RerenderAllNodes();
-		m_needsStaticRedraw = true;
 		m_needsRefresh = false;
 	}
 

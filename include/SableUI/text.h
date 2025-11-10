@@ -106,6 +106,7 @@ namespace SableUI
 		uint32_t indicesSize;
 		int height;
 		int minWidthNeeded;
+		int actualRenderedWidth;
 		int refCount;
 		void* context = nullptr;
 		std::chrono::steady_clock::time_point lastUsed;

@@ -2015,6 +2015,7 @@ SableUI::CachedTextBuffer* SableUI::TextCache::CreateBuffer(const TextCacheKey& 
 	buffer.indicesSize = text->indiciesSize;
 
 	buffer.minWidthNeeded = text->m_actualWrappedWidth;
+	buffer.actualRenderedWidth = std::min(text->m_maxWidth, text->m_actualWrappedWidth);
 
 	buffer.refCount = 1;
 	buffer.lastUsed = std::chrono::steady_clock::now();
@@ -2148,46 +2149,62 @@ int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSiz
 	uint64_t newContentHash = TextCache::HashString(str);
 	int newLineSpacingPx = static_cast<int>(fontSize * lineSpacing);
 
+	CachedTextBuffer* bestMatch = nullptr;
+	TextCacheKey bestKey;
+	int smallestWidth = INT_MAX;
+
 	for (const auto& [key, buffer] : TextCache::GetInstance().m_cache)
 	{
 		if (key.contentHash == newContentHash &&
 			key.fontSize == fontSize &&
 			key.maxHeight == maxHeight &&
 			key.lineSpacingPx == newLineSpacingPx &&
-			key.justify == justification &&
-			maxWidth >= buffer.minWidthNeeded)
+			key.justify == justification)
 		{
-			if (m_hasCachedBuffer && !(m_cacheKey == key))
-			{
-				ReleaseCache();
-			}
+			bool fitsOurWidth = (maxWidth >= buffer.actualRenderedWidth);
+			bool layoutFits = (buffer.minWidthNeeded <= maxWidth);
 
-			m_content = str;
-			m_fontSize = fontSize;
-			m_maxWidth = maxWidth;
-			m_maxHeight = maxHeight;
-			m_lineSpacingPx = newLineSpacingPx;
-			m_justify = justification;
-			m_cacheKey = key;
-
-			CachedTextBuffer* cachedBuffer = TextCache::GetInstance().Acquire(key, this);
-			if (cachedBuffer)
+			if (fitsOurWidth && layoutFits && buffer.actualRenderedWidth < smallestWidth)
 			{
-				m_VAO = cachedBuffer->VAO;
-				m_VBO = cachedBuffer->VBO;
-				m_EBO = cachedBuffer->EBO;
-				indiciesSize = cachedBuffer->indicesSize;
-				m_cachedHeight = cachedBuffer->height;
-				m_hasCachedBuffer = true;
-				return cachedBuffer->height;
+				bestMatch = const_cast<CachedTextBuffer*>(&buffer);
+				bestKey = key;
+				smallestWidth = buffer.actualRenderedWidth;
 			}
 		}
 	}
 
-	if (m_hasCachedBuffer)
+	if (bestMatch != nullptr)
 	{
-		ReleaseCache();
+		if (m_hasCachedBuffer && !(m_cacheKey == bestKey))
+			ReleaseCache();
+
+		m_content = str;
+		m_fontSize = fontSize;
+		m_maxWidth = maxWidth;
+		m_maxHeight = maxHeight;
+		m_lineSpacingPx = newLineSpacingPx;
+		m_justify = justification;
+		m_cacheKey = bestKey;
+
+		if (!m_hasCachedBuffer)
+		{
+			bestMatch = TextCache::GetInstance().Acquire(bestKey, this);
+		}
+
+		if (bestMatch)
+		{
+			m_VAO = bestMatch->VAO;
+			m_VBO = bestMatch->VBO;
+			m_EBO = bestMatch->EBO;
+			indiciesSize = bestMatch->indicesSize;
+			m_cachedHeight = bestMatch->height;
+			m_hasCachedBuffer = true;
+			return bestMatch->height;
+		}
 	}
+
+	if (m_hasCachedBuffer)
+		ReleaseCache();
 
 	m_content = str;
 	m_fontSize = fontSize;
@@ -2227,34 +2244,54 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 	if (m_maxWidth == maxWidth)
 		return m_cachedHeight;
 
+	CachedTextBuffer* bestMatch = nullptr;
+	TextCacheKey bestKey;
+	int smallestWidth = INT_MAX;
+
 	for (const auto& [key, buffer] : TextCache::GetInstance().m_cache)
 	{
 		if (key.contentHash == TextCache::HashString(m_content) &&
 			key.fontSize == m_fontSize &&
 			key.maxHeight == m_maxHeight &&
 			key.lineSpacingPx == m_lineSpacingPx &&
-			key.justify == m_justify &&
-			maxWidth >= buffer.minWidthNeeded)
+			key.justify == m_justify)
 		{
-			if (m_hasCachedBuffer && !(m_cacheKey == key))
-			{
-				ReleaseCache();
-			}
+			bool fitsOurWidth = (maxWidth >= buffer.actualRenderedWidth);
+			bool layoutFits = (buffer.minWidthNeeded <= maxWidth);
 
-			m_maxWidth = maxWidth;
-			m_cacheKey = key;
-
-			CachedTextBuffer* cachedBuffer = TextCache::GetInstance().Acquire(key, this);
-			if (cachedBuffer)
+			if (fitsOurWidth && layoutFits && buffer.actualRenderedWidth < smallestWidth)
 			{
-				m_VAO = cachedBuffer->VAO;
-				m_VBO = cachedBuffer->VBO;
-				m_EBO = cachedBuffer->EBO;
-				indiciesSize = cachedBuffer->indicesSize;
-				m_cachedHeight = cachedBuffer->height;
-				m_hasCachedBuffer = true;
-				return cachedBuffer->height;
+				bestMatch = const_cast<CachedTextBuffer*>(&buffer);
+				bestKey = key;
+				smallestWidth = buffer.actualRenderedWidth;
 			}
+		}
+	}
+
+	if (bestMatch != nullptr)
+	{
+		if (m_hasCachedBuffer && !(m_cacheKey == bestKey))
+		{
+			ReleaseCache();
+		}
+
+		m_maxWidth = maxWidth;
+		m_cacheKey = bestKey;
+
+		if (!m_hasCachedBuffer)
+		{
+			bestMatch = TextCache::GetInstance().Acquire(bestKey, this);
+		}
+
+		if (bestMatch)
+		{
+			m_VAO = bestMatch->VAO;
+			m_VBO = bestMatch->VBO;
+			m_EBO = bestMatch->EBO;
+			indiciesSize = bestMatch->indicesSize;
+			m_cachedHeight = bestMatch->height;
+			m_hasCachedBuffer = true;
+			return bestMatch->height;
 		}
 	}
 
@@ -2278,7 +2315,6 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 
 	return 0;
 }
-
 int SableUI::_Text::GetMinWidth()
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
