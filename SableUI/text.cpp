@@ -1719,6 +1719,16 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 	height = static_cast<int>(lines.size()) * text->m_lineSpacingPx;
 	cursor.y -= height;
 
+	float maxActualLineWidth = 0.0f;
+	for (const auto& line : lines)
+	{
+		float lineWidth = 0.0f;
+		for (const auto& token : line)
+			lineWidth += token.width;
+		maxActualLineWidth = std::max(maxActualLineWidth, lineWidth);
+	}
+	text->m_actualWrappedWidth = static_cast<int>(std::ceil(maxActualLineWidth));
+
 	/* ---------- PASS 2: vertex build ---------- */
 	unsigned int currentGlyphOffset = 0;
 
@@ -1858,7 +1868,7 @@ void SableUI::BindTextAtlasTexture()
 bool SableUI::TextCacheKey::operator==(const TextCacheKey& other) const
 {
 	return contentHash == other.contentHash &&
-		maxWidth == other.maxWidth &&
+		minWidthNeeded == other.minWidthNeeded &&
 		fontSize == other.fontSize &&
 		maxHeight == other.maxHeight &&
 		lineSpacingPx == other.lineSpacingPx &&
@@ -1875,7 +1885,7 @@ SableUI::CachedTextBuffer::CachedTextBuffer()
 std::size_t SableUI::TextCacheKeyHash::operator()(const TextCacheKey& key) const
 {
 	std::size_t h1 = std::hash<uint64_t>()(key.contentHash);
-	std::size_t h2 = std::hash<int>()(key.maxWidth);
+	std::size_t h2 = std::hash<int>()(key.minWidthNeeded);
 	std::size_t h3 = std::hash<int>()(key.fontSize);
 	std::size_t h4 = std::hash<int>()(key.maxHeight);
 	std::size_t h5 = std::hash<int>()(key.lineSpacingPx);
@@ -2003,6 +2013,9 @@ SableUI::CachedTextBuffer* SableUI::TextCache::CreateBuffer(const TextCacheKey& 
 
 	buffer.height = fontManager->GetDrawInfo(text);
 	buffer.indicesSize = text->indiciesSize;
+
+	buffer.minWidthNeeded = text->m_actualWrappedWidth;
+
 	buffer.refCount = 1;
 	buffer.lastUsed = std::chrono::steady_clock::now();
 
@@ -2121,7 +2134,7 @@ SableUI::TextCacheKey SableUI::_Text::GenerateCacheKey() const
 {
 	TextCacheKey key;
 	key.contentHash = TextCache::HashString(m_content);
-	key.maxWidth = m_maxWidth;
+	key.minWidthNeeded = m_maxWidth;
 	key.fontSize = m_fontSize;
 	key.maxHeight = m_maxHeight;
 	key.lineSpacingPx = m_lineSpacingPx;
@@ -2132,15 +2145,46 @@ SableUI::TextCacheKey SableUI::_Text::GenerateCacheKey() const
 int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSize,
 	int maxHeight, float lineSpacing, TextJustification justification)
 {
-	TextCacheKey newKey;
-	newKey.contentHash = TextCache::HashString(str);
-	newKey.maxWidth = maxWidth;
-	newKey.fontSize = fontSize;
-	newKey.maxHeight = maxHeight;
-	newKey.lineSpacingPx = static_cast<int>(fontSize * lineSpacing);
-	newKey.justify = justification;
+	uint64_t newContentHash = TextCache::HashString(str);
+	int newLineSpacingPx = static_cast<int>(fontSize * lineSpacing);
 
-	if (m_hasCachedBuffer && !(m_cacheKey == newKey))
+	for (const auto& [key, buffer] : TextCache::GetInstance().m_cache)
+	{
+		if (key.contentHash == newContentHash &&
+			key.fontSize == fontSize &&
+			key.maxHeight == maxHeight &&
+			key.lineSpacingPx == newLineSpacingPx &&
+			key.justify == justification &&
+			maxWidth >= buffer.minWidthNeeded)
+		{
+			if (m_hasCachedBuffer && !(m_cacheKey == key))
+			{
+				ReleaseCache();
+			}
+
+			m_content = str;
+			m_fontSize = fontSize;
+			m_maxWidth = maxWidth;
+			m_maxHeight = maxHeight;
+			m_lineSpacingPx = newLineSpacingPx;
+			m_justify = justification;
+			m_cacheKey = key;
+
+			CachedTextBuffer* cachedBuffer = TextCache::GetInstance().Acquire(key, this);
+			if (cachedBuffer)
+			{
+				m_VAO = cachedBuffer->VAO;
+				m_VBO = cachedBuffer->VBO;
+				m_EBO = cachedBuffer->EBO;
+				indiciesSize = cachedBuffer->indicesSize;
+				m_cachedHeight = cachedBuffer->height;
+				m_hasCachedBuffer = true;
+				return cachedBuffer->height;
+			}
+		}
+	}
+
+	if (m_hasCachedBuffer)
 	{
 		ReleaseCache();
 	}
@@ -2149,11 +2193,20 @@ int SableUI::_Text::SetContent(const SableString& str, int maxWidth, int fontSiz
 	m_fontSize = fontSize;
 	m_maxWidth = maxWidth;
 	m_maxHeight = maxHeight;
-	m_lineSpacingPx = static_cast<int>(fontSize * lineSpacing);
+	m_lineSpacingPx = newLineSpacingPx;
 	m_justify = justification;
+
+	TextCacheKey newKey;
+	newKey.contentHash = newContentHash;
+	newKey.minWidthNeeded = maxWidth;
+	newKey.fontSize = fontSize;
+	newKey.maxHeight = maxHeight;
+	newKey.lineSpacingPx = newLineSpacingPx;
+	newKey.justify = justification;
+
 	m_cacheKey = newKey;
 
-	CachedTextBuffer* buffer = TextCache::GetInstance().Acquire(m_cacheKey, this);
+	CachedTextBuffer* buffer = TextCache::GetInstance().Acquire(newKey, this);
 
 	if (buffer)
 	{
@@ -2173,6 +2226,37 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 {
 	if (m_maxWidth == maxWidth)
 		return m_cachedHeight;
+
+	for (const auto& [key, buffer] : TextCache::GetInstance().m_cache)
+	{
+		if (key.contentHash == TextCache::HashString(m_content) &&
+			key.fontSize == m_fontSize &&
+			key.maxHeight == m_maxHeight &&
+			key.lineSpacingPx == m_lineSpacingPx &&
+			key.justify == m_justify &&
+			maxWidth >= buffer.minWidthNeeded)
+		{
+			if (m_hasCachedBuffer && !(m_cacheKey == key))
+			{
+				ReleaseCache();
+			}
+
+			m_maxWidth = maxWidth;
+			m_cacheKey = key;
+
+			CachedTextBuffer* cachedBuffer = TextCache::GetInstance().Acquire(key, this);
+			if (cachedBuffer)
+			{
+				m_VAO = cachedBuffer->VAO;
+				m_VBO = cachedBuffer->VBO;
+				m_EBO = cachedBuffer->EBO;
+				indiciesSize = cachedBuffer->indicesSize;
+				m_cachedHeight = cachedBuffer->height;
+				m_hasCachedBuffer = true;
+				return cachedBuffer->height;
+			}
+		}
+	}
 
 	ReleaseCache();
 

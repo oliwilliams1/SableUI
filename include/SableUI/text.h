@@ -43,7 +43,7 @@ namespace SableUI
 
 	struct TextCacheKey {
 		uint64_t contentHash;
-		int maxWidth;
+		int minWidthNeeded;
 		int fontSize;
 		int maxHeight;
 		int lineSpacingPx;
@@ -76,6 +76,7 @@ namespace SableUI
 		int m_maxHeight = 0;
 		int m_lineSpacingPx = 0;
 		int m_cachedHeight = 0;
+		int m_actualWrappedWidth = 0;
 		TextJustification m_justify = TextJustification::Left;
 
 		GLuint m_fontTextureID = 0;
@@ -104,6 +105,7 @@ namespace SableUI
 		GLuint EBO;
 		uint32_t indicesSize;
 		int height;
+		int minWidthNeeded;
 		int refCount;
 		void* context = nullptr;
 		std::chrono::steady_clock::time_point lastUsed;
