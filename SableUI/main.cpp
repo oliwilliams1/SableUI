@@ -113,7 +113,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("Console", fontSize(24));
+		Text("TEST IF TEXT CACHE REMOVES ITSELF, ADD PER INSTANCE COUNTERS", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -174,6 +174,13 @@ int main(int argc, char** argv)
 
 		}
 		Panel();
+	}
+
+	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	VSplitter()
+	{
+		PanelWith(SableUI::ElementTreeView, mainWindow);
+		PanelWith(SableUI::PropertiesView);
 	}
 
 	SableUI::CreateSecondaryWindow("Debug View", 250, 900);

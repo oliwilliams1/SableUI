@@ -277,7 +277,8 @@ void SableUI::Element::SetText(const SableString& text)
     if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
     {
         drText->m_text.m_colour = textColour;
-        drText->m_text.SetContent(text, drawable->m_rect.w, fontSize, maxHeight, lineHeight, textJustification);
+        drText->m_text.SetContent(renderer, text, drawable->m_rect.w,
+            fontSize, maxHeight, lineHeight, textJustification);
     }
     else
     {

@@ -158,7 +158,6 @@ void SableUI::ElementTreeView::Layout()
 		Text("Text: "				+ std::to_string(_Text::GetNumInstances()));
 		Text("Textures: "			+ std::to_string(Texture::GetNumInstances()));
 		Text("Strings: "			+ std::to_string(String::GetNumInstances()));
-		Text("Text Cache: "			+ std::to_string(TextCache::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
 		Text("Font Packs: "			+ std::to_string(FontPack::GetNumInstances()));

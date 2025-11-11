@@ -320,7 +320,7 @@ bool SableUI::Window::PollEvents()
 	cleanupTextCounter++;
 	if (cleanupTextCounter >= 500)
 	{
-		SableUI::CleanupTextCache(10);
+		SableUI::CleanupTextCache(m_renderer, 10);
 		cleanupTextCounter = 0;
 	}
 
@@ -641,6 +641,7 @@ SableUI::Window::~Window()
 	glfwMakeContextCurrent(m_window);
 	SB_delete(m_root);
 	DestroyDrawables();
+	DestroyTextCache(m_renderer);
 
 	SB_delete(m_renderer);
 	glfwDestroyWindow(m_window);
