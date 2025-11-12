@@ -42,18 +42,6 @@ namespace SableUI
 	};
 
 	class RendererBackend;
-	struct TextCacheKey {
-		uint64_t contentHash;
-		int minWidthNeeded;
-		int fontSize;
-		int maxHeight;
-		int lineSpacingPx;
-		TextJustification justify;
-		RendererBackend* renderer;
-
-		bool operator==(const TextCacheKey& other) const;
-	};
-
 	struct _Text {
 		_Text();
 		~_Text();
@@ -67,7 +55,7 @@ namespace SableUI
 		int SetContent(RendererBackend* renderer, const SableString& str,
 			int maxWidth, int fontSize = 10, int maxHeight = -1, float lineSpacing = 1.15f,
 			TextJustification justification = TextJustification::Left);
-		
+
 		int UpdateMaxWidth(int maxWidth);
 		int GetMinWidth();
 		int GetUnwrappedHeight();
@@ -81,70 +69,16 @@ namespace SableUI
 		int m_cachedHeight = 0;
 		int m_actualWrappedWidth = 0;
 		TextJustification m_justify = TextJustification::Left;
-
 		GLuint m_fontTextureID = 0;
 		GLuint m_VAO = 0;
 		GLuint m_VBO = 0;
 		GLuint m_EBO = 0;
 		uint32_t indiciesSize = 0;
-
 		RendererBackend* m_renderer = nullptr;
-
-	private:
-		TextCacheKey m_cacheKey{};
-		bool m_hasCachedBuffer = false;
-
-		void ReleaseCache();
-		TextCacheKey GenerateCacheKey() const;
-	};
-
-	struct TextCacheKeyHash {
-		std::size_t operator()(const TextCacheKey& key) const;
-	};
-
-	struct CachedTextBuffer {
-		CachedTextBuffer(RendererBackend* renderer);
-
-		GLuint VAO = 0;
-		GLuint VBO = 0;
-		GLuint EBO = 0;
-		uint32_t indicesSize = 0;
-		int height = 0;
-		int minWidthNeeded = 0;
-		int actualRenderedWidth = 0;
-		int refCount = 0;
-		RendererBackend* m_renderer = nullptr;
-		std::chrono::steady_clock::time_point lastUsed;
-	};
-
-	class TextCache {
-	public:
-		TextCache(RendererBackend* renderer) : m_renderer(renderer) {};
-		~TextCache() { Shutdown(); }
-
-		static TextCache* GetInstance(RendererBackend* renderer);
-
-		CachedTextBuffer* Acquire(const TextCacheKey& key, _Text* text);
-		void Release(const TextCacheKey& key);
-		void CleanupUnused(int secondsThreshold = 10);
-
-		void Shutdown();
-		static uint64_t HashString(const SableString& str);
-		std::unordered_map<TextCacheKey, CachedTextBuffer, TextCacheKeyHash> m_cache;
-	
-	private:
-		RendererBackend* m_renderer = nullptr;
-		inline static std::unordered_map<RendererBackend*, TextCache*> m_instances;
-		TextCache(const TextCache&) = delete;
-		TextCache& operator=(const TextCache&) = delete;
-		CachedTextBuffer* CreateBuffer(const TextCacheKey& key, _Text* text);
-		void DeleteBuffer(CachedTextBuffer& buffer);
 	};
 
 	void BindTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);
-	void CleanupTextCache(RendererBackend* renderer, int secondsThreshold);
 	void InitFontManager();
 	void DestroyFontManager();
-	void DestroyTextCache(RendererBackend* renderer);
 }
