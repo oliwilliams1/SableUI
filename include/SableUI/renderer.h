@@ -38,12 +38,17 @@ namespace SableUI
 		Float2,
 		Float3,
 		Float4,
-		UInt8_4,
-		UInt16_2,
-		UInt16_4
+		UInt1,
+		UInt2,
+		UInt3,
+		UInt4,
+		Int1,
+		Int2,
+		Int3,
+		Int4
 	};
 
-	constexpr uint32_t FormatSize(VertexFormat format)
+	constexpr uint16_t GetFormatSize(VertexFormat format)
 	{
 		switch (format)
 		{
@@ -51,9 +56,14 @@ namespace SableUI
 		case VertexFormat::Float2: return 8;
 		case VertexFormat::Float3: return 12;
 		case VertexFormat::Float4: return 16;
-		case VertexFormat::UInt8_4: return 4;
-		case VertexFormat::UInt16_2: return 4;
-		case VertexFormat::UInt16_4: return 8;
+		case VertexFormat::UInt1: return 4;
+		case VertexFormat::UInt2: return 8;
+		case VertexFormat::UInt3: return 12;
+		case VertexFormat::UInt4: return 16;
+		case VertexFormat::Int1: return 4;
+		case VertexFormat::Int2: return 8;
+		case VertexFormat::Int3: return 12;
+		case VertexFormat::Int4: return 16;
 		}
 		return 0;
 	}
@@ -62,17 +72,23 @@ namespace SableUI
 	{
 		uint16_t offset;
 		VertexFormat format;
+		bool normalised = false;
 	};
 
 	struct VertexLayout
 	{
 		std::vector<VertexAttribute> attributes;
-		uint32_t stride = 0;
+		uint16_t stride = 0;
+		uint16_t currentOffset = 0;
 
-		void Add(uint16_t offset, VertexFormat format)
+		void Add(VertexFormat format)
 		{
-			attributes.push_back({ offset, format });
-			stride = std::max(stride, offset + FormatSize(format));
+			VertexAttribute attr;
+			attr.format = format;
+			attr.offset = currentOffset;
+			attributes.push_back(attr);
+			currentOffset += GetFormatSize(format);
+			stride = currentOffset;
 		}
 	};
 

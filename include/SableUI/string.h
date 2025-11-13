@@ -80,3 +80,23 @@ namespace SableUI
 		return left + rhs;
 	}
 }
+
+namespace std
+{
+	template<>
+	struct hash<SableUI::String>
+	{
+		std::size_t operator()(const SableUI::String& s) const noexcept
+		{
+			std::size_t h = 0;
+			std::hash<char32_t> charHasher;
+
+			for (auto c : s)
+			{
+				std::size_t charHash = charHasher(c);
+				h ^= charHash + 0x9e3779b9 + (h << 6) + (h >> 2);
+			}
+			return h;
+		}
+	};
+}

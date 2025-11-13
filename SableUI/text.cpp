@@ -22,6 +22,7 @@
 #define SABLEUI_SUBSYSTEM "Text"
 #include "SableUI/console.h"
 #include "SableUI/window.h"
+#include "SableUI/textCache.h"
 
 constexpr int ATLAS_WIDTH = 512;
 constexpr int ATLAS_HEIGHT = 512;
@@ -40,6 +41,12 @@ void SableUI::SetFontDPI(const vec2& dpi)
 {
 	s_dpi = dpi;
 }
+
+struct TextVertex {
+	SableUI::vec2 pos;
+	SableUI::vec3 uv; // uv.x and uv.y for texture coordinates, uv.z for layer
+	SableUI::Colour colour;
+};
 
 // ============================================================================
 // Font Range & Font Pack counters
@@ -331,7 +338,12 @@ public:
 	bool Initialize();
 	void Shutdown();
 	bool isInitialized = false;
-	int GetDrawInfo(SableUI::_Text* text);
+	void GetTextVertexData(
+		const SableUI::_Text* text,
+		std::vector<TextVertex>& outVertices,
+		std::vector<uint32_t>& outIndices,
+		int& outHeight,
+		int& outActualLineWidth);
 	int GetMinWidth(SableUI::_Text* text);
 	
 	void InitFreeType();
@@ -1478,12 +1490,6 @@ void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
 // ============================================================================
 // Font Rendering
 // ============================================================================
-struct Vertex {
-	SableUI::vec2 pos;
-	SableUI::vec3 uv; // uv.x and uv.y for texture coordinates, uv.z for layer
-	SableUI::Colour colour;
-};
-
 struct TextToken {
 	SableString content;
 	float width = 0.0f;
@@ -1492,11 +1498,16 @@ struct TextToken {
 	std::vector<Character> charDataList;
 };
 
-int FontManager::GetDrawInfo(SableUI::_Text* text)
+void FontManager::GetTextVertexData(
+	const SableUI::_Text* text,
+	std::vector<TextVertex>& outVertices,
+	std::vector<uint32_t>& outIndices,
+	int& outHeight,
+	int& outActualLineWidth)
 {
 	SableUI::TextJustification currentJustification = text->m_justify;
 
-	std::vector<Vertex> vertices;
+	std::vector<TextVertex> vertices;
 	std::vector<unsigned int> indices;
 	int height = 0;
 
@@ -1727,7 +1738,6 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 			lineWidth += token.width;
 		maxActualLineWidth = std::max(maxActualLineWidth, lineWidth);
 	}
-	text->m_actualWrappedWidth = static_cast<int>(std::ceil(maxActualLineWidth));
 
 	/* ---------- PASS 2: vertex build ---------- */
 	unsigned int currentGlyphOffset = 0;
@@ -1776,10 +1786,10 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 
 				float layerIndex = static_cast<float>(charData.layer);
 
-				vertices.push_back(Vertex{ {x, y}, {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x + w, y}, {uTopRight, vBottomLeft, layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x + w, y + h}, {uTopRight, vTopRight, layerIndex}, text->m_colour });
-				vertices.push_back(Vertex{ {x, y + h}, {uBottomLeft, vTopRight, layerIndex}, text->m_colour });
+				vertices.push_back(TextVertex{ {x, y}, {uBottomLeft, vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(TextVertex{ {x + w, y}, {uTopRight, vBottomLeft, layerIndex}, text->m_colour });
+				vertices.push_back(TextVertex{ {x + w, y + h}, {uTopRight, vTopRight, layerIndex}, text->m_colour });
+				vertices.push_back(TextVertex{ {x, y + h}, {uBottomLeft, vTopRight, layerIndex}, text->m_colour });
 
 				unsigned int offset = currentGlyphOffset * 4;
 				indices.push_back(offset);
@@ -1796,17 +1806,10 @@ int FontManager::GetDrawInfo(SableUI::_Text* text)
 		cursor.y += text->m_lineSpacingPx;
 	}
 
-	glBindVertexArray(text->m_VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, text->m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text->m_EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-	text->indiciesSize = indices.size();
-
-	glBindVertexArray(0);
-	return height;
+	outVertices = vertices;
+	outIndices = indices;
+	outHeight = height;
+	outActualLineWidth = static_cast<int>(std::ceil(maxActualLineWidth));
 }
 
 int FontManager::GetMinWidth(SableUI::_Text* text)
@@ -1856,6 +1859,30 @@ int FontManager::GetMinWidth(SableUI::_Text* text)
 	return std::max(maxWordWidth, currentWordWidth);
 }
 
+SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& actualLineWidth)
+{
+	if (fontManager == nullptr)
+		FontManager::GetInstance().Initialize();
+
+	std::vector<TextVertex> vertices;
+	std::vector<uint32_t> indices;
+	fontManager->GetTextVertexData(text, vertices, indices, height, actualLineWidth);
+
+	VertexLayout layout;
+	layout.Add(VertexFormat::Float2);
+	layout.Add(VertexFormat::Float3);
+	layout.Add(VertexFormat::UInt1);
+
+	GpuObject* obj = text->m_renderer->CreateGpuObject(
+		vertices.data(),
+		vertices.size(),
+		indices.data(),
+		indices.size(),
+		layout);
+
+	return obj;
+}
+
 void SableUI::BindTextAtlasTexture()
 {
 	if (!FontManager::GetInstance().isInitialized)
@@ -1867,55 +1894,17 @@ void SableUI::BindTextAtlasTexture()
 // ============================================================================
 // Text Backend
 // ============================================================================
+
 static int s_textOGL = 0;
 
 SableUI::_Text::_Text()
-	: m_VAO(0), m_VBO(0), m_EBO(0), indiciesSize(0)
-{
-	// Create OpenGL buffers
-	glGenVertexArrays(1, &m_VAO);
-	glBindVertexArray(m_VAO);
-
-	glGenBuffers(1, &m_VBO);
-	glGenBuffers(1, &m_EBO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-
-	// Position attribute (layout 0, 2 floats)
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	// UV + Layer attribute (layout 1, 3 floats)
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(vec2)));
-	glEnableVertexAttribArray(1);
-
-	// Colour (layout 2, uint32_t)
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(sizeof(vec2) + sizeof(vec3)));
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(0);
-
-	s_textOGL++;
-}
+	{ s_textOGL++; }
 
 SableUI::_Text::~_Text()
 {
-	if (m_VAO != 0)
-	{
-		glDeleteVertexArrays(1, &m_VAO);
-		m_VAO = 0;
-	}
-	if (m_VBO != 0)
-	{
-		glDeleteBuffers(1, &m_VBO);
-		m_VBO = 0;
-	}
-	if (m_EBO != 0)
-	{
-		glDeleteBuffers(1, &m_EBO);
-		m_EBO = 0;
-	}
-
+	for (const auto& key : m_cacheKeys)
+		TextCacheFactory::Release(m_renderer, key);
+	
 	s_textOGL--;
 }
 
@@ -1928,51 +1917,16 @@ SableUI::_Text::_Text(_Text&& other) noexcept
 	m_lineSpacingPx(other.m_lineSpacingPx),
 	m_justify(other.m_justify),
 	m_fontTextureID(other.m_fontTextureID),
-	m_VAO(other.m_VAO),
-	m_VBO(other.m_VBO),
-	m_EBO(other.m_EBO),
+	m_gpuObject(other.m_gpuObject),
 	indiciesSize(other.indiciesSize),
 	m_cachedHeight(other.m_cachedHeight),
 	m_actualWrappedWidth(other.m_actualWrappedWidth),
-	m_renderer(other.m_renderer)
+	m_renderer(other.m_renderer),
+	m_cacheKeys(std::move(other.m_cacheKeys))
 {
-	other.m_VAO = 0;
-	other.m_VBO = 0;
-	other.m_EBO = 0;
-}
-
-SableUI::_Text& SableUI::_Text::operator=(_Text&& other) noexcept
-{
-	if (this != &other)
-	{
-		if (m_VAO != 0)
-			glDeleteVertexArrays(1, &m_VAO);
-		if (m_VBO != 0)
-			glDeleteBuffers(1, &m_VBO);
-		if (m_EBO != 0)
-			glDeleteBuffers(1, &m_EBO);
-
-		m_content = std::move(other.m_content);
-		m_colour = other.m_colour;
-		m_fontSize = other.m_fontSize;
-		m_maxWidth = other.m_maxWidth;
-		m_maxHeight = other.m_maxHeight;
-		m_lineSpacingPx = other.m_lineSpacingPx;
-		m_justify = other.m_justify;
-		m_fontTextureID = other.m_fontTextureID;
-		m_VAO = other.m_VAO;
-		m_VBO = other.m_VBO;
-		m_EBO = other.m_EBO;
-		indiciesSize = other.indiciesSize;
-		m_cachedHeight = other.m_cachedHeight;
-		m_actualWrappedWidth = other.m_actualWrappedWidth;
-		m_renderer = other.m_renderer;
-
-		other.m_VAO = 0;
-		other.m_VBO = 0;
-		other.m_EBO = 0;
-	}
-	return *this;
+	other.m_gpuObject = nullptr;
+	other.m_cacheKeys.clear();
+	other.m_renderer = nullptr;
 }
 
 int SableUI::_Text::SetContent(
@@ -1990,12 +1944,9 @@ int SableUI::_Text::SetContent(
 	m_lineSpacingPx = static_cast<int>(fontSize * lineSpacing);
 	m_justify = justification;
 
-	if (fontManager == nullptr || !fontManager->isInitialized)
-		FontManager::GetInstance().Initialize();
-
-	fontManager = &FontManager::GetInstance();
-
-	m_cachedHeight = fontManager->GetDrawInfo(this);
+	TextCacheKey key(this);
+	m_gpuObject = TextCacheFactory::Get(this, m_cachedHeight);
+	m_cacheKeys.push_back(key);
 
 	return m_cachedHeight;
 }
@@ -2009,11 +1960,12 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
-
+	
 	fontManager = &FontManager::GetInstance();
 
-	// Regenerate vertex/index data and upload to GPU
-	m_cachedHeight = fontManager->GetDrawInfo(this);
+	TextCacheKey key(this);
+	m_gpuObject = TextCacheFactory::Get(this, m_cachedHeight);
+	m_cacheKeys.push_back(key);
 
 	return m_cachedHeight;
 }
@@ -2022,7 +1974,7 @@ int SableUI::_Text::GetMinWidth()
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
-
+	
 	fontManager = &FontManager::GetInstance();
 
 	return fontManager->GetMinWidth(this);
@@ -2034,7 +1986,7 @@ int SableUI::_Text::GetUnwrappedHeight()
 	for (char32_t c : m_content)
 		if (c == U'\n')
 			lines++;
-
+	
 	return lines * m_lineSpacingPx;
 }
 

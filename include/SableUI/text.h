@@ -42,13 +42,15 @@ namespace SableUI
 	};
 
 	class RendererBackend;
+	struct GpuObject;
+	struct TextCacheKey;
 	struct _Text {
 		_Text();
 		~_Text();
 		_Text(const _Text&) = delete;
 		_Text& operator=(const _Text&) = delete;
 		_Text(_Text&& other) noexcept;
-		_Text& operator=(_Text&& other) noexcept;
+		_Text& operator=(_Text&& other) = delete;
 
 		static int GetNumInstances();
 
@@ -70,12 +72,15 @@ namespace SableUI
 		int m_actualWrappedWidth = 0;
 		TextJustification m_justify = TextJustification::Left;
 		GLuint m_fontTextureID = 0;
-		GLuint m_VAO = 0;
-		GLuint m_VBO = 0;
-		GLuint m_EBO = 0;
+		GpuObject* m_gpuObject = nullptr;
 		uint32_t indiciesSize = 0;
 		RendererBackend* m_renderer = nullptr;
+
+	private:
+		std::vector<TextCacheKey> m_cacheKeys;
 	};
+
+	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& actualLineWidth);
 
 	void BindTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);

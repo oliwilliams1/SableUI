@@ -62,7 +62,7 @@ ContextResources& SableUI::GetContextResources(RendererBackend* backend)
     ContextResources& resources = g_contextResources[ctx];
 
     VertexLayout layout;
-    layout.Add(0, VertexFormat::Float2);
+    layout.Add(VertexFormat::Float2);
     resources.rectObject = backend->CreateGpuObject(
         rectVertices, 
         sizeof(rectVertices) / sizeof(Vertex),
@@ -320,7 +320,6 @@ int DrawableText::GetNumInstances()
 void DrawableText::Draw(RenderTarget* renderTarget, ContextResources& res)
 {
     g_tShader.Use();
-    glBindVertexArray(m_text.m_VAO);
     glUniform2f(g_tTargetSizeLoc, static_cast<float>(renderTarget->width), static_cast<float>(renderTarget->height));
     glUniform2f(g_tPosLoc, m_rect.x, m_rect.y + m_rect.h);
 
@@ -330,5 +329,5 @@ void DrawableText::Draw(RenderTarget* renderTarget, ContextResources& res)
 
     glUniform1i(g_tAtlasLoc, 0);
 
-    glDrawElements(GL_TRIANGLES, m_text.indiciesSize, GL_UNSIGNED_INT, 0);
+    m_text.m_gpuObject->Draw();
 }

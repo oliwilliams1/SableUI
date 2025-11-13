@@ -1,6 +1,7 @@
 #include "SableUI/renderer.h"
 #include "SableUI/window.h"
 #include "SableUI/memory.h"
+#include "SableUI/textCache.h"
 
 #include <cstdio>
 #include <iostream>
@@ -8,13 +9,13 @@
 #include <algorithm>
 #include <stack>
 
-#include <GLFW/glfw3.h>
-
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
 #include <windows.h>
 #include <dwmapi.h>
 #endif
+
+#include <GLFW/glfw3.h>
 
 using namespace SableMemory;
 
@@ -640,6 +641,7 @@ SableUI::Window::~Window()
 	glfwMakeContextCurrent(m_window);
 	SB_delete(m_root);
 	DestroyDrawables();
+	TextCacheFactory::ShutdownFactory(m_renderer);
 
 	SB_delete(m_renderer);
 	glfwDestroyWindow(m_window);

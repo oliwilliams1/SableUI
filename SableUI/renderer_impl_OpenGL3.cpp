@@ -213,10 +213,10 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 	for (const auto& attr : layout.attributes)
 	{
 		glEnableVertexAttribArray(attrIndex);
-
 		GLenum type = GL_FLOAT;
 		GLint count = 1;
-		GLboolean normalized = GL_FALSE;
+		GLboolean normalized = attr.normalised ? GL_TRUE : GL_FALSE;
+		bool isInteger = false;
 
 		switch (attr.format)
 		{
@@ -224,20 +224,37 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 		case VertexFormat::Float2: count = 2; type = GL_FLOAT; break;
 		case VertexFormat::Float3: count = 3; type = GL_FLOAT; break;
 		case VertexFormat::Float4: count = 4; type = GL_FLOAT; break;
-		case VertexFormat::UInt8_4: count = 4; type = GL_UNSIGNED_BYTE; normalized = GL_TRUE; break;
-		case VertexFormat::UInt16_2: count = 2; type = GL_UNSIGNED_SHORT; normalized = GL_TRUE; break;
-		case VertexFormat::UInt16_4: count = 4; type = GL_UNSIGNED_SHORT; normalized = GL_TRUE; break;
+		case VertexFormat::UInt1: count = 1; type = GL_UNSIGNED_INT; isInteger = true; break;
+		case VertexFormat::UInt2: count = 2; type = GL_UNSIGNED_INT; isInteger = true; break;
+		case VertexFormat::UInt3: count = 3; type = GL_UNSIGNED_INT; isInteger = true; break;
+		case VertexFormat::UInt4: count = 4; type = GL_UNSIGNED_INT; isInteger = true; break;
+		case VertexFormat::Int1: count = 1; type = GL_INT; isInteger = true; break;
+		case VertexFormat::Int2: count = 2; type = GL_INT; isInteger = true; break;
+		case VertexFormat::Int3: count = 3; type = GL_INT; isInteger = true; break;
+		case VertexFormat::Int4: count = 4; type = GL_INT; isInteger = true; break;
 		}
 
-		glVertexAttribPointer(
-			attrIndex,
-			count,
-			type,
-			normalized,
-			layout.stride,
-			reinterpret_cast<void*>(attr.offset)
-		);
-
+		if (isInteger)
+		{
+			glVertexAttribIPointer(
+				attrIndex,
+				count,
+				type,
+				layout.stride,
+				reinterpret_cast<void*>(attr.offset)
+			);
+		}
+		else
+		{
+			glVertexAttribPointer(
+				attrIndex,
+				count,
+				type,
+				normalized,
+				layout.stride,
+				reinterpret_cast<void*>(attr.offset)
+			);
+		}
 		attrIndex++;
 	}
 
@@ -302,6 +319,11 @@ void OpenGL3Backend::Draw()
 void OpenGL3Backend::Draw(const GpuObject* obj)
 {
 	OpenGLMesh& mesh = m_meshes[obj->m_handle];
+	if (mesh.vao == 0)
+	{
+		SableUI_Error("Invalid GPU object");
+		return;
+	}
 	glBindVertexArray(mesh.vao);
 	glDrawElements(GL_TRIANGLES, obj->numIndices, GL_UNSIGNED_INT, 0);
 }
