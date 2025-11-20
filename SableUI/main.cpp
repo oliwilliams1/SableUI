@@ -122,7 +122,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("TEST IF TEXT CACHE REMOVES ITSELF, ADD PER INSTANCE COUNTERS", fontSize(24));
+		Text("Console", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -262,4 +262,3 @@ int main(int argc, char** argv)
 
 | | render target panel
 */
-////////////////////////

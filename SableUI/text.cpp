@@ -58,6 +58,15 @@ struct TextVertex {
 	SableUI::Colour colour;
 };
 
+static inline bool IsNonPrintableChar(char32_t c)
+{
+	if (c == U'\n') return false;
+	if (std::iswspace(static_cast<wint_t>(c))) return false;
+	if (c < 32) return true;
+	if (c == 0x7F || (c >= 0x80 && c <= 0x9F)) return true;
+	return false;
+}
+
 // ============================================================================
 // Font Range & Font Pack counters
 // ============================================================================
@@ -881,7 +890,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	int initialAtlasYForRenderPass = atlasCursor.y;
 
-	/* first pass, get bounds of all glyphs to calculate height of atlas */
+	// first pass, get bounds of all glyphs to calculate height of atlas
 	SableUI::uvec2 tempCursor = { ATLAS_PADDING, atlasCursor.y };
 	uint16_t currentRowHeight = 0;
 	int maxGlobalYReached = atlasCursor.y;
@@ -1529,6 +1538,8 @@ void FontManager::GetTextVertexData(
 	/* tokenisation with style tracking */
 	for (char32_t c : text->m_content)
 	{
+		if (IsNonPrintableChar(c)) continue;
+
 		if (SetStyleChar(c))
 		{
 			if (!currentToken.content.empty())
@@ -1596,9 +1607,18 @@ void FontManager::GetTextVertexData(
 				if (it != characters.end())
 					charData = it->second;
 				else
+				{
+					SableUI_Warn("Could not find character U+%04X with font size %d even after attempting to load its range. Using empty glyph.",
+						c, text->m_fontSize);
 					charData = Character{};
+				}
 			}
-			else charData = Character{};
+			else
+			{
+				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph. Text: %s",
+					c, std::string(text->m_content).c_str());
+				charData = Character{};
+			}
 		}
 
 		if (std::iswspace(static_cast<wint_t>(c)))
@@ -1831,6 +1851,8 @@ int FontManager::GetMinWidth(SableUI::_Text* text)
 
 	for (char32_t c : text->m_content)
 	{
+		if (IsNonPrintableChar(c)) continue;
+
 		if (c == U' ' || c == U'\n' || c == U'\t')
 		{
 			maxWordWidth = std::max(maxWordWidth, currentWordWidth);
@@ -2003,8 +2025,12 @@ int SableUI::_Text::GetUnwrappedHeight()
 {
 	int lines = 1;
 	for (char32_t c : m_content)
+	{
+		if (IsNonPrintableChar(c)) continue;
+
 		if (c == U'\n')
 			lines++;
+	}
 	
 	return lines * m_lineSpacingPx;
 }
