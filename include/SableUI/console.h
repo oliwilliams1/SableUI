@@ -2,8 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <cstdarg>
-#include <cstdio>
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI"

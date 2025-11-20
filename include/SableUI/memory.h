@@ -27,4 +27,26 @@ namespace SableMemory
 
 	void DestroyPools();
 	void InitPools();
+	void CompactPools();
+
+	enum class PoolType
+	{
+		Element,
+		VirtualNode,
+		BaseComponent,
+		Child,
+		DrawableRect,
+		DrawableImage,
+		DrawableText
+	};
+
+	struct SizeData {
+		size_t numChunks;
+		size_t totalUsed;
+		size_t totalCapacity;
+		size_t peak;
+		size_t sizeInKB;
+	};
+
+	SizeData GetSizeData(PoolType type);
 }

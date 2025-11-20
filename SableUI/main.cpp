@@ -1,7 +1,16 @@
 ﻿#include <utility>
+#include <algorithm>
+#include <cstdint>
+#include <string>
 
-#include "SableUI/SableUI.h"
-#include "SableUI/components/debugComponents.h"
+#include <SableUI/SableUI.h>
+#include <SableUI/components/debugComponents.h>
+#include <SableUI/component.h>
+#include <SableUI/console.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
+#include <SableUI/utils.h>
+#include <SableUI/window.h>
 
 class ToggleImageView : public SableUI::BaseComponent
 {
@@ -253,3 +262,4 @@ int main(int argc, char** argv)
 
 | | render target panel
 */
+////////////////////////

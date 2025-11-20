@@ -1,6 +1,8 @@
 #pragma once
 #include "SableUI/drawable.h"
-#include <algorithm>
+#include <cstdint>
+#include <vector>
+#include "utils.h"
 
 namespace SableUI
 {

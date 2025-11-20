@@ -1,5 +1,14 @@
-#include "SableUI/textCache.h"
-#include "SableUI/renderer.h"
+#include <SableUI/textCache.h>
+
+#include <chrono>
+#include <unordered_map>
+#include <vector>
+
+#include <SableUI/renderer.h>
+#include <SableUI/console.h>
+#include <SableUI/string.h>
+#include <SableUI/text.h>
+#include <SableUI/utils.h>
 
 using namespace SableUI;
 
@@ -12,17 +21,18 @@ GpuObject* TextCacheFactory::Get_priv(const _Text* text, int& height)
 	if (it != m_cache.end())
 	{
 		it->second.refCount++;
+		it->second.lastConsumedFrame = m_currentFrame;
 		height = it->second.height;
 		return it->second.gpuObject;
 	}
 
-	int actualLineWidth = 0;
+	int maxWidth = 0;
 	TextCache entry{};
-	entry.gpuObject = GetTextGpuObject(text, height, actualLineWidth);
+	entry.gpuObject = GetTextGpuObject(text, height, maxWidth);
 	entry.refCount++;
-	entry.actualLineWidth = actualLineWidth;
+	entry.maxWidth = text->m_maxWidth;
 	entry.height = height;
-	entry.lastUsed = std::chrono::steady_clock::now();
+	entry.lastConsumedFrame = m_currentFrame;
 	m_cache[key] = entry;
 	return entry.gpuObject;
 }
@@ -59,20 +69,58 @@ void SableUI::TextCacheFactory::ShutdownFactory(RendererBackend* renderer)
 	}
 }
 
+std::vector<const TextCacheFactory*> SableUI::TextCacheFactory::GetFactories()
+{
+	std::vector<const TextCacheFactory*> factories;
+
+	for (auto& pair : s_textCacheFactories)
+		factories.push_back(&pair.second);
+
+	return factories;
+}
+
 void TextCacheFactory::Release_priv(TextCacheKey key)
 {
 	auto it = m_cache.find(key);
 	if (it != m_cache.end())
 	{
 		it->second.refCount--;
-		if (it->second.refCount <= 0)
-		{
-			it->second.gpuObject->m_context->DestroyGpuObject(it->second.gpuObject);
-			m_cache.erase(it);
-		}
 	}
 	else
 		SableUI_Warn("Entry not found");
+}
+
+int SableUI::TextCacheFactory::GetNumInstances() const
+{
+	return m_cache.size();
+}
+
+void SableUI::TextCacheFactory::CleanCache(RendererBackend* renderer)
+{
+	auto it = s_textCacheFactories.find(renderer);
+	if (it != s_textCacheFactories.end())
+		it->second.CleanCache_priv();
+	else
+		SableUI_Warn("Factory not found for renderer");
+}
+
+void SableUI::TextCacheFactory::CleanCache_priv()
+{
+	std::vector<TextCacheKey> toDelete;
+
+	for (auto& pair : m_cache)
+	{
+		if (pair.second.refCount <= 0 && pair.second.lastConsumedFrame < m_currentFrame)
+		{
+			pair.second.gpuObject->m_context->DestroyGpuObject(pair.second.gpuObject);
+			toDelete.push_back(pair.first);
+		}
+	}
+
+	for (auto& key : toDelete)
+		m_cache.erase(key);
+
+	m_currentFrame++;
 }
 
 void TextCacheFactory::Delete(TextCacheKey key)
@@ -90,7 +138,7 @@ void TextCacheFactory::Delete(TextCacheKey key)
 SableUI::TextCacheKey::TextCacheKey(const _Text* text)
 {
 	stringHash = std::hash<SableString>()(text->m_content);
-	minWrapWidth = text->m_maxWidth;
+	maxWidth = text->m_maxWidth;
 	fontSize = text->m_fontSize;
 	maxHeight = text->m_maxHeight;
 	lineSpacingPx = text->m_lineSpacingPx;

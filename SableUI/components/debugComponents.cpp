@@ -1,4 +1,20 @@
-#include "SableUI/components/debugComponents.h"
+#include <SableUI/components/debugComponents.h>
+#include <string>
+#include <utility>
+#include <SableUI/component.h>
+#include <SableUI/drawable.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
+#include <SableUI/panel.h>
+#include <SableUI/renderer.h>
+#include <SableUI/SableUI.h>
+#include <SableUI/string.h>
+#include <SableUI/text.h>
+#include <SableUI/texture.h>
+#include <SableUI/utils.h>
+#include <SableUI/window.h>
+#include <SableUI/textCache.h>
+#include <SableUI/memory.h>
 
 using namespace SableUI;
 
@@ -136,32 +152,50 @@ void SableUI::ElementTreeView::Layout()
 	if (memoryDebugger)
 	{
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Base Panels: "		+ std::to_string(BasePanel::GetNumInstances()));
-		Text("Root Panels: "		+ std::to_string(RootPanel::GetNumInstances()));
-		Text("Splitter Panels: "	+ std::to_string(SplitterPanel::GetNumInstances()));
-		Text("Content Panels: "		+ std::to_string(ContentPanel::GetNumInstances()));
+		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
+		Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
+		Text(SableString::Format("Splitter Panels: %d", SplitterPanel::GetNumInstances()));
+		Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Components: "			+ std::to_string(BaseComponent::GetNumInstances()));
-		Text("Elements: "			+ std::to_string(Element::GetNumInstances()));
-		Text("Virtual Elements: "	+ std::to_string(VirtualNode::GetNumInstances()));
+		Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
+		Text(SableString::Format("Elements: %d    (%zukb)", 
+			Element::GetNumInstances(), 
+			SableMemory::GetSizeData(SableMemory::PoolType::Element).sizeInKB));
+		Text(SableString::Format("Virtual Elements: %d    (%zukb)",
+			VirtualNode::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Drawable Base: "		+ std::to_string(DrawableBase::GetNumInstances()));
-		Text("Drawable Text: "		+ std::to_string(DrawableText::GetNumInstances()));
-		Text("Drawable Rect: "		+ std::to_string(DrawableRect::GetNumInstances()));
-		Text("Drawable Splitter: "	+ std::to_string(DrawableSplitter::GetNumInstances()));
-		Text("Drawable Image: "		+ std::to_string(DrawableImage::GetNumInstances()));
-		Text("GPU Objects: "		+ std::to_string(GpuObject::GetNumInstances()));
+		Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
+		Text(SableString::Format("Drawable Text: %d    (%zukb)",
+			DrawableText::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableText).sizeInKB));
+		Text(SableString::Format("Drawable Rect: %d    (%zukb)",
+			DrawableRect::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableRect).sizeInKB));
+		Text(SableString::Format("Drawable Splitter: %d", DrawableSplitter::GetNumInstances()));
+		Text(SableString::Format("Drawable Image: %d    (%zukb)",
+			DrawableImage::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
+		Text(SableString::Format("GPU Objects: %d", GpuObject::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Text: "				+ std::to_string(_Text::GetNumInstances()));
-		Text("Textures: "			+ std::to_string(Texture::GetNumInstances()));
-		Text("Strings: "			+ std::to_string(String::GetNumInstances()));
+		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
+		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
+		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text("Font Packs: "			+ std::to_string(FontPack::GetNumInstances()));
-		Text("Font Ranges: "		+ std::to_string(FontRange::GetNumInstances()));
+		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
+		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
+
+		int instanceCount = 0;
+		for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
+		{
+			instanceCount++;
+			Text(SableString::Format("Instance %d Text Cache: %d", 
+				instanceCount, factory->GetNumInstances()));
+		}
 	}
 
 	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));

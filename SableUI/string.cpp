@@ -1,9 +1,11 @@
 #include "SableUI/string.h"
-#include "SableUI/console.h"
 
 #include <algorithm>
 #include <cstring>
-#include <stdexcept>
+#include <cstdarg>
+#include <cstdio>
+#include <string>
+#include <utility>
 
 using namespace SableUI;
 static int s_numComponents = 0;

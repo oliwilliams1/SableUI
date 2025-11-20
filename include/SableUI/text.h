@@ -80,7 +80,7 @@ namespace SableUI
 		std::vector<TextCacheKey> m_cacheKeys;
 	};
 
-	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& actualLineWidth);
+	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& maxWidth);
 
 	void BindTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);

@@ -1,7 +1,9 @@
 #pragma once
 #include <unordered_map>
 #include <chrono>
-#include "SableUI/text.h"
+#include <cstdint>
+#include <functional>
+#include <vector>
 
 namespace SableUI
 {
@@ -13,7 +15,7 @@ namespace SableUI
 	{
 		TextCacheKey(const _Text* text);
 		uint64_t stringHash;
-		int minWrapWidth;
+		int maxWidth;
 		int fontSize;
 		int maxHeight;
 		int lineSpacingPx;
@@ -22,7 +24,7 @@ namespace SableUI
 		bool operator==(const TextCacheKey& other) const
 		{
 			return stringHash == other.stringHash &&
-				minWrapWidth == other.minWrapWidth &&
+				maxWidth == other.maxWidth &&
 				fontSize == other.fontSize &&
 				maxHeight == other.maxHeight &&
 				lineSpacingPx == other.lineSpacingPx &&
@@ -41,7 +43,7 @@ namespace std
 			std::size_t h = 0;
 
 			h ^= std::hash<uint64_t>()(key.stringHash) + 0x9e3779b9 + (h << 6) + (h >> 2);
-			h ^= std::hash<int>()(key.minWrapWidth) + 0x9e3779b9 + (h << 6) + (h >> 2);
+			h ^= std::hash<int>()(key.maxWidth) + 0x9e3779b9 + (h << 6) + (h >> 2);
 			h ^= std::hash<int>()(key.fontSize) + 0x9e3779b9 + (h << 6) + (h >> 2);
 			h ^= std::hash<int>()(key.maxHeight) + 0x9e3779b9 + (h << 6) + (h >> 2);
 			h ^= std::hash<int>()(key.lineSpacingPx) + 0x9e3779b9 + (h << 6) + (h >> 2);
@@ -58,9 +60,9 @@ namespace SableUI
 	{
 		GpuObject* gpuObject;
 		int refCount;
-		int actualLineWidth;
+		int maxWidth;
 		int height;
-		std::chrono::steady_clock::time_point lastUsed;
+		int lastConsumedFrame;
 
 		bool operator==(const TextCache& other) const { return gpuObject == other.gpuObject; }
 	};
@@ -71,11 +73,16 @@ namespace SableUI
 		static GpuObject* Get(const _Text* key, int& height);
 		static void Release(RendererBackend* renderer, const TextCacheKey& key);
 		static void ShutdownFactory(RendererBackend* renderer);
+		static void CleanCache(RendererBackend* renderer);
+
+		static std::vector<const TextCacheFactory*> GetFactories();
+		int GetNumInstances() const;
 
 	private:
+		void CleanCache_priv();
+		int m_currentFrame = 0;
 		GpuObject* Get_priv(const _Text* key, int& height);
 		void Release_priv(TextCacheKey key);
-
 		void Delete(TextCacheKey key);
 		std::unordered_map<TextCacheKey, TextCache> m_cache;
 	};

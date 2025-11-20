@@ -1,9 +1,21 @@
-#include "SableUI/SableUI.h"
-#include "SableUI/component.h"
-#include "SableUI/memory.h"
+#include <SableUI/SableUI.h>
 #include <stack>
 #include <thread>
 #include <cstring>
+#include <string.h>
+#include <chrono>
+#include <string>
+#include <vector>
+#include <SableUI/component.h>
+#include <SableUI/memory.h>
+#include <SableUI/console.h>
+#include <SableUI/drawable.h>
+#include <SableUI/element.h>
+#include <SableUI/panel.h>
+#include <SableUI/renderer.h>
+#include <SableUI/text.h>
+#include <SableUI/utils.h>
+#include <SableUI/window.h>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;
@@ -454,6 +466,9 @@ SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int
 
 bool SableUI::PollEvents() {
 	if (s_app == nullptr) return false;
+
+	SableMemory::CompactPools();
+
 	return s_app->PollEvents();
 }
 

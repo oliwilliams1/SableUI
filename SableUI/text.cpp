@@ -4,6 +4,7 @@
 #include <map>
 #include <algorithm>
 #include <fstream>
+#include <cctype>
 #include <cwctype>
 #include <sstream>
 #include <vector>
@@ -14,14 +15,23 @@
 #include <string>
 #include <cstring>
 
-#include <ft2build.h>
+#include <freetype/config/ftheader.h>
+#include <freetype/fttypes.h>
+#include <corecrt.h>
+#include <string.h>
+#include <chrono>
+#include <climits>
+#include <cmath>
+#include <cstdint>
+#include <exception>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
 #include FT_FREETYPE_H
 #include FT_LCD_FILTER_H
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Text"
 #include "SableUI/console.h"
-#include "SableUI/window.h"
 #include "SableUI/textCache.h"
 
 constexpr int ATLAS_WIDTH = 512;
@@ -1859,14 +1869,14 @@ int FontManager::GetMinWidth(SableUI::_Text* text)
 	return std::max(maxWordWidth, currentWordWidth);
 }
 
-SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& actualLineWidth)
+SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& maxWidth)
 {
 	if (fontManager == nullptr)
 		FontManager::GetInstance().Initialize();
 
 	std::vector<TextVertex> vertices;
 	std::vector<uint32_t> indices;
-	fontManager->GetTextVertexData(text, vertices, indices, height, actualLineWidth);
+	fontManager->GetTextVertexData(text, vertices, indices, height, maxWidth);
 
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
@@ -1895,17 +1905,17 @@ void SableUI::BindTextAtlasTexture()
 // Text Backend
 // ============================================================================
 
-static int s_textOGL = 0;
+static int s_textCount = 0;
 
 SableUI::_Text::_Text()
-	{ s_textOGL++; }
+	{ s_textCount++; }
 
 SableUI::_Text::~_Text()
 {
 	for (const auto& key : m_cacheKeys)
 		TextCacheFactory::Release(m_renderer, key);
 	
-	s_textOGL--;
+	s_textCount--;
 }
 
 SableUI::_Text::_Text(_Text&& other) noexcept
@@ -1936,6 +1946,10 @@ int SableUI::_Text::SetContent(
 	int maxHeight, float lineSpacing,
 	TextJustification justification)
 {
+	for (const auto& oldKey : m_cacheKeys)
+		TextCacheFactory::Release(m_renderer, oldKey);
+	m_cacheKeys.clear();
+
 	m_renderer = renderer;
 	m_content = str;
 	m_fontSize = fontSize;
@@ -1956,11 +1970,15 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 	if (m_maxWidth == maxWidth)
 		return m_cachedHeight;
 
+	for (const auto& oldKey : m_cacheKeys)
+		TextCacheFactory::Release(m_renderer, oldKey);
+	m_cacheKeys.clear();
+
 	m_maxWidth = maxWidth;
 
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
-	
+
 	fontManager = &FontManager::GetInstance();
 
 	TextCacheKey key(this);
@@ -1969,6 +1987,7 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 
 	return m_cachedHeight;
 }
+
 
 int SableUI::_Text::GetMinWidth()
 {
@@ -1992,7 +2011,7 @@ int SableUI::_Text::GetUnwrappedHeight()
 
 int SableUI::_Text::GetNumInstances()
 {
-	return s_textOGL;
+	return s_textCount;
 }
 
 void SableUI::DestroyFontManager()

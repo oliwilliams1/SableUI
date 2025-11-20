@@ -267,17 +267,22 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 {
 	auto it = m_meshes.find(obj->m_handle);
-	if (it == m_meshes.end()) return;
+	if (it == m_meshes.end())
+	{
+		SableMemory::SB_delete(obj);
+		return;
+	}
 
 	OpenGLMesh& mesh = it->second;
-
 	if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
 	if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
 	if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
 
 	m_meshes.erase(it);
 	FreeHandle(obj->m_handle);
-	s_numGpuObjects--;
+
+	obj->m_context = nullptr;
+	SableMemory::SB_delete(obj);
 }
 
 void OpenGL3Backend::Draw()
@@ -580,7 +585,7 @@ void GpuObject::Draw() const
 GpuObject::~GpuObject()
 {
 	if (m_context)
-		m_context->DestroyGpuObject(this);
+		s_numGpuObjects--;
 }
 
 int GpuObject::GetNumInstances()

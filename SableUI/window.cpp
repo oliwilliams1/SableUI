@@ -317,6 +317,7 @@ bool SableUI::Window::PollEvents()
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();
 	StepCachedTexturesCleaner();
+	TextCacheFactory::CleanCache(m_renderer);
 
 	cleanupTextCounter++;
 	if (cleanupTextCounter >= 500)
