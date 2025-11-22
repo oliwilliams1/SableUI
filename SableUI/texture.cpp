@@ -9,7 +9,6 @@
 #include <map>
 #include <vector>
 #include <cstring>
-#include <cmath>
 #include <chrono>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -19,6 +18,12 @@
 #include <stb_image_resize2.h>
 
 #include <webp/decode.h>
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <webp/types.h>
 
 using namespace SableUI;
 
@@ -127,7 +132,7 @@ void Texture::LoadTexture(const std::string& path)
         }
 
         auto tex = std::make_shared<CachedGpuTexture>();
-        tex->gpu.SetData(webpPixels, w, h, 3);
+        tex->gpu.SetData(webpPixels, w, h, TextureFormat::RGB8);
         tex->width = w;
         tex->height = h;
         m_cachedGpu = tex;
@@ -135,8 +140,21 @@ void Texture::LoadTexture(const std::string& path)
         return;
     }
 
+    TextureFormat format = TextureFormat::Undefined;
+	switch (channels)
+	{
+	case 1: format = TextureFormat::R8; break;
+	case 2: format = TextureFormat::RG8; break;
+	case 3: format = TextureFormat::RGB8; break;
+	case 4: format = TextureFormat::RGBA8; break;
+	default:
+		SableUI_Warn("Unsupported texture format: %s", path.c_str());
+		GenerateDefaultTexture();
+		return;
+	}
+
     auto tex = std::make_shared<CachedGpuTexture>();
-    tex->gpu.SetData(pixels, width, height, channels);
+    tex->gpu.SetData(pixels, width, height, format);
     tex->width = width;
     tex->height = height;
     m_cachedGpu = tex;
@@ -243,8 +261,21 @@ void Texture::LoadTextureOptimised(const std::string& path, int width, int heigh
         }
     }
 
+    TextureFormat format = TextureFormat::Undefined;
+    switch (targetChannels)
+    {
+    case 1: format = TextureFormat::R8; break;
+    case 2: format = TextureFormat::RG8; break;
+    case 3: format = TextureFormat::RGB8; break;
+    case 4: format = TextureFormat::RGBA8; break;
+    default:
+        SableUI_Warn("Unsupported texture format: %s", path.c_str());
+        GenerateDefaultTexture();
+        return;
+    }
+
     auto tex = std::make_shared<CachedGpuTexture>();
-    tex->gpu.SetData(finalPixels, loadedWidth, loadedHeight, targetChannels);
+    tex->gpu.SetData(finalPixels, loadedWidth, loadedHeight, format);
     tex->width = loadedWidth;
     tex->height = loadedHeight;
     tex->lastUsed = std::chrono::steady_clock::now();
@@ -271,7 +302,7 @@ void Texture::GenerateDefaultTexture()
     };
 
     auto tex = std::make_shared<CachedGpuTexture>();
-    tex->gpu.SetData((uint8_t*)pixels, 4, 4, 4);
+    tex->gpu.SetData((uint8_t*)pixels, 4, 4, TextureFormat::RGBA8);
     tex->width = 4;
     tex->height = 4;
     m_cachedGpu = tex;

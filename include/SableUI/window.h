@@ -2,12 +2,12 @@
 #pragma warning(push)
 #pragma warning(disable : 4005)
 #include <string>
-#include <chrono>
-#include <vector>
 #include <array>
 
 #include "SableUI/renderer.h"
 #include "SableUI/panel.h"
+#include "events.h"
+#include "utils.h"
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -40,7 +40,7 @@ namespace SableUI
 		~Window();
 
 		bool PollEvents();
-		void Draw();
+		void AddToDrawStack();
 		bool m_needsStaticRedraw = false;
 		bool m_needsRefresh = false;
 
@@ -54,6 +54,8 @@ namespace SableUI
 
 	private:
 		RendererBackend* m_renderer = nullptr;
+		GpuFramebuffer m_framebuffer;
+		GpuTexture2D m_colourAttachment;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled);
@@ -78,8 +80,6 @@ namespace SableUI
 		GLFWcursor* m_arrowCursor = nullptr;
 		GLFWcursor* m_hResizeCursor = nullptr;
 		GLFWcursor* m_vResizeCursor = nullptr;
-
-		int cleanupTextCounter = 0;
 
 		static constexpr double DOUBLE_CLICK_TIME = 0.3;
 		static constexpr int DOUBLE_CLICK_MAX_DIST = 5;

@@ -19,7 +19,7 @@ public:
 
 	void Layout() override
 	{
-		std::string path = (toggleState) ? "1.jpg" : "2.webp";
+		std::string path = (toggleState) ? "1.jpg" : "2.jpg";
 
 		Div(w(128) h_fit)
 		{
@@ -122,7 +122,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("Console", fontSize(24));
+		Text("MAKE FRAMEBUFFER ABSTRATION WITH GPUTEXTURE INTERPLAY FOR TEXTURE RENDER TARGETS\nFIX GPU OBJECT LEAK", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
 					HSplitter()
 					{
 						PanelWith(TestComponent, 80);
-						PanelWith(ImageView, "3.jpg", 128, 128);
+						PanelWith(ImageView, "3.webp", 128, 128);
 					}
 				}
 			}
@@ -192,12 +192,12 @@ int main(int argc, char** argv)
 		PanelWith(SableUI::PropertiesView);
 	}
 
-	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	VSplitter()
-	{
-		PanelWith(SableUI::ElementTreeView, mainWindow);
-		PanelWith(SableUI::PropertiesView);
-	}
+	//SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	//VSplitter()
+	//{
+	//	PanelWith(SableUI::ElementTreeView, mainWindow);
+	//	PanelWith(SableUI::PropertiesView);
+	//}
 
 	while (SableUI::PollEvents())
 	{
@@ -262,3 +262,4 @@ int main(int argc, char** argv)
 
 | | render target panel
 */
+////////////////////////////////////

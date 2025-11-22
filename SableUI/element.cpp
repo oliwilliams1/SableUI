@@ -84,7 +84,7 @@ void SableUI::Element::SetRect(const Rect& r)
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
             drRect->Update(rect, bgColour, 0.0f);
-            renderer->Draw(drRect);
+            renderer->AddToDrawStack(drRect);
         }
         else
         {
@@ -96,7 +96,7 @@ void SableUI::Element::SetRect(const Rect& r)
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
         {
             drImage->Update(rect);
-            renderer->Draw(drImage);
+            renderer->AddToDrawStack(drImage);
         }
         else
         {
@@ -110,7 +110,7 @@ void SableUI::Element::SetRect(const Rect& r)
             rect.h = drText->m_text.UpdateMaxWidth(rect.w);
             height = rect.h;
             drText->Update(rect);
-            renderer->Draw(drText);
+            renderer->AddToDrawStack(drText);
         }
         else
         {
@@ -122,7 +122,7 @@ void SableUI::Element::SetRect(const Rect& r)
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
             drRect->Update(rect, bgColour, 0.0f);
-            renderer->Draw(drRect);
+            renderer->AddToDrawStack(drRect);
         }
         else
         {
@@ -179,7 +179,7 @@ void SableUI::Element::Render(int z)
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
             drawable->setZ(z);
-            renderer->Draw(drRect);
+            renderer->AddToDrawStack(drRect);
         }
         else
         {
@@ -193,7 +193,7 @@ void SableUI::Element::Render(int z)
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
         {
             drawable->setZ(z);
-            renderer->Draw(drImage);
+            renderer->AddToDrawStack(drImage);
         }
         else
         {
@@ -207,7 +207,7 @@ void SableUI::Element::Render(int z)
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
             drawable->setZ(z);
-            renderer->Draw(drText);
+            renderer->AddToDrawStack(drText);
         }
         else
         {
@@ -221,7 +221,7 @@ void SableUI::Element::Render(int z)
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
             drawable->setZ(z);
-            renderer->Draw(drRect);
+            renderer->AddToDrawStack(drRect);
         }
         else
         {

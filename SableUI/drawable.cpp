@@ -1,4 +1,3 @@
-#include <memory>
 #include <map>
 #include <algorithm>
 #include "SableUI/drawable.h"
@@ -6,6 +5,12 @@
 #include "SableUI/window.h"
 #include "SableUI/generated/shaders.h"
 #include "SableUI/renderer.h"
+#include <vector>
+#include <SableUI/console.h>
+#include <SableUI/memory.h>
+#include <SableUI/text.h>
+#include <SableUI/utils.h>
+#include <GL/glew.h>
 
 using namespace SableUI;
 
@@ -103,10 +108,11 @@ void SableUI::DestroyDrawables()
     auto it = g_contextResources.find(ctx);
     if (it != g_contextResources.end())
     {
-        SableMemory::SB_delete(it->second.rectObject);
-
-        g_contextResources.erase(it);
+        auto& res = it->second;
+        res.rectObject->m_context->DestroyGpuObject(res.rectObject);
     }
+
+    g_contextResources.clear();
 }
 
 // ============================================================================
@@ -171,13 +177,13 @@ void DrawableRect::Update(Rect& rect, Colour colour, float pBSize)
     this->m_colour = colour;
 }
 
-void DrawableRect::Draw(RenderTarget* texture, ContextResources& res)
+void DrawableRect::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
-    float x = (m_rect.x / static_cast<float>(texture->width));
-    float y = (m_rect.y / static_cast<float>(texture->height));
-    float w = (m_rect.w / static_cast<float>(texture->width));
-    float h = (m_rect.h / static_cast<float>(texture->height));
+    float x = (m_rect.x / static_cast<float>(framebuffer->width));
+    float y = (m_rect.y / static_cast<float>(framebuffer->height));
+    float w = (m_rect.w / static_cast<float>(framebuffer->width));
+    float h = (m_rect.h / static_cast<float>(framebuffer->height));
 
     /* normalise to opengl NDC [0, 1] ->[-1, 1] */
     x = x * 2.0f - 1.0f;
@@ -197,7 +203,7 @@ void DrawableRect::Draw(RenderTarget* texture, ContextResources& res)
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
-    res.rectObject->Draw();
+    res.rectObject->AddToDrawStack();
 }
 
 // ============================================================================
@@ -240,7 +246,7 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
     this->m_offsets = segments;
 }
 
-void DrawableSplitter::Draw(RenderTarget* texture, ContextResources& res)
+void DrawableSplitter::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
 {
 
 }
@@ -266,13 +272,13 @@ int DrawableImage::GetNumInstances()
     return s_drawableImageCount;
 }
 
-void DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& res)
+void DrawableImage::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
-    float x = (m_rect.x / static_cast<float>(renderTarget->width));
-    float y = (m_rect.y / static_cast<float>(renderTarget->height));
-    float w = (m_rect.w / static_cast<float>(renderTarget->width));
-    float h = (m_rect.h / static_cast<float>(renderTarget->height));
+    float x = (m_rect.x / static_cast<float>(framebuffer->width));
+    float y = (m_rect.y / static_cast<float>(framebuffer->height));
+    float w = (m_rect.w / static_cast<float>(framebuffer->width));
+    float h = (m_rect.h / static_cast<float>(framebuffer->height));
 
     /* normalise to opengl NDC [0, 1] ->[-1, 1] */
     x = x * 2.0f - 1.0f;
@@ -293,7 +299,7 @@ void DrawableImage::Draw(SableUI::RenderTarget* renderTarget, ContextResources& 
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
     glUniform1i(g_rUTexBoolLoc, 1);
-    res.rectObject->Draw();
+    res.rectObject->AddToDrawStack();
 }
 
 // ============================================================================
@@ -317,10 +323,10 @@ int DrawableText::GetNumInstances()
     return s_drawableTextCount;
 }
 
-void DrawableText::Draw(RenderTarget* renderTarget, ContextResources& res)
+void DrawableText::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
 {
     g_tShader.Use();
-    glUniform2f(g_tTargetSizeLoc, static_cast<float>(renderTarget->width), static_cast<float>(renderTarget->height));
+    glUniform2f(g_tTargetSizeLoc, static_cast<float>(framebuffer->width), static_cast<float>(framebuffer->height));
     glUniform2f(g_tPosLoc, m_rect.x, m_rect.y + m_rect.h);
 
     glActiveTexture(GL_TEXTURE0);
@@ -329,5 +335,5 @@ void DrawableText::Draw(RenderTarget* renderTarget, ContextResources& res)
 
     glUniform1i(g_tAtlasLoc, 0);
 
-    m_text.m_gpuObject->Draw();
+    m_text.m_gpuObject->AddToDrawStack();
 }

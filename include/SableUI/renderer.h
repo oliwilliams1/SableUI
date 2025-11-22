@@ -98,14 +98,15 @@ namespace SableUI
 	struct GpuObject
 	{
 		static int GetNumInstances();
+		GpuObject();
 		~GpuObject();
 		RendererBackend* m_context = nullptr;
-		uint32_t m_handle;
-		uint32_t numVertices;
-		uint32_t numIndices;
-		VertexLayout layout;
+		uint32_t m_handle = 0;
+		uint32_t numVertices = 0;
+		uint32_t numIndices = 0;
+		VertexLayout layout{};
 
-		void Draw() const;
+		void AddToDrawStack() const;
 	};
 
 	// Renderer
@@ -130,6 +131,7 @@ namespace SableUI
 		SrcAlphaSaturate
 	};
 
+	struct GpuFramebuffer;
 	class RendererBackend
 	{
 	public:
@@ -145,21 +147,20 @@ namespace SableUI
 		
 		virtual void ClearDrawableStack() = 0;
 		virtual void ClearDrawable(const DrawableBase* drawable) = 0;
-		virtual void Draw(DrawableBase* drawable) = 0;
-		virtual void Draw() = 0;
-		virtual void Draw(const GpuObject* obj) = 0;
-		virtual void StartDirectDraw() = 0;
-		virtual void DirectDrawRect(const Rect& rect, const Colour& color) = 0;
-		virtual void EndDirectDraw() = 0;
+		virtual void AddToDrawStack(DrawableBase* drawable) = 0;
+		virtual void AddToDrawStack(const GpuObject* obj) = 0;
+		virtual bool Draw(GpuFramebuffer* target) = 0;
 
 		virtual GpuObject* CreateGpuObject(
 			const void* vertices, uint32_t numVertices,
 			const uint32_t* indices, uint32_t numIndices,
 			const VertexLayout& layout) = 0;
 		virtual void DestroyGpuObject(GpuObject* obj) = 0;
+		virtual void BeginRenderPass(GpuFramebuffer* fbo) = 0;
+		virtual void EndRenderPass() = 0;
+		virtual void BlitToScreen(GpuFramebuffer* source) = 0;
+		bool isDirty() const { return !m_drawStack.empty(); };
 
-		RenderTarget m_renderTarget;
-	
 	protected:
 		uint32_t AllocateHandle();
 		void FreeHandle(uint32_t handle);
@@ -171,17 +172,43 @@ namespace SableUI
 		std::vector<DrawableBase*> m_drawStack;
 	};
 
+	enum class TextureFormat
+	{
+		RGBA8,
+		RGB8,
+		RG8,
+		R8,
+		Undefined
+	};
+
+	enum class TextureUsage
+	{
+		ShaderSample,
+		RenderTarget,
+		Storage
+	};
+
 	struct GpuTexture2D
 	{
 	public:
 		~GpuTexture2D();
-		void Bind() const;
-		void Unbind() const;
-		void SetData(const uint8_t* pixels, int width, int height, int channels);
+		void Bind(uint32_t slot = 0) const;
+		void Unbind(uint32_t slot = 0) const;
+
+		void CreateStorage(int width, int height, TextureFormat format, TextureUsage usage);
+		void SetData(const uint8_t* pixels, int width, int height, TextureFormat format);
+
+		uint32_t GetHandle() const { return m_textureID; }
+		int GetWidth() const { return m_width; }
+		int GetHeight() const { return m_height; }
+		TextureFormat GetFormat() const { return m_format; }
+		TextureUsage GetUsage() const { return m_usage; }
 
 	private:
 		int m_width = 0, m_height = 0;
 		uint32_t m_textureID = 0;
+		TextureFormat m_format = TextureFormat::Undefined;
+		TextureUsage m_usage = TextureUsage::ShaderSample;
 	};
 
 	struct GpuTexture2DArray
@@ -207,6 +234,28 @@ namespace SableUI
 
 	private:
 		int m_width = 0, m_height = 0, m_depth = 0;
+	};
+
+	struct GpuFramebuffer
+	{
+	public:
+		~GpuFramebuffer();
+
+		void AttachColour(GpuTexture2D* texture, int slot = 0);
+		void AttachDepthStencil(GpuTexture2D* texture);
+		void Bake();
+		void SetSize(int width, int height);
+		uint32_t GetHandle() const { return m_handle; }
+
+		const std::vector<GpuTexture2D>& GetColorAttachments() const { return m_colorAttachments; }
+		const GpuTexture2D& GetDepthAttachment() const { return m_depthStencilAttachment; }
+
+		int width = 0, height = 0;
+	private:
+		uint32_t m_handle = 0;
+
+		std::vector<GpuTexture2D> m_colorAttachments;
+		GpuTexture2D m_depthStencilAttachment;
 	};
 
 	inline uint32_t RendererBackend::AllocateHandle()

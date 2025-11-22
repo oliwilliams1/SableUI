@@ -3,11 +3,7 @@
 #include "SableUI/memory.h"
 #include "SableUI/textCache.h"
 
-#include <cstdio>
-#include <iostream>
-#include <functional>
 #include <algorithm>
-#include <stack>
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
@@ -16,6 +12,17 @@
 #endif
 
 #include <GLFW/glfw3.h>
+#include <cmath>
+#include <cstdlib>
+#include <iterator>
+#include <string>
+#include <SableUI/console.h>
+#include <SableUI/drawable.h>
+#include <SableUI/events.h>
+#include <SableUI/panel.h>
+#include <SableUI/texture.h>
+#include <SableUI/utils.h>
+#include <GL/glew.h>
 
 using namespace SableMemory;
 
@@ -133,7 +140,8 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->m_windowSize = ivec2(width, height);
 	instance->m_renderer->Viewport(0, 0, width, height);
 
-	instance->m_renderer->m_renderTarget.Resize(width, height);
+	instance->m_colourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+	instance->m_framebuffer.SetSize(width, height);
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
@@ -195,8 +203,10 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 
 	m_renderer->Flush();
 
-	m_renderer->m_renderTarget.SetTarget(RenderTargetType::Window);
-	m_renderer->m_renderTarget.Resize(m_windowSize.x, m_windowSize.y);
+	m_colourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+	m_framebuffer.SetSize(m_windowSize.x, m_windowSize.y);
+	m_framebuffer.AttachColour(&m_colourAttachment, 0);
+	m_framebuffer.Bake();
 
 	if (m_root != nullptr)
 	{
@@ -316,14 +326,9 @@ bool SableUI::Window::PollEvents()
 
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();
+
 	StepCachedTexturesCleaner();
 	TextCacheFactory::CleanCache(m_renderer);
-
-	cleanupTextCounter++;
-	if (cleanupTextCounter >= 500)
-	{
-		cleanupTextCounter = 0;
-	}
 
 	HandleResize();
 
@@ -334,7 +339,7 @@ bool SableUI::Window::PollEvents()
 	return !glfwWindowShouldClose(m_window);
 }
 
-void SableUI::Window::Draw()
+void SableUI::Window::AddToDrawStack()
 {
 	glfwMakeContextCurrent(m_window);
 	m_renderer->CheckErrors();
@@ -352,8 +357,13 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	/* flush drawable stack & render to screen */
-	m_renderer->Draw();
+	if (!m_renderer->isDirty()) return;
+
+	m_renderer->BeginRenderPass(&m_framebuffer);
+	bool res = m_renderer->Draw(&m_framebuffer);
+	m_renderer->EndRenderPass();
+
+	m_renderer->BlitToScreen(&m_framebuffer);
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -370,7 +380,7 @@ void SableUI::Window::RerenderAllNodes()
 	m_root->Render();
 
 	m_needsStaticRedraw = true;
-	Draw();
+	AddToDrawStack();
 }
 
 void SableUI::Window::RecalculateNodes()

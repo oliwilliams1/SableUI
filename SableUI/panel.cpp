@@ -172,7 +172,7 @@ void SableUI::SplitterPanel::Render()
 		child->Render();
 
 	m_drawable.m_zIndex = 999;
-	m_renderer->Draw(&m_drawable);
+	m_renderer->AddToDrawStack(&m_drawable);
 }
 
 SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)

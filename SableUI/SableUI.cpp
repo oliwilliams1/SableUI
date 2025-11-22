@@ -533,10 +533,10 @@ void App::Render()
 
 	m_nextFrameTime = clock::now() + m_frameDuration;
 
-	m_mainWindow->Draw();
+	m_mainWindow->AddToDrawStack();
 
 	for (SableUI::Window* window : m_secondaryWindows)
-		window->Draw();
+		window->AddToDrawStack();
 }
 
 App::~App()
