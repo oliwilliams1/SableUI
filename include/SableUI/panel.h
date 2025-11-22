@@ -1,15 +1,13 @@
 #pragma once
 
 #include <vector>
-#include <string>
-#include <cstdio>
-#include <cstdint>
-#include <memory>
 #include <type_traits>
-#include <utility>
 
 #include "SableUI/component.h"
 #include "SableUI/memory.h"
+#include "events.h"
+#include "renderer.h"
+#include "utils.h"
 
 namespace SableUI
 {
@@ -85,7 +83,7 @@ namespace SableUI
 
         int bSize = 1;
     private:
-        DrawableSplitter m_drawable;
+        DrawableSplitter* m_drawable;
         bool m_drawableUpToDate = false;
 
         Colour m_bColour = { 51, 51, 51 };

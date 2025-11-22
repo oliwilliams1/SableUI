@@ -19,6 +19,10 @@
 using namespace SableUI;
 
 static TreeNode g_selectedNode;
+static TreeNode g_hoveredNode;
+static TreeNode g_lastDrawnHoveredNode;
+static size_t g_currentHoveredUUID = 0;
+
 // ============================================================================
 // Helper functions
 // ============================================================================
@@ -78,33 +82,35 @@ static SableString TextJustificationToString(TextJustification justify)
 SableUI::ElementTreeView::ElementTreeView(Window* window)
 	: BaseComponent(), m_window(window) {};
 
-TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element)
+TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element, size_t& uuidCounter)
 {
 	TreeNode node;
 	node.name = ElementTypeToString(element->type);
 	node.rect = element->rect;
 	node.elInfo = element->GetInfo();
+	node.uuid = uuidCounter++;
 
 	for (Child* child : element->children)
 	{
 		Element* el = (Element*)*child;
-		node.children.push_back(GenerateElementTree(el));
+		node.children.push_back(GenerateElementTree(el, uuidCounter));
 	}
 	return node;
 }
 
-TreeNode SableUI::ElementTreeView::GeneratePanelTree(BasePanel* panel)
+TreeNode SableUI::ElementTreeView::GeneratePanelTree(BasePanel* panel, size_t& uuidCounter)
 {
 	TreeNode node;
 	node.name = GetPanelName(panel);
 	node.rect = panel->rect;
+	node.uuid = uuidCounter++;
 
 	for (BasePanel* child : panel->children)
-		node.children.push_back(GeneratePanelTree(child));
+		node.children.push_back(GeneratePanelTree(child, uuidCounter));
 
 	if (panel->children.empty())
 		if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
-			node.children.push_back(GenerateElementTree(p->GetComponent()->GetRootElement()));
+			node.children.push_back(GenerateElementTree(p->GetComponent()->GetRootElement(), uuidCounter));
 
 	return node;
 }
@@ -119,27 +125,29 @@ int SableUI::ElementTreeView::DrawTreeNode(TreeNode& node, int depth, int line)
 		prefix = node.isExpanded ? U"\u25BE " : U"\u25B8 ";
 	else
 		prefix = "    ";
+	
+	TreeNode nodeCopy = node;
+	size_t nodeUUID = node.uuid;
 
 	Div(h_fit w_fill bg(line % 2 == 0 ? rgb(40, 40, 40) : rgb(43, 43, 43)))
 	{
 		TextU32(indent + prefix + node.name,
-			onDoubleClick([&]() {
-				node.isExpanded = !node.isExpanded;
-				needsRerender = true;
+			onDoubleClick([&, nodeUUID]() {
+				FindAndToggleNode(nodeUUID);
 			})
-			onClick([&]() { 
-				g_selectedNode = node; 
+			onClick([nodeCopy]() {
+				g_selectedNode = nodeCopy;
+			})
+			onHover([nodeCopy]() {
+				g_currentHoveredUUID = nodeCopy.uuid;
+				g_hoveredNode = nodeCopy;
 			})
 		);
 	}
 
 	if (node.isExpanded)
-	{
 		for (TreeNode& child : node.children)
-		{
 			line = DrawTreeNode(child, depth + 1, line);
-		}
-	}
 
 	return line;
 }
@@ -158,27 +166,40 @@ void SableUI::ElementTreeView::Layout()
 		Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
+
 		Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
+
 		Text(SableString::Format("Elements: %d    (%zukb)", 
 			Element::GetNumInstances(), 
 			SableMemory::GetSizeData(SableMemory::PoolType::Element).sizeInKB));
+
 		Text(SableString::Format("Virtual Elements: %d    (%zukb)",
 			VirtualNode::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
+
 		Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
+
 		Text(SableString::Format("Drawable Text: %d    (%zukb)",
 			DrawableText::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::DrawableText).sizeInKB));
+
 		Text(SableString::Format("Drawable Rect: %d    (%zukb)",
 			DrawableRect::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::DrawableRect).sizeInKB));
-		Text(SableString::Format("Drawable Splitter: %d", DrawableSplitter::GetNumInstances()));
+
+		Text(SableString::Format("Drawable Splitter: %d    (%zukb)",
+			DrawableSplitter::GetNumInstances(), 
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableSplitter).sizeInKB));
+
 		Text(SableString::Format("Drawable Image: %d    (%zukb)",
 			DrawableImage::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
-		Text(SableString::Format("GPU Objects: %d", GpuObject::GetNumInstances()));
+
+		Text(SableString::Format("GPU Objects: %d    (%zukb)",
+			GpuObject::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
 
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
 		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
@@ -204,12 +225,104 @@ void SableUI::ElementTreeView::Layout()
 
 void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 {
-	TreeNode newRoot = GeneratePanelTree(m_window->GetRoot());
-
+	size_t uuidCounter = 0;
+	TreeNode newRoot = GeneratePanelTree(m_window->GetRoot(), uuidCounter);
 	PreserveExpandedState(rootNode, newRoot);
-
+	
 	if (newRoot != rootNode)
 		setRootNode(std::move(newRoot));
+	
+	if (g_hoveredNode != g_lastDrawnHoveredNode)
+	{
+		g_lastDrawnHoveredNode = g_hoveredNode;
+		const Rect& rect = g_hoveredNode.rect;
+		const ElementInfo& info = g_hoveredNode.elInfo;
+
+		// Padding
+		if (info.paddingTop > 0) {
+			Rect paddingTop = {
+				rect.x + info.paddingLeft,
+				rect.y,
+				rect.w - info.paddingLeft - info.paddingRight,
+				info.paddingTop
+			};
+			m_window->DrawRectOnTop(paddingTop, Colour(140, 200, 140, 120));
+		}
+		if (info.paddingBottom > 0) {
+			Rect paddingBottom = {
+				rect.x + info.paddingLeft,
+				rect.y + rect.h - info.paddingBottom,
+				rect.w - info.paddingLeft - info.paddingRight,
+				info.paddingBottom
+			};
+			m_window->DrawRectOnTop(paddingBottom, Colour(140, 200, 140, 120));
+		}
+		if (info.paddingLeft > 0) {
+			Rect paddingLeft = {
+				rect.x,
+				rect.y,
+				info.paddingLeft,
+				rect.h
+			};
+			m_window->DrawRectOnTop(paddingLeft, Colour(140, 200, 140, 120));
+		}
+		if (info.paddingRight > 0) {
+			Rect paddingRight = {
+				rect.x + rect.w - info.paddingRight,
+				rect.y,
+				info.paddingRight,
+				rect.h
+			};
+			m_window->DrawRectOnTop(paddingRight, Colour(140, 200, 140, 120));
+		}
+
+		// Margins
+		if (info.marginTop > 0) {
+			Rect marginTop = {
+				rect.x + info.marginLeft,
+				rect.y - info.marginTop,
+				rect.w - info.marginLeft - info.marginRight,
+				info.marginTop
+			};
+			m_window->DrawRectOnTop(marginTop, Colour(255, 180, 100, 120));
+		}
+		if (info.marginBottom > 0) {
+			Rect marginBottom = {
+				rect.x + info.marginLeft,
+				rect.y + rect.h,
+				rect.w - info.marginLeft - info.marginRight,
+				info.marginBottom
+			};
+			m_window->DrawRectOnTop(marginBottom, Colour(255, 180, 100, 120));
+		}
+		if (info.marginLeft > 0) {
+			Rect marginLeft = {
+				rect.x - info.marginLeft,
+				rect.y - info.marginTop,
+				info.marginLeft,
+				rect.h + info.marginTop + info.marginBottom
+			};
+			m_window->DrawRectOnTop(marginLeft, Colour(255, 180, 100, 120));
+		}
+		if (info.marginRight > 0) {
+			Rect marginRight = {
+				rect.x + rect.w,
+				rect.y - info.marginTop,
+				info.marginRight,
+				rect.h + info.marginTop + info.marginBottom
+			};
+			m_window->DrawRectOnTop(marginRight, Colour(255, 180, 100, 120));
+		}
+
+		// Content area
+		Rect contentRect = {
+			rect.x + info.paddingLeft,
+			rect.y + info.paddingTop,
+			rect.w - info.paddingLeft - info.paddingRight,
+			rect.h - info.paddingTop - info.paddingBottom
+		};
+		m_window->DrawRectOnTop(contentRect, Colour(100, 180, 255, 120));
+	}
 }
 
 void SableUI::ElementTreeView::PreserveExpandedState(const TreeNode& oldNode, TreeNode& newNode)
@@ -220,6 +333,25 @@ void SableUI::ElementTreeView::PreserveExpandedState(const TreeNode& oldNode, Tr
 	for (size_t i = 0; i < newNode.children.size(); ++i)
 		if (i < oldNode.children.size())
 			PreserveExpandedState(oldNode.children[i], newNode.children[i]);
+}
+
+void SableUI::ElementTreeView::FindAndToggleNode(size_t uuid)
+{
+	auto toggle = [](TreeNode& n, size_t id, auto& self) -> bool
+	{
+		if (n.uuid == id)
+		{
+			n.isExpanded = !n.isExpanded;
+			return true;
+		}
+		for (auto& child : n.children)
+			if (self(child, id, self)) return true;
+
+		return false;
+	};
+
+	toggle(rootNode, uuid, toggle);
+	needsRerender = true;
 }
 
 // ============================================================================

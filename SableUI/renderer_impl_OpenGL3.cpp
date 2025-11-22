@@ -148,7 +148,7 @@ void OpenGL3Backend::CheckErrors()
 
 void OpenGL3Backend::BeginRenderPass(GpuFramebuffer* fbo)
 {
-	if (fbo)
+	if (!fbo->isWindowSurface)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo->GetHandle());
 		glViewport(0, 0, fbo->GetColorAttachments()[0].GetWidth(),
@@ -544,6 +544,11 @@ GpuTexture2D::~GpuTexture2D()
 // ============================================================================
 void GpuFramebuffer::AttachColour(GpuTexture2D* texture, int slot)
 {
+	if (isWindowSurface)
+	{
+		SableUI_Error("Cannot add a colour attachment to a window surface");
+		return;
+	}
 	if (slot < 0 || slot >= 8)
 	{
 		SableUI_Error("Color attachment slot must be between 0 and 7");
@@ -565,6 +570,12 @@ void GpuFramebuffer::AttachDepthStencil(GpuTexture2D* texture)
 
 void GpuFramebuffer::Bake()
 {
+	if (isWindowSurface)
+	{
+		SableUI_Error("Cannot bake a window-surface framebuffer");
+		return;
+	}
+
 	if (m_handle == 0)
 		glGenFramebuffers(1, &m_handle);
 

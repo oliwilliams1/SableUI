@@ -122,7 +122,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("MAKE FRAMEBUFFER ABSTRATION WITH GPUTEXTURE INTERPLAY FOR TEXTURE RENDER TARGETS\nFIX GPU OBJECT LEAK", fontSize(24));
+		Text("Console", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 

@@ -1,5 +1,6 @@
 #include "SableUI/panel.h"
 #include "SableUI/memory.h"
+#include "SableUI/drawable.h"
 
 using namespace SableMemory;
 
@@ -156,6 +157,7 @@ static int s_splitterPanelCount = 0;
 SableUI::SplitterPanel::SplitterPanel(BasePanel* parent, PanelType type, RendererBackend* renderer)
 	: BasePanel(parent, renderer)
 {
+	m_drawable = SableMemory::SB_new<DrawableSplitter>();
 	s_splitterPanelCount++;
 	this->type = type;
 }
@@ -171,8 +173,8 @@ void SableUI::SplitterPanel::Render()
 	for (SableUI::BasePanel* child : children)
 		child->Render();
 
-	m_drawable.m_zIndex = 999;
-	m_renderer->AddToDrawStack(&m_drawable);
+	m_drawable->m_zIndex = 999;
+	m_renderer->AddToDrawStack(m_drawable);
 }
 
 SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
@@ -417,7 +419,7 @@ void SableUI::SplitterPanel::Update()
 			segments.push_back(child->rect.y - rect.y);
 	}
 	
-	m_drawable.Update(rect, m_bColour, type, bSize, segments);
+	m_drawable->Update(rect, m_bColour, type, bSize, segments);
 	m_drawableUpToDate = true;
 	Render();
 }
@@ -428,6 +430,7 @@ SableUI::SplitterPanel::~SplitterPanel()
 		SB_delete(child);
 	children.clear();
 
+	SableMemory::SB_delete(m_drawable);
 	s_splitterPanelCount--;
 }
 

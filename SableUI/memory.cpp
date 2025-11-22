@@ -183,6 +183,8 @@ static DynamicPool s_childPool;
 static DynamicPool s_drawableRectPool;
 static DynamicPool s_drawableImagePool;
 static DynamicPool s_drawableTextPool;
+static DynamicPool s_drawableSplitterPool;
+static DynamicPool s_gpuObjectPool;
 
 static bool s_poolsInit = false;
 static size_t s_frameCount = 0;
@@ -198,6 +200,8 @@ void SableMemory::InitPools()
 	Pool_Init(&s_drawableRectPool, sizeof(SableUI::DrawableRect), 64);
 	Pool_Init(&s_drawableImagePool, sizeof(SableUI::DrawableImage), 32);
 	Pool_Init(&s_drawableTextPool, sizeof(SableUI::DrawableText), 32);
+	Pool_Init(&s_drawableSplitterPool, sizeof(SableUI::DrawableSplitter), 16);
+	Pool_Init(&s_gpuObjectPool, sizeof(SableUI::GpuObject), 32);
 
 	s_poolsInit = true;
 }
@@ -220,6 +224,10 @@ void* SableMemory::SB_alloc(size_t size)
 		return Pool_Alloc(&s_drawableImagePool);
 	else if (size == sizeof(SableUI::DrawableText))
 		return Pool_Alloc(&s_drawableTextPool);
+	else if (size == sizeof(SableUI::DrawableSplitter))
+		return Pool_Alloc(&s_drawableSplitterPool);
+	else if (size == sizeof(SableUI::GpuObject))
+		return Pool_Alloc(&s_gpuObjectPool);
 
 	return std::malloc(size);
 }
@@ -235,6 +243,8 @@ void SableMemory::SB_free(void* ptr)
 	if (Pool_Free(&s_drawableRectPool, ptr)) return;
 	if (Pool_Free(&s_drawableImagePool, ptr)) return;
 	if (Pool_Free(&s_drawableTextPool, ptr)) return;
+	if (Pool_Free(&s_drawableSplitterPool, ptr)) return;
+	if (Pool_Free(&s_gpuObjectPool, ptr)) return;
 
 	std::free(ptr);
 }
@@ -254,6 +264,8 @@ void SableMemory::CompactPools()
 	Pool_Compact(&s_drawableRectPool);
 	Pool_Compact(&s_drawableImagePool);
 	Pool_Compact(&s_drawableTextPool);
+	Pool_Compact(&s_drawableSplitterPool);
+	Pool_Compact(&s_gpuObjectPool);
 }
 
 SableMemory::SizeData SableMemory::GetSizeData(PoolType type)
@@ -277,26 +289,32 @@ SableMemory::SizeData SableMemory::GetSizeData(PoolType type)
 
 	switch (type)
 	{
-	case SableMemory::PoolType::Element:
+	case PoolType::Element:
 		fillData(data, &s_elementPool);
 		break;
-	case SableMemory::PoolType::VirtualNode:
+	case PoolType::VirtualNode:
 		fillData(data, &s_vnodePool);
 		break;
-	case SableMemory::PoolType::BaseComponent:
+	case PoolType::BaseComponent:
 		fillData(data, &s_componentPool);
 		break;
-	case SableMemory::PoolType::Child:
+	case PoolType::Child:
 		fillData(data, &s_childPool);
 		break;
-	case SableMemory::PoolType::DrawableRect:
+	case PoolType::DrawableRect:
 		fillData(data, &s_drawableRectPool);
 		break;
-	case SableMemory::PoolType::DrawableImage:
+	case PoolType::DrawableImage:
 		fillData(data, &s_drawableImagePool);
 		break;
-	case SableMemory::PoolType::DrawableText:
+	case PoolType::DrawableText:
 		fillData(data, &s_drawableTextPool);
+		break;
+	case PoolType::DrawableSplitter:
+		fillData(data, &s_drawableSplitterPool);
+		break;
+	case PoolType::GpuObject:
+		fillData(data, &s_gpuObjectPool);
 		break;
 	default:
 		break;
@@ -316,6 +334,8 @@ void SableMemory::DestroyPools()
 	Pool_Destroy(&s_drawableRectPool);
 	Pool_Destroy(&s_drawableImagePool);
 	Pool_Destroy(&s_drawableTextPool);
+	Pool_Destroy(&s_drawableSplitterPool);
+	Pool_Destroy(&s_gpuObjectPool);
 
 	s_poolsInit = false;
 	s_frameCount = 0;

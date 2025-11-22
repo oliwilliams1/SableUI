@@ -457,14 +457,13 @@ void SableUI::Shutdown()
 SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
 {
 	if (s_app == nullptr)
-	{
 		SableUI_Runtime_Error("SableUI has not been initialised");
-	}
 
 	return s_app->CreateSecondaryWindow(name, width, height, x, y);
 }
 
-bool SableUI::PollEvents() {
+bool SableUI::PollEvents()
+{
 	if (s_app == nullptr) return false;
 
 	SableMemory::CompactPools();
@@ -472,7 +471,8 @@ bool SableUI::PollEvents() {
 	return s_app->PollEvents();
 }
 
-void SableUI::Render() {
+void SableUI::Render()
+{
 	if (s_app == nullptr) return;
 	s_app->Render();
 }
@@ -533,10 +533,10 @@ void App::Render()
 
 	m_nextFrameTime = clock::now() + m_frameDuration;
 
-	m_mainWindow->AddToDrawStack();
+	m_mainWindow->Draw();
 
 	for (SableUI::Window* window : m_secondaryWindows)
-		window->AddToDrawStack();
+		window->Draw();
 }
 
 App::~App()

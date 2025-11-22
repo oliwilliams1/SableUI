@@ -26,6 +26,14 @@
 
 using namespace SableMemory;
 
+static void SetGLFWContext(GLFWwindow* window)
+{
+	static GLFWwindow* prevContext = nullptr;
+
+	if (prevContext != window)
+		glfwMakeContextCurrent(window);
+}
+
 static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 {
 	SableUI::Rect r = node->rect;
@@ -129,7 +137,7 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 }
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
-	glfwMakeContextCurrent(window);
+	SetGLFWContext(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
@@ -142,6 +150,7 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 
 	instance->m_colourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
 	instance->m_framebuffer.SetSize(width, height);
+	instance->m_windowSurface.SetSize(width, height);
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
@@ -150,7 +159,7 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 
 void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
 {
-	glfwMakeContextCurrent(window);
+	SetGLFWContext(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
@@ -181,11 +190,11 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
 	}
 
-	glfwMakeContextCurrent(m_window);
+	SetGLFWContext(m_window);
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
-	// Enable immersive darkmode on windows via api 
+	// Enable immersive dark mode on windows via api 
 	HWND hwnd = FindWindowA(NULL, title.c_str());
 
 	BOOL dark_mode = true;
@@ -207,6 +216,9 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_framebuffer.SetSize(m_windowSize.x, m_windowSize.y);
 	m_framebuffer.AttachColour(&m_colourAttachment, 0);
 	m_framebuffer.Bake();
+
+	m_windowSurface.SetIsWindowSurface(true);
+	m_windowSurface.SetSize(m_windowSize.x, m_windowSize.y);
 
 	if (m_root != nullptr)
 	{
@@ -313,7 +325,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 
 bool SableUI::Window::PollEvents()
 {
-	glfwMakeContextCurrent(m_window);
+	SetGLFWContext(m_window);
 	glfwPollEvents();
 
 	if (m_needsRefresh)
@@ -339,10 +351,13 @@ bool SableUI::Window::PollEvents()
 	return !glfwWindowShouldClose(m_window);
 }
 
-void SableUI::Window::AddToDrawStack()
+void SableUI::Window::Draw()
 {
-	glfwMakeContextCurrent(m_window);
+	SetGLFWContext(m_window);
+
+#ifdef _DEBUG
 	m_renderer->CheckErrors();
+#endif
 
 #ifdef _WIN32
 	MSG msg;
@@ -357,13 +372,34 @@ void SableUI::Window::AddToDrawStack()
 	}
 #endif
 
-	if (!m_renderer->isDirty()) return;
+	bool blitted = false;
+	bool wasDirty = false;
+	if (m_renderer->isDirty())
+	{
+		wasDirty = true;
+		m_renderer->BeginRenderPass(&m_framebuffer);
+		bool res = m_renderer->Draw(&m_framebuffer);
+		m_renderer->EndRenderPass();
+	}
 
-	m_renderer->BeginRenderPass(&m_framebuffer);
-	bool res = m_renderer->Draw(&m_framebuffer);
-	m_renderer->EndRenderPass();
+	if (rectDrawQueue.size() != 0)
+	{
+		m_renderer->BlitToScreen(&m_framebuffer);
+		blitted = true;
 
-	m_renderer->BlitToScreen(&m_framebuffer);
+		for (auto& dr : rectDrawQueue)
+			m_renderer->AddToDrawStack(&dr);
+
+		m_renderer->BeginRenderPass(&m_windowSurface);
+		m_renderer->Draw(&m_windowSurface);
+		m_renderer->EndRenderPass();
+
+	}
+
+	if (wasDirty && !blitted)
+		m_renderer->BlitToScreen(&m_framebuffer);
+	
+	rectDrawQueue.clear();
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -380,12 +416,20 @@ void SableUI::Window::RerenderAllNodes()
 	m_root->Render();
 
 	m_needsStaticRedraw = true;
-	AddToDrawStack();
+	Draw();
 }
 
 void SableUI::Window::RecalculateNodes()
 {
 	m_root->Recalculate();
+}
+
+void SableUI::Window::DrawRectOnTop(const Rect& rect, const Colour& colour)
+{
+	DrawableRect drRect{};
+	drRect.m_rect = rect;
+	drRect.m_colour = colour;
+	rectDrawQueue.push_back(drRect);
 }
 
 // ============================================================================

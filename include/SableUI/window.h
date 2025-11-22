@@ -3,11 +3,13 @@
 #pragma warning(disable : 4005)
 #include <string>
 #include <array>
+#include <vector>
 
 #include "SableUI/renderer.h"
 #include "SableUI/panel.h"
 #include "events.h"
 #include "utils.h"
+#include "drawable.h"
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -40,7 +42,7 @@ namespace SableUI
 		~Window();
 
 		bool PollEvents();
-		void AddToDrawStack();
+		void Draw();
 		bool m_needsStaticRedraw = false;
 		bool m_needsRefresh = false;
 
@@ -52,9 +54,12 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
+		void DrawRectOnTop(const Rect& rect, const Colour& colour);
+
 	private:
 		RendererBackend* m_renderer = nullptr;
 		GpuFramebuffer m_framebuffer;
+		GpuFramebuffer m_windowSurface;
 		GpuTexture2D m_colourAttachment;
 
 		void HandleResize();
@@ -86,5 +91,7 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
+
+		std::vector<DrawableRect> rectDrawQueue;
 	};
 }
