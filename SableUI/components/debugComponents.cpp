@@ -22,6 +22,7 @@ static TreeNode g_selectedNode;
 static TreeNode g_hoveredNode;
 static TreeNode g_lastDrawnHoveredNode;
 static size_t g_currentHoveredUUID = 0;
+static bool g_needsTransparencyUpdate = false;
 
 // ============================================================================
 // Helper functions
@@ -87,6 +88,9 @@ TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element, size_t&
 	TreeNode node;
 	node.name = ElementTypeToString(element->type);
 	node.rect = element->rect;
+	if (highlightElements)
+		node.minBoundsRect = { element->rect.x, element->rect.y, element->GetMinWidth(), element->GetMinHeight() };
+	
 	node.elInfo = element->GetInfo();
 	node.uuid = uuidCounter++;
 
@@ -103,6 +107,7 @@ TreeNode SableUI::ElementTreeView::GeneratePanelTree(BasePanel* panel, size_t& u
 	TreeNode node;
 	node.name = GetPanelName(panel);
 	node.rect = panel->rect;
+	node.minBoundsRect = { panel->rect.x, panel->rect.y, panel->minBounds.x, panel->minBounds.y };
 	node.uuid = uuidCounter++;
 
 	for (BasePanel* child : panel->children)
@@ -155,7 +160,8 @@ int SableUI::ElementTreeView::DrawTreeNode(TreeNode& node, int depth, int line)
 void SableUI::ElementTreeView::Layout()
 {
 	rootElement->setPadding(4);
-	Text("Open/close mem diagnostics", onDoubleClick([&]() { setMemoryDebugger(!memoryDebugger); }));
+	SableString memSwitch = memoryDebugger ? "Close" : "Open";
+	Text(memSwitch + " memory diagnostics", onDoubleClick([&]() { setMemoryDebugger(!memoryDebugger); }));
 
 	if (memoryDebugger)
 	{
@@ -220,6 +226,25 @@ void SableUI::ElementTreeView::Layout()
 	}
 
 	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
+
+	SableString toggleHighlightElements = highlightElements ? "off" : "on";
+	Text("Turn " + toggleHighlightElements + " highlight selected elements",
+		mb(4)
+		onClick([&]() { setHighlightElements(!highlightElements);
+	}));
+
+	SableString transparencyValueStr = SableString::Format("%d", ((transparency * 100 / 255 + 10) / 20) * 20);
+	Text("Set transparency " + transparencyValueStr + "%",
+		mb(4)
+		onClick([&]() {
+			setTransparency(transparency + 52);
+			if (transparency >= 255)
+				setTransparency(0);
+
+			g_needsTransparencyUpdate = true;
+		})
+	);
+
 	DrawTreeNode(rootNode, 0);
 }
 
@@ -232,8 +257,11 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 	if (newRoot != rootNode)
 		setRootNode(std::move(newRoot));
 	
-	if (g_hoveredNode != g_lastDrawnHoveredNode)
+	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
 	{
+		m_window->DrawRectOnTop(rootNode.rect, Colour(0, 0, 0, transparency));
+		g_needsTransparencyUpdate = false;
+
 		g_lastDrawnHoveredNode = g_hoveredNode;
 		const Rect& rect = g_hoveredNode.rect;
 		const ElementInfo& info = g_hoveredNode.elInfo;
@@ -279,18 +307,18 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 		// Margins
 		if (info.marginTop > 0) {
 			Rect marginTop = {
-				rect.x + info.marginLeft,
+				rect.x,
 				rect.y - info.marginTop,
-				rect.w - info.marginLeft - info.marginRight,
+				rect.w,
 				info.marginTop
 			};
 			m_window->DrawRectOnTop(marginTop, Colour(255, 180, 100, 120));
 		}
 		if (info.marginBottom > 0) {
 			Rect marginBottom = {
-				rect.x + info.marginLeft,
+				rect.x,
 				rect.y + rect.h,
-				rect.w - info.marginLeft - info.marginRight,
+				rect.w,
 				info.marginBottom
 			};
 			m_window->DrawRectOnTop(marginBottom, Colour(255, 180, 100, 120));
@@ -313,6 +341,8 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 			};
 			m_window->DrawRectOnTop(marginRight, Colour(255, 180, 100, 120));
 		}
+
+		m_window->DrawRectOnTop(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
 
 		// Content area
 		Rect contentRect = {

@@ -15,10 +15,6 @@ SableUI::Child::~Child()
     {
         SB_delete(element);
     }
-    else if (type == ChildType::COMPONENT)
-    {
-        SB_delete(component);
-    }
 }
 
 /* child struct */

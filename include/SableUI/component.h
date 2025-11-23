@@ -2,9 +2,11 @@
 #include "SableUI/element.h"
 #include "SableUI/memory.h"
 #include <functional>
-#include <map>
-#include <any>
-#include <tuple>
+#include <type_traits>
+#include <vector>
+#include "events.h"
+#include "renderer.h"
+#include "utils.h"
 
 namespace SableUI
 {
@@ -39,13 +41,14 @@ namespace SableUI
         {
             return StateBlock(
                 variable, 
-                [](void* dst, const void* src) {
+                [](void* dst, const void* src)
+                {
                     *static_cast<T*>(dst) = *static_cast<const T*>(src);
                 });
         }
 
         void CopyFrom(const StateBlock& other) const
-        { copier(ptr, other.ptr); }
+            { copier(ptr, other.ptr); }
     };
 
     class BaseComponent
@@ -98,8 +101,18 @@ namespace SableUI
     {
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 
-        T* component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
-        m_componentChildren.push_back(component);
+        T* component;
+
+        if (static_cast<size_t>(m_childCount) < m_componentChildren.size())
+        {
+            component = static_cast<T*>(m_componentChildren[m_childCount]);
+        }
+        else
+        {
+            component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
+            m_componentChildren.push_back(component);
+        }
+
         m_childCount++;
         return component;
     }

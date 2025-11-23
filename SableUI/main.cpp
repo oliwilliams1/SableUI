@@ -24,7 +24,7 @@ public:
 		Div(w(128) h_fit)
 		{
 			Div(bg(128, 32, 32) p(2)
-				onClick([&]() { setToggleState(!toggleState); }))
+				onClick([=]() { setToggleState(!toggleState); }))
 			{
 				Text("Click to change image. Loaded: " + path, textColour(0, 0, 0));
 			}
@@ -48,16 +48,13 @@ public:
 
 		Div(dir(direction) bg(255, 0, 0))
 		{
-			Div(ID("child") w(50) h(50))
+			Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50)
+				onHover([=]() { setIsHovered(true); })
+				onHoverExit([=]() { setIsHovered(false); }))
 			{
-				Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50)
-					onHover([&]() { setIsHovered(true); })
-					onHoverExit([&]() { setIsHovered(false); }))
-				{
-					Rect(w(20) h(20) bg(clicks, 0, 255)
-						onClick([&]() { setClicks(clicks + 40); })
-						onSecondaryClick([&]() { setClicks(clicks - 40); }));
-				}
+				Rect(w(20) h(20) bg(clicks, 0, 255)
+					onClick([=]() { setClicks(clicks + 40); })
+					onSecondaryClick([=]() { setClicks(clicks - 40); }));
 			}
 
 			Div(m(5) w(100) h(100) bg(255, 255, 0))
@@ -87,8 +84,8 @@ public:
 	void Layout() override
 	{
 		Image(m_path, w(width) h(height) centerXY
-			onHover([&]() { setState(false); })
-			onHoverExit([&]() { setState(true); }));
+			onHover([=]() { setState(false); })
+			onHoverExit([=]() { setState(true); }));
 
 		if (state)
 		{

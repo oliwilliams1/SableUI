@@ -107,10 +107,10 @@ namespace SableUI
 /* style modifiers */
 #define ID(value)			.setID(value)
 #define bg(...)				.setBgColour(SableUI::Colour(__VA_ARGS__))
-#define w(value)			.setWidth(value)
+#define w(value)			.setWidth(value).setMinWidth(value)
 #define minW(value)			.setMinWidth(value)
 #define maxW(value)			.setMaxWidth(value)
-#define h(value)			.setHeight(value)
+#define h(value)			.setHeight(value).setMinWidth(value)
 #define minH(value)			.setMinHeight(value)
 #define maxH(value)			.setMaxHeight(value)
 #define w_fill				.setWType(SableUI::RectType::FILL)
@@ -155,17 +155,18 @@ namespace SableUI
 
 #define dir(value)			.setLayoutDirection(value)
 
-#define useState(variableName, setterName, T, initialValue)				\
-    T variableName = initialValue;										\
-    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(		\
-        [this](T const& val) {											\
-            if (this->variableName == val) return;						\
-            this->variableName = val;									\
-            this->needsRerender = true;									\
-        });																\
-    struct __StateReg_##variableName {									\
-        __StateReg_##variableName(SableUI::BaseComponent* comp, T* var)	\
-        { comp->RegisterState(var); }									\
+#define useState(variableName, setterName, T, initialValue)             \
+    T variableName = initialValue;                                      \
+    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
+        [this](T const& val) {                                          \
+            if (!this) return;						                    \
+            if (this->variableName == val) return;                      \
+            this->variableName = val;                                   \
+            this->needsRerender = true;                                 \
+        });                                                             \
+    struct __StateReg_##variableName {                                  \
+        __StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
+        { if (comp) comp->RegisterState(var); }							\
     } __stateReg_##variableName{this, &variableName}
 
 #define onHover(...)				.setOnHover(__VA_ARGS__)

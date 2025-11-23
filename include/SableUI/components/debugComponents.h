@@ -14,8 +14,9 @@ namespace SableUI
 	{
 		SableString name;
 		std::vector<TreeNode> children;
-		bool isExpanded = false;
+		bool isExpanded = true;
 		Rect rect;
+		Rect minBoundsRect;
 		ElementInfo elInfo;
 		size_t uuid = 0;
 
@@ -23,8 +24,10 @@ namespace SableUI
 		{
 			if (a.name != b.name) return false;
 			if (a.uuid != b.uuid) return false;
-			bool res = a.children.size() == b.children.size();
-			if (!res) return false;
+			if (a.children.size() != b.children.size())	return false;
+			if (a.rect != b.rect) return false;
+			if (a.minBoundsRect != b.minBoundsRect) return false;
+
 			for (int i = 0; i < a.children.size(); i++)
 				if (a.children[i] != b.children[i]) return false;
 			return true;
@@ -47,6 +50,8 @@ namespace SableUI
 
 	private:
 		useState(memoryDebugger, setMemoryDebugger, bool, false);
+		useState(highlightElements, setHighlightElements, bool, false);
+		useState(transparency, setTransparency, int, 0);
 		useState(rootNode, setRootNode, TreeNode, {});
 		Window* m_window = nullptr;
 	};

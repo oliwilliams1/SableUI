@@ -12,11 +12,18 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 	m_bgColour = colour;
 }
 
+// In BaseComponent.cpp
 SableUI::BaseComponent::~BaseComponent()
 {
 	s_numComponents--;
 
 	if (rootElement) SB_delete(rootElement);
+
+	// FIX: This component OWNS its children. Delete them.
+	for (BaseComponent* child : m_componentChildren)
+	{
+		if (child) SB_delete(child);
+	}
 	m_componentChildren.clear();
 }
 
