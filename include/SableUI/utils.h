@@ -144,6 +144,13 @@ namespace SableUI
 				return { 0, 0 };
 			}
 		}
+
+		void normalise()
+		{
+			float f = std::sqrt(x * x + y * y);
+			x /= f;
+			y /= f;
+		}
 	};
 
 	struct vec3

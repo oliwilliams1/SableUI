@@ -1,5 +1,13 @@
 #pragma once
-#include "SableUI/window.h"
+#include <SableUI/window.h>
+#include <SableUI/component.h>
+#include <SableUI/drawable.h>
+#include <SableUI/element.h>
+#include <SableUI/panel.h>
+#include <SableUI/renderer.h>
+#include <SableUI/text.h>
+#include <SableUI/utils.h>
+#include <string>
 
 /* non-macro user api */
 namespace SableUI
@@ -40,6 +48,9 @@ namespace SableUI
 	void AddImage(const std::string& path, const ElementInfo& info = {});
 	void AddText(const std::string& text, const ElementInfo& info = {});
 	void AddTextU32(const SableString& text, const ElementInfo& info = {});
+
+	void SetNextPanelMaxWidth(int width);
+	void SetNextPanelMaxHeight(int height);
 
 	struct DivScope
 	{

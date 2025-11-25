@@ -420,6 +420,7 @@ void SableUI::Element::LayoutChildren()
 
     int totalFixedMainAxis = 0;
     int totalMarginMainAxis = 0;
+    int totalPaddingOfFillElementsMainAxis = 0;
     int fillMainAxisCount = 0;
 
     for (Child* child : children)
@@ -442,6 +443,7 @@ void SableUI::Element::LayoutChildren()
             else if (childElement->hType == RectType::FILL)
             {
                 fillMainAxisCount++;
+                totalPaddingOfFillElementsMainAxis += childElement->paddingTop + childElement->paddingBottom;
             }
         }
         else
@@ -460,12 +462,13 @@ void SableUI::Element::LayoutChildren()
             else if (childElement->wType == RectType::FILL)
             {
                 fillMainAxisCount++;
+                totalPaddingOfFillElementsMainAxis += childElement->paddingLeft + childElement->paddingRight;
             }
         }
     }
 
     int availableMainAxis = isVerticalFlow ? contentAreaSize.y : contentAreaSize.x;
-    int remainingMainAxis = availableMainAxis - totalFixedMainAxis - totalMarginMainAxis;
+    int remainingMainAxis = availableMainAxis - totalFixedMainAxis - totalMarginMainAxis - totalPaddingOfFillElementsMainAxis;
     int fillMainAxisSize = (fillMainAxisCount > 0) ? std::max(0, remainingMainAxis / fillMainAxisCount) : 0;
     int fillMainAxisRemainder = (fillMainAxisCount > 0) ? remainingMainAxis % fillMainAxisCount : 0;
 

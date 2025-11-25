@@ -63,7 +63,7 @@ namespace SableUI
 		GpuTexture2D m_colourAttachment;
 
 		void HandleResize();
-		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled);
+		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled, bool isLastChild);
 		void Resize(ivec2 pos, BasePanel* panel = nullptr);
 		void ResizeStep(ivec2 deltaPos, BasePanel* panel, BasePanel* root);
 		ResizeState m_resizeState;

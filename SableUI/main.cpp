@@ -23,10 +23,10 @@ public:
 
 		Div(w(128) h_fit)
 		{
-			Div(bg(128, 32, 32) p(2)
+			Div(bg(128, 32, 32) p(4)
 				onClick([=]() { setToggleState(!toggleState); }))
 			{
-				Text("Click to change image. Loaded: " + path, textColour(0, 0, 0));
+				Text("Click to change image. Loaded: " + path, textColour(0, 0, 0) mb(4));
 			}
 
 			Image(path, w(128) h(128));
@@ -152,6 +152,31 @@ private:
 	useState(nLogs, setNlogs, int, 0);
 };
 
+class MenuBar : public SableUI::BaseComponent
+{
+public:
+	MenuBar() : SableUI::BaseComponent() {};
+
+	void DrawMenuBarItem(const std::string& text)
+	{
+		Div(p(2) mb(2) bg(32, 32, 32) w_fit)
+		{
+			Text(text, justify_center h_fit w_fit px(4));
+		}
+	}
+
+	void Layout() override
+	{
+		Div(left_right bg(32, 32, 32))
+		{
+			DrawMenuBarItem("File");
+			DrawMenuBarItem("Edit");
+			DrawMenuBarItem("View");
+			DrawMenuBarItem("...");
+		}
+	}
+};
+
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
@@ -159,27 +184,33 @@ int main(int argc, char** argv)
 	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
 	SableUI::SetMaxFPS(60);
 
-	HSplitter()
+	VSplitter()
 	{
-		VSplitter()
+		SableUI::SetNextPanelMaxHeight(20);
+		PanelWith(MenuBar);
+		HSplitter()
 		{
-			HSplitter()
+			VSplitter()
 			{
-				PanelWith(TestComponent, 128);
-				VSplitter()
+				HSplitter()
 				{
-					Panel();
-					HSplitter()
+					PanelWith(TestComponent, 128);
+					VSplitter()
 					{
-						PanelWith(TestComponent, 80);
-						PanelWith(ImageView, "3.webp", 128, 128);
+						Panel();
+						HSplitter()
+						{
+							PanelWith(TestComponent, 80);
+							PanelWith(ImageView, "3.jpg", 128, 128);
+						}
 					}
 				}
-			}
-			PanelWith(ConsoleView);
+				SableUI::SetNextPanelMaxHeight(250);
+				PanelWith(ConsoleView);
 
+			}
+			Panel();
 		}
-		Panel();
 	}
 
 	SableUI::CreateSecondaryWindow("Debug View", 250, 900);

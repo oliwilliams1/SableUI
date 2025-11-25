@@ -23,6 +23,7 @@
 #include <SableUI/texture.h>
 #include <SableUI/utils.h>
 #include <GL/glew.h>
+#include <vector>
 
 using namespace SableMemory;
 
@@ -247,7 +248,7 @@ void SableUI::Window::HandleResize()
 
 	if (DistToEdge(m_root, ctx.mousePos) > 5.0f)
 	{
-		cursorToSet = CheckResize(m_root, &resCalled);
+		cursorToSet = CheckResize(m_root, &resCalled, false);
 	}
 
 	if (m_currentCursor != cursorToSet && !m_resizing)
@@ -269,20 +270,19 @@ void SableUI::Window::HandleResize()
 		if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		{
 			m_resizing = false;
-			m_renderer->ClearDrawableStack();
-			RecalculateNodes();
-			RerenderAllNodes();
 		}
 	}
 }
 
-GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
+GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool p_isLastChild)
 {
 	if (node == nullptr) return m_arrowCursor;
 
 	GLFWcursor* cursorToSet = m_arrowCursor;
 
-	if (RectBoundingBox(node->rect, ctx.mousePos) && ctx.mousePos.x != 0 && ctx.mousePos.y != 0)
+	if (RectBoundingBox(node->rect, ctx.mousePos) 
+		&& ctx.mousePos.x != 0 && ctx.mousePos.y != 0 
+		&& !p_isLastChild)
 	{
 		float d1 = DistToEdge(node, ctx.mousePos);
 
@@ -310,7 +310,8 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 
 	for (BasePanel* child : node->children)
 	{
-		GLFWcursor* childCursor = CheckResize(child, resCalled);
+		bool isLastChild = child == node->children.back();
+		GLFWcursor* childCursor = CheckResize(child, resCalled, isLastChild);
 		if (childCursor != m_arrowCursor)
 		{
 			cursorToSet = childCursor;
@@ -319,6 +320,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled)
 
 	if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		m_resizing = false;
+
 
 	return cursorToSet;
 }
@@ -393,12 +395,12 @@ void SableUI::Window::Draw()
 		m_renderer->BeginRenderPass(&m_windowSurface);
 		m_renderer->Draw(&m_windowSurface);
 		m_renderer->EndRenderPass();
-
 	}
 
 	if (wasDirty && !blitted)
 		m_renderer->BlitToScreen(&m_framebuffer);
 	
+	m_renderer->Flush();
 	rectDrawQueue.clear();
 }
 
@@ -410,8 +412,6 @@ SableUI::RootPanel* SableUI::Window::GetRoot()
 void SableUI::Window::RerenderAllNodes()
 {
 	m_renderer->ClearDrawableStack();
-
-	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
 	m_root->Render();
 
@@ -447,6 +447,8 @@ static void FixWidth(SableUI::BasePanel* panel)
 	}
 
 	bool resized = false;
+	int deficit = 0;
+
 	for (SableUI::BasePanel* child : panel->children)
 	{
 		if (child->rect.w < child->minBounds.x)
@@ -454,6 +456,59 @@ static void FixWidth(SableUI::BasePanel* panel)
 			child->rect.w = child->minBounds.x;
 			child->rect.wType = SableUI::RectType::FIXED;
 			resized = true;
+		}
+
+		if (child->maxBounds.x > 0 && child->rect.w > child->maxBounds.x)
+		{
+			int excess = child->rect.w - child->maxBounds.x;
+			child->rect.w = child->maxBounds.x;
+			child->rect.wType = SableUI::RectType::FIXED;
+			deficit += excess;
+			resized = true;
+		}
+	}
+
+	if (deficit > 0)
+	{
+		std::vector<SableUI::BasePanel*> panels;
+
+		for (size_t i = 0; i < panel->children.size(); i++)
+		{
+			SableUI::BasePanel* child = panel->children[i];
+
+			if (child->maxBounds.x > 0 && child->rect.w >= child->maxBounds.x)
+				continue;
+
+			if (child->rect.wType == SableUI::RectType::FIXED ||
+				child->rect.wType == SableUI::RectType::FILL)
+			{
+				panels.push_back(child);
+			}
+		}
+
+		if (!panels.empty())
+		{
+			int deficitPerPanel = deficit / panels.size();
+			int leftoverDeficit = deficit % panels.size();
+
+			for (size_t i = 0; i < panels.size(); i++)
+			{
+				int additionalWidth = deficitPerPanel + (i < leftoverDeficit ? 1 : 0);
+				panels[i]->rect.w += additionalWidth;
+
+				if (panels[i]->maxBounds.x > 0 &&
+					panels[i]->rect.w > panels[i]->maxBounds.x)
+				{
+					int overflow = panels[i]->rect.w - panels[i]->maxBounds.x;
+					panels[i]->rect.w = panels[i]->maxBounds.x;
+					panels[i]->rect.wType = SableUI::RectType::FIXED;
+
+					if (i + 1 < panels.size())
+					{
+						leftoverDeficit += overflow;
+					}
+				}
+			}
 		}
 	}
 
@@ -499,6 +554,8 @@ static void FixHeight(SableUI::BasePanel* panel)
 	}
 
 	bool resized = false;
+	int deficit = 0;
+
 	for (SableUI::BasePanel* child : panel->children)
 	{
 		if (child->rect.h < child->minBounds.y)
@@ -506,6 +563,59 @@ static void FixHeight(SableUI::BasePanel* panel)
 			child->rect.h = child->minBounds.y;
 			child->rect.hType = SableUI::RectType::FIXED;
 			resized = true;
+		}
+
+		if (child->maxBounds.y > 0 && child->rect.h > child->maxBounds.y)
+		{
+			int excess = child->rect.h - child->maxBounds.y;
+			child->rect.h = child->maxBounds.y;
+			child->rect.hType = SableUI::RectType::FIXED;
+			deficit += excess;
+			resized = true;
+		}
+	}
+
+	if (deficit > 0)
+	{
+		std::vector<SableUI::BasePanel*> panels;
+
+		for (size_t i = 0; i < panel->children.size(); i++)
+		{
+			SableUI::BasePanel* child = panel->children[i];
+
+			if (child->maxBounds.y > 0 && child->rect.h >= child->maxBounds.y)
+				continue;
+
+			if (child->rect.hType == SableUI::RectType::FIXED ||
+				child->rect.hType == SableUI::RectType::FILL)
+			{
+				panels.push_back(child);
+			}
+		}
+
+		if (!panels.empty())
+		{
+			int deficitPerPanel = deficit / panels.size();
+			int leftoverDeficit = deficit % panels.size();
+
+			for (size_t i = 0; i < panels.size(); i++)
+			{
+				int additionalHeight = deficitPerPanel + (i < leftoverDeficit ? 1 : 0);
+				panels[i]->rect.h += additionalHeight;
+
+				if (panels[i]->maxBounds.y > 0 &&
+					panels[i]->rect.h > panels[i]->maxBounds.y)
+				{
+					int overflow = panels[i]->rect.h - panels[i]->maxBounds.y;
+					panels[i]->rect.h = panels[i]->maxBounds.y;
+					panels[i]->rect.hType = SableUI::RectType::FIXED;
+
+					if (i + 1 < panels.size())
+					{
+						leftoverDeficit += overflow;
+					}
+				}
+			}
 		}
 	}
 
@@ -686,7 +796,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 
 	// Clear accumulated draw calls from resize steps
 	m_renderer->ClearDrawableStack();
-	m_root->Recalculate();
+	m_needsRefresh = true;
 
 	oldPos = pos;
 }

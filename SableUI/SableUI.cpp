@@ -1,11 +1,4 @@
 #include <SableUI/SableUI.h>
-#include <stack>
-#include <thread>
-#include <cstring>
-#include <string.h>
-#include <chrono>
-#include <string>
-#include <vector>
 #include <SableUI/component.h>
 #include <SableUI/memory.h>
 #include <SableUI/console.h>
@@ -16,6 +9,13 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
+#include <stack>
+#include <thread>
+#include <cstring>
+#include <string.h>
+#include <chrono>
+#include <string>
+#include <vector>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;
@@ -33,6 +33,11 @@ void SableUI::SetContext(SableUI::Window* window)
 	s_currentContext = window;
 	s_currentPanel = s_currentContext->GetRoot();
 }
+
+static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };
+
+void SableUI::SetNextPanelMaxHeight(int height) { g_nextPanelMaxBounds.h = height; };
+void SableUI::SetNextPanelMaxWidth(int width)	{ g_nextPanelMaxBounds.w = width; };
 
 // ============================================================================
 // Virtual Node Builder
@@ -129,6 +134,9 @@ SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 	}
 
 	SableUI::SplitterPanel* splitter = s_currentPanel->AddSplitter(orientation);
+	splitter->maxBounds = g_nextPanelMaxBounds;
+	g_nextPanelMaxBounds = { 0, 0 };
+
 	s_panelStack.push(s_currentPanel);
 	s_currentPanel = splitter;
 
@@ -162,6 +170,8 @@ SableUI::ContentPanel* SableUI::AddPanel()
 	}
 
 	SableUI::ContentPanel* panel = s_currentPanel->AddPanel();
+	panel->maxBounds = g_nextPanelMaxBounds;
+	g_nextPanelMaxBounds = { 0, 0 };
 	return panel;
 }
 

@@ -215,6 +215,12 @@ void SableUI::SplitterPanel::CalculateScales()
 			if (child->rect.wType == RectType::FIXED || child->rect.wType == RectType::FIT_CONTENT)
 			{
 				child->rect.w = (child->rect.wType == RectType::FIXED) ? child->rect.w : std::max(0, child->minBounds.x);
+
+				if (child->maxBounds.x > 0 && child->rect.w > child->maxBounds.x)
+				{
+					child->rect.w = child->maxBounds.x;
+				}
+
 				totalFixedWidth += child->rect.w;
 			}
 			else
@@ -242,7 +248,23 @@ void SableUI::SplitterPanel::CalculateScales()
 
 				for (size_t i = 0; i < fillChildren.size(); i++)
 				{
-					fillChildren[i]->rect.w = fillChildren[i]->minBounds.x + widthPerFillChild + (i < leftoverWidth ? 1 : 0);
+					int calculatedWidth = fillChildren[i]->minBounds.x + widthPerFillChild + (i < leftoverWidth ? 1 : 0);
+
+					if (fillChildren[i]->maxBounds.x > 0 && calculatedWidth > fillChildren[i]->maxBounds.x)
+					{
+						int excess = calculatedWidth - fillChildren[i]->maxBounds.x;
+						fillChildren[i]->rect.w = fillChildren[i]->maxBounds.x;
+						fillChildren[i]->rect.wType = RectType::FIXED;
+
+						if (i + 1 < fillChildren.size())
+						{
+							leftoverWidth += excess;
+						}
+					}
+					else
+					{
+						fillChildren[i]->rect.w = calculatedWidth;
+					}
 				}
 			}
 			else
@@ -268,6 +290,12 @@ void SableUI::SplitterPanel::CalculateScales()
 			if (child->rect.hType == RectType::FIXED || child->rect.hType == RectType::FIT_CONTENT)
 			{
 				child->rect.h = (child->rect.hType == RectType::FIXED) ? child->rect.h : std::max(0, child->minBounds.y);
+
+				if (child->maxBounds.y > 0 && child->rect.h > child->maxBounds.y)
+				{
+					child->rect.h = child->maxBounds.y;
+				}
+
 				totalFixedHeight += child->rect.h;
 			}
 			else
@@ -295,7 +323,23 @@ void SableUI::SplitterPanel::CalculateScales()
 
 				for (size_t i = 0; i < fillChildren.size(); i++)
 				{
-					fillChildren[i]->rect.h = fillChildren[i]->minBounds.y + heightPerFillChild + (i < leftoverHeight ? 1 : 0);
+					int calculatedHeight = fillChildren[i]->minBounds.y + heightPerFillChild + (i < leftoverHeight ? 1 : 0);
+
+					if (fillChildren[i]->maxBounds.y > 0 && calculatedHeight > fillChildren[i]->maxBounds.y)
+					{
+						int excess = calculatedHeight - fillChildren[i]->maxBounds.y;
+						fillChildren[i]->rect.h = fillChildren[i]->maxBounds.y;
+						fillChildren[i]->rect.hType = RectType::FIXED;
+
+						if (i + 1 < fillChildren.size())
+						{
+							leftoverHeight += excess;
+						}
+					}
+					else
+					{
+						fillChildren[i]->rect.h = calculatedHeight;
+					}
 				}
 			}
 			else

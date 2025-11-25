@@ -37,6 +37,7 @@ namespace SableUI
         BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
         ivec2 minBounds = { 20, 20 };
+        ivec2 maxBounds = { 0, 0 };
         PanelType type = PanelType::UNDEF;
         std::vector<BasePanel*> children;
 

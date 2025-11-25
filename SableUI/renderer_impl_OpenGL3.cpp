@@ -331,8 +331,6 @@ bool OpenGL3Backend::Draw(GpuFramebuffer* framebuffer)
 	// draw window border after queue is drawn
 	// DrawWindowBorder(&m_renderTarget);
 	m_drawStack.clear();
-	
-	Flush();
 
 	return true;
 }
