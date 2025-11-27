@@ -54,6 +54,8 @@ void SableUI::BaseComponent::BackendInitialisePanel(RendererBackend* renderer)
 	rootElement = SB_new<Element>(renderer, ElementType::DIV);
 	rootElement->Init(renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
+	rootElement->setWType(RectType::FILL);
+	rootElement->setHType(RectType::FILL);
 
 	SetElementBuilderContext(renderer, rootElement, false);
 	LayoutWrapper();

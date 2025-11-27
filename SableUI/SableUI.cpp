@@ -230,8 +230,8 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (s_reconciliationMode) return StartDivVirtual(p_info, child);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
 	if (s_elementStack.empty() || s_elementRenderer == nullptr)
 	{
@@ -274,8 +274,8 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddRectVirtual(p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
 	if (s_elementStack.empty() || s_elementRenderer == nullptr)
 	{
@@ -295,8 +295,8 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddImageVirtual(path, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FILL;
+	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
+	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
 	if (s_elementStack.empty() || s_elementRenderer == nullptr)
 	{

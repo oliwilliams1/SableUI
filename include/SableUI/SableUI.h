@@ -7,6 +7,7 @@
 #include <SableUI/renderer.h>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
+#include <SableUI/events.h>
 #include <string>
 
 /* non-macro user api */
@@ -153,6 +154,7 @@ namespace SableUI
 #define centerX				.setCenterX(true)
 #define centerY				.setCenterY(true)
 #define centerXY			.setCenterX(true).setCenterY(true)
+#define rounded(value)		.setBorderRadius(value)
 
 #define left_right			.setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
 #define right_left			.setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)

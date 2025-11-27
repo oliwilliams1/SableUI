@@ -53,8 +53,9 @@ namespace SableUI
 		float _lineHeight = 1.15f;
 		bool _centerX = false;
 		bool _centerY = false;
-		RectType wType = RectType::FILL;
-		RectType hType = RectType::FILL;
+		float _borderRadius = 0.0f;
+		RectType wType = RectType::UNDEF;
+		RectType hType = RectType::UNDEF;
 		ElementType type = ElementType::UNDEF;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath = "";
@@ -101,6 +102,8 @@ namespace SableUI
 
 		ElementInfo& setCenterX(bool v)						{ _centerX = v; return *this; }
 		ElementInfo& setCenterY(bool v)						{ _centerY = v; return *this; }
+		ElementInfo& setBorderRadius(float v)				{ _borderRadius = v; return *this; }
+
 		ElementInfo& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
 
@@ -123,7 +126,7 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		ElementType type;
+		ElementType type = ElementType::UNDEF;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
 		SableString uniqueTextOrPath;
@@ -180,8 +183,9 @@ namespace SableUI
 		int lineHeight = 0.0f;
 		bool centerX = false;
 		bool centerY = false;
-		RectType wType = RectType::FILL;
-		RectType hType = RectType::FILL;
+		float borderRadius = 0.0f;
+		RectType wType = RectType::UNDEF;
+		RectType hType = RectType::UNDEF;
 		Colour bgColour = Colour(128, 128, 128);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath;
@@ -228,6 +232,8 @@ namespace SableUI
 
 		Element& setCenterX(bool v)						{ centerX = v; return *this; }
 		Element& setCenterY(bool v)						{ centerY = v; return *this; }
+		Element& setBorderRadius(float v)				{ borderRadius = v; return *this; }
+
 		Element& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 		Element& setType(ElementType v)					{ type = v; return *this; }
 

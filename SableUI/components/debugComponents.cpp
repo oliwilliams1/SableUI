@@ -399,7 +399,7 @@ void SableUI::PropertiesView::Layout()
 
 	Rect(mx(2) mt(4) h(1) w_fill bg(67, 67, 67));
 
-	Div(bg(32, 32, 32) p(6))
+	Div(bg(32, 32, 32) p(6) w_fill)
 	{
 		Text("Bounding Box", textColour(180, 180, 180) mb(2));
 		Text(selected.rect.ToString(), mb(8));

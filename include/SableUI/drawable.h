@@ -36,6 +36,7 @@ namespace SableUI
 		void setZ(int z) { this->m_zIndex = z; }
 		int m_zIndex = 0;
 		Rect m_rect = { 0, 0, 0, 0 };
+		float m_borderRadius = 0.0f;
 		unsigned int uuid = 0;
 		bool orphan = false;
 	private:
@@ -46,10 +47,9 @@ namespace SableUI
 	{
 	public:
 		DrawableRect();
-		DrawableRect(Rect& r, Colour colour);
 		~DrawableRect();
 		static int GetNumInstances();
-		void Update(Rect& rect, Colour colour, float pBSize = 0.0f);
+		void Update(Rect& rect, Colour colour, float borderRadius);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 	};
@@ -76,7 +76,7 @@ namespace SableUI
 		DrawableImage();
 		~DrawableImage();
 		static int GetNumInstances();
-		void Update(Rect& rect) { this->m_rect = rect; }
+		void Update(Rect& rect, float borderRadius);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Texture m_texture;
 	};

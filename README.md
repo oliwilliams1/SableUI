@@ -1,108 +1,135 @@
-﻿# INCOMPLETE
-# SableUI
-SableUI is a modern, low-level and high-performance, application UI framework
-for C++ drawing inspiration from Reacts dynamic component-based "immediate mode"
-gui, tailwinds simple styling, and foobar2000s ColumnsUI panel-based window structure.
+﻿# SableUI
+A high-performance C++ UI/application framework combining React's component
+and state model, Tailwind's easy styling approach, and foobar2000's ColumnsUI
+flexible panel-based layouts.
+
+![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-green)
+![Status](https://img.shields.io/badge/Status-Work%20in%20Progress:%20~65%25-yellow)
 
 ## Features
-- Easy API Usage: Utilising macros etc
-- Hardware Accel: Lightweight, low-level
-- Advanced text rendering with unicode support
-- Cross-plaftform
+- Declarative components with reactive state management
+- Flexible layouts with resizable splitter panels
+- Advanced text rendering with full unicode support, custom styling, and colour
+- Cross-platform compatibility supporting OpenGL (soon supporting Vulkan, DirectX, Metal, GLES)
+  - Supports Windows, Linux, and macOS (Intel & Apple Silicon)
+  <br>macOS untested, but should compile due to Linux support
 
-### Example Usage
+<br>
+<details>
+    <summary>More examples</summary>
+    <img src="readme-resources/complex-demo.png">
+</details>
+
+### Example Usage: Counter App
+![Example counter app](readme-resources/counter-app-example.png)
 ```cpp
-#include "SableUI/SableUI.h"
+#include <SableUI/SableUI.h> // include core library
+#include <SableUI/components/debugComponents.h> // for element inspector
 
-class HoverImageView : public SableUI::BaseComponent
+class Counter : public SableUI::BaseComponent
 {
 public:
-	HoverImageView() : SableUI::BaseComponent() {};
+    Counter() : SableUI::BaseComponent() {}
 
-	void Layout() override
-	{
-		std::string path = (isHovered) ? "img1.webp" : "img2.jpg";
+    void Layout() override
+    {
+        // outer container
+        Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10)) // simmilar to tailwind styling
+        {
+            // formatting strings made easy for text elements
+            Text(SableString::Format("Count: %d", count),
+                fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
 
-		Div(w(128) h(160))
-		{
-			Div(bg(128, 32, 32)
-				onHover([&]() { setIsHovered(true); })
-				onHoverExit([&]() { setIsHovered(false); }))
-			{
-				Text("Hover to change image,\nloaded: " + path);
-			}
+            // horizontal row with buttons
+            Div(left_right p(4) centerX rounded(9))
+            {
+                Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
+                    onClick([=]() { setCount(count + 1); })) // lambda event callbacks
+                {
+                    Text("Increment",
+                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+                }
 
-			Image(path, w(128) h(128));
-		}
-	}
+                Div(bg(255, 120, 120) p(8) rounded(5)
+                    onClick([=]() { setCount(count - 1); }))
+                {
+                    Text("Decrement",
+                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+                }
+            }
+        } // macro utilises RAII for proper tree generation and lifetime handling
+    }
 
 private:
-	useState(isHovered, setIsHovered, bool, false);
+    /* in react this would be written as:
+     * const [count, setCount] = useState<int>(0);
+     * but due to limitations in c++, have to use a macro */
+    useState(count, setCount, int, 0);
 };
+
 
 int main(int argc, char** argv)
 {
-	using namespace SableUI;
-	Window mainWindow("SableUI Layout Test", 1600, 1000);
-	SetContext(&mainWindow);
-	
-	HSplitter()
-	{
-		PanelWith(HoverImageView);
-	}
+    SableUI::PreInit(argc, argv); // not neccasary, but there for to switch backends through args
+    SableUI::Window* window = SableUI::Initialise("SableUI App", 800, 600);
 
-	while (mainWindow.PollEvents())
-	{
-		mainWindow.Draw();
-	}
-	return 0;
+    VSplitter()
+    {
+        PanelWith(Counter);
+    }
+
+    // create an element inspector in a different window
+    SableUI::CreateSecondaryWindow("Debug View", 250, 600);
+    VSplitter()
+    {
+        PanelWith(SableUI::ElementTreeView, window); // focus around this window
+        PanelWith(SableUI::PropertiesView);
+    }
+
+    while (SableUI::PollEvents())
+        SableUI::Render();
+
+    SableUI::Shutdown();
+    return 0;
 }
 ```
+---
+## Building
+Requires CMake for creating build files and a C++17 compiler.
 
-## Building from Source
-Ensure you have CMake installed on your machine with a C++ compiler like MSVC 
-for windows, gcc for Linux, MacOS. C++ Compiler must be atleast C++17 due to use
-of the filesystem standard library among other modern features.
+> NOTE: If building from source you may need development libraries for your
+specific graphics api otherwise CMake will not find libraries and may not be
+able to build with graphics API support, to avoid this check for prebuilt
+binaries in releases (not uploaded until project completion).
 
-To ensure all third-party libraries are included, clone this repository with 
-the recursive option, otherwise compilation will not work!
-
+Clone with submodules
 ```bash
 git clone https://github.com/oliwilliams1/SableUI --recursive
 cd SableUI
 ```
-
-### Windows
-1. Run ```setup.bat``` to generate project files for Microsoft Visual Studio via CMake.
-2. Navigate to the build directory and open ```SableUI.sln```.
-3. In Solution Explorer, set ```SableUI``` as the startup project if you are running the demo, skip step if building libraries.
-4. Build and Run!
-
-### Linux / macOS
-1. Create a build directory and navigate into it:
+#### Windows
 ```bash
-mkdir build
-cd build
+mkdir build && cd build
+setup.bat
 ```
-
-2. Run CMake to configure the project:
+**Compile instructions for MSVC:**<br>
+Open the ```.sln``` in Visual Studio, set ```SableUI``` as current target and build.
+#### Linux/macOS
 ```bash
+mkdir build && cd build
 cmake ..
-```
-3. Compile the project using ```make```. You can use the ```-j``` flag for faster compilation (e.g., ```-j12```):
-```bash
-make -j12
-```
-4. Run the application (if running demo)
-```bash
-./SableUI
+make -j$(nproc)
 ```
 
 ## Acknowledgments
-This project uses the following libraries:
-- [glfw](https://github.com/glfw/glfw)
-- [glew](https://github.com/nigels-com/glew)
-- [Vulkan](https://www.lunarg.com/vulkan-sdk/)
-- [FreeType](https://www.freetype.org)
-- [libwebp](https://github.com/webmproject/libwebp)
-- [stb_image + stb_image_resize2](https://github.com/nothings/stb)
+This project uses the following open-source libraries:
+- [GLFW](https://github.com/glfw/glfw) - Window & input handling
+- [GLEW](https://github.com/nigels-com/glew) - OpenGL extensions
+- [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/) - Vulkan graphics API
+- [FreeType](https://www.freetype.org) - Font rendering
+- [libwebp](https://github.com/webmproject/libwebp) - WebP image support
+- [Shaderc](https://github.com/google/shaderc) - Cross-platform shader compilation
+- [stb_image + stb_image_resize2](https://github.com/nothings/stb) - Image loading
+
+Licenses for these libraries can be found in their submodule directories as their source is linked to this library (vendor/)

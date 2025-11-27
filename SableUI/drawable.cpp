@@ -23,6 +23,8 @@ static Shader g_rShader;
 static GLuint g_rUColourLoc = 0;
 static GLuint g_rURectLoc = 0;
 static GLuint g_rUTexBoolLoc = 0;
+static GLuint g_rURealRectLoc = 0;
+static GLuint g_rURadius = 0;
 
 /* text globals */
 static Shader g_tShader;
@@ -88,6 +90,8 @@ void SableUI::InitDrawables()
         g_rShader.Use();
         g_rUColourLoc = GetUniformLocation(g_rShader, "uColour");
         g_rURectLoc = GetUniformLocation(g_rShader, "uRect");
+        g_rURadius = GetUniformLocation(g_rShader, "uRadius");
+        g_rURealRectLoc = GetUniformLocation(g_rShader, "uRealRect");
         g_rUTexBoolLoc = GetUniformLocation(g_rShader, "uUseTexture");
         glUniform4f(g_rUColourLoc, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
         glUniform1i(glGetUniformLocation(g_rShader.m_shaderProgram, "uTexture"), 0);
@@ -153,14 +157,6 @@ DrawableRect::DrawableRect()
     this->m_zIndex = 0;
 }
 
-DrawableRect::DrawableRect(Rect& r, Colour colour)
-    : m_colour(colour)
-{
-    s_drawableRectCount++;
-    this->m_rect = r;
-    this->m_zIndex = 0;
-}
-
 DrawableRect::~DrawableRect()
 {
     s_drawableRectCount--;
@@ -171,10 +167,11 @@ int DrawableRect::GetNumInstances()
     return s_drawableRectCount;
 }
 
-void DrawableRect::Update(Rect& rect, Colour colour, float pBSize)
+void DrawableRect::Update(Rect& rect, Colour colour, float borderRadius)
 {
     this->m_rect = rect;
     this->m_colour = colour;
+    this->m_borderRadius = borderRadius;
 }
 
 void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
@@ -201,6 +198,8 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
+    glUniform4f(g_rURealRectLoc, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
+    glUniform1f(g_rURadius, m_borderRadius);
     glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
     glUniform1i(g_rUTexBoolLoc, 0);
     res.rectObject->AddToDrawStack();
@@ -272,6 +271,12 @@ int DrawableImage::GetNumInstances()
     return s_drawableImageCount;
 }
 
+void SableUI::DrawableImage::Update(Rect& rect, float borderRadius)
+{
+    this->m_rect = rect;
+    this->m_borderRadius = borderRadius;
+}
+
 void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
@@ -298,6 +303,8 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 
     g_rShader.Use();
     glUniform4f(g_rURectLoc, x, y, w, h);
+    glUniform4f(g_rURealRectLoc, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
+    glUniform1f(g_rURadius, m_borderRadius);
     glUniform1i(g_rUTexBoolLoc, 1);
     res.rectObject->AddToDrawStack();
 }

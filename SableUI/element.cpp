@@ -1,6 +1,14 @@
-#include "SableUI/element.h"
-#include "SableUI/component.h"
-#include "SableUI/memory.h"
+#include <SableUI/element.h>
+#include <SableUI/component.h>
+#include <SableUI/memory.h>
+#include <string>
+#include <SableUI/console.h>
+#include <SableUI/drawable.h>
+#include <SableUI/events.h>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
+#include <algorithm>
+#include <functional>
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Element"
@@ -18,7 +26,7 @@ SableUI::Child::~Child()
 }
 
 /* child struct */
-SableUI::Child::operator SableUI::Element* ()
+SableUI::Child::operator SableUI::Element*()
 {
     if (type == ChildType::ELEMENT)
         return element;
@@ -79,7 +87,7 @@ void SableUI::Element::SetRect(const Rect& r)
     case ElementType::RECT:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            drRect->Update(rect, bgColour, 0.0f);
+            drRect->Update(rect, bgColour, borderRadius);
             renderer->AddToDrawStack(drRect);
         }
         else
@@ -91,7 +99,7 @@ void SableUI::Element::SetRect(const Rect& r)
     case ElementType::IMAGE:
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
         {
-            drImage->Update(rect);
+            drImage->Update(rect, borderRadius);
             renderer->AddToDrawStack(drImage);
         }
         else
@@ -117,7 +125,7 @@ void SableUI::Element::SetRect(const Rect& r)
     case ElementType::DIV:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            drRect->Update(rect, bgColour, 0.0f);
+            drRect->Update(rect, bgColour, borderRadius);
             renderer->AddToDrawStack(drRect);
         }
         else
@@ -153,6 +161,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->lineHeight                = info._lineHeight;
     this->centerX                   = info._centerX;
     this->centerY                   = info._centerY;
+    this->borderRadius              = info._borderRadius;
     this->wType                     = info.wType;
     this->hType                     = info.hType;
     this->bgColour                  = info.bgColour;
@@ -376,10 +385,6 @@ void SableUI::Element::LayoutChildren()
     if (type != ElementType::DIV) return;
     if (children.empty()) return;
 
-    bool layoutDirty = false;
-    int totalChildHeight = 0;
-    int totalChildWidth = 0;
-
     rect.w = std::max(rect.w, GetMinWidth());
     rect.h = std::max(rect.h, GetMinHeight());
 
@@ -511,7 +516,6 @@ void SableUI::Element::LayoutChildren()
                     if (newHeight != childElement->height)
                     {
                         childElement->height = newHeight;
-                        layoutDirty = true;
                     }
                     childContentHeight = newHeight;
                 }
@@ -601,7 +605,6 @@ void SableUI::Element::LayoutChildren()
                 if (newHeight != childElement->height)
                 {
                     childElement->height = newHeight;
-                    layoutDirty = true;
                 }
                 childContentHeight = newHeight;
 
@@ -649,72 +652,42 @@ void SableUI::Element::LayoutChildren()
             }
         }
 
-        // Centering logic for single child
-        if (children.size() == 1)
+        if (isVerticalFlow)
         {
             if (childElement->centerX)
             {
-                int availableCrossSpace = contentAreaSize.x - childTotalWidth;
-                if (availableCrossSpace > 0)
-                {
-                    childX = contentAreaPosition.x + availableCrossSpace / 2 + childElement->marginLeft;
-                }
-            }
-            if (childElement->centerY)
-            {
-                int availableCrossSpace = contentAreaSize.y - childTotalHeight;
-                if (availableCrossSpace > 0)
-                {
-                    childY = contentAreaPosition.y + availableCrossSpace / 2 + childElement->marginTop;
-                }
+                int available = contentAreaSize.x - childTotalWidth;
+                if (available > 0)
+                    childX = contentAreaPosition.x + available / 2 + childElement->marginLeft;
             }
         }
         else
         {
-            if (isVerticalFlow && childElement->centerX)
+            if (childElement->centerY)
             {
-                int availableCrossSpace = contentAreaSize.x - childTotalWidth;
-                if (availableCrossSpace > 0)
-                {
-                    childX = contentAreaPosition.x + availableCrossSpace / 2 + childElement->marginLeft;
-                }
-            }
-            else if (!isVerticalFlow && childElement->centerY)
-            {
-                int availableCrossSpace = contentAreaSize.y - childTotalHeight;
-                if (availableCrossSpace > 0)
-                {
-                    childY = contentAreaPosition.y + availableCrossSpace / 2 + childElement->marginTop;
-                }
+                int available = contentAreaSize.y - childTotalHeight;
+                if (available > 0)
+                    childY = contentAreaPosition.y + available / 2 + childElement->marginTop;
             }
         }
 
-        Rect childRect = {
+        if (children.size() == 1)
+        {
+            if (childElement->centerX)
+                childX = contentAreaPosition.x + (contentAreaSize.x - childTotalWidth) / 2 + childElement->marginLeft;
+            if (childElement->centerY)
+                childY = contentAreaPosition.y + (contentAreaSize.y - childTotalHeight) / 2 + childElement->marginTop;
+        }
+
+        Rect childFinalRect = {
             childX,
             childY,
-            childContentWidth,
-            childContentHeight
-        };
-
-        totalChildWidth += childContentWidth + childElement->marginLeft + childElement->marginRight;
-        totalChildHeight += childContentHeight + childElement->marginTop + childElement->marginBottom;
-
-        SableUI::Rect childFinalRect = {
-            childRect.x,
-            childRect.y,
-            std::min(childRect.w, (contentAreaPosition.x + contentAreaSize.x) - childRect.x),
-            std::min(childRect.h, (contentAreaPosition.y + contentAreaSize.y) - childRect.y)
+            std::min(childContentWidth, (contentAreaPosition.x + contentAreaSize.x) - childX),
+            std::min(childContentHeight, (contentAreaPosition.y + contentAreaSize.y) - childY)
         };
 
         childElement->SetRect(childFinalRect);
         childElement->LayoutChildren();
-    }
-
-    if (layoutDirty)
-    {
-        layoutDirty = false;
-        SetRect({ rect.x, rect.y, totalChildWidth + paddingLeft + paddingRight, totalChildHeight + paddingTop + paddingBottom });
-        LayoutChildren();
     }
 }
 
@@ -737,10 +710,11 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.paddingBottom          = paddingBottom;
     info.paddingLeft            = paddingLeft;
     info.paddingRight           = paddingRight;
-    info._fontSize               = fontSize;
-    info._lineHeight             = lineHeight;
-    info._centerX                = centerX;
-    info._centerY                = centerY;
+    info._fontSize              = fontSize;
+    info._lineHeight            = lineHeight;
+    info._centerX               = centerX;
+    info._centerY               = centerY;
+    info._borderRadius          = borderRadius;
     info.wType                  = wType;
     info.hType                  = hType;
     info.type                   = type;
