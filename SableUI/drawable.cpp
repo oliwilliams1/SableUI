@@ -1,13 +1,12 @@
 #include <map>
 #include <algorithm>
-#include "SableUI/drawable.h"
-#include "SableUI/shader.h"
-#include "SableUI/window.h"
-#include "SableUI/generated/shaders.h"
-#include "SableUI/renderer.h"
+#include <SableUI/drawable.h>
+#include <SableUI/shader.h>
+#include <SableUI/SableUI.h>
+#include <SableUI/generated/shaders.h>
+#include <SableUI/renderer.h>
 #include <vector>
 #include <SableUI/console.h>
-#include <SableUI/memory.h>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <GL/glew.h>
@@ -58,7 +57,7 @@ static GLuint GetUniformLocation(Shader shader, const char* uniformName)
 
 ContextResources& SableUI::GetContextResources(RendererBackend* backend)
 {
-    void* ctx = GetCurrentContext();
+    void* ctx = GetCurrentContext_voidType();
 
     auto it = g_contextResources.find(ctx);
     if (it != g_contextResources.end())
@@ -107,7 +106,7 @@ void SableUI::InitDrawables()
 
 void SableUI::DestroyDrawables()
 {
-    void* ctx = SableUI::GetCurrentContext();
+    void* ctx = SableUI::GetCurrentContext_voidType();
 
     auto it = g_contextResources.find(ctx);
     if (it != g_contextResources.end())

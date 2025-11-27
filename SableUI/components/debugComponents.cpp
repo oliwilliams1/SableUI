@@ -259,7 +259,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 	
 	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
 	{
-		CustomTargetQueue* queue = m_window->CreateCustomTargetQueue(m_window->GetWindowSurface());
+		CustomTargetQueue* queue = m_window->CreateCustomTargetQueue_window(m_window->GetWindowSurface());
 		queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
 		g_needsTransparencyUpdate = false;
 

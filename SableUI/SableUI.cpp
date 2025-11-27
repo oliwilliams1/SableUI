@@ -26,6 +26,10 @@ static std::stack<SableUI::VirtualNode*> s_virtualStack;
 static SableUI::VirtualNode* s_virtualRoot = nullptr;
 static bool s_reconciliationMode = false;
 
+static SableUI::CustomTargetQueue* s_currentCustomTargetQueue = nullptr;
+static std::stack<SableUI::Element*> s_elementStack;
+static SableUI::RendererBackend* s_elementRenderer = nullptr;
+
 using namespace SableMemory;
 
 void SableUI::SetContext(SableUI::Window* window)
@@ -36,7 +40,7 @@ void SableUI::SetContext(SableUI::Window* window)
 
 static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };
 
-void SableUI::SetNextPanelMaxHeight(int height) { g_nextPanelMaxBounds.h = height; };
+void SableUI::SetNextPanelMaxHeight(int height) { g_nextPanelMaxBounds.h = height; }
 void SableUI::SetNextPanelMaxWidth(int width)	{ g_nextPanelMaxBounds.w = width; };
 
 // ============================================================================
@@ -178,9 +182,6 @@ SableUI::ContentPanel* SableUI::AddPanel()
 // ============================================================================
 // Real Element Builder
 // ============================================================================
-static std::stack<SableUI::Element*> s_elementStack;
-static SableUI::RendererBackend* s_elementRenderer = nullptr;
-
 void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual)
 {
 	s_reconciliationMode = isVirtual;
@@ -360,6 +361,36 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 }
 
 // ============================================================================
+// CustomTargetQueue builder
+// ============================================================================
+void SableUI::BeginCustomLayout(SableUI::CustomTargetQueue* queue)
+{
+	if (s_currentCustomTargetQueue != nullptr)
+		SableUI_Runtime_Error("Cannot have nested custom target layouts");
+
+	if (queue == nullptr)
+		SableUI_Runtime_Error("Cannot have a null custom queue");
+
+	s_currentCustomTargetQueue = queue;
+	s_currentCustomTargetQueue->root = SB_new<Element>(s_elementRenderer, ElementType::DIV);
+	s_currentCustomTargetQueue->root->Init(s_elementRenderer, ElementType::DIV);
+	s_currentCustomTargetQueue->root->setBgColour(rgb(32, 32, 32));
+	s_currentCustomTargetQueue->root->setWType(RectType::FIT_CONTENT);
+	s_currentCustomTargetQueue->root->setHType(RectType::FIT_CONTENT);
+	
+	s_elementStack.push(s_currentCustomTargetQueue->root);
+}
+
+void SableUI::EndCustomLayout()
+{
+	if (s_currentCustomTargetQueue == nullptr)
+		SableUI_Runtime_Error("Cannot end custom layout twice, something nested?");
+
+	s_elementStack.pop();
+	s_currentCustomTargetQueue = nullptr;
+}
+
+// ============================================================================
 // App
 // ============================================================================
 class App
@@ -385,6 +416,16 @@ private:
 
 static App* s_app = nullptr;
 static SableUI::Backend s_backend = SableUI::Backend::UNDEF;
+
+void* SableUI::GetCurrentContext_voidType()
+{
+	return static_cast<void*>(s_currentContext);
+}
+
+void SableUI::SetCurrentContext(Window* window)
+{
+	s_currentContext = window;
+}
 
 void SableUI::PreInit(int argc, char** argv)
 {
@@ -420,6 +461,16 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 
 	s_backend = backend;
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
+}
+
+SableUI::CustomTargetQueue* SableUI::CreateCustomTargetQueue(const GpuFramebuffer* target)
+{
+	return s_currentContext->CreateCustomTargetQueue_window(target);
+}
+
+const SableUI::GpuFramebuffer* SableUI::GetCurrentWindowSurface()
+{
+	return s_currentContext->GetWindowSurface();
 }
 
 SableUI::Window* SableUI::Initialise(const char* name, int width, int height, int x, int y)

@@ -2,6 +2,11 @@
 #include "SableUI/SableUI.h"
 #include "SableUI/memory.h"
 #include <cstring>
+#include <SableUI/console.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
 
 using namespace SableMemory;
 

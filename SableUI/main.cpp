@@ -11,11 +11,13 @@
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
+#include <SableUI/renderer.h>
 
-class ToggleImageView : public SableUI::BaseComponent
+using namespace SableUI;
+class ToggleImageView : public BaseComponent
 {
 public:
-	ToggleImageView() : SableUI::BaseComponent() {};
+	ToggleImageView() : BaseComponent() {};
 
 	void Layout() override
 	{
@@ -37,10 +39,10 @@ private:
 	useState(toggleState, setToggleState, bool, false);
 };
 
-class TestComponent : public SableUI::BaseComponent
+class TestComponent : public BaseComponent
 {
 public:
-	TestComponent(int r) : SableUI::BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {}
+	TestComponent(int r) : BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {}
 
 	void Layout() override
 	{
@@ -77,11 +79,11 @@ private:
 	int v;
 };
 
-class ImageView : public SableUI::BaseComponent
+class ImageView : public BaseComponent
 {
 public:
 	ImageView(std::string  path, const int width = 128, const int height = 128)
-		: SableUI::BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
+		: BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
 
 	void Layout() override
 	{
@@ -113,10 +115,10 @@ private:
 	useState(state, setState, bool, true);
 };
 
-class ConsoleView : public SableUI::BaseComponent
+class ConsoleView : public BaseComponent
 {
 public:
-	ConsoleView() : SableUI::BaseComponent() {};
+	ConsoleView() : BaseComponent() {};
 
 	void Layout() override
 	{
@@ -129,13 +131,13 @@ public:
 		for (int i = std::max(nLogs - 18, 0); i < nLogs; i++)
 		{
 			const auto& logData = SableUI::Console::m_Logs[i];
-			SableUI::Colour logColour = rgb(255, 255, 255);
+			Colour logColour = rgb(255, 255, 255);
 
 			switch (logData.type)
 			{
-			case SableUI::LogType::SBUI_LOG: logColour = rgb(0, 255, 0); break;
-			case SableUI::LogType::SBUI_WARNING: logColour = rgb(255, 255, 0); break;
-			case SableUI::LogType::SBUI_ERROR: logColour = rgb(255, 0, 0); break;
+			case LogType::SBUI_LOG: logColour = rgb(0, 255, 0); break;
+			case LogType::SBUI_WARNING: logColour = rgb(255, 255, 0); break;
+			case LogType::SBUI_ERROR: logColour = rgb(255, 0, 0); break;
 			default: logColour = rgb(255, 255, 255); break;
 			}
 
@@ -143,11 +145,11 @@ public:
 		}
 	}
 
-	void OnUpdate(const SableUI::UIEventContext& ctx) override
+	void OnUpdate(const UIEventContext& ctx) override
 	{
-		if (nLogs != SableUI::Console::m_Logs.size())
+		if (nLogs != Console::m_Logs.size())
 		{
-			setNlogs(SableUI::Console::m_Logs.size());
+			setNlogs(Console::m_Logs.size());
 		}
 	}
 
@@ -155,14 +157,14 @@ private:
 	useState(nLogs, setNlogs, int, 0);
 };
 
-class MenuBar : public SableUI::BaseComponent
+class MenuBar : public BaseComponent
 {
 public:
-	MenuBar() : SableUI::BaseComponent() {};
+	MenuBar() : BaseComponent() {};
 
 	void DrawMenuBarItem(const std::string& text)
 	{
-		Div(p(2) mb(2) bg(32, 32, 32) w_fit)
+		Div(p(2) mb(2) bg(255, 32, 32) w_fit)
 		{
 			Text(text, justify_center h_fit w_fit px(4));
 		}
@@ -170,14 +172,47 @@ public:
 
 	void Layout() override
 	{
-		Div(left_right bg(32, 32, 32))
+		CustomTargetQueue* queue = CreateCustomTargetQueue(GetCurrentWindowSurface());
+		CustomLayoutContext(queue)
 		{
-			DrawMenuBarItem("File");
-			DrawMenuBarItem("Edit");
-			DrawMenuBarItem("View");
-			DrawMenuBarItem("...");
+			Rect(w(50) h(50) bg(255, 0, 0));
 		}
 	}
+};
+
+class Counter : public SableUI::BaseComponent
+{
+public:
+	Counter() : SableUI::BaseComponent() {}
+
+	void Layout() override
+	{
+		Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10))
+		{
+			Text(SableString::Format("Count: %d", count),
+				fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
+
+			Div(left_right p(4) centerX rounded(9))
+			{
+				Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
+					onClick([=]() { setCount(count + 1); }))
+				{
+					Text("Increment",
+						mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+				}
+
+				Div(bg(255, 120, 120) p(8) rounded(5)
+					onClick([=]() { setCount(count - 1); }))
+				{
+					Text("Decrement",
+						mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+				}
+			}
+		}
+	}
+
+private:
+	useState(count, setCount, int, 0);
 };
 
 int main(int argc, char** argv)
@@ -200,7 +235,7 @@ int main(int argc, char** argv)
 					PanelWith(TestComponent, 128);
 					VSplitter()
 					{
-						Panel();
+						PanelWith(Counter);
 						HSplitter()
 						{
 							PanelWith(TestComponent, 80);

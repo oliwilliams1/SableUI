@@ -1,7 +1,4 @@
-#include "SableUI/renderer.h"
-#include "SableUI/window.h"
-#include "SableUI/memory.h"
-#include "SableUI/textCache.h"
+#include <SableUI/window.h>
 
 #include <algorithm>
 
@@ -16,23 +13,30 @@
 #include <cstdlib>
 #include <iterator>
 #include <string>
+#include <vector>
+#include <SableUI/renderer.h>
+#include <SableUI/memory.h>
+#include <SableUI/textCache.h>
 #include <SableUI/console.h>
 #include <SableUI/drawable.h>
 #include <SableUI/events.h>
 #include <SableUI/panel.h>
 #include <SableUI/texture.h>
 #include <SableUI/utils.h>
+#include <SableUI/SableUI.h>
 #include <GL/glew.h>
-#include <vector>
 
 using namespace SableMemory;
 
-static void SetGLFWContext(GLFWwindow* window)
+static void SetGLFWContext(GLFWwindow* window, SableUI::Window* sableWindow)
 {
 	static GLFWwindow* prevContext = nullptr;
 
 	if (prevContext != window)
+	{
 		glfwMakeContextCurrent(window);
+		SableUI::SetCurrentContext(sableWindow);
+	}
 }
 
 static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
@@ -68,11 +72,6 @@ static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 	default:
 		return 0.0f;
 	}
-}
-
-void* SableUI::GetCurrentContext()
-{
-	return static_cast<void*>(glfwGetCurrentContext());
 }
 
 // ============================================================================
@@ -138,7 +137,7 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 }
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
-	SetGLFWContext(window);
+	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
@@ -146,6 +145,7 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 		return;
 	}
 
+	SetGLFWContext(window, instance);
 	instance->m_windowSize = ivec2(width, height);
 	instance->m_renderer->Viewport(0, 0, width, height);
 
@@ -160,13 +160,14 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 
 void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
 {
-	SetGLFWContext(window);
+	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
 		SableUI_Runtime_Error("Could not get window instance");
 		return;
 	}
+	SetGLFWContext(window, instance);
 
 	instance->m_needsRefresh = true;
 }
@@ -191,7 +192,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
 	}
 
-	SetGLFWContext(m_window);
+	SetGLFWContext(m_window, this);
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
@@ -327,7 +328,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 
 bool SableUI::Window::PollEvents()
 {
-	SetGLFWContext(m_window);
+	SetGLFWContext(m_window, this);
 	glfwPollEvents();
 
 	if (m_needsRefresh)
@@ -355,7 +356,7 @@ bool SableUI::Window::PollEvents()
 
 void SableUI::Window::Draw()
 {
-	SetGLFWContext(m_window);
+	SetGLFWContext(m_window, this);
 
 #ifdef _WIN32
 	MSG msg;
@@ -391,6 +392,7 @@ void SableUI::Window::Draw()
 		for (auto& queue : customTargetQueues)
 			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
 
+
 		// if we do, blit old non-dirty custom fbo to window surface
 		if (needsToBlitDefault) 
 		{
@@ -405,11 +407,19 @@ void SableUI::Window::Draw()
 		for (auto& dr : queue->drawables)
 			m_renderer->AddToDrawStack(dr);
 
+		bool res1 = false;
+		if (queue->root)
+		{
+			res1 = true;
+			queue->root->LayoutChildren();
+			queue->root->Render();
+		}
+
 		m_renderer->BeginRenderPass(queue->target);
-		bool res = m_renderer->Draw(queue->target);
+		bool res2 = m_renderer->Draw(queue->target);
 		m_renderer->EndRenderPass();
 
-		needsFlush = needsFlush || res;
+		needsFlush = needsFlush || res1 || res2;
 	}
 
 	if (wasDirty && !blitted)
@@ -448,7 +458,7 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
-SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue(const GpuFramebuffer* target)
+SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue_window(const GpuFramebuffer* target)
 {
 	CustomTargetQueue* queue = SableMemory::SB_new<CustomTargetQueue>(target);
 	customTargetQueues.push_back(queue);

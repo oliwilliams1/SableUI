@@ -346,7 +346,7 @@ bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 
 	std::sort(m_drawStack.begin(), m_drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
 		return a->m_zIndex < b->m_zIndex;
-		});
+	});
 
 	std::set<unsigned int> drawnUUIDs;
 

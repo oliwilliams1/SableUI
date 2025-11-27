@@ -5,11 +5,11 @@
 #include <array>
 #include <vector>
 
-#include "SableUI/renderer.h"
-#include "SableUI/panel.h"
-#include "events.h"
-#include "utils.h"
-#include "drawable.h"
+#include <SableUI/renderer.h>
+#include <SableUI/panel.h>
+#include <SableUI/events.h>
+#include <SableUI/utils.h>
+#include <SableUI/drawable.h>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -19,7 +19,6 @@ namespace SableUI
 {
 	void SableUI_Window_Initalise_GLFW();
 	void SableUI_Window_Terminate_GLFW();
-	void* GetCurrentContext();
 
 	struct ResizeState
 	{
@@ -54,7 +53,7 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		CustomTargetQueue* CreateCustomTargetQueue(const GpuFramebuffer* target);
+		CustomTargetQueue* CreateCustomTargetQueue_window(const GpuFramebuffer* target);
 		const GpuFramebuffer* GetWindowSurface() const { return &m_windowSurface; }
 
 	private:
