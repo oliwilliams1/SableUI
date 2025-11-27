@@ -357,10 +357,6 @@ void SableUI::Window::Draw()
 {
 	SetGLFWContext(m_window);
 
-#ifdef _DEBUG
-	m_renderer->CheckErrors();
-#endif
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -376,32 +372,60 @@ void SableUI::Window::Draw()
 
 	bool blitted = false;
 	bool wasDirty = false;
+	bool needsFlush = false;
+	// if layout is dirty rerender to windows custom framebuffer
 	if (m_renderer->isDirty())
 	{
 		wasDirty = true;
 		m_renderer->BeginRenderPass(&m_framebuffer);
 		bool res = m_renderer->Draw(&m_framebuffer);
 		m_renderer->EndRenderPass();
+
+		needsFlush = needsFlush || res;
 	}
 
-	if (rectDrawQueue.size() != 0)
+	if (customTargetQueues.size() != 0)
 	{
-		m_renderer->BlitToScreen(&m_framebuffer);
-		blitted = true;
+		// track if we need to blit custom targets to window surface
+		bool needsToBlitDefault = false;
+		for (auto& queue : customTargetQueues)
+			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
 
-		for (auto& dr : rectDrawQueue)
-			m_renderer->AddToDrawStack(&dr);
+		// if we do, blit old non-dirty custom fbo to window surface
+		if (needsToBlitDefault) 
+		{
+			m_renderer->BlitToScreen(&m_framebuffer);
+			blitted = true;
+		}
+	}
 
-		m_renderer->BeginRenderPass(&m_windowSurface);
-		m_renderer->Draw(&m_windowSurface);
+	// execute custom queues
+	for (auto& queue : customTargetQueues)
+	{
+		for (auto& dr : queue->drawables)
+			m_renderer->AddToDrawStack(dr);
+
+		m_renderer->BeginRenderPass(queue->target);
+		bool res = m_renderer->Draw(queue->target);
 		m_renderer->EndRenderPass();
+
+		needsFlush = needsFlush || res;
 	}
 
 	if (wasDirty && !blitted)
 		m_renderer->BlitToScreen(&m_framebuffer);
 	
-	m_renderer->Flush();
-	rectDrawQueue.clear();
+	if (needsFlush) // has surface changed? flush changes
+	{
+		m_renderer->CheckErrors();
+		m_renderer->Flush();
+	}
+	
+	// cleanup orphan drawables
+	for (auto& queue: customTargetQueues)
+		SableMemory::SB_delete(queue);
+
+	customTargetQueues.clear();
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -424,12 +448,11 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
-void SableUI::Window::DrawRectOnTop(const Rect& rect, const Colour& colour)
+SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue(const GpuFramebuffer* target)
 {
-	DrawableRect drRect{};
-	drRect.m_rect = rect;
-	drRect.m_colour = colour;
-	rectDrawQueue.push_back(drRect);
+	CustomTargetQueue* queue = SableMemory::SB_new<CustomTargetQueue>(target);
+	customTargetQueues.push_back(queue);
+	return queue;
 }
 
 // ============================================================================

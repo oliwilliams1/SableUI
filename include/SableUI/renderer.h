@@ -1,8 +1,9 @@
 #pragma once
-#include "SableUI/drawable.h"
+#include <SableUI/drawable.h>
 #include <cstdint>
 #include <vector>
-#include "utils.h"
+#include <SableUI/utils.h>
+#include "memory.h"
 
 namespace SableUI
 {
@@ -131,7 +132,33 @@ namespace SableUI
 		SrcAlphaSaturate
 	};
 
+	enum class TextureInterpolation
+	{
+		Nearest, 
+		Linear
+	};
+
 	struct GpuFramebuffer;
+	struct Element;
+	struct CustomTargetQueue
+	{
+		CustomTargetQueue(const GpuFramebuffer* target) { this->target = target; }
+		const GpuFramebuffer* target = nullptr;
+		std::vector<DrawableBase*> drawables;
+		Element* root = nullptr;
+
+		void AddRect(Rect rect, Colour colour);
+	};
+
+	struct BlitCommand
+	{
+		GpuFramebuffer* source = nullptr;
+		GpuFramebuffer* target = nullptr;
+		Rect sourceRect = { 0, 0, 0, 0 };
+		Rect destRect = { 0, 0, 0, 0 };
+		TextureInterpolation interpolation = TextureInterpolation::Nearest;
+	};
+
 	class RendererBackend
 	{
 	public:
@@ -149,16 +176,24 @@ namespace SableUI
 		virtual void ClearDrawable(const DrawableBase* drawable) = 0;
 		virtual void AddToDrawStack(DrawableBase* drawable) = 0;
 		virtual void AddToDrawStack(const GpuObject* obj) = 0;
-		virtual bool Draw(GpuFramebuffer* target) = 0;
+		virtual bool Draw(const GpuFramebuffer* target) = 0;
 
 		virtual GpuObject* CreateGpuObject(
 			const void* vertices, uint32_t numVertices,
 			const uint32_t* indices, uint32_t numIndices,
 			const VertexLayout& layout) = 0;
 		virtual void DestroyGpuObject(GpuObject* obj) = 0;
-		virtual void BeginRenderPass(GpuFramebuffer* fbo) = 0;
+
+		virtual void BeginRenderPass(const GpuFramebuffer* fbo) = 0;
 		virtual void EndRenderPass() = 0;
-		virtual void BlitToScreen(GpuFramebuffer* source) = 0;
+
+		virtual void BlitToScreen(GpuFramebuffer* source,
+			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
+		virtual void BlitToFramebuffer(
+			GpuFramebuffer* source, GpuFramebuffer* target,
+			Rect sourceRect, Rect destRect,
+			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
+
 		bool isDirty() const { return !m_drawStack.empty(); };
 
 	protected:
@@ -275,5 +310,14 @@ namespace SableUI
 	inline void RendererBackend::FreeHandle(uint32_t handle)
 	{
 		m_freeHandles.push_back(handle);
+	}
+
+	inline void CustomTargetQueue::AddRect(Rect rect, Colour colour)
+	{
+		DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
+		drRect->m_rect = rect;
+		drRect->m_colour = colour;
+		drRect->orphan = true;
+		drawables.push_back(drRect);
 	}
 }

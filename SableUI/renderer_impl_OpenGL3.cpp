@@ -1,17 +1,19 @@
-#include "SableUI/renderer.h"
-#include "SableUI/memory.h"
+#include <SableUI/renderer.h>
+#include <SableUI/memory.h>
+#include <SableUI/drawable.h>
+#include <SableUI/utils.h>
+
 #include <algorithm>
 #include <set>
 #include <GL/glew.h>
-#include "SableUI/console.h"
 #include <gl/GLU.h>
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include <SableUI/drawable.h>
-#include <SableUI/utils.h>
 #include <utility>
 #include <vector>
+
+#include <SableUI/console.h>
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Renderer"
 using namespace SableUI;
@@ -40,16 +42,20 @@ public:
 
 	void AddToDrawStack(DrawableBase* drawable) override;
 	void AddToDrawStack(const GpuObject* obj) override;
-	bool Draw(GpuFramebuffer* framebuffer) override;
+	bool Draw(const GpuFramebuffer* framebuffer) override;
 
 	GpuObject* CreateGpuObject(
 		const void* vertices, uint32_t numVertices,
 		const uint32_t* indices, uint32_t numIndices,
 		const VertexLayout& layout);
 	void DestroyGpuObject(GpuObject* obj) override;
-	void BeginRenderPass(GpuFramebuffer* fbo) override;
+	void BeginRenderPass(const GpuFramebuffer* fbo) override;
 	void EndRenderPass() override;
-	void BlitToScreen(GpuFramebuffer* source) override;
+	void BlitToScreen(GpuFramebuffer* source, TextureInterpolation interpolation) override;
+	void BlitToFramebuffer(
+		GpuFramebuffer* source, GpuFramebuffer* target,
+		Rect sourceRect, Rect destRect,
+		TextureInterpolation interpolation) override;
 
 private:
 	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
@@ -91,6 +97,18 @@ static GLenum BlendFactorToOpenGLEnum(BlendFactor factor)
 	default:
 		SableUI_Runtime_Error("Unknown blend factor, %i", (int)factor);
 		return GL_ONE;
+	}
+}
+
+static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolation)
+{
+	switch (interpolation)
+	{
+	case TextureInterpolation::Nearest:	return GL_NEAREST;
+	case TextureInterpolation::Linear:	return GL_LINEAR;
+	default:
+		SableUI_Runtime_Error("Unknown texture interpolation, %i", (int)interpolation);
+		return GL_NEAREST;
 	}
 }
 
@@ -146,7 +164,7 @@ void OpenGL3Backend::CheckErrors()
 	}
 }
 
-void OpenGL3Backend::BeginRenderPass(GpuFramebuffer* fbo)
+void OpenGL3Backend::BeginRenderPass(const GpuFramebuffer* fbo)
 {
 	if (!fbo->isWindowSurface)
 	{
@@ -165,16 +183,34 @@ void OpenGL3Backend::EndRenderPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void OpenGL3Backend::BlitToScreen(GpuFramebuffer* source)
+void OpenGL3Backend::BlitToScreen(
+	GpuFramebuffer* source,
+	TextureInterpolation interpolation)
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, source->width, source->height,
 		0, 0, source->width, source->height,
 		GL_COLOR_BUFFER_BIT,
-		GL_NEAREST);
+		TextureInterpolationToOpenGLEnum(interpolation));
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OpenGL3Backend::BlitToFramebuffer(
+	GpuFramebuffer* source, GpuFramebuffer* target, 
+	Rect sourceRect, Rect destRect,
+	TextureInterpolation interpolation)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->GetHandle());
+	glBlitFramebuffer(
+		sourceRect.x, sourceRect.y,
+		sourceRect.x + sourceRect.width, sourceRect.y + sourceRect.height,
+		destRect.x, destRect.y,
+		destRect.x + destRect.width, destRect.y + destRect.height,
+		GL_COLOR_BUFFER_BIT,
+		TextureInterpolationToOpenGLEnum(interpolation));
 }
 
 // ============================================================================
@@ -302,7 +338,7 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 	SableMemory::SB_delete(obj);  // This calls the destructor
 }
 
-bool OpenGL3Backend::Draw(GpuFramebuffer* framebuffer)
+bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 {
 	if (m_drawStack.size() == 0) return false;
 

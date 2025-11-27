@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <string>
-
+ 
 #include <SableUI/SableUI.h>
 #include <SableUI/components/debugComponents.h>
 #include <SableUI/component.h>
@@ -119,7 +119,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("Console", fontSize(24));
+		Text("FLUSH() CALLED PER FRAME - ONLY CALL IF DRAWABLES ARE DRAWN!", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -290,4 +290,4 @@ int main(int argc, char** argv)
 
 | | render target panel
 */
-////////////////////////////////////
+////////////////////////////////////////////////

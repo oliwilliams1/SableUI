@@ -32,7 +32,7 @@ namespace SableUI
 		DrawableBase();
 		virtual ~DrawableBase();
 		static int GetNumInstances();
-		virtual void Draw(GpuFramebuffer* framebuffer, ContextResources& res) = 0;
+		virtual void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) = 0;
 		void setZ(int z) { this->m_zIndex = z; }
 		int m_zIndex = 0;
 		Rect m_rect = { 0, 0, 0, 0 };
@@ -50,7 +50,7 @@ namespace SableUI
 		~DrawableRect();
 		static int GetNumInstances();
 		void Update(Rect& rect, Colour colour, float pBSize = 0.0f);
-		void Draw(GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 	};
 
@@ -63,7 +63,7 @@ namespace SableUI
 		static int GetNumInstances();
 		void Update(Rect& rect, Colour colour, PanelType type,
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
-		void Draw(GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 0;
 		std::vector<int> m_offsets;
@@ -77,7 +77,7 @@ namespace SableUI
 		~DrawableImage();
 		static int GetNumInstances();
 		void Update(Rect& rect) { this->m_rect = rect; }
-		void Draw(GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Texture m_texture;
 	};
 
@@ -88,7 +88,7 @@ namespace SableUI
 		~DrawableText();
 		static int GetNumInstances();
 		void Update(Rect& rect) { this->m_rect = rect; };
-		void Draw(GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		_Text m_text;
 	};
 }

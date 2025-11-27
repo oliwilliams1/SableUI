@@ -177,7 +177,7 @@ void DrawableRect::Update(Rect& rect, Colour colour, float pBSize)
     this->m_colour = colour;
 }
 
-void DrawableRect::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(framebuffer->width));
@@ -246,7 +246,7 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
     this->m_offsets = segments;
 }
 
-void DrawableSplitter::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
 
 }
@@ -272,7 +272,7 @@ int DrawableImage::GetNumInstances()
     return s_drawableImageCount;
 }
 
-void DrawableImage::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
     /* normalise from texture bounds to [0, 1] */
     float x = (m_rect.x / static_cast<float>(framebuffer->width));
@@ -323,7 +323,7 @@ int DrawableText::GetNumInstances()
     return s_drawableTextCount;
 }
 
-void DrawableText::Draw(GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
     g_tShader.Use();
     glUniform2f(g_tTargetSizeLoc, static_cast<float>(framebuffer->width), static_cast<float>(framebuffer->height));

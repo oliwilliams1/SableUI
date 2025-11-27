@@ -259,7 +259,8 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 	
 	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
 	{
-		m_window->DrawRectOnTop(rootNode.rect, Colour(0, 0, 0, transparency));
+		CustomTargetQueue* queue = m_window->CreateCustomTargetQueue(m_window->GetWindowSurface());
+		queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
 		g_needsTransparencyUpdate = false;
 
 		g_lastDrawnHoveredNode = g_hoveredNode;
@@ -274,7 +275,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				rect.w - info.paddingLeft - info.paddingRight,
 				info.paddingTop
 			};
-			m_window->DrawRectOnTop(paddingTop, Colour(140, 200, 140, 120));
+			queue->AddRect(paddingTop, Colour(140, 200, 140, 120));
 		}
 		if (info.paddingBottom > 0) {
 			Rect paddingBottom = {
@@ -283,7 +284,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				rect.w - info.paddingLeft - info.paddingRight,
 				info.paddingBottom
 			};
-			m_window->DrawRectOnTop(paddingBottom, Colour(140, 200, 140, 120));
+			queue->AddRect(paddingBottom, Colour(140, 200, 140, 120));
 		}
 		if (info.paddingLeft > 0) {
 			Rect paddingLeft = {
@@ -292,7 +293,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				info.paddingLeft,
 				rect.h
 			};
-			m_window->DrawRectOnTop(paddingLeft, Colour(140, 200, 140, 120));
+			queue->AddRect(paddingLeft, Colour(140, 200, 140, 120));
 		}
 		if (info.paddingRight > 0) {
 			Rect paddingRight = {
@@ -301,7 +302,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				info.paddingRight,
 				rect.h
 			};
-			m_window->DrawRectOnTop(paddingRight, Colour(140, 200, 140, 120));
+			queue->AddRect(paddingRight, Colour(140, 200, 140, 120));
 		}
 
 		// Margins
@@ -312,7 +313,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				rect.w,
 				info.marginTop
 			};
-			m_window->DrawRectOnTop(marginTop, Colour(255, 180, 100, 120));
+			queue->AddRect(marginTop, Colour(255, 180, 100, 120));
 		}
 		if (info.marginBottom > 0) {
 			Rect marginBottom = {
@@ -321,7 +322,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				rect.w,
 				info.marginBottom
 			};
-			m_window->DrawRectOnTop(marginBottom, Colour(255, 180, 100, 120));
+			queue->AddRect(marginBottom, Colour(255, 180, 100, 120));
 		}
 		if (info.marginLeft > 0) {
 			Rect marginLeft = {
@@ -330,7 +331,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				info.marginLeft,
 				rect.h + info.marginTop + info.marginBottom
 			};
-			m_window->DrawRectOnTop(marginLeft, Colour(255, 180, 100, 120));
+			queue->AddRect(marginLeft, Colour(255, 180, 100, 120));
 		}
 		if (info.marginRight > 0) {
 			Rect marginRight = {
@@ -339,10 +340,10 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 				info.marginRight,
 				rect.h + info.marginTop + info.marginBottom
 			};
-			m_window->DrawRectOnTop(marginRight, Colour(255, 180, 100, 120));
+			queue->AddRect(marginRight, Colour(255, 180, 100, 120));
 		}
 
-		m_window->DrawRectOnTop(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
+		queue->AddRect(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
 
 		// Content area
 		Rect contentRect = {
@@ -351,7 +352,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 			rect.w - info.paddingLeft - info.paddingRight,
 			rect.h - info.paddingTop - info.paddingBottom
 		};
-		m_window->DrawRectOnTop(contentRect, Colour(100, 180, 255, 120));
+		queue->AddRect(contentRect, Colour(100, 180, 255, 120));
 	}
 }
 
