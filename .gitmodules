@@ -17,3 +17,6 @@
 [submodule "vendor/libwebp"]
 	path = vendor/libwebp
 	url = https://github.com/webmproject/libwebp
+[submodule "vendor/shaderc"]
+	path = vendor/shaderc
+	url = https://github.com/google/shaderc
