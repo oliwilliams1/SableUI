@@ -207,6 +207,9 @@ void SableUI::ElementTreeView::Layout()
 			GpuObject::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
 
+		Text(SableString::Format("Num Custom Queues: %d",
+			CustomTargetQueue::GetNumInstances()));
+
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
 		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
 		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
@@ -259,100 +262,106 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 	
 	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
 	{
-		CustomTargetQueue* queue = m_window->CreateCustomTargetQueue_window(m_window->GetWindowSurface());
-		queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
-		g_needsTransparencyUpdate = false;
+		UseCustomTargetQueue(queue, m_window, m_window->GetSurface())
+		{
+			queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
+			g_needsTransparencyUpdate = false;
 
-		g_lastDrawnHoveredNode = g_hoveredNode;
-		const Rect& rect = g_hoveredNode.rect;
-		const ElementInfo& info = g_hoveredNode.elInfo;
+			g_lastDrawnHoveredNode = g_hoveredNode;
+			const Rect& rect = g_hoveredNode.rect;
+			const ElementInfo& info = g_hoveredNode.elInfo;
 
-		// Padding
-		if (info.paddingTop > 0) {
-			Rect paddingTop = {
+			// Padding
+			if (info.paddingTop > 0) {
+				Rect paddingTop = {
+					rect.x + info.paddingLeft,
+					rect.y,
+					rect.w - info.paddingLeft - info.paddingRight,
+					info.paddingTop
+				};
+				queue->AddRect(paddingTop, Colour(140, 200, 140, 120));
+			}
+			if (info.paddingBottom > 0) {
+				Rect paddingBottom = {
+					rect.x + info.paddingLeft,
+					rect.y + rect.h - info.paddingBottom,
+					rect.w - info.paddingLeft - info.paddingRight,
+					info.paddingBottom
+				};
+				queue->AddRect(paddingBottom, Colour(140, 200, 140, 120));
+			}
+			if (info.paddingLeft > 0) {
+				Rect paddingLeft = {
+					rect.x,
+					rect.y,
+					info.paddingLeft,
+					rect.h
+				};
+				queue->AddRect(paddingLeft, Colour(140, 200, 140, 120));
+			}
+			if (info.paddingRight > 0) {
+				Rect paddingRight = {
+					rect.x + rect.w - info.paddingRight,
+					rect.y,
+					info.paddingRight,
+					rect.h
+				};
+				queue->AddRect(paddingRight, Colour(140, 200, 140, 120));
+			}
+
+			// Margins
+			if (info.marginTop > 0) {
+				Rect marginTop = {
+					rect.x,
+					rect.y - info.marginTop,
+					rect.w,
+					info.marginTop
+				};
+				queue->AddRect(marginTop, Colour(255, 180, 100, 120));
+			}
+			if (info.marginBottom > 0) {
+				Rect marginBottom = {
+					rect.x,
+					rect.y + rect.h,
+					rect.w,
+					info.marginBottom
+				};
+				queue->AddRect(marginBottom, Colour(255, 180, 100, 120));
+			}
+			if (info.marginLeft > 0) {
+				Rect marginLeft = {
+					rect.x - info.marginLeft,
+					rect.y - info.marginTop,
+					info.marginLeft,
+					rect.h + info.marginTop + info.marginBottom
+				};
+				queue->AddRect(marginLeft, Colour(255, 180, 100, 120));
+			}
+			if (info.marginRight > 0) {
+				Rect marginRight = {
+					rect.x + rect.w,
+					rect.y - info.marginTop,
+					info.marginRight,
+					rect.h + info.marginTop + info.marginBottom
+				};
+				queue->AddRect(marginRight, Colour(255, 180, 100, 120));
+			}
+
+			queue->AddRect(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
+
+			// Content area
+			Rect contentRect = {
 				rect.x + info.paddingLeft,
-				rect.y,
+				rect.y + info.paddingTop,
 				rect.w - info.paddingLeft - info.paddingRight,
-				info.paddingTop
+				rect.h - info.paddingTop - info.paddingBottom
 			};
-			queue->AddRect(paddingTop, Colour(140, 200, 140, 120));
+			queue->AddRect(contentRect, Colour(100, 180, 255, 120));
 		}
-		if (info.paddingBottom > 0) {
-			Rect paddingBottom = {
-				rect.x + info.paddingLeft,
-				rect.y + rect.h - info.paddingBottom,
-				rect.w - info.paddingLeft - info.paddingRight,
-				info.paddingBottom
-			};
-			queue->AddRect(paddingBottom, Colour(140, 200, 140, 120));
-		}
-		if (info.paddingLeft > 0) {
-			Rect paddingLeft = {
-				rect.x,
-				rect.y,
-				info.paddingLeft,
-				rect.h
-			};
-			queue->AddRect(paddingLeft, Colour(140, 200, 140, 120));
-		}
-		if (info.paddingRight > 0) {
-			Rect paddingRight = {
-				rect.x + rect.w - info.paddingRight,
-				rect.y,
-				info.paddingRight,
-				rect.h
-			};
-			queue->AddRect(paddingRight, Colour(140, 200, 140, 120));
-		}
-
-		// Margins
-		if (info.marginTop > 0) {
-			Rect marginTop = {
-				rect.x,
-				rect.y - info.marginTop,
-				rect.w,
-				info.marginTop
-			};
-			queue->AddRect(marginTop, Colour(255, 180, 100, 120));
-		}
-		if (info.marginBottom > 0) {
-			Rect marginBottom = {
-				rect.x,
-				rect.y + rect.h,
-				rect.w,
-				info.marginBottom
-			};
-			queue->AddRect(marginBottom, Colour(255, 180, 100, 120));
-		}
-		if (info.marginLeft > 0) {
-			Rect marginLeft = {
-				rect.x - info.marginLeft,
-				rect.y - info.marginTop,
-				info.marginLeft,
-				rect.h + info.marginTop + info.marginBottom
-			};
-			queue->AddRect(marginLeft, Colour(255, 180, 100, 120));
-		}
-		if (info.marginRight > 0) {
-			Rect marginRight = {
-				rect.x + rect.w,
-				rect.y - info.marginTop,
-				info.marginRight,
-				rect.h + info.marginTop + info.marginBottom
-			};
-			queue->AddRect(marginRight, Colour(255, 180, 100, 120));
-		}
-
-		queue->AddRect(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
-
-		// Content area
-		Rect contentRect = {
-			rect.x + info.paddingLeft,
-			rect.y + info.paddingTop,
-			rect.w - info.paddingLeft - info.paddingRight,
-			rect.h - info.paddingTop - info.paddingBottom
-		};
-		queue->AddRect(contentRect, Colour(100, 180, 255, 120));
+	}
+	else
+	{
+		InvalidateQueue(queue);
 	}
 }
 

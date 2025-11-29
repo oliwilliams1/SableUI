@@ -9,7 +9,7 @@
 #include <SableUI/panel.h>
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
-#include <SableUI/drawable.h>
+#include <unordered_map>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -53,11 +53,13 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		CustomTargetQueue* CreateCustomTargetQueue_window(const GpuFramebuffer* target);
-		const GpuFramebuffer* GetWindowSurface() const { return &m_windowSurface; }
+		CustomTargetQueue* CreateCustomTargetQueue(const GpuFramebuffer* target, size_t fingerprint);
+		void InvalidateCustomTargetQueue(size_t fingerprint);
+		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
 
-	private:
 		RendererBackend* m_renderer = nullptr;
+	
+	private:
 		GpuFramebuffer m_framebuffer;
 		GpuFramebuffer m_windowSurface;
 		GpuTexture2D m_colourAttachment;
@@ -92,7 +94,7 @@ namespace SableUI
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 
-		std::vector<CustomTargetQueue*> customTargetQueues;
+		std::unordered_map<size_t, CustomTargetQueue*> customTargetQueues;
 		std::vector<BlitCommand> blitCommands;
 	};
 }

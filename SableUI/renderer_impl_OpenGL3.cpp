@@ -351,23 +351,17 @@ bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 	std::set<unsigned int> drawnUUIDs;
 
 	// iterate through queue and draw all types of drawables
-	for (const auto& drawable : m_drawStack)
+	for (DrawableBase* drawable : m_drawStack)
 	{
 		if (drawable)
 		{
 			if (drawnUUIDs.find(drawable->uuid) != drawnUUIDs.end()) continue;
 			drawnUUIDs.insert(drawable->uuid);
 			drawable->Draw(framebuffer, res);
-
-			if (drawable->orphan)
-				SableMemory::SB_delete(drawable);
 		}
 	}
 
-	// draw window border after queue is drawn
-	// DrawWindowBorder(&m_renderTarget);
 	m_drawStack.clear();
-
 	return true;
 }
 

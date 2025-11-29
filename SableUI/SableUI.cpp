@@ -28,7 +28,7 @@ static bool s_reconciliationMode = false;
 
 static SableUI::CustomTargetQueue* s_currentCustomTargetQueue = nullptr;
 static std::stack<SableUI::Element*> s_elementStack;
-static SableUI::RendererBackend* s_elementRenderer = nullptr;
+static std::stack<SableUI::RendererBackend*> s_rendererStack;
 
 using namespace SableMemory;
 
@@ -204,7 +204,8 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 			return;
 		}
 
-		s_elementRenderer = renderer;
+		s_rendererStack = std::stack<RendererBackend*>();
+		s_rendererStack.push(renderer);
 		s_elementStack = std::stack<Element*>();
 		s_elementStack.push(rootElement);
 	}
@@ -234,7 +235,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
@@ -242,7 +243,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 
 	Element* parent = s_elementStack.top();
 
-	Element* newDiv = SB_new<Element>(s_elementRenderer, ElementType::DIV);
+	Element* newDiv = SB_new<Element>(s_rendererStack.top(), ElementType::DIV);
 	newDiv->SetInfo(info);
 
 	if (child == nullptr)
@@ -278,14 +279,14 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newRect = SB_new<Element>(s_elementRenderer, ElementType::RECT);
+	Element* newRect = SB_new<Element>(s_rendererStack.top(), ElementType::RECT);
 
 	newRect->SetInfo(info);
 	parent->AddChild(newRect);
@@ -299,14 +300,14 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newImage = SB_new<Element>(s_elementRenderer, ElementType::IMAGE);
+	Element* newImage = SB_new<Element>(s_rendererStack.top(), ElementType::IMAGE);
 
 	newImage->uniqueTextOrPath = path;
 	newImage->SetInfo(info);
@@ -322,14 +323,14 @@ void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newText = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
+	Element* newText = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
 	newText->uniqueTextOrPath = text;
 	newText->SetInfo(info);
@@ -345,14 +346,14 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newTextU32 = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
+	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
 	newTextU32->uniqueTextOrPath = text;
 	newTextU32->SetInfo(info);
@@ -363,7 +364,7 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 // ============================================================================
 // CustomTargetQueue builder
 // ============================================================================
-void SableUI::BeginCustomLayout(SableUI::CustomTargetQueue* queue)
+void SableUI::BeginCustomLayout(SableUI::CustomTargetQueue* queue, SableUI::Window* window)
 {
 	if (s_currentCustomTargetQueue != nullptr)
 		SableUI_Runtime_Error("Cannot have nested custom target layouts");
@@ -372,13 +373,17 @@ void SableUI::BeginCustomLayout(SableUI::CustomTargetQueue* queue)
 		SableUI_Runtime_Error("Cannot have a null custom queue");
 
 	s_currentCustomTargetQueue = queue;
-	s_currentCustomTargetQueue->root = SB_new<Element>(s_elementRenderer, ElementType::DIV);
-	s_currentCustomTargetQueue->root->Init(s_elementRenderer, ElementType::DIV);
-	s_currentCustomTargetQueue->root->setBgColour(rgb(32, 32, 32));
-	s_currentCustomTargetQueue->root->setWType(RectType::FIT_CONTENT);
-	s_currentCustomTargetQueue->root->setHType(RectType::FIT_CONTENT);
+	if (s_currentCustomTargetQueue) // for linter to be :)
+	{
+		s_rendererStack.push(window->m_renderer);
+		s_currentCustomTargetQueue->root = SB_new<Element>(s_rendererStack.top(), ElementType::DIV);
+		s_currentCustomTargetQueue->root->Init(s_rendererStack.top(), ElementType::DIV);
+		s_currentCustomTargetQueue->root->setBgColour(rgb(32, 32, 32));
+		s_currentCustomTargetQueue->root->setWType(RectType::FIT_CONTENT);
+		s_currentCustomTargetQueue->root->setHType(RectType::FIT_CONTENT);
 	
-	s_elementStack.push(s_currentCustomTargetQueue->root);
+		s_elementStack.push(s_currentCustomTargetQueue->root);
+	}
 }
 
 void SableUI::EndCustomLayout()
@@ -386,6 +391,7 @@ void SableUI::EndCustomLayout()
 	if (s_currentCustomTargetQueue == nullptr)
 		SableUI_Runtime_Error("Cannot end custom layout twice, something nested?");
 
+	s_rendererStack.pop();
 	s_elementStack.pop();
 	s_currentCustomTargetQueue = nullptr;
 }
@@ -461,16 +467,6 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 
 	s_backend = backend;
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
-}
-
-SableUI::CustomTargetQueue* SableUI::CreateCustomTargetQueue(const GpuFramebuffer* target)
-{
-	return s_currentContext->CreateCustomTargetQueue_window(target);
-}
-
-const SableUI::GpuFramebuffer* SableUI::GetCurrentWindowSurface()
-{
-	return s_currentContext->GetWindowSurface();
 }
 
 SableUI::Window* SableUI::Initialise(const char* name, int width, int height, int x, int y)

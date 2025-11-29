@@ -142,12 +142,23 @@ namespace SableUI
 	struct Element;
 	struct CustomTargetQueue
 	{
-		CustomTargetQueue(const GpuFramebuffer* target) { this->target = target; }
+	public:
+		CustomTargetQueue(const GpuFramebuffer* target) { this->target = target; s_instances++; }
+		~CustomTargetQueue() { s_instances--; }
+		static int GetNumInstances() { return s_instances; }
 		const GpuFramebuffer* target = nullptr;
 		std::vector<DrawableBase*> drawables;
 		Element* root = nullptr;
 
 		void AddRect(Rect rect, Colour colour);
+		
+		CustomTargetQueue(const CustomTargetQueue&) = delete;
+		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;
+		CustomTargetQueue(CustomTargetQueue&& other) = delete;
+		CustomTargetQueue& operator=(CustomTargetQueue&& other) = delete;
+
+	private:
+		static inline int s_instances = 0;
 	};
 
 	struct BlitCommand
@@ -317,7 +328,6 @@ namespace SableUI
 		DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
 		drRect->m_rect = rect;
 		drRect->m_colour = colour;
-		drRect->orphan = true;
-		drawables.push_back(drRect);
+		drawables.emplace_back(drRect);
 	}
 }

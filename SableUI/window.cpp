@@ -389,8 +389,8 @@ void SableUI::Window::Draw()
 	{
 		// track if we need to blit custom targets to window surface
 		bool needsToBlitDefault = false;
-		for (auto& queue : customTargetQueues)
-			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
+		for (auto& it : customTargetQueues)
+			needsToBlitDefault = needsToBlitDefault || it.second->target == &m_windowSurface;
 
 
 		// if we do, blit old non-dirty custom fbo to window surface
@@ -402,24 +402,28 @@ void SableUI::Window::Draw()
 	}
 
 	// execute custom queues
-	for (auto& queue : customTargetQueues)
+	for (auto& it : customTargetQueues)
 	{
-		for (auto& dr : queue->drawables)
+		for (DrawableBase* dr : it.second->drawables)
 			m_renderer->AddToDrawStack(dr);
 
 		bool res1 = false;
-		if (queue->root)
+		if (it.second->root)
 		{
 			res1 = true;
-			queue->root->LayoutChildren();
-			queue->root->Render();
+			it.second->root->LayoutChildren();
+			it.second->root->Render();
 		}
 
-		m_renderer->BeginRenderPass(queue->target);
-		bool res2 = m_renderer->Draw(queue->target);
+		m_renderer->BeginRenderPass(it.second->target);
+		bool res2 = m_renderer->Draw(it.second->target);
 		m_renderer->EndRenderPass();
 
 		needsFlush = needsFlush || res1 || res2;
+
+		for (DrawableBase* dr : it.second->drawables)
+			SB_delete(dr);
+		it.second->drawables.clear();
 	}
 
 	if (wasDirty && !blitted)
@@ -430,12 +434,6 @@ void SableUI::Window::Draw()
 		m_renderer->CheckErrors();
 		m_renderer->Flush();
 	}
-	
-	// cleanup orphan drawables
-	for (auto& queue: customTargetQueues)
-		SableMemory::SB_delete(queue);
-
-	customTargetQueues.clear();
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -458,11 +456,35 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
-SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue_window(const GpuFramebuffer* target)
+SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue(const GpuFramebuffer* target, size_t fingerprint)
 {
 	CustomTargetQueue* queue = SableMemory::SB_new<CustomTargetQueue>(target);
-	customTargetQueues.push_back(queue);
+	
+	auto it = customTargetQueues.find(fingerprint);
+	if (it != customTargetQueues.end())
+		InvalidateCustomTargetQueue(fingerprint);
+
+	customTargetQueues[fingerprint] = queue;
 	return queue;
+}
+
+void SableUI::Window::InvalidateCustomTargetQueue(size_t fingerprint)
+{
+	auto it = customTargetQueues.find(fingerprint);
+	if (it != customTargetQueues.end())
+	{
+		auto queue = it->second;
+		if (queue->root)
+			SB_delete(queue->root);
+
+		for (auto& dr : queue->drawables)
+			SB_delete(dr);
+		
+		queue->drawables.clear();
+
+		SB_delete(queue);
+		customTargetQueues.erase(it);
+	}
 }
 
 // ============================================================================

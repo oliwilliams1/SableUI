@@ -96,7 +96,7 @@ int main(int argc, char** argv)
 ```
 ---
 ## Building
-Requires CMake for creating build files and a C++17 compiler.
+Requires CMake for creating build files and a C++20 compiler is reccomended.
 
 > NOTE: If building from source you may need development libraries for your
 specific graphics api otherwise CMake will not find libraries and may not be

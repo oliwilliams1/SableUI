@@ -7,6 +7,7 @@
 #include <SableUI/events.h>
 #include <SableUI/renderer.h>
 #include <SableUI/utils.h>
+#include <SableUI/window.h>
 
 using namespace SableMemory;
 
@@ -17,14 +18,18 @@ SableUI::BaseComponent::BaseComponent(Colour colour)
 	m_bgColour = colour;
 }
 
-// In BaseComponent.cpp
 SableUI::BaseComponent::~BaseComponent()
 {
 	s_numComponents--;
 
+	for (const QueueRegistration& reg : m_customQueues)
+		if (reg.window)
+			reg.window->InvalidateCustomTargetQueue(reg.fingerprint);
+
+	m_customQueues.clear();
+
 	if (rootElement) SB_delete(rootElement);
 
-	// FIX: This component OWNS its children. Delete them.
 	for (BaseComponent* child : m_componentChildren)
 	{
 		if (child) SB_delete(child);
@@ -43,7 +48,7 @@ void SableUI::BaseComponent::LayoutWrapper()
 	Layout();
 
 	if (m_componentChildren.size() > static_cast<size_t>(m_childCount))
-		for (size_t i = m_childCount; i < m_componentChildren.size(); ++i)
+		for (size_t i = m_childCount; i < m_componentChildren.size(); i++)
 			if (m_componentChildren[i])
 				SB_delete(m_componentChildren[i]);
 
@@ -133,11 +138,9 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	return false;
 }
 
-
 void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 {
 	OnUpdate(ctx);
-
 	rootElement->el_PropagateEvents(ctx);
 }
 
