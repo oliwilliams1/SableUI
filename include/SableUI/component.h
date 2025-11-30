@@ -94,6 +94,10 @@ namespace SableUI
         void RegisterState(T* variable)
             { m_stateBlocks.push_back(StateBlock::Create(variable)); }
 
+        template<typename T>
+        void RegisterReference(T* variable)
+            { m_stateBlocks.push_back(StateBlock::Create(variable)); }
+
         void CopyStateFrom(const BaseComponent& other);
         void AddCustomQueue(const QueueRegistration& reg)
             { m_customQueues.push_back(reg); }

@@ -371,7 +371,6 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool blitted = false;
 	bool wasDirty = false;
 	bool needsFlush = false;
 	// if layout is dirty rerender to windows custom framebuffer
@@ -385,48 +384,7 @@ void SableUI::Window::Draw()
 		needsFlush = needsFlush || res;
 	}
 
-	if (customTargetQueues.size() != 0)
-	{
-		// track if we need to blit custom targets to window surface
-		bool needsToBlitDefault = false;
-		for (auto& it : customTargetQueues)
-			needsToBlitDefault = needsToBlitDefault || it.second->target == &m_windowSurface;
-
-
-		// if we do, blit old non-dirty custom fbo to window surface
-		if (needsToBlitDefault) 
-		{
-			m_renderer->BlitToScreen(&m_framebuffer);
-			blitted = true;
-		}
-	}
-
-	// execute custom queues
-	for (auto& it : customTargetQueues)
-	{
-		for (DrawableBase* dr : it.second->drawables)
-			m_renderer->AddToDrawStack(dr);
-
-		bool res1 = false;
-		if (it.second->root)
-		{
-			res1 = true;
-			it.second->root->LayoutChildren();
-			it.second->root->Render();
-		}
-
-		m_renderer->BeginRenderPass(it.second->target);
-		bool res2 = m_renderer->Draw(it.second->target);
-		m_renderer->EndRenderPass();
-
-		needsFlush = needsFlush || res1 || res2;
-
-		for (DrawableBase* dr : it.second->drawables)
-			SB_delete(dr);
-		it.second->drawables.clear();
-	}
-
-	if (wasDirty && !blitted)
+	if (wasDirty)
 		m_renderer->BlitToScreen(&m_framebuffer);
 	
 	if (needsFlush) // has surface changed? flush changes
@@ -454,37 +412,6 @@ void SableUI::Window::RerenderAllNodes()
 void SableUI::Window::RecalculateNodes()
 {
 	m_root->Recalculate();
-}
-
-SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue(const GpuFramebuffer* target, size_t fingerprint)
-{
-	CustomTargetQueue* queue = SableMemory::SB_new<CustomTargetQueue>(target);
-	
-	auto it = customTargetQueues.find(fingerprint);
-	if (it != customTargetQueues.end())
-		InvalidateCustomTargetQueue(fingerprint);
-
-	customTargetQueues[fingerprint] = queue;
-	return queue;
-}
-
-void SableUI::Window::InvalidateCustomTargetQueue(size_t fingerprint)
-{
-	auto it = customTargetQueues.find(fingerprint);
-	if (it != customTargetQueues.end())
-	{
-		auto queue = it->second;
-		if (queue->root)
-			SB_delete(queue->root);
-
-		for (auto& dr : queue->drawables)
-			SB_delete(dr);
-		
-		queue->drawables.clear();
-
-		SB_delete(queue);
-		customTargetQueues.erase(it);
-	}
 }
 
 // ============================================================================

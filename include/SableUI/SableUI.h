@@ -54,9 +54,6 @@ namespace SableUI
 	void SetNextPanelMaxWidth(int width);
 	void SetNextPanelMaxHeight(int height);
 
-	void BeginCustomLayout(CustomTargetQueue* queue, Window* window);
-	void EndCustomLayout();
-
 	struct DivScope
 	{
 	public:
@@ -89,33 +86,6 @@ namespace SableUI
 		SplitterScope& operator=(const SplitterScope&) = delete;
 		SplitterScope(SplitterScope&&) = default;
 		SplitterScope& operator=(SplitterScope&&) = default;
-	};
-
-	struct CustomLayoutScope
-	{
-	public:
-		CustomLayoutScope(
-			Window* window,
-			const GpuFramebuffer* surface, 
-			CustomTargetQueue** queue,
-			Window** contextToSet,
-			size_t fingerprint)
-		{
-			if (window == nullptr) return;
-			*queue = window->CreateCustomTargetQueue(surface, fingerprint);
-			*contextToSet = window;
-			SableUI::BeginCustomLayout(*queue, window);
-		}
-
-		~CustomLayoutScope()
-		{
-			SableUI::EndCustomLayout();
-		}
-
-		CustomLayoutScope(const CustomLayoutScope&) = delete;
-		CustomLayoutScope& operator=(const CustomLayoutScope&) = delete;
-		CustomLayoutScope(CustomLayoutScope&&) = default;
-		CustomLayoutScope& operator=(CustomLayoutScope&&) = default;
 	};
 }
 
@@ -236,6 +206,13 @@ constexpr size_t constexprStringHash(const std::string& str) {
         __StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
         { if (comp) comp->RegisterState(var); }							\
     } __stateReg_##variableName{this, &variableName}
+
+#define useRef(variableName, T, initalValue)                            \
+	T variableName = initalValue;                                       \
+	struct __RefReg_##variableName {                                    \
+		__RefReg_##variableName(SableUI::BaseComponent* comp, T* var)   \
+		{ if (comp) comp->RegisterReference(var); }							\
+	} __refReg_##variableName{this, &variableName}
 
 #define onHover(...)				.setOnHover(__VA_ARGS__)
 #define onHoverExit(...)			.setOnHoverExit(__VA_ARGS__)

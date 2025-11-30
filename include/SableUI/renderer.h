@@ -140,36 +140,6 @@ namespace SableUI
 
 	struct GpuFramebuffer;
 	struct Element;
-	struct CustomTargetQueue
-	{
-	public:
-		CustomTargetQueue(const GpuFramebuffer* target) { this->target = target; s_instances++; }
-		~CustomTargetQueue() { s_instances--; }
-		static int GetNumInstances() { return s_instances; }
-		const GpuFramebuffer* target = nullptr;
-		std::vector<DrawableBase*> drawables;
-		Element* root = nullptr;
-
-		void AddRect(Rect rect, Colour colour);
-		
-		CustomTargetQueue(const CustomTargetQueue&) = delete;
-		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;
-		CustomTargetQueue(CustomTargetQueue&& other) = delete;
-		CustomTargetQueue& operator=(CustomTargetQueue&& other) = delete;
-
-	private:
-		static inline int s_instances = 0;
-	};
-
-	struct BlitCommand
-	{
-		GpuFramebuffer* source = nullptr;
-		GpuFramebuffer* target = nullptr;
-		Rect sourceRect = { 0, 0, 0, 0 };
-		Rect destRect = { 0, 0, 0, 0 };
-		TextureInterpolation interpolation = TextureInterpolation::Nearest;
-	};
-
 	class RendererBackend
 	{
 	public:
@@ -321,13 +291,5 @@ namespace SableUI
 	inline void RendererBackend::FreeHandle(uint32_t handle)
 	{
 		m_freeHandles.push_back(handle);
-	}
-
-	inline void CustomTargetQueue::AddRect(Rect rect, Colour colour)
-	{
-		DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
-		drRect->m_rect = rect;
-		drRect->m_colour = colour;
-		drawables.emplace_back(drRect);
 	}
 }

@@ -53,10 +53,7 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		CustomTargetQueue* CreateCustomTargetQueue(const GpuFramebuffer* target, size_t fingerprint);
-		void InvalidateCustomTargetQueue(size_t fingerprint);
-		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
-
+	private:
 		RendererBackend* m_renderer = nullptr;
 	
 	private:
@@ -93,8 +90,5 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
-
-		std::unordered_map<size_t, CustomTargetQueue*> customTargetQueues;
-		std::vector<BlitCommand> blitCommands;
 	};
 }

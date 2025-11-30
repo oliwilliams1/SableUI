@@ -26,7 +26,6 @@ static std::stack<SableUI::VirtualNode*> s_virtualStack;
 static SableUI::VirtualNode* s_virtualRoot = nullptr;
 static bool s_reconciliationMode = false;
 
-static SableUI::CustomTargetQueue* s_currentCustomTargetQueue = nullptr;
 static std::stack<SableUI::Element*> s_elementStack;
 static std::stack<SableUI::RendererBackend*> s_rendererStack;
 
@@ -362,41 +361,6 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 }
 
 // ============================================================================
-// CustomTargetQueue builder
-// ============================================================================
-void SableUI::BeginCustomLayout(SableUI::CustomTargetQueue* queue, SableUI::Window* window)
-{
-	if (s_currentCustomTargetQueue != nullptr)
-		SableUI_Runtime_Error("Cannot have nested custom target layouts");
-
-	if (queue == nullptr)
-		SableUI_Runtime_Error("Cannot have a null custom queue");
-
-	s_currentCustomTargetQueue = queue;
-	if (s_currentCustomTargetQueue) // for linter to be :)
-	{
-		s_rendererStack.push(window->m_renderer);
-		s_currentCustomTargetQueue->root = SB_new<Element>(s_rendererStack.top(), ElementType::DIV);
-		s_currentCustomTargetQueue->root->Init(s_rendererStack.top(), ElementType::DIV);
-		s_currentCustomTargetQueue->root->setBgColour(rgb(32, 32, 32));
-		s_currentCustomTargetQueue->root->setWType(RectType::FIT_CONTENT);
-		s_currentCustomTargetQueue->root->setHType(RectType::FIT_CONTENT);
-	
-		s_elementStack.push(s_currentCustomTargetQueue->root);
-	}
-}
-
-void SableUI::EndCustomLayout()
-{
-	if (s_currentCustomTargetQueue == nullptr)
-		SableUI_Runtime_Error("Cannot end custom layout twice, something nested?");
-
-	s_rendererStack.pop();
-	s_elementStack.pop();
-	s_currentCustomTargetQueue = nullptr;
-}
-
-// ============================================================================
 // App
 // ============================================================================
 class App
@@ -468,7 +432,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 	s_backend = backend;
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
 }
-
+ 
 SableUI::Window* SableUI::Initialise(const char* name, int width, int height, int x, int y)
 {
 	if (s_app != nullptr)
