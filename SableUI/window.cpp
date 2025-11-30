@@ -371,7 +371,6 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool blitted = false;
 	bool wasDirty = false;
 	bool needsFlush = false;
 	// if layout is dirty rerender to windows custom framebuffer
@@ -385,44 +384,7 @@ void SableUI::Window::Draw()
 		needsFlush = needsFlush || res;
 	}
 
-	if (customTargetQueues.size() != 0)
-	{
-		// track if we need to blit custom targets to window surface
-		bool needsToBlitDefault = false;
-		for (auto& queue : customTargetQueues)
-			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
-
-
-		// if we do, blit old non-dirty custom fbo to window surface
-		if (needsToBlitDefault) 
-		{
-			m_renderer->BlitToScreen(&m_framebuffer);
-			blitted = true;
-		}
-	}
-
-	// execute custom queues
-	for (auto& queue : customTargetQueues)
-	{
-		for (auto& dr : queue->drawables)
-			m_renderer->AddToDrawStack(dr);
-
-		bool res1 = false;
-		if (queue->root)
-		{
-			res1 = true;
-			queue->root->LayoutChildren();
-			queue->root->Render();
-		}
-
-		m_renderer->BeginRenderPass(queue->target);
-		bool res2 = m_renderer->Draw(queue->target);
-		m_renderer->EndRenderPass();
-
-		needsFlush = needsFlush || res1 || res2;
-	}
-
-	if (wasDirty && !blitted)
+	if (wasDirty)
 		m_renderer->BlitToScreen(&m_framebuffer);
 	
 	if (needsFlush) // has surface changed? flush changes
@@ -430,12 +392,6 @@ void SableUI::Window::Draw()
 		m_renderer->CheckErrors();
 		m_renderer->Flush();
 	}
-	
-	// cleanup orphan drawables
-	for (auto& queue: customTargetQueues)
-		SableMemory::SB_delete(queue);
-
-	customTargetQueues.clear();
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -456,13 +412,6 @@ void SableUI::Window::RerenderAllNodes()
 void SableUI::Window::RecalculateNodes()
 {
 	m_root->Recalculate();
-}
-
-SableUI::CustomTargetQueue* SableUI::Window::CreateCustomTargetQueue_window(const GpuFramebuffer* target)
-{
-	CustomTargetQueue* queue = SableMemory::SB_new<CustomTargetQueue>(target);
-	customTargetQueues.push_back(queue);
-	return queue;
 }
 
 // ============================================================================

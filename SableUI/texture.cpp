@@ -107,7 +107,6 @@ void Texture::LoadTexture(const std::string& path)
         std::ifstream file(path, std::ios::binary);
         if (!file.is_open())
         {
-            SableUI_Warn("Unable to open file: %s", path.c_str());
             GenerateDefaultTexture();
             return;
         }
@@ -184,7 +183,6 @@ void Texture::LoadTextureOptimised(const std::string& path, int width, int heigh
         std::ifstream file(path, std::ios::binary);
         if (!file.is_open())
         {
-            SableUI_Warn("Unable to open texture: %s", path.c_str());
             GenerateDefaultTexture();
             return;
         }

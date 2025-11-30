@@ -53,9 +53,6 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		CustomTargetQueue* CreateCustomTargetQueue_window(const GpuFramebuffer* target);
-		const GpuFramebuffer* GetWindowSurface() const { return &m_windowSurface; }
-
 	private:
 		RendererBackend* m_renderer = nullptr;
 		GpuFramebuffer m_framebuffer;
@@ -91,8 +88,5 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
-
-		std::vector<CustomTargetQueue*> customTargetQueues;
-		std::vector<BlitCommand> blitCommands;
 	};
 }

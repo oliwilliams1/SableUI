@@ -20,9 +20,6 @@ namespace SableUI
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
-	CustomTargetQueue* CreateCustomTargetQueue(const GpuFramebuffer* target);
-	const GpuFramebuffer* GetCurrentWindowSurface();
-
 	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
 	void SetMaxFPS(int fps);
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
@@ -57,9 +54,6 @@ namespace SableUI
 	void SetNextPanelMaxWidth(int width);
 	void SetNextPanelMaxHeight(int height);
 
-	void BeginCustomLayout(CustomTargetQueue* queue);
-	void EndCustomLayout();
-
 	struct DivScope
 	{
 	public:
@@ -93,25 +87,6 @@ namespace SableUI
 		SplitterScope(SplitterScope&&) = default;
 		SplitterScope& operator=(SplitterScope&&) = default;
 	};
-
-	struct CustomLayoutScope
-	{
-	public:
-		explicit CustomLayoutScope(CustomTargetQueue* queue)
-		{
-			SableUI::BeginCustomLayout(queue);
-		}
-
-		~CustomLayoutScope()
-		{
-			SableUI::EndCustomLayout();
-		}
-
-		CustomLayoutScope(const CustomLayoutScope&) = delete;
-		CustomLayoutScope& operator=(const CustomLayoutScope&) = delete;
-		CustomLayoutScope(CustomLayoutScope&&) = default;
-		CustomLayoutScope& operator=(CustomLayoutScope&&) = default;
-	};
 }
 
 /* scoped RAII rect guard api */
@@ -124,8 +99,6 @@ namespace SableUI
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
 #define Component(T, info, ...) AddComponent<T>(__VA_ARGS__)->BackendInitialiseChild(STRINGIFY(T), this, style(info))
-
-#define CustomLayoutContext(queue) if (SableUI::CustomLayoutScope CONCAT(_custom_layout_scope_, __LINE__)(queue); true)
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -209,6 +182,13 @@ namespace SableUI
         __StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
         { if (comp) comp->RegisterState(var); }							\
     } __stateReg_##variableName{this, &variableName}
+
+#define useRef(variableName, T, initalValue)                            \
+	T variableName = initalValue;                                       \
+	struct __RefReg_##variableName {                                    \
+		__RefReg_##variableName(SableUI::BaseComponent* comp, T* var)   \
+		{ if (comp) comp->RegisterReference(var); }							\
+	} __refReg_##variableName{this, &variableName}
 
 #define onHover(...)				.setOnHover(__VA_ARGS__)
 #define onHoverExit(...)			.setOnHoverExit(__VA_ARGS__)

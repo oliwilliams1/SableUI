@@ -172,11 +172,6 @@ public:
 
 	void Layout() override
 	{
-		CustomTargetQueue* queue = CreateCustomTargetQueue(GetCurrentWindowSurface());
-		CustomLayoutContext(queue)
-		{
-			Rect(w(50) h(50) bg(255, 0, 0));
-		}
 	}
 };
 
@@ -215,6 +210,99 @@ private:
 	useState(count, setCount, int, 0);
 };
 
+class RefTest : public SableUI::BaseComponent
+{
+public:
+	RefTest() : BaseComponent()
+	{
+		SableUI_Log("RefTest() constructor called");
+	}
+
+	~RefTest()
+	{
+		SableUI_Log("~RefTest() destructor called");
+	}
+
+	void Layout() override
+	{
+		SableUI_Log("Layout: ref = %d, state = %d", refCounter, stateCounter);
+
+		Div(bg(50, 50, 50) p(20) w_fill rounded(10))
+		{
+			Div(bg(70, 70, 120) p(15) rounded(5) mb(20) w_fill centerX)
+			{
+				Text(SableString::Format("State counter: %d", stateCounter),
+					fontSize(20) mb(10));
+
+				Div(bg(100, 100, 200) p(8) rounded(5) w_fill
+					onClick([this]() {
+						setStateCounter(stateCounter + 1);
+						SableUI_Log("State increment -> now %d", stateCounter + 1);
+					}))
+				{
+					Text("Increment useState");
+				}
+			}
+
+			Div(bg(120, 70, 70) p(15) rounded(5) w_fill centerX)
+			{
+				Text(SableString::Format("Ref counter: %d", refCounter),
+					fontSize(20) mb(10));
+
+				Div(bg(200, 100, 100) p(8) rounded(5) w_fill
+					onClick([this]() {
+						refCounter++;
+						SableUI_Log("Ref increment -> now %d", refCounter);
+					}))
+				{
+					Text("Increment useRef");
+				}
+			}
+		}
+	}
+
+private:
+	useState(stateCounter, setStateCounter, int, 0);
+	useRef(refCounter, int, 0);
+};
+
+class RefTestParent : public SableUI::BaseComponent
+{
+public:
+	void Layout() override
+	{
+		Div(p(30) bg(40, 40, 40) w_fill)
+		{
+			Div(bg(32, 80, 128) p(10) mb(20) w_fill rounded(5)
+				onClick([this]() {
+					setShow(!show);
+					SableUI_Log("Toggled show -> %d", show ? 0 : 1);
+				}))
+			{
+				Text("Toggle RefTest", justify_center);
+			}
+
+			Div(bg(32, 80, 128) p(10) mb(20) w_fill rounded(5)
+				onClick([this]() {
+					needsRerender = true;
+					SableUI_Log("Parent forced rerender");
+				}))
+			{
+				Text("Rerender Parent", justify_center);
+			}
+
+			if (show)
+			{
+				Component(RefTest, w_fill bg(50, 50, 50) rounded(10));
+			}
+		}
+	}
+
+private:
+	useState(show, setShow, bool, true);
+};
+
+
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
@@ -247,7 +335,7 @@ int main(int argc, char** argv)
 				PanelWith(ConsoleView);
 
 			}
-			Panel();
+			PanelWith(RefTestParent);
 		}
 	}
 
