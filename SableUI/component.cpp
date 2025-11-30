@@ -22,12 +22,6 @@ SableUI::BaseComponent::~BaseComponent()
 {
 	s_numComponents--;
 
-	for (const QueueRegistration& reg : m_customQueues)
-		if (reg.window)
-			reg.window->InvalidateCustomTargetQueue(reg.fingerprint);
-
-	m_customQueues.clear();
-
 	if (rootElement) SB_delete(rootElement);
 
 	for (BaseComponent* child : m_componentChildren)

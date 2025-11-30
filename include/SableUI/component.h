@@ -54,15 +54,6 @@ namespace SableUI
     };
 
     class Window;
-    struct QueueRegistration
-    {
-        QueueRegistration(size_t fingerprint, Window* window, CustomTargetQueue* queue)
-            : fingerprint(fingerprint), window(window), queue(queue) {}
-        size_t fingerprint;
-        Window* window;  // nullptr for implicit window
-        CustomTargetQueue* queue;
-    };
-
     class BaseComponent
     {
     public:
@@ -99,12 +90,9 @@ namespace SableUI
             { m_stateBlocks.push_back(StateBlock::Create(variable)); }
 
         void CopyStateFrom(const BaseComponent& other);
-        void AddCustomQueue(const QueueRegistration& reg)
-            { m_customQueues.push_back(reg); }
 
     protected:
         std::vector<StateBlock> m_stateBlocks;
-        std::vector<QueueRegistration> m_customQueues;
         Element* rootElement = nullptr;
 
     private:
