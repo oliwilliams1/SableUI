@@ -9,7 +9,7 @@
 #include <SableUI/panel.h>
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
-#include <SableUI/drawable.h>
+#include <unordered_map>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -55,6 +55,8 @@ namespace SableUI
 
 	private:
 		RendererBackend* m_renderer = nullptr;
+	
+	private:
 		GpuFramebuffer m_framebuffer;
 		GpuFramebuffer m_windowSurface;
 		GpuTexture2D m_colourAttachment;

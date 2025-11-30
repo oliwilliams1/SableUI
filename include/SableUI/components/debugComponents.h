@@ -54,6 +54,7 @@ namespace SableUI
 		useState(transparency, setTransparency, int, 0);
 		useState(rootNode, setRootNode, TreeNode, {});
 		Window* m_window = nullptr;
+		CustomLayoutContext(queue);
 	};
 
 

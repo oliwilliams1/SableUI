@@ -27,7 +27,7 @@ static SableUI::VirtualNode* s_virtualRoot = nullptr;
 static bool s_reconciliationMode = false;
 
 static std::stack<SableUI::Element*> s_elementStack;
-static SableUI::RendererBackend* s_elementRenderer = nullptr;
+static std::stack<SableUI::RendererBackend*> s_rendererStack;
 
 using namespace SableMemory;
 
@@ -203,7 +203,8 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 			return;
 		}
 
-		s_elementRenderer = renderer;
+		s_rendererStack = std::stack<RendererBackend*>();
+		s_rendererStack.push(renderer);
 		s_elementStack = std::stack<Element*>();
 		s_elementStack.push(rootElement);
 	}
@@ -233,7 +234,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
@@ -241,7 +242,7 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 
 	Element* parent = s_elementStack.top();
 
-	Element* newDiv = SB_new<Element>(s_elementRenderer, ElementType::DIV);
+	Element* newDiv = SB_new<Element>(s_rendererStack.top(), ElementType::DIV);
 	newDiv->SetInfo(info);
 
 	if (child == nullptr)
@@ -277,14 +278,14 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newRect = SB_new<Element>(s_elementRenderer, ElementType::RECT);
+	Element* newRect = SB_new<Element>(s_rendererStack.top(), ElementType::RECT);
 
 	newRect->SetInfo(info);
 	parent->AddChild(newRect);
@@ -298,14 +299,14 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newImage = SB_new<Element>(s_elementRenderer, ElementType::IMAGE);
+	Element* newImage = SB_new<Element>(s_rendererStack.top(), ElementType::IMAGE);
 
 	newImage->uniqueTextOrPath = path;
 	newImage->SetInfo(info);
@@ -321,14 +322,14 @@ void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newText = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
+	Element* newText = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
 	newText->uniqueTextOrPath = text;
 	newText->SetInfo(info);
@@ -344,14 +345,14 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
 	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
 
-	if (s_elementStack.empty() || s_elementRenderer == nullptr)
+	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
 		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
 		return;
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newTextU32 = SB_new<Element>(s_elementRenderer, ElementType::TEXT);
+	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
 	newTextU32->uniqueTextOrPath = text;
 	newTextU32->SetInfo(info);

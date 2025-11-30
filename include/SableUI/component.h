@@ -1,12 +1,14 @@
 #pragma once
-#include "SableUI/element.h"
-#include "SableUI/memory.h"
+#include <SableUI/element.h>
+#include <SableUI/memory.h>
+#include <SableUI/events.h>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
+
 #include <functional>
 #include <type_traits>
+#include <utility>
 #include <vector>
-#include "events.h"
-#include "renderer.h"
-#include "utils.h"
 
 namespace SableUI
 {
@@ -51,11 +53,21 @@ namespace SableUI
             { copier(ptr, other.ptr); }
     };
 
+    class Window;
+    struct QueueRegistration
+    {
+        QueueRegistration(size_t fingerprint, Window* window, CustomTargetQueue* queue)
+            : fingerprint(fingerprint), window(window), queue(queue) {}
+        size_t fingerprint;
+        Window* window;  // nullptr for implicit window
+        CustomTargetQueue* queue;
+    };
+
     class BaseComponent
     {
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
-        virtual ~BaseComponent();
+        ~BaseComponent();
         static int GetNumInstances();
 
         virtual void Layout() {};
@@ -87,9 +99,12 @@ namespace SableUI
             { m_stateBlocks.push_back(StateBlock::Create(variable)); }
 
         void CopyStateFrom(const BaseComponent& other);
+        void AddCustomQueue(const QueueRegistration& reg)
+            { m_customQueues.push_back(reg); }
 
     protected:
         std::vector<StateBlock> m_stateBlocks;
+        std::vector<QueueRegistration> m_customQueues;
         Element* rootElement = nullptr;
 
     private:

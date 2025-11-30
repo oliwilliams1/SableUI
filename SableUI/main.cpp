@@ -160,11 +160,21 @@ private:
 class MenuBar : public BaseComponent
 {
 public:
-	MenuBar() : BaseComponent() {};
+	MenuBar(Window* window) : BaseComponent() { m_window = window; };
 
 	void DrawMenuBarItem(const std::string& text)
 	{
-		Div(p(2) mb(2) bg(255, 32, 32) w_fit)
+		Div(p(2) mb(2) bg(32, 32, 32) w_fit
+			onClick([=]()
+			{
+				UseCustomTargetQueue(queue, m_window, m_window->GetSurface())
+				{
+					Div(w(128) h(128) bg(32, 32, 32, 255) p(50))
+					{
+						Text(SableString::Format("Clicked: %s", text.c_str()));
+					}
+				}
+			}))
 		{
 			Text(text, justify_center h_fit w_fit px(4));
 		}
@@ -313,7 +323,7 @@ int main(int argc, char** argv)
 	VSplitter()
 	{
 		SableUI::SetNextPanelMaxHeight(20);
-		PanelWith(MenuBar);
+		PanelWith(MenuBar, mainWindow);
 		HSplitter()
 		{
 			VSplitter()

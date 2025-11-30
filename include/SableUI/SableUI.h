@@ -103,6 +103,30 @@ namespace SableUI
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
+constexpr size_t constexprStringHash(const std::string& str) {
+	size_t hash = 1469598103934665603ull;
+	for (char c : str)
+		hash = (hash ^ c) * 1099511628211ull;
+	return hash;
+}
+
+#define HASHED_FINGERPRINT constexprStringHash(std::string(__FILE__) + ":" + std::to_string(__LINE__))
+
+#define CustomLayoutContext(queueVar) \
+    size_t CONCAT(queueVar, _fingerprint) = HASHED_FINGERPRINT; \
+	Window* CONCAT(queueVar, _context) = nullptr; \
+    SableUI::CustomTargetQueue* queueVar = nullptr \
+
+#define UseCustomTargetQueue(queueVar, window, surface) \
+	if (!queueVar) this->m_customQueues.push_back(QueueRegistration(CONCAT(queueVar, _fingerprint), window, queueVar)); \
+    if (SableUI::CustomLayoutScope CONCAT(_scope_, __LINE__)(window, surface, &queueVar, &CONCAT(queueVar, _context), CONCAT(queueVar, _fingerprint)); true)
+
+#define InvalidateQueue(queueVar) \
+	if (CONCAT(queueVar, _context)) \
+	{ \
+		CONCAT(queueVar, _context)->InvalidateCustomTargetQueue(CONCAT(queueVar, _fingerprint)); \
+	}
+
 /*  Box Model
 	/-----------------------------------------\
 	| Margin (Top, Bottom, Left, Right)       |
