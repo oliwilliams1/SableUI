@@ -124,7 +124,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("Console", fontSize(24));
+		Text("WOKRK ON StartCustomLayoutScope()", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -160,7 +160,7 @@ private:
 class MenuBar : public BaseComponent
 {
 public:
-	MenuBar() : BaseComponent() {};
+	MenuBar(Window* window) : BaseComponent(), m_window(window) {};
 
 	void DrawMenuBarItem(const std::string& text)
 	{
@@ -172,7 +172,26 @@ public:
 
 	void Layout() override
 	{
+		
 	}
+
+	void OnUpdate(const UIEventContext& ctx) override
+	{
+		UseCustomLayoutContext(queue, m_window, m_window->GetSurface())
+		{
+			Div(left_right bg(32, 32, 32))
+			{
+				DrawMenuBarItem("File");
+				DrawMenuBarItem("Edit");
+				DrawMenuBarItem("View");
+				DrawMenuBarItem("Help");
+			}
+		}
+	}
+
+private:
+	Window* m_window = nullptr;
+	CustomLayoutContext(queue);
 };
 
 class Counter : public SableUI::BaseComponent
@@ -302,7 +321,6 @@ private:
 	useState(show, setShow, bool, true);
 };
 
-
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
@@ -313,7 +331,7 @@ int main(int argc, char** argv)
 	VSplitter()
 	{
 		SableUI::SetNextPanelMaxHeight(20);
-		PanelWith(MenuBar);
+		PanelWith(MenuBar, mainWindow);
 		HSplitter()
 		{
 			VSplitter()

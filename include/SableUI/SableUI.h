@@ -54,6 +54,9 @@ namespace SableUI
 	void SetNextPanelMaxWidth(int width);
 	void SetNextPanelMaxHeight(int height);
 
+	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface, CustomTargetQueue** queuePtr);
+	void EndCustomLayoutScope(Window* window, CustomTargetQueue** queuePtr);
+
 	struct DivScope
 	{
 	public:
@@ -87,6 +90,28 @@ namespace SableUI
 		SplitterScope(SplitterScope&&) = default;
 		SplitterScope& operator=(SplitterScope&&) = default;
 	};
+
+	struct CustomLayoutScope
+	{
+	public:
+		explicit CustomLayoutScope(Window* window, const GpuFramebuffer* surface, CustomTargetQueue** queuePtr)
+			: m_window(window), m_queuePtr(queuePtr)
+		{
+			SableUI::StartCustomLayoutScope(window, surface, queuePtr);
+		}
+		~CustomLayoutScope()
+		{
+			SableUI::EndCustomLayoutScope(m_window, m_queuePtr);
+		}
+		CustomLayoutScope(const CustomLayoutScope&) = delete;
+		CustomLayoutScope& operator=(const CustomLayoutScope&) = delete;
+		CustomLayoutScope(CustomLayoutScope&&) = default;
+		CustomLayoutScope& operator=(CustomLayoutScope&&) = default;
+
+	private:
+		Window* m_window = nullptr;
+		CustomTargetQueue** m_queuePtr = nullptr;
+	};
 }
 
 /* scoped RAII rect guard api */
@@ -102,41 +127,6 @@ namespace SableUI
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
-
-constexpr size_t constexprStringHash(const std::string& str) {
-	size_t hash = 1469598103934665603ull;
-	for (char c : str)
-		hash = (hash ^ c) * 1099511628211ull;
-	return hash;
-}
-
-#define HASHED_FINGERPRINT constexprStringHash(std::string(__FILE__) + ":" + std::to_string(__LINE__))
-
-#define CustomLayoutContext(queueVar) \
-    size_t CONCAT(queueVar, _fingerprint) = HASHED_FINGERPRINT; \
-	Window* CONCAT(queueVar, _context) = nullptr; \
-    SableUI::CustomTargetQueue* queueVar = nullptr \
-
-#define UseCustomTargetQueue(queueVar, window, surface) \
-	if (!queueVar) this->m_customQueues.push_back(QueueRegistration(CONCAT(queueVar, _fingerprint), window, queueVar)); \
-    if (SableUI::CustomLayoutScope CONCAT(_scope_, __LINE__)(window, surface, &queueVar, &CONCAT(queueVar, _context), CONCAT(queueVar, _fingerprint)); true)
-
-#define InvalidateQueue(queueVar) \
-	if (CONCAT(queueVar, _context)) \
-	{ \
-		CONCAT(queueVar, _context)->InvalidateCustomTargetQueue(CONCAT(queueVar, _fingerprint)); \
-	}
-
-/*  Box Model
-	/-----------------------------------------\
-	| Margin (Top, Bottom, Left, Right)       |
-	| |------------------------------------ | |
-	| | Padding (Top, Bottom, Left, Right)  | |
-	| | |-------------------------------- | | |
-	| | | Content (rect)                  | | |
-	| | |-------------------------------- | | |
-	| |------------------------------------ | |
-	\-----------------------------------------/ */
 
 #define rgb(r, g, b) SableUI::Colour(r, g, b)
 #define rgba(r, g, b, a) SableUI::Colour(r, g, b, a)
@@ -211,8 +201,19 @@ constexpr size_t constexprStringHash(const std::string& str) {
 	T variableName = initalValue;                                       \
 	struct __RefReg_##variableName {                                    \
 		__RefReg_##variableName(SableUI::BaseComponent* comp, T* var)   \
-		{ if (comp) comp->RegisterReference(var); }							\
+		{ if (comp) comp->RegisterReference(var); }						\
 	} __refReg_##variableName{this, &variableName}
+
+#define CustomLayoutContext(queueVar)									\
+	useRef(queueVar, CustomTargetQueue*, nullptr);						\
+	struct __LayCtxReg_##queueVar {										\
+		__LayCtxReg_##queueVar(SableUI::BaseComponent* comp,			\
+							   SableUI::CustomTargetQueue** var)		\
+		{ if (comp) comp->RegisterQueue(var); }							\
+	} __LayCtxReg_##queueVar{ this, &queueVar }
+
+#define UseCustomLayoutContext(queueVar, window, surface)				\
+	if (SableUI::CustomLayoutScope CONCAT(_lay_ctx_guard_, __LINE__)(window, surface, &queueVar); true)
 
 #define onHover(...)				.setOnHover(__VA_ARGS__)
 #define onHoverExit(...)			.setOnHoverExit(__VA_ARGS__)

@@ -414,6 +414,31 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
+void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)
+{
+	if (std::find(m_customTargetQueues.begin(), m_customTargetQueues.end(), queue)
+		== m_customTargetQueues.end())
+	{
+		m_customTargetQueues.push_back(queue);
+	}
+	else
+	{
+		SableUI_Runtime_Error("Custom target queue already exists");
+	}
+}
+
+void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
+{
+	for (int i = 0; i < m_customTargetQueues.size(); i++)
+	{
+		if (m_customTargetQueues[i] == reference)
+		{
+			m_customTargetQueues.erase(m_customTargetQueues.begin() + i);
+			break;
+		}
+	}
+}
+
 // ============================================================================
 // Node calculations
 // ============================================================================

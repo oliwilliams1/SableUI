@@ -14,7 +14,7 @@ namespace SableUI
 	{
 		SableString name;
 		std::vector<TreeNode> children;
-		bool isExpanded = true;
+		bool isExpanded = false;
 		Rect rect;
 		Rect minBoundsRect;
 		ElementInfo elInfo;
@@ -49,7 +49,7 @@ namespace SableUI
 		void FindAndToggleNode(size_t node);
 
 	private:
-		useState(memoryDebugger, setMemoryDebugger, bool, false);
+		useState(memoryDebugger, setMemoryDebugger, bool, true);
 		useState(highlightElements, setHighlightElements, bool, false);
 		useState(transparency, setTransparency, int, 0);
 		useState(rootNode, setRootNode, TreeNode, {});

@@ -25,10 +25,20 @@ SableUI::BaseComponent::~BaseComponent()
 	if (rootElement) SB_delete(rootElement);
 
 	for (BaseComponent* child : m_componentChildren)
-	{
 		if (child) SB_delete(child);
-	}
+	
 	m_componentChildren.clear();
+
+	for (CustomTargetQueue** queuePtr : m_customTargetQueuePtrs)
+	{
+		if (queuePtr && *queuePtr)
+		{
+			SB_delete(*queuePtr);
+			*queuePtr = nullptr;
+		}
+	}
+
+	m_customTargetQueuePtrs.clear();
 }
 
 int SableUI::BaseComponent::GetNumInstances()
@@ -56,7 +66,6 @@ void SableUI::BaseComponent::BackendInitialisePanel(RendererBackend* renderer)
 	m_renderer = renderer;
 
 	rootElement = SB_new<Element>(renderer, ElementType::DIV);
-	rootElement->Init(renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
 	rootElement->setWType(RectType::FILL);
 	rootElement->setHType(RectType::FILL);
@@ -164,13 +173,15 @@ bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasConten
 
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 {
+	size_t minSize = std::min(m_stateBlocks.size(), other.m_stateBlocks.size());
+
 	if (m_stateBlocks.size() != other.m_stateBlocks.size())
 	{
-		SableUI_Runtime_Error("Trying to copy state from component with different number of state variables");
-		return;
+		SableUI_Warn("Component state block count mismatch (this: %zu, other: %zu). Copying %zu blocks.",
+			m_stateBlocks.size(), other.m_stateBlocks.size(), minSize);
 	}
 
-	for (size_t i = 0; i < m_stateBlocks.size(); i++)
+	for (size_t i = 0; i < minSize; i++)
 	{
 		m_stateBlocks[i].CopyFrom(other.m_stateBlocks[i]);
 	}

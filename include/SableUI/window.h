@@ -53,7 +53,9 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-	private:
+		void SubmitCustomQueue(CustomTargetQueue* queue);
+		void RemoveQueueReference(CustomTargetQueue* queue);
+		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
 		RendererBackend* m_renderer = nullptr;
 	
 	private:
@@ -90,5 +92,7 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
+
+		std::vector<CustomTargetQueue*> m_customTargetQueues;
 	};
 }

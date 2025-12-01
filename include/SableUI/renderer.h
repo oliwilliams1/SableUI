@@ -1,9 +1,8 @@
 #pragma once
-#include <SableUI/drawable.h>
 #include <cstdint>
 #include <vector>
 #include <SableUI/utils.h>
-#include "memory.h"
+#include <SableUI/drawable.h>
 
 namespace SableUI
 {
@@ -140,6 +139,21 @@ namespace SableUI
 
 	struct GpuFramebuffer;
 	struct Element;
+	struct CustomTargetQueue
+	{
+	public:
+		CustomTargetQueue(const GpuFramebuffer* target);
+		~CustomTargetQueue();
+		static int GetNumInstances();
+		const GpuFramebuffer* target = nullptr;
+		Element* root = nullptr;
+
+		CustomTargetQueue(const CustomTargetQueue&) = delete;
+		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;
+		CustomTargetQueue(CustomTargetQueue&& other) = delete;
+		CustomTargetQueue& operator=(CustomTargetQueue&& other) = delete;
+	};
+
 	class RendererBackend
 	{
 	public:
@@ -276,20 +290,4 @@ namespace SableUI
 		std::vector<GpuTexture2D> m_colorAttachments;
 		GpuTexture2D m_depthStencilAttachment;
 	};
-
-	inline uint32_t RendererBackend::AllocateHandle()
-	{
-		if (!m_freeHandles.empty())
-		{
-			uint32_t handle = m_freeHandles.back();
-			m_freeHandles.pop_back();
-			return handle;
-		}
-		return m_nextHandle++;
-	}
-
-	inline void RendererBackend::FreeHandle(uint32_t handle)
-	{
-		m_freeHandles.push_back(handle);
-	}
 }

@@ -53,6 +53,8 @@ void SableUI::Element::Init(RendererBackend* renderer, ElementType type)
     this->renderer = renderer;
     this->type = type;
 
+    if (drawable != nullptr) SableUI_Runtime_Error("Drawable already created, redundant Init() calls");
+
     switch (type)
     {
     case ElementType::RECT:
@@ -86,26 +88,16 @@ void SableUI::Element::SetRect(const Rect& r)
     {
     case ElementType::RECT:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-        {
             drRect->Update(rect, bgColour, borderRadius);
-            renderer->AddToDrawStack(drRect);
-        }
         else
-        {
             SableUI_Error("Dynamic cast failed");
-        }
         break;
 
     case ElementType::IMAGE:
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-        {
             drImage->Update(rect, borderRadius);
-            renderer->AddToDrawStack(drImage);
-        }
         else
-        {
             SableUI_Error("Dynamic cast failed");
-        }
         break;
 
     case ElementType::TEXT:
@@ -114,24 +106,16 @@ void SableUI::Element::SetRect(const Rect& r)
             rect.h = drText->m_text.UpdateMaxWidth(rect.w);
             height = rect.h;
             drText->Update(rect);
-            renderer->AddToDrawStack(drText);
         }
         else
-        {
             SableUI_Error("Dynamic cast failed");
-        }
         break;
 
     case ElementType::DIV:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-        {
             drRect->Update(rect, bgColour, borderRadius);
-            renderer->AddToDrawStack(drRect);
-        }
         else
-        {
-			SableUI_Error("Dynamic cast failed");
-        }
+            SableUI_Error("Dynamic cast failed");
         break;
 
     default:

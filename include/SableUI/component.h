@@ -89,10 +89,14 @@ namespace SableUI
         void RegisterReference(T* variable)
             { m_stateBlocks.push_back(StateBlock::Create(variable)); }
 
+        void RegisterQueue(CustomTargetQueue** queuePtrAddr)
+            { m_customTargetQueuePtrs.push_back(queuePtrAddr); }
+
         void CopyStateFrom(const BaseComponent& other);
 
     protected:
         std::vector<StateBlock> m_stateBlocks;
+        std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;
         Element* rootElement = nullptr;
 
     private:

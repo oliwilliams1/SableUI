@@ -361,6 +361,62 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 }
 
 // ============================================================================
+// CustomLayoutTarget Element Builder
+// ============================================================================
+bool s_customLayoutMode = false;
+void SableUI::StartCustomLayoutScope(
+	Window* window,
+	const GpuFramebuffer* surface,
+	CustomTargetQueue** queuePtr)
+{
+	if (s_customLayoutMode)
+		SableUI_Runtime_Error("Cannot nest custom layouts");
+	if (s_reconciliationMode)
+		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
+
+	if (*queuePtr != nullptr)
+	{
+		window->RemoveQueueReference(*queuePtr);
+		if ((*queuePtr)->root)
+		{
+			SB_delete((*queuePtr)->root);
+			(*queuePtr)->root = nullptr;
+		}
+	}
+	else
+	{
+		*queuePtr = SB_new<CustomTargetQueue>(surface);
+	}
+
+	(*queuePtr)->target = surface;
+
+	s_rendererStack.push(window->m_renderer);
+	Element* queueRoot = SB_new<Element>(window->m_renderer, ElementType::DIV);
+	queueRoot->setBgColour(rgb(32, 32, 32));
+	queueRoot->setWType(RectType::FIT_CONTENT);
+	queueRoot->setHType(RectType::FIT_CONTENT);
+
+	(*queuePtr)->root = queueRoot;
+	s_elementStack.push(queueRoot);
+	s_customLayoutMode = true;
+}
+
+void SableUI::EndCustomLayoutScope(
+	Window* window, 
+	CustomTargetQueue** queuePtr)
+{
+	if (!s_customLayoutMode)
+		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
+
+	window->SubmitCustomQueue(*queuePtr);
+	s_elementStack.top()->LayoutChildren();
+	s_rendererStack.pop();
+	s_elementStack.pop();
+
+	s_customLayoutMode = false;
+}
+
+// ============================================================================
 // App
 // ============================================================================
 class App

@@ -207,6 +207,9 @@ void SableUI::ElementTreeView::Layout()
 			GpuObject::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
 
+		Text(SableString::Format("CustomDrawTargets: %d",
+			CustomTargetQueue::GetNumInstances()));
+
 		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
 		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
 		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
