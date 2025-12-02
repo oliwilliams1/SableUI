@@ -36,6 +36,7 @@ namespace SableUI
 	// Object
 	enum class VertexFormat : uint16_t
 	{
+		UNDEF,
 		Float1,
 		Float2,
 		Float3,
@@ -73,7 +74,7 @@ namespace SableUI
 	struct VertexAttribute
 	{
 		uint16_t offset;
-		VertexFormat format;
+		VertexFormat format = VertexFormat::UNDEF;
 		bool normalised = false;
 	};
 
@@ -139,14 +140,19 @@ namespace SableUI
 
 	struct GpuFramebuffer;
 	struct Element;
+	class Window;
 	struct CustomTargetQueue
 	{
 	public:
 		CustomTargetQueue(const GpuFramebuffer* target);
 		~CustomTargetQueue();
 		static int GetNumInstances();
+		Window* queueContext = nullptr;
 		const GpuFramebuffer* target = nullptr;
 		Element* root = nullptr;
+		std::vector<DrawableBase*> drawables;
+
+		void AddRect(const Rect& rect, const Colour& colour, float borderRadius = 0.0f);
 
 		CustomTargetQueue(const CustomTargetQueue&) = delete;
 		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;

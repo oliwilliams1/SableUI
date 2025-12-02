@@ -9,7 +9,7 @@
 #include <SableUI/panel.h>
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
-#include <unordered_map>
+#include <SableUI/element.h>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -49,6 +49,7 @@ namespace SableUI
 
 		void RerenderAllNodes();
 		void RecalculateNodes();
+		ElementInfo GetElementInfoById(const SableString& id);
 
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };

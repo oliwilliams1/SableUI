@@ -166,7 +166,7 @@ int DrawableRect::GetNumInstances()
     return s_drawableRectCount;
 }
 
-void DrawableRect::Update(Rect& rect, Colour colour, float borderRadius)
+void DrawableRect::Update(const Rect& rect, Colour colour, float borderRadius)
 {
     this->m_rect = rect;
     this->m_colour = colour;

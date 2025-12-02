@@ -186,3 +186,11 @@ void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 		m_stateBlocks[i].CopyFrom(other.m_stateBlocks[i]);
 	}
 }
+
+SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
+{
+	if (!rootElement)
+		return nullptr;
+
+	return rootElement->GetElementById(id);
+}

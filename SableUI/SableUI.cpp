@@ -367,7 +367,8 @@ bool s_customLayoutMode = false;
 void SableUI::StartCustomLayoutScope(
 	Window* window,
 	const GpuFramebuffer* surface,
-	CustomTargetQueue** queuePtr)
+	CustomTargetQueue** queuePtr,
+	const ElementInfo& ElementInfo)
 {
 	if (s_customLayoutMode)
 		SableUI_Runtime_Error("Cannot nest custom layouts");
@@ -381,18 +382,24 @@ void SableUI::StartCustomLayoutScope(
 		{
 			SB_delete((*queuePtr)->root);
 			(*queuePtr)->root = nullptr;
+
+			for (DrawableBase* dr : (*queuePtr)->drawables)
+				SB_delete(dr);
+			
+			(*queuePtr)->drawables.clear();
 		}
 	}
 	else
 	{
 		*queuePtr = SB_new<CustomTargetQueue>(surface);
+		(*queuePtr)->queueContext = window;
 	}
 
 	(*queuePtr)->target = surface;
 
 	s_rendererStack.push(window->m_renderer);
 	Element* queueRoot = SB_new<Element>(window->m_renderer, ElementType::DIV);
-	queueRoot->setBgColour(rgb(32, 32, 32));
+	queueRoot->SetInfo(ElementInfo);
 	queueRoot->setWType(RectType::FIT_CONTENT);
 	queueRoot->setHType(RectType::FIT_CONTENT);
 

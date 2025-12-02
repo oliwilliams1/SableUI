@@ -3,11 +3,13 @@
 #include <vector>
 #include <type_traits>
 
-#include "SableUI/component.h"
-#include "SableUI/memory.h"
-#include "events.h"
-#include "renderer.h"
-#include "utils.h"
+#include <SableUI/component.h>
+#include <SableUI/memory.h>
+#include <SableUI/events.h>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
+#include <SableUI/drawable.h>
+#include <SableUI/element.h>
 
 namespace SableUI
 {
@@ -33,6 +35,7 @@ namespace SableUI
 
         virtual void PropagateEvents(const UIEventContext& ctx);
         virtual bool PropagateComponentStateChanges();
+        virtual Element* GetElementById(const SableString& id);
 
         BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
@@ -110,6 +113,7 @@ namespace SableUI
         bool PropagateComponentStateChanges() override;
 
         BaseComponent* GetComponent() const { return m_component; }
+        Element* GetElementById(const SableString& id) override;
 
     private:
         BaseComponent* m_component = nullptr;

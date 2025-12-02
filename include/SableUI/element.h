@@ -67,6 +67,8 @@ namespace SableUI
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
 		std::function<void()> onDoubleClickFunc = nullptr;
+
+		Rect rect;
 		
 		// setter functions for macros
 		ElementInfo& setID(const SableString& v)			{ id = v; return *this; }
@@ -109,6 +111,7 @@ namespace SableUI
 
 		ElementInfo& setTextColour(const Colour& v)			{ textColour = v; return *this; }
 		ElementInfo& setJustification(TextJustification v)	{ textJustification = v; return *this; }
+		ElementInfo& setAbsolutePosition(int x, int y) 		{ rect.x = x; rect.y = y; return *this; }
 
 		// Event functions
 		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc			= func;	return *this; }
@@ -239,6 +242,7 @@ namespace SableUI
 
 		Element& setTextColour(const Colour& v)			{ textColour = v; return *this; }
 		Element& setJustification(TextJustification v)	{ textJustification = v; return *this; }
+		Element& setAbsolutePosition(int x, int y)		{ rect.x = x; rect.y = y; return *this; }
 
 		Element& setOnHover(const std::function<void()>& func)			{ m_onHoverFunc				= func;	return *this; }
 		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }
@@ -256,6 +260,7 @@ namespace SableUI
 		// event system
 		void el_PropagateEvents(const UIEventContext& ctx);
 		bool el_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
+		Element* GetElementById(const SableString& id);
 
 		// rendering
 		void Render(int z = 1);

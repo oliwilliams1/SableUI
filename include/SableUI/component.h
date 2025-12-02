@@ -94,6 +94,8 @@ namespace SableUI
 
         void CopyStateFrom(const BaseComponent& other);
 
+        Element* GetElementById(const SableString& id);
+
     protected:
         std::vector<StateBlock> m_stateBlocks;
         std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;

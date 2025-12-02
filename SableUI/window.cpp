@@ -24,6 +24,7 @@
 #include <SableUI/texture.h>
 #include <SableUI/utils.h>
 #include <SableUI/SableUI.h>
+#include <SableUI/element.h>
 #include <GL/glew.h>
 
 using namespace SableMemory;
@@ -371,8 +372,10 @@ void SableUI::Window::Draw()
 	}
 #endif
 
+	bool blitted = false;
 	bool wasDirty = false;
 	bool needsFlush = false;
+
 	// if layout is dirty rerender to windows custom framebuffer
 	if (m_renderer->isDirty())
 	{
@@ -384,9 +387,50 @@ void SableUI::Window::Draw()
 		needsFlush = needsFlush || res;
 	}
 
-	if (wasDirty)
+	if (m_customTargetQueues.size() != 0)
+	{
+		// track if we need to blit custom targets to window surface
+		bool needsToBlitDefault = false;
+		for (CustomTargetQueue* queue : m_customTargetQueues)
+			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
+
+		// if we do, blit old non-dirty custom fbo to window surface
+		if (needsToBlitDefault)
+		{
+			m_renderer->BlitToScreen(&m_framebuffer);
+			blitted = true;
+		}
+	}
+
+	// execute custom queues
+	for (CustomTargetQueue* queue : m_customTargetQueues)
+	{
+		bool res = false;
+		if (queue->drawables.size() != 0)
+			res = true;
+
+		for (DrawableBase* dr : queue->drawables)
+			m_renderer->AddToDrawStack(dr);
+
+		if (queue->root)
+		{
+			res = true;
+			queue->root->LayoutChildren();
+			queue->root->Render();
+		}
+
+		m_renderer->BeginRenderPass(queue->target);
+		if (m_renderer->Draw(queue->target));
+			res = true;
+
+		m_renderer->EndRenderPass();
+
+		needsFlush = needsFlush || res;
+	}
+
+	if ((wasDirty && !blitted))
 		m_renderer->BlitToScreen(&m_framebuffer);
-	
+
 	if (needsFlush) // has surface changed? flush changes
 	{
 		m_renderer->CheckErrors();
@@ -412,6 +456,18 @@ void SableUI::Window::RerenderAllNodes()
 void SableUI::Window::RecalculateNodes()
 {
 	m_root->Recalculate();
+}
+
+SableUI::ElementInfo SableUI::Window::GetElementInfoById(const SableString& id)
+{
+	Element* el = m_root->GetElementById(id);
+	if (el)
+	{
+		const ElementInfo& elInfo = el->GetInfo();
+		return elInfo;
+	}
+	else
+		return ElementInfo{};
 }
 
 void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)

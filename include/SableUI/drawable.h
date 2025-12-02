@@ -49,7 +49,7 @@ namespace SableUI
 		DrawableRect();
 		~DrawableRect();
 		static int GetNumInstances();
-		void Update(Rect& rect, Colour colour, float borderRadius);
+		void Update(const Rect& rect, Colour colour, float borderRadius);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 	};

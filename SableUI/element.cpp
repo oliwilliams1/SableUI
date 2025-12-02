@@ -126,6 +126,7 @@ void SableUI::Element::SetRect(const Rect& r)
 
 void SableUI::Element::SetInfo(const ElementInfo& info)
 {
+    this->rect                      = info.rect;
     this->ID                        = info.id;
     this->width                     = info.width;
     this->minWidth                  = info.minWidth;
@@ -678,6 +679,7 @@ void SableUI::Element::LayoutChildren()
 SableUI::ElementInfo SableUI::Element::GetInfo() const
 {
     ElementInfo info{};
+    info.rect                   = rect;
     info.id                     = ID;
     info.bgColour               = bgColour;
     info.width                  = width;
@@ -962,6 +964,24 @@ bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChange
 	}
 
     return res;
+}
+
+SableUI::Element* SableUI::Element::GetElementById(const SableString& id)
+{
+    if (this->ID == id)
+        return this;
+
+    for (Child* child : children)
+    {
+        Element* childElement = (Element*)*child;
+        if (!childElement) continue;
+
+        Element* found = childElement->GetElementById(id);
+        if (found)
+            return found;
+    }
+
+    return nullptr;
 }
 
 SableUI::Element::~Element()

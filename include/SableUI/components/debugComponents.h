@@ -52,7 +52,8 @@ namespace SableUI
 		useState(memoryDebugger, setMemoryDebugger, bool, true);
 		useState(highlightElements, setHighlightElements, bool, false);
 		useState(transparency, setTransparency, int, 0);
-		useState(rootNode, setRootNode, TreeNode, {});
+		useState(rootNode, setRootNode, TreeNode, {}); 
+		CustomLayoutContext(queue);
 		Window* m_window = nullptr;
 	};
 

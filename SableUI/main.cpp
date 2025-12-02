@@ -5,6 +5,7 @@
 
 #include <SableUI/SableUI.h>
 #include <SableUI/components/debugComponents.h>
+#include <SableUI/components/menuBar.h>
 #include <SableUI/component.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
@@ -124,7 +125,7 @@ public:
 	{
 		rootElement->setPadding(4);
 
-		Text("WOKRK ON StartCustomLayoutScope()", fontSize(24));
+		Text("Console", fontSize(24));
 
 		int nLogs = SableUI::Console::m_Logs.size();
 
@@ -155,43 +156,6 @@ public:
 
 private:
 	useState(nLogs, setNlogs, int, 0);
-};
-
-class MenuBar : public BaseComponent
-{
-public:
-	MenuBar(Window* window) : BaseComponent(), m_window(window) {};
-
-	void DrawMenuBarItem(const std::string& text)
-	{
-		Div(p(2) mb(2) bg(32, 32, 32) w_fit)
-		{
-			Text(text, justify_center h_fit w_fit px(4));
-		}
-	}
-
-	void Layout() override
-	{
-		
-	}
-
-	void OnUpdate(const UIEventContext& ctx) override
-	{
-		UseCustomLayoutContext(queue, m_window, m_window->GetSurface())
-		{
-			Div(left_right bg(32, 32, 32))
-			{
-				DrawMenuBarItem("File");
-				DrawMenuBarItem("Edit");
-				DrawMenuBarItem("View");
-				DrawMenuBarItem("Help");
-			}
-		}
-	}
-
-private:
-	Window* m_window = nullptr;
-	CustomLayoutContext(queue);
 };
 
 class Counter : public SableUI::BaseComponent
@@ -326,7 +290,7 @@ int main(int argc, char** argv)
 	SableUI::PreInit(argc, argv);
 	//SableUI::SetBackend(SableUI::Backend::Vulkan);
 	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
-	SableUI::SetMaxFPS(60);
+	SableUI::SetMaxFPS(200);
 
 	VSplitter()
 	{

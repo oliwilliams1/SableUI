@@ -1,6 +1,14 @@
-#include "SableUI/panel.h"
-#include "SableUI/memory.h"
-#include "SableUI/drawable.h"
+#include <algorithm>
+#include <vector>
+#include <SableUI/panel.h>
+#include <SableUI/memory.h>
+#include <SableUI/drawable.h>
+#include <SableUI/component.h>
+#include <SableUI/console.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
 
 using namespace SableMemory;
 
@@ -39,6 +47,16 @@ bool SableUI::BasePanel::PropagateComponentStateChanges()
 	return res;
 }
 
+SableUI::Element* SableUI::BasePanel::GetElementById(const SableString& id)
+{
+	for (BasePanel* child : children)
+	{
+		Element* found = child->GetElementById(id);
+		if (found) return found;
+	}
+
+	return nullptr;
+}
 
 // ============================================================================
 // Root Panel
@@ -570,4 +588,12 @@ bool SableUI::ContentPanel::PropagateComponentStateChanges()
 	}
 
 	return res;
+}
+
+SableUI::Element* SableUI::ContentPanel::GetElementById(const SableString& id)
+{
+	if (!m_component)
+		return nullptr;
+
+	return m_component->GetElementById(id);
 }
