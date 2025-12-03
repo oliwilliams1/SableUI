@@ -9,6 +9,7 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
+#include <SableUI/components/tabStack.h>
 #include <stack>
 #include <thread>
 #include <cstring>
@@ -421,6 +422,26 @@ void SableUI::EndCustomLayoutScope(
 	s_elementStack.pop();
 
 	s_customLayoutMode = false;
+}
+
+// ============================================================================
+// Tab Stack
+// ============================================================================
+static std::stack<SableUI::TabStackPanel*> s_tabStacks;
+void SableUI::StartTabStack(SableUI::TabStackPanel* ref)
+{
+	s_tabStacks.push(ref);
+}
+
+void SableUI::EndTabStack()
+{
+	s_tabStacks.top()->BackendInitialisePanel(s_rendererStack.top());
+	s_tabStacks.pop();
+}
+
+SableUI::TabStackPanel* SableUI::GetTabReference()
+{
+	return s_tabStacks.top();
 }
 
 // ============================================================================

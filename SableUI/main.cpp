@@ -6,6 +6,7 @@
 #include <SableUI/SableUI.h>
 #include <SableUI/components/debugComponents.h>
 #include <SableUI/components/menuBar.h>
+#include <SableUI/components/tabStack.h>
 #include <SableUI/component.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
@@ -288,57 +289,26 @@ private:
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
-	//SableUI::SetBackend(SableUI::Backend::Vulkan);
 	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
 	SableUI::SetMaxFPS(200);
 
-	VSplitter()
+	TabStack()
 	{
-		SableUI::SetNextPanelMaxHeight(20);
-		PanelWith(MenuBar, mainWindow);
-		HSplitter()
-		{
-			VSplitter()
-			{
-				HSplitter()
-				{
-					PanelWith(TestComponent, 128);
-					VSplitter()
-					{
-						PanelWith(Counter);
-						HSplitter()
-						{
-							PanelWith(TestComponent, 80);
-							PanelWith(ImageView, "3.jpg", 128, 128);
-						}
-					}
-				}
-				SableUI::SetNextPanelMaxHeight(250);
-				PanelWith(ConsoleView);
-
-			}
-			PanelWith(RefTestParent);
-		}
+		TabItem(Counter);
+		TabItem(TestComponent, 128);
+		TabItem(ImageView, "3.jpg", 128, 128);
 	}
 
 	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	VSplitter()
+	TabStack()
 	{
-		PanelWith(SableUI::ElementTreeView, mainWindow);
-		PanelWith(SableUI::PropertiesView);
+		TabItem(SableUI::ElementTreeView, mainWindow);
+		TabItem(TestComponent, 128);
+		TabItem(ImageView, "3.jpg", 128, 128);
 	}
-
-	//SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	//VSplitter()
-	//{
-	//	PanelWith(SableUI::ElementTreeView, mainWindow);
-	//	PanelWith(SableUI::PropertiesView);
-	//}
 
 	while (SableUI::PollEvents())
-	{
 		SableUI::Render();
-	}
 
 	SableUI::Shutdown();
 	return 0;

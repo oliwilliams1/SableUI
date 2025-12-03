@@ -106,7 +106,8 @@ namespace SableUI
         void CalculateMinBounds() override;
 
         template<typename T, typename... Args>
-        ContentPanel* AttachComponent(Args&&... args);
+        T* AttachComponent(Args&&... args);
+
         void Update() override;
 
         void PropagateEvents(const UIEventContext& ctx) override;
@@ -120,16 +121,17 @@ namespace SableUI
     };
 
     template<typename T, typename... Args>
-	inline ContentPanel* ContentPanel::AttachComponent(Args&&... args)
+	inline T* ContentPanel::AttachComponent(Args&&... args)
 	{
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 
         if (m_component != nullptr) SableMemory::SB_delete(m_component);
 
-        m_component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
+        T* comp = SableMemory::SB_new<T>(std::forward<Args>(args)...);
+        m_component = comp;
         m_component->BackendInitialisePanel(m_renderer);
 
         Update();
-        return this;
+        return comp;
 	}
 }

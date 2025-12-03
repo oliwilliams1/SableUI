@@ -68,16 +68,16 @@ namespace SableUI
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
 
         template<typename T, typename... Args>
-        BaseComponent* AddComponent(Args&&... args);
+        T* AddComponent(Args&&... args);
 
-        Element* GetRootElement();
+        virtual Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
         int GetNumChildren() const { return m_childCount; }
         bool Rerender(bool* hasContentsChanged = nullptr);
 
         bool needsRerender = false;
-        void comp_PropagateEvents(const UIEventContext& ctx);
-        bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
+        virtual void comp_PropagateEvents(const UIEventContext& ctx);
+        virtual bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
 
         virtual void OnUpdate(const UIEventContext& ctx) {}; // user override
 
@@ -95,22 +95,23 @@ namespace SableUI
         void CopyStateFrom(const BaseComponent& other);
 
         Element* GetElementById(const SableString& id);
+    
+        std::vector<BaseComponent*> m_componentChildren;
 
     protected:
+        Element* rootElement = nullptr;
         std::vector<StateBlock> m_stateBlocks;
         std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;
-        Element* rootElement = nullptr;
 
     private:
         size_t m_hash = 0;
         RendererBackend* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
-        std::vector<BaseComponent*> m_componentChildren;
         int m_childCount = 0;
     };
 
     template<typename T, typename... Args>
-    BaseComponent* BaseComponent::AddComponent(Args&&... args)
+    T* BaseComponent::AddComponent(Args&&... args)
     {
         static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
 

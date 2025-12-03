@@ -222,14 +222,14 @@ namespace SableUI
 	if (queueVar)														\
 		queueVar->queueContext->RemoveQueueReference(queueVar);	
 
-#define onHover(...)				.setOnHover(__VA_ARGS__)
-#define onHoverExit(...)			.setOnHoverExit(__VA_ARGS__)
-#define onClick(...)				.setOnClick(__VA_ARGS__)
-#define onSecondaryClick(...)		.setOnSecondaryClick(__VA_ARGS__)
-#define onDoubleClick(...)			.setOnDoubleClick(__VA_ARGS__)
+#define onHover(...)						.setOnHover(__VA_ARGS__)
+#define onHoverExit(...)					.setOnHoverExit(__VA_ARGS__)
+#define onClick(...)						.setOnClick(__VA_ARGS__)
+#define onSecondaryClick(...)				.setOnSecondaryClick(__VA_ARGS__)
+#define onDoubleClick(...)					.setOnDoubleClick(__VA_ARGS__)
 
-#define HSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
-#define VSplitter()                 if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
+#define HSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+#define VSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
-#define Panel()                     SableUI::AddPanel();
-#define PanelWith(T, ...)           SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__);
+#define Panel()								SableUI::AddPanel()
+#define PanelWith(T, ...)					SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__)
