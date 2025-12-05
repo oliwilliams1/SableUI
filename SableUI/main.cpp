@@ -286,26 +286,56 @@ private:
 	useState(show, setShow, bool, true);
 };
 
+class TabStackTest : public SableUI::BaseComponent
+{
+public:
+	TabStackTest() : BaseComponent() {}
+	void Layout() override
+	{
+		Div(w_fill h_fit left_right bg(45, 45, 45))
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				bool isActive = (i == activeTab);
+				Div(bg(isActive ? rgb(70, 70, 70) : rgb(50, 50, 50))
+					p(4) mr(4)
+					onClick([this, i]() { setActiveTab(i); }))
+				{
+					Text(SableString::Format("Tab-%d", i));
+				}
+			}
+		}
+
+		Div(w_fill h_fill bg(32, 32, 32))
+		{
+			if (activeTab == 0)
+				Component(Counter, w_fill h_fill bg(50, 50, 50));
+			if (activeTab == 1)
+				Component(RefTestParent, w_fill bg(50, 50, 50));
+			if (activeTab == 2)
+				Component(TestComponent, , 128);
+		}
+	}
+
+private:
+	useState(activeTab, setActiveTab, int, 0);
+};
+
 int main(int argc, char** argv)
 {
 	SableUI::PreInit(argc, argv);
 	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
 	SableUI::SetMaxFPS(200);
 
-	TabStack()
+	VSplitter()
 	{
-		TabItem(Counter);
-		TabItem(TestComponent, 128);
-		TabItem(ImageView, "3.jpg", 128, 128);
+		SableUI::SetNextPanelMaxHeight(20);
+		PanelWith(MenuBar, mainWindow);
+		PanelWith(TabStackTest);
 	}
 
-	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
-	TabStack()
-	{
-		TabItem(SableUI::ElementTreeView, mainWindow);
-		TabItem(TestComponent, 128);
-		TabItem(ImageView, "3.jpg", 128, 128);
-	}
+	SableUI::CreateSecondaryWindow("Debug window", 200, 900);
+	PanelWith(SableUI::ElementTreeView, mainWindow);
 
 	while (SableUI::PollEvents())
 		SableUI::Render();

@@ -16,7 +16,8 @@ namespace SableUI
     struct StateSetter
     {
         StateSetter(std::function<void(const T&)> setter)
-            : m_setter(setter) {};
+            : m_setter(setter) {
+        };
 
         void operator()(const T& value) const { m_setter(value); }
         void set(const T& value) const { m_setter(value); }
@@ -33,16 +34,16 @@ namespace SableUI
     class StateBlock
     {
         StateBlock(void* ptr, std::function<void(void*, const void*)> copier) : ptr(ptr), copier(copier) {}
-        
+
         void* ptr;
         std::function<void(void*, const void*)> copier;
-    
+
     public:
         template<typename T>
         static StateBlock Create(T* variable)
         {
             return StateBlock(
-                variable, 
+                variable,
                 [](void* dst, const void* src)
                 {
                     *static_cast<T*>(dst) = *static_cast<const T*>(src);
@@ -50,7 +51,9 @@ namespace SableUI
         }
 
         void CopyFrom(const StateBlock& other) const
-            { copier(ptr, other.ptr); }
+        {
+            copier(ptr, other.ptr);
+        }
     };
 
     class Window;
@@ -83,23 +86,31 @@ namespace SableUI
 
         template<typename T>
         void RegisterState(T* variable)
-            { m_stateBlocks.push_back(StateBlock::Create(variable)); }
+        {
+            m_stateBlocks.push_back(StateBlock::Create(variable));
+        }
 
         template<typename T>
         void RegisterReference(T* variable)
-            { m_stateBlocks.push_back(StateBlock::Create(variable)); }
+        {
+            m_stateBlocks.push_back(StateBlock::Create(variable));
+        }
 
         void RegisterQueue(CustomTargetQueue** queuePtrAddr)
-            { m_customTargetQueuePtrs.push_back(queuePtrAddr); }
+        {
+            m_customTargetQueuePtrs.push_back(queuePtrAddr);
+        }
 
         void CopyStateFrom(const BaseComponent& other);
 
         Element* GetElementById(const SableString& id);
-    
+
         std::vector<BaseComponent*> m_componentChildren;
 
-    protected:
         Element* rootElement = nullptr;
+
+    protected:
+        std::vector<BaseComponent*> m_garbageChildren;
         std::vector<StateBlock> m_stateBlocks;
         std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;
 
@@ -119,7 +130,20 @@ namespace SableUI
 
         if (static_cast<size_t>(m_childCount) < m_componentChildren.size())
         {
-            component = static_cast<T*>(m_componentChildren[m_childCount]);
+            BaseComponent* existing = m_componentChildren[m_childCount];
+            T* casted = dynamic_cast<T*>(existing);
+
+            if (casted)
+            {
+                component = casted;
+            }
+            else
+            {
+                if (existing) m_garbageChildren.push_back(existing);
+
+                component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
+                m_componentChildren[m_childCount] = component;
+            }
         }
         else
         {

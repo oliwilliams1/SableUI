@@ -26,8 +26,13 @@ SableUI::BaseComponent::~BaseComponent()
 
 	for (BaseComponent* child : m_componentChildren)
 		if (child) SB_delete(child);
-	
+
 	m_componentChildren.clear();
+
+	for (BaseComponent* garbage : m_garbageChildren)
+		SB_delete(garbage);
+
+	m_garbageChildren.clear();
 
 	for (CustomTargetQueue** queuePtr : m_customTargetQueuePtrs)
 	{
@@ -52,9 +57,11 @@ void SableUI::BaseComponent::LayoutWrapper()
 	Layout();
 
 	if (m_componentChildren.size() > static_cast<size_t>(m_childCount))
+	{
 		for (size_t i = m_childCount; i < m_componentChildren.size(); i++)
 			if (m_componentChildren[i])
-				SB_delete(m_componentChildren[i]);
+				m_garbageChildren.push_back(m_componentChildren[i]);
+	}
 
 	m_componentChildren.resize(m_childCount);
 }
@@ -90,8 +97,6 @@ static size_t GetHash(int n, const char* name)
 
 void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info)
 {
-	if (rootElement) SB_delete(rootElement);
-
 	int n = parent->GetNumChildren();
 
 	m_hash = GetHash(n, name);
@@ -127,6 +132,10 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 	if (rootElement->Reconcile(virtualRoot) && hasContentsChanged)
 		*hasContentsChanged = true;
+
+	for (BaseComponent* garbage : m_garbageChildren)
+		SB_delete(garbage);
+	m_garbageChildren.clear();
 
 	rootElement->LayoutChildren();
 	rootElement->LayoutChildren();

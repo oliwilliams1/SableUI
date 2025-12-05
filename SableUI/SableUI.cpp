@@ -425,26 +425,6 @@ void SableUI::EndCustomLayoutScope(
 }
 
 // ============================================================================
-// Tab Stack
-// ============================================================================
-static std::stack<SableUI::TabStackPanel*> s_tabStacks;
-void SableUI::StartTabStack(SableUI::TabStackPanel* ref)
-{
-	s_tabStacks.push(ref);
-}
-
-void SableUI::EndTabStack()
-{
-	s_tabStacks.top()->BackendInitialisePanel(s_rendererStack.top());
-	s_tabStacks.pop();
-}
-
-SableUI::TabStackPanel* SableUI::GetTabReference()
-{
-	return s_tabStacks.top();
-}
-
-// ============================================================================
 // App
 // ============================================================================
 class App

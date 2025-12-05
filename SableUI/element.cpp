@@ -33,7 +33,7 @@ SableUI::Child::operator SableUI::Element*()
     else if (type == ChildType::COMPONENT)
         return component->GetRootElement();
 
-    SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
+    SableUI_Runtime_Error("Unexpected union behaviour, you've been struck by the sun");
 	return nullptr;
 }
 

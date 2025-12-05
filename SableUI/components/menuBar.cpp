@@ -16,7 +16,7 @@ MenuBar::MenuBar(SableUI::Window* window) : BaseComponent(), m_window(window)
 }
 void MenuBar::Layout()
 {
-	Div(left_right h_fill bg(32, 32, 32) ID("menu-bar"))
+	Div(left_right w_fill h_fill bg(51, 51, 51) ID("menu-bar"))
 	{
 		for (const auto& pair : m_menuItems)
 		{
@@ -53,7 +53,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 	bool isSelected = (activeMenu == text);
 
 	Div(p(2) h_fill w_fit ID(text) rounded(4)
-		bg(isSelected ? rgb(64, 64, 64) : rgb(32, 32, 32))
+		bg(isSelected ? rgb(64, 64, 64) : rgb(51, 51, 51))
 
 		onHover([this, text]() {
 			if (activeMenu.size() > 0 && activeMenu != text)
