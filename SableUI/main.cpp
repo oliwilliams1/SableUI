@@ -1,26 +1,22 @@
-﻿#include <utility>
+﻿#include <SableUI/SableUI.h>
+#include <SableUI/component.h>
+#include <SableUI/componentRegistry.h>
+#include <SableUI/components/menuBar.h>
+#include <SableUI/components/debugComponents.h>
+#include <SableUI/window.h>
+#include <SableUI/console.h>
+#include <SableUI/events.h>
+#include <SableUI/utils.h>
 #include <algorithm>
 #include <cstdint>
 #include <string>
-
-#include <SableUI/SableUI.h>
-#include <SableUI/components/debugComponents.h>
-#include <SableUI/components/menuBar.h>
-#include <SableUI/components/tabStack.h>
-#include <SableUI/component.h>
-#include <SableUI/console.h>
-#include <SableUI/element.h>
-#include <SableUI/events.h>
-#include <SableUI/utils.h>
-#include <SableUI/window.h>
-#include <SableUI/renderer.h>
+#include <utility>
 
 using namespace SableUI;
+
 class ToggleImageView : public BaseComponent
 {
 public:
-	ToggleImageView() : BaseComponent() {};
-
 	void Layout() override
 	{
 		std::string path = (toggleState) ? "1.webp" : "1.webp";
@@ -28,7 +24,7 @@ public:
 		Div(w(128) h_fit)
 		{
 			Div(bg(128, 32, 32) p(4) w_fill
-				onClick([=]() { setToggleState(!toggleState); }))
+				onClick([this]() { setToggleState(!toggleState); }))
 			{
 				Text("Click to change image. Loaded: " + path, textColour(0, 0, 0) mb(4));
 			}
@@ -44,31 +40,27 @@ private:
 class TestComponent : public BaseComponent
 {
 public:
-	TestComponent(int r) : BaseComponent(SableUI::Colour(r, 32, 32)), v(r) {}
-
 	void Layout() override
 	{
-		SableUI::LayoutDirection direction = (v == 128) ? SableUI::LayoutDirection::RIGHT_LEFT : SableUI::LayoutDirection::LEFT_RIGHT;
-
-		Div(dir(direction) w_fill h_fill bg(255, 0, 0))
+		Div(left_right w_fill h_fill bg(255, 0, 0))
 		{
 			Div(p(5) bg(isHovered ? rgb(255, 255, 255) : rgb(0, 255, 255)) w(50) h(50)
-				onHover([=]() { setIsHovered(true); })
-				onHoverExit([=]() { setIsHovered(false); }))
+				onHover([this]() { setIsHovered(true); })
+				onHoverExit([this]() { setIsHovered(false); }))
 			{
 				Rect(w(20) h(20) bg(clicks, 0, 255)
-					onClick([=]() { setClicks(clicks + 40); })
-					onSecondaryClick([=]() { setClicks(clicks - 40); }));
+					onClick([this]() { setClicks(clicks + 40); })
+					onSecondaryClick([this]() { setClicks(clicks - 40); }));
 			}
 
 			Div(m(5) w(100) h(100) bg(255, 255, 0))
 			{
 				Rect(px(5) py(5) bg(255, 0, 255) w(50) h(50));
 			}
-			Component(ToggleImageView, w_fit h_fit p(5));
-			Component(ToggleImageView, w_fit h_fit p(5));
+			Component("ToggleImageView", w_fit h_fit p(5));
+			Component("ToggleImageView", w_fit h_fit p(5));
 		}
-		Div(w_fill bg(v, 0, 0))
+		Div(w_fill bg(180, 0, 0))
 		{
 			Rect(w_fill minW(250) maxW(300) h(75) bg(128, 128, 128));
 			Rect(m(5) w(60) h(60) bg(255, 128, 0));
@@ -78,14 +70,14 @@ public:
 private:
 	useState(isHovered, setIsHovered, bool, false);
 	useState(clicks, setClicks, uint8_t, 0);
-	int v;
 };
 
 class ImageView : public BaseComponent
 {
 public:
 	ImageView(std::string  path, const int width = 128, const int height = 128)
-		: BaseComponent(), m_path(std::move(path)), width(width), height(height) {};
+		: BaseComponent(), m_path(std::move(path)), width(width), height(height) {
+	};
 
 	void Layout() override
 	{
@@ -120,8 +112,6 @@ private:
 class ConsoleView : public BaseComponent
 {
 public:
-	ConsoleView() : BaseComponent() {};
-
 	void Layout() override
 	{
 		rootElement->setPadding(4);
@@ -162,8 +152,6 @@ private:
 class Counter : public SableUI::BaseComponent
 {
 public:
-	Counter() : SableUI::BaseComponent() {}
-
 	void Layout() override
 	{
 		Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10))
@@ -222,7 +210,7 @@ public:
 					onClick([this]() {
 						setStateCounter(stateCounter + 1);
 						SableUI_Log("State increment -> now %d", stateCounter + 1);
-					}))
+						}))
 				{
 					Text("Increment useState");
 				}
@@ -237,7 +225,7 @@ public:
 					onClick([this]() {
 						refCounter++;
 						SableUI_Log("Ref increment -> now %d", refCounter);
-					}))
+						}))
 				{
 					Text("Increment useRef");
 				}
@@ -261,7 +249,7 @@ public:
 				onClick([this]() {
 					setShow(!show);
 					SableUI_Log("Toggled show -> %d", show ? 0 : 1);
-				}))
+					}))
 			{
 				Text("Toggle RefTest", justify_center);
 			}
@@ -270,14 +258,14 @@ public:
 				onClick([this]() {
 					needsRerender = true;
 					SableUI_Log("Parent forced rerender");
-				}))
+					}))
 			{
 				Text("Rerender Parent", justify_center);
 			}
 
 			if (show)
 			{
-				Component(RefTest, w_fill bg(50, 50, 50) rounded(10));
+				Component("RefTest", w_fill bg(50, 50, 50) rounded(10));
 			}
 		}
 	}
@@ -309,11 +297,11 @@ public:
 		Div(w_fill h_fill bg(32, 32, 32))
 		{
 			if (activeTab == 0)
-				Component(Counter, w_fill h_fill bg(50, 50, 50));
+				Component("Counter", w_fill h_fill bg(50, 50, 50));
 			if (activeTab == 1)
-				Component(RefTestParent, w_fill bg(50, 50, 50));
+				Component("RefTestParent", w_fill bg(50, 50, 50));
 			if (activeTab == 2)
-				Component(TestComponent, , 128);
+				Component("TestComponent");
 		}
 	}
 
@@ -323,23 +311,31 @@ private:
 
 int main(int argc, char** argv)
 {
-	SableUI::PreInit(argc, argv);
-	SableUI::Window* mainWindow = SableUI::Initialise("SableUI Test", 1600, 900);
-	SableUI::SetMaxFPS(200);
+    SableUI::PreInit(argc, argv);
 
-	VSplitter()
-	{
-		SableUI::SetNextPanelMaxHeight(20);
-		PanelWith(MenuBar, mainWindow);
-		PanelWith(TabStackTest);
-	}
+    SableUI::RegisterComponent<TabStackTest>("TabStackTest");
+    SableUI::RegisterComponent<Counter>("Counter");
+    SableUI::RegisterComponent<RefTestParent>("RefTestParent");
+    SableUI::RegisterComponent<RefTest>("RefTest");
+    SableUI::RegisterComponent<TestComponent>("TestComponent");
+    SableUI::RegisterComponent<ToggleImageView>("ToggleImageView");
+
+    SableUI::Window* mainWindow = SableUI::Initialise("Component Registry Test", 1600, 900);
+    SableUI::SetMaxFPS(200);
+
+    VSplitter()
+    {
+        SableUI::SetNextPanelMaxHeight(20);
+        PanelWithArgs(MenuBar, mainWindow);
+        Panel("TabStackTest");
+    }
 
 	SableUI::CreateSecondaryWindow("Debug window", 200, 900);
-	PanelWith(SableUI::ElementTreeView, mainWindow);
+	PanelWithArgs(ElementTreeView, mainWindow);
 
-	while (SableUI::PollEvents())
-		SableUI::Render();
+    while (SableUI::PollEvents())
+        SableUI::Render();
 
-	SableUI::Shutdown();
-	return 0;
+    SableUI::Shutdown();
+    return 0;
 }

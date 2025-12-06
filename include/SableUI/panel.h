@@ -107,6 +107,7 @@ namespace SableUI
 
         template<typename T, typename... Args>
         T* AttachComponent(Args&&... args);
+        BaseComponent* AttachComponent(const std::string& componentName);
 
         void Update() override;
 

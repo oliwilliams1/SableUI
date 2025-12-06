@@ -7,6 +7,7 @@
 #include <SableUI/renderer.h>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
+#include <SableUI/componentRegistry.h>
 #include <string>
 
 /* non-macro user api */
@@ -126,7 +127,7 @@ namespace SableUI
 
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
-#define Component(T, info, ...) AddComponent<T>(__VA_ARGS__)->BackendInitialiseChild(STRINGIFY(T), this, style(info))
+#define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, style(__VA_ARGS__))
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -231,5 +232,6 @@ namespace SableUI
 #define HSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
 #define VSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
-#define Panel()								SableUI::AddPanel()
-#define PanelWith(T, ...)					SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__)
+#define EmptyPanel()						SableUI::AddPanel()
+#define PanelWithArgs(T, ...)				SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__)
+#define Panel(name)							SableUI::AddPanel()->AttachComponent(name)

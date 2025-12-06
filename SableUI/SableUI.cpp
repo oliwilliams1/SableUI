@@ -9,7 +9,7 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
-#include <SableUI/components/tabStack.h>
+#include <SableUI/componentRegistry.h>
 #include <stack>
 #include <thread>
 #include <cstring>
@@ -635,5 +635,6 @@ App::~App()
 	SB_delete(m_mainWindow);
 	m_mainWindow = nullptr;
 
+	SableUI::ComponentRegistry::Shutdown();
 	SableUI::SableUI_Window_Terminate_GLFW();
 }

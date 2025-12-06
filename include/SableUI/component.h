@@ -70,8 +70,7 @@ namespace SableUI
         void BackendInitialisePanel(RendererBackend* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
 
-        template<typename T, typename... Args>
-        T* AddComponent(Args&&... args);
+        BaseComponent* AddComponent(const std::string& componentName);
 
         virtual Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
@@ -120,38 +119,4 @@ namespace SableUI
         Colour m_bgColour = Colour{ 32, 32, 32 };
         int m_childCount = 0;
     };
-
-    template<typename T, typename... Args>
-    T* BaseComponent::AddComponent(Args&&... args)
-    {
-        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-        T* component;
-
-        if (static_cast<size_t>(m_childCount) < m_componentChildren.size())
-        {
-            BaseComponent* existing = m_componentChildren[m_childCount];
-            T* casted = dynamic_cast<T*>(existing);
-
-            if (casted)
-            {
-                component = casted;
-            }
-            else
-            {
-                if (existing) m_garbageChildren.push_back(existing);
-
-                component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
-                m_componentChildren[m_childCount] = component;
-            }
-        }
-        else
-        {
-            component = SableMemory::SB_new<T>(std::forward<Args>(args)...);
-            m_componentChildren.push_back(component);
-        }
-
-        m_childCount++;
-        return component;
-    }
 }

@@ -103,3 +103,6 @@ if(UNIX)
 endif()
 
 target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/include/SableUI/generated")
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fonts/" 
+     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/fonts/")
