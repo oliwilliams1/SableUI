@@ -8,6 +8,7 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
+#include <SableUI/componentRegistry.h>
 #include <string>
 
 /* non-macro user api */

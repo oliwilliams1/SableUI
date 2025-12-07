@@ -5,10 +5,6 @@ project(SableUI VERSION 0.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-if (MSVC)
-	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif()
-
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
@@ -16,7 +12,7 @@ find_package(OpenGL REQUIRED)
 add_subdirectory("vendor/glfw")
 
 # Specify the path to GLEW
-set(GLEW_DIR "${CMAKE_SOURCE_DIR}/vendor/glew") # Path to GLEW
+set(GLEW_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/glew") # Path to GLEW
 include_directories("${GLEW_DIR}/include")
 
 add_definitions(-DGLEW_STATIC)
@@ -33,9 +29,6 @@ set(FT_DISABLE_BROTLI		TRUE CACHE BOOL "Disable Brotli support in FreeType")
 
 add_subdirectory("vendor/freetype" EXCLUDE_FROM_ALL)
 
-# Stb
-include_directories("vendor/stb")
-
 # libwebp
 set(WEBP_BUILD_ANIM_UTILS   OFF)
 set(WEBP_BUILD_CWEBP        OFF)
@@ -50,59 +43,61 @@ set(WEBP_BUILD_EXTRAS       OFF)
 set(WEBP_USE_THREAD         OFF)
 set(WEBP_NEAR_LOSSLESS      OFF)
 set(WEBP_UNICODE            OFF)
+
 add_subdirectory("vendor/libwebp")
-include_directories("vendor/libwebp/src")
 
 # SableUI
-include_directories("include")
-include_directories("SableUI")
 file(GLOB_RECURSE SABLE_UI_SOURCES "SableUI/*.cpp" "SableUI/*.h" "include/*.h")
 
 # Embed shaders
-set(SHADER_DIR ${CMAKE_SOURCE_DIR}/shaders)
-set(GENERATED_SHADER_HEADER "${CMAKE_SOURCE_DIR}/include/SableUI/generated/shaders.h")
+set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+set(GENERATED_SHADER_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/include/SableUI/generated/shaders.h")
 
 file(GLOB SHADER_FILES "${SHADER_DIR}/*")
-file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/SableUI/generated")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/SableUI/generated")
 file(WRITE ${GENERATED_SHADER_HEADER} "// Auto-generated shader header\n#pragma once\n\n")
 
 foreach(SHADER_FILE ${SHADER_FILES})
-	get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-	string(REPLACE "." "_" VAR_NAME ${SHADER_NAME}) # shader.frag -> shader_frag
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
+    string(REPLACE "." "_" VAR_NAME ${SHADER_NAME}) # shader.frag -> shader_frag
 
-	file(READ ${SHADER_FILE} SHADER_CONTENTS)
+    file(READ ${SHADER_FILE} SHADER_CONTENTS)
 
-	file(APPEND ${GENERATED_SHADER_HEADER}
-		"constexpr const char ${VAR_NAME}[] = R\"(${SHADER_CONTENTS})\";\n\n"
-	)
+    file(APPEND ${GENERATED_SHADER_HEADER}
+        "constexpr const char ${VAR_NAME}[] = R\"(${SHADER_CONTENTS})\";\n\n"
+    )
 endforeach()
 
 add_custom_target(EmbedShaders
-	COMMENT "Embedding shaders into ${GENERATED_SHADER_HEADER}"
+    COMMENT "Embedding shaders into ${GENERATED_SHADER_HEADER}"
 )
 
-add_executable(SableUI ${SABLE_UI_SOURCES})
+add_library(SableUI STATIC ${SABLE_UI_SOURCES})
 add_dependencies(SableUI EmbedShaders)
 
-if (MSVC)
-	set_property(TARGET SableUI PROPERTY WIN32_EXECUTABLE "$<$<CONFIG:Release>:TRUE>$<$<NOT:$<CONFIG:Release>>:FALSE>")
-	target_link_options(SableUI PRIVATE $<$<CONFIG:Release>:/ENTRY:mainCRTStartup>)
-endif()
+# Export include paths
+target_include_directories(SableUI PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SableUI"
+    "${GLEW_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/libwebp/src"
+    ${FREETYPE_INCLUDE_DIRS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/SableUI/generated"
+)
 
-# Link libraries
-target_link_libraries(SableUI PRIVATE
-	${OPENGL_LIBRARIES}
-	glew
-	glfw
-	freetype
-	webp
+# Export required libraries
+target_link_libraries(SableUI PUBLIC
+    ${OPENGL_LIBRARIES}
+    glew
+    glfw
+    freetype
+    webp
 )
 
 if(UNIX)
-	target_link_libraries(SableUI PRIVATE GL)
+    target_link_libraries(SableUI PUBLIC GL)
 endif()
 
-target_include_directories(SableUI PRIVATE ${FREETYPE_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/include/SableUI/generated")
-
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fonts/" 
-     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/fonts/")
+# Copy fonts
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fonts/" DESTINATION "${CMAKE_BINARY_DIR}/fonts/")

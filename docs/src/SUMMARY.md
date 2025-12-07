@@ -3,6 +3,8 @@
 - [Introduction](introduction.md)
     - [What is SableUI?](what-is-sableui.md)
     - [Getting Started](getting-started.md)
+    - [Your First Application](your-first-application.md)
+    - [Troubleshooting](troubleshooting-configuration.md)
 
 - [Core Concepts]()
     - [Components & Lifecycle]()
@@ -36,3 +38,5 @@
     - [Building from source]()
     - [Architecture overview]()
     - [Contributing guidelines]()
+
+- [Roadmap](todo.md)
