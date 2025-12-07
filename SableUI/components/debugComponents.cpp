@@ -80,9 +80,6 @@ static SableString TextJustificationToString(TextJustification justify)
 // ============================================================================
 // Element Tree Viewer
 // ============================================================================
-SableUI::ElementTreeView::ElementTreeView(Window* window)
-	: BaseComponent(), m_window(window) {};
-
 TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element, size_t& uuidCounter)
 {
 	TreeNode node;
@@ -159,77 +156,15 @@ int SableUI::ElementTreeView::DrawTreeNode(TreeNode& node, int depth, int line)
 
 void SableUI::ElementTreeView::Layout()
 {
-	rootElement->setPadding(4);
-	SableString memSwitch = memoryDebugger ? "Close" : "Open";
-	Text(memSwitch + " memory diagnostics", onDoubleClick([&]() { setMemoryDebugger(!memoryDebugger); }));
-
-	if (memoryDebugger)
+	if (window == nullptr)
 	{
-		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
-		Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
-		Text(SableString::Format("Splitter Panels: %d", SplitterPanel::GetNumInstances()));
-		Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
-
-		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
-		Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
-
-		Text(SableString::Format("Elements: %d    (%zukb)", 
-			Element::GetNumInstances(), 
-			SableMemory::GetSizeData(SableMemory::PoolType::Element).sizeInKB));
-
-		Text(SableString::Format("Virtual Elements: %d    (%zukb)",
-			VirtualNode::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
-
-		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
-		Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
-
-		Text(SableString::Format("Drawable Text: %d    (%zukb)",
-			DrawableText::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::DrawableText).sizeInKB));
-
-		Text(SableString::Format("Drawable Rect: %d    (%zukb)",
-			DrawableRect::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::DrawableRect).sizeInKB));
-
-		Text(SableString::Format("Drawable Splitter: %d    (%zukb)",
-			DrawableSplitter::GetNumInstances(), 
-			SableMemory::GetSizeData(SableMemory::PoolType::DrawableSplitter).sizeInKB));
-
-		Text(SableString::Format("Drawable Image: %d    (%zukb)",
-			DrawableImage::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
-
-		Text(SableString::Format("GPU Objects: %d    (%zukb)",
-			GpuObject::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
-
-		Text(SableString::Format("CustomDrawTargets: %d",
-			CustomTargetQueue::GetNumInstances()));
-
-		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
-		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
-		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
-
-		Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
-		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
-
-		int instanceCount = 0;
-		for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
-		{
-			instanceCount++;
-			Text(SableString::Format("Instance %d Text Cache: %d", 
-				instanceCount, factory->GetNumInstances()));
-		}
+		Text("Window is not set, call use, create ElementTreeView via PanelGainRef() then call SetWindow() on the reference",
+			centerY textColour(255, 0, 0));
+		return;
 	}
 
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
+	rootElement->setPadding(4);
+	
 	SableString toggleHighlightElements = highlightElements ? "off" : "on";
 	Text("Turn " + toggleHighlightElements + " highlight selected elements",
 		mb(4)
@@ -255,8 +190,9 @@ void SableUI::ElementTreeView::Layout()
 
 void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 {
+	if (window == nullptr) return;
 	size_t uuidCounter = 0;
-	TreeNode newRoot = GeneratePanelTree(m_window->GetRoot(), uuidCounter);
+	TreeNode newRoot = GeneratePanelTree(window->GetRoot(), uuidCounter);
 	PreserveExpandedState(rootNode, newRoot);
 	
 	if (newRoot != rootNode)
@@ -264,7 +200,7 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 
 	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
 	{
-		UseCustomLayoutContext(queue, m_window, m_window->GetSurface())
+		UseCustomLayoutContext(queue, window, window->GetSurface())
 		{
 			queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
 			g_needsTransparencyUpdate = false;

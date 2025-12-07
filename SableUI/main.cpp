@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace SableUI;
 
@@ -75,10 +76,6 @@ private:
 class ImageView : public BaseComponent
 {
 public:
-	ImageView(std::string  path, const int width = 128, const int height = 128)
-		: BaseComponent(), m_path(std::move(path)), width(width), height(height) {
-	};
-
 	void Layout() override
 	{
 		Image(m_path, w(width) h(height) centerXY
@@ -101,6 +98,12 @@ public:
 			}
 			Image(m_path, w(width) h(height) centerXY);
 		}
+	}
+
+	void InitData(const std::string& path, int w, int h)
+	{ 
+		m_path = path; width = w; height = h;
+		needsRerender = true;
 	}
 
 private:
@@ -249,7 +252,7 @@ public:
 				onClick([this]() {
 					setShow(!show);
 					SableUI_Log("Toggled show -> %d", show ? 0 : 1);
-					}))
+				}))
 			{
 				Text("Toggle RefTest", justify_center);
 			}
@@ -258,7 +261,7 @@ public:
 				onClick([this]() {
 					needsRerender = true;
 					SableUI_Log("Parent forced rerender");
-					}))
+				}))
 			{
 				Text("Rerender Parent", justify_center);
 			}
@@ -274,68 +277,128 @@ private:
 	useState(show, setShow, bool, true);
 };
 
+struct _TabDef
+{
+	std::string component;
+	std::string label;
+};
+
 class TabStackTest : public SableUI::BaseComponent
 {
 public:
 	TabStackTest() : BaseComponent() {}
+
 	void Layout() override
 	{
 		Div(w_fill h_fit left_right bg(45, 45, 45))
 		{
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < tabs.size(); i++)
 			{
+				std::string& tabLabel = tabs[i].label;
 				bool isActive = (i == activeTab);
 				Div(bg(isActive ? rgb(70, 70, 70) : rgb(50, 50, 50))
 					p(4) mr(4)
 					onClick([this, i]() { setActiveTab(i); }))
 				{
-					Text(SableString::Format("Tab-%d", i));
+					Text(tabLabel);
 				}
 			}
 		}
-
 		Div(w_fill h_fill bg(32, 32, 32))
 		{
-			if (activeTab == 0)
-				Component("Counter", w_fill h_fill bg(50, 50, 50));
-			if (activeTab == 1)
-				Component("RefTestParent", w_fill bg(50, 50, 50));
-			if (activeTab == 2)
-				Component("TestComponent");
+			if (tabs.empty())
+			{
+				Text("No tabs", centerY w_fill justify_center);
+			}
+			else if (activeTab < tabs.size())
+			{
+				Component(tabs[activeTab].component.c_str(), w_fill h_fill bg(32, 32, 32));
+			}
+			else
+			{
+				Text("Invalid tab index", centerY w_fill justify_center);
+			}
 		}
+	}
+
+	void AddTab(const std::string& componentName, const std::string& label)
+	{
+		tabs.push_back({ componentName, label });
+		needsRerender = true;
+	}
+
+	void AddTab(const std::string& componentName)
+	{
+		tabs.push_back({ componentName, componentName });
+		needsRerender = true;
 	}
 
 private:
 	useState(activeTab, setActiveTab, int, 0);
+	useRef(tabs, std::vector<_TabDef>, {});
 };
+
 
 int main(int argc, char** argv)
 {
-    SableUI::PreInit(argc, argv);
+	SableUI::PreInit(argc, argv);
 
-    SableUI::RegisterComponent<TabStackTest>("TabStackTest");
-    SableUI::RegisterComponent<Counter>("Counter");
-    SableUI::RegisterComponent<RefTestParent>("RefTestParent");
-    SableUI::RegisterComponent<RefTest>("RefTest");
-    SableUI::RegisterComponent<TestComponent>("TestComponent");
-    SableUI::RegisterComponent<ToggleImageView>("ToggleImageView");
+	SableUI::RegisterComponent<MenuBar>("Menu Bar");
+	SableUI::RegisterComponent<TabStackTest>("TabStackTest");
+	SableUI::RegisterComponent<Counter>("Counter");
+	SableUI::RegisterComponent<RefTestParent>("RefTestParent");
+	SableUI::RegisterComponent<RefTest>("RefTest");
+	SableUI::RegisterComponent<TestComponent>("TestComponent");
+	SableUI::RegisterComponent<ToggleImageView>("ToggleImageView");
+	SableUI::RegisterComponent<ImageView>("ImageView");
+	SableUI::RegisterComponent<ConsoleView>("ConsoleView");
+	SableUI::RegisterComponent<ElementTreeView>("ElementTreeView");
 
-    SableUI::Window* mainWindow = SableUI::Initialise("Component Registry Test", 1600, 900);
-    SableUI::SetMaxFPS(200);
+	SableUI::Window* mainWindow = SableUI::Initialise("SableUI", 1600, 900);
+	SableUI::SetMaxFPS(200);
 
-    VSplitter()
-    {
-        SableUI::SetNextPanelMaxHeight(20);
-        PanelWithArgs(MenuBar, mainWindow);
-        Panel("TabStackTest");
-    }
+	VSplitter()
+	{
+		SableUI::SetNextPanelMaxHeight(20);
+		PanelGainRef("Menu Bar", MenuBar, menuBarRef);
+		menuBarRef->SetWindow(mainWindow);
+		HSplitter()
+		{
+			VSplitter()
+			{
+				HSplitter()
+				{
+					Panel("TestComponent");
+					VSplitter()
+					{
+						Panel("Counter");
+						HSplitter()
+						{
+							Panel("TestComponent");
+							PanelGainRef("ImageView", ImageView, imageViewRef);
+							imageViewRef->InitData("3.jpg", 128, 128);
+						}
+					}
+				}
+				SableUI::SetNextPanelMaxHeight(250);
+				Panel("ConsoleView");
 
-	SableUI::CreateSecondaryWindow("Debug window", 200, 900);
-	PanelWithArgs(ElementTreeView, mainWindow);
+			}
+			Panel("RefTestParent");
+		}
+	}
 
-    while (SableUI::PollEvents())
-        SableUI::Render();
+	SableUI::CreateSecondaryWindow("Debug View", 250, 900);
+	VSplitter()
+	{
+		PanelGainRef("ElementTreeView", ElementTreeView, elementTreeViewRef);
+		elementTreeViewRef->SetWindow(mainWindow);
+		//PanelWith(SableUI::PropertiesView);
+	}
 
-    SableUI::Shutdown();
-    return 0;
+	while (SableUI::PollEvents())
+		SableUI::Render();
+
+	SableUI::Shutdown();
+	return 0;
 }

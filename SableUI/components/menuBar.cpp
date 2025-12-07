@@ -6,8 +6,9 @@
 #include <SableUI/SableUI.h>
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
+using namespace SableUI;
 
-MenuBar::MenuBar(SableUI::Window* window) : BaseComponent(), m_window(window)
+MenuBar::MenuBar() : BaseComponent()
 {
 	m_menuItems["File"] = { "New", "Open", "Save", "Save As...", "Exit" };
 	m_menuItems["Edit"] = { "Undo", "Redo", "Cut", "Copy", "Paste" };
@@ -16,6 +17,13 @@ MenuBar::MenuBar(SableUI::Window* window) : BaseComponent(), m_window(window)
 }
 void MenuBar::Layout()
 {
+	if (window == nullptr)
+	{
+		Text("Window is not set, call use, create MenuBar via PanelGainRef() then call SetWindow() on the reference",
+			centerY textColour(255, 0, 0));
+		return;
+	}
+
 	Div(left_right w_fill h_fill bg(51, 51, 51) ID("menu-bar"))
 	{
 		for (const auto& pair : m_menuItems)
@@ -27,10 +35,12 @@ void MenuBar::Layout()
 
 void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
 {
+	if (window == nullptr) return;
+
 	if (activeMenu.size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
 	{
-		SableUI::ElementInfo menuBarInfo = m_window->GetElementInfoById("menu-bar");
-		SableUI::ElementInfo dropdownInfo = m_window->GetElementInfoById("menu-dropdown");
+		SableUI::ElementInfo menuBarInfo = window->GetElementInfoById("menu-bar");
+		SableUI::ElementInfo dropdownInfo = window->GetElementInfoById("menu-dropdown");
 
 		bool mouseOverMenuBar = RectBoundingBox(menuBarInfo.rect, ctx.mousePos);
 		bool mouseOverDropdown = RectBoundingBox(dropdownInfo.rect, ctx.mousePos);
@@ -79,9 +89,10 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 
 void MenuBar::DrawDropdownMenu()
 {
-	SableUI::ElementInfo elInfo = m_window->GetElementInfoById(activeMenu);
+	if (window == nullptr) return;
+	SableUI::ElementInfo elInfo = window->GetElementInfoById(activeMenu);
 
-	UseCustomLayoutContext(queue, m_window, m_window->GetSurface(),
+	UseCustomLayoutContext(queue, window, window->GetSurface(),
 		absolute(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
 		ID("menu-dropdown")
 	)

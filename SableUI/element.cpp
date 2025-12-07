@@ -814,13 +814,31 @@ bool SableUI::Element::Reconcile(VirtualNode* vnode)
 
     for (size_t i = 0; i < this->children.size(); i++)
     {
-        Element* childEl = (Element*)*this->children[i];
+        Child* childWrapper = this->children[i];
+
+        Element* childEl = (Element*)*childWrapper;
         VirtualNode* childVn = vnode->children[i];
 
         std::size_t childElHash = ComputeHash(childEl);
         std::size_t childVnHash = ComputeHash(childVn);
 
-        if (childElHash != childVnHash)
+        bool componentMismatch = false;
+        bool isComponent = (childWrapper->type == ChildType::COMPONENT);
+        bool wantsComponent = (childVn->childComp != nullptr);
+
+        if (isComponent != wantsComponent)
+        {
+            componentMismatch = true;
+        }
+        else if (isComponent)
+        {
+            if (childWrapper->component != childVn->childComp)
+            {
+                componentMismatch = true;
+            }
+        }
+
+        if (childElHash != childVnHash || componentMismatch)
         {
             for (Child* child : this->children)
                 SB_delete(child);

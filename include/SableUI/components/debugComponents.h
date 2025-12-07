@@ -39,7 +39,6 @@ namespace SableUI
 	class ElementTreeView : public SableUI::BaseComponent
 	{
 	public:
-		ElementTreeView(SableUI::Window* window);
 		TreeNode GenerateElementTree(Element* element, size_t& uuidCounter);
 		TreeNode GeneratePanelTree(BasePanel* panel, size_t& uuidCounter);
 		int DrawTreeNode(TreeNode& node, int depth, int line = 0);
@@ -47,14 +46,14 @@ namespace SableUI
 		void OnUpdate(const UIEventContext& ctx) override;
 		void PreserveExpandedState(const TreeNode& oldNode, TreeNode& newNode);
 		void FindAndToggleNode(size_t node);
+		void SetWindow(Window* window) { setWindow(window); }
 
 	private:
-		useState(memoryDebugger, setMemoryDebugger, bool, true);
 		useState(highlightElements, setHighlightElements, bool, false);
 		useState(transparency, setTransparency, int, 0);
 		useState(rootNode, setRootNode, TreeNode, {}); 
+		useState(window, setWindow, Window*, nullptr);
 		CustomLayoutContext(queue);
-		Window* m_window = nullptr;
 	};
 
 

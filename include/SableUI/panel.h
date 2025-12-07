@@ -120,19 +120,4 @@ namespace SableUI
     private:
         BaseComponent* m_component = nullptr;
     };
-
-    template<typename T, typename... Args>
-	inline T* ContentPanel::AttachComponent(Args&&... args)
-	{
-        static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-        if (m_component != nullptr) SableMemory::SB_delete(m_component);
-
-        T* comp = SableMemory::SB_new<T>(std::forward<Args>(args)...);
-        m_component = comp;
-        m_component->BackendInitialisePanel(m_renderer);
-
-        Update();
-        return comp;
-	}
 }

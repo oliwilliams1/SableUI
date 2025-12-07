@@ -2,3 +2,6 @@
 title = "SableUI"
 authors = ["Oliver Williams"]
 language = "en"
+
+[output.html]
+additional-css = ["theme/cards.css"]

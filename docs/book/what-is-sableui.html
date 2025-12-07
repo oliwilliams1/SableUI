@@ -28,6 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/cards-bc32a73e.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -35,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-43d16bfb.js";
+            window.path_to_searchindex_js = "searchindex-576199e0.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1d456162.js"></script>
+        <script src="toc-e7b6b344.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -175,129 +176,131 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="what-is-sableui"><a class="header" href="#what-is-sableui">What is SableUI?</a></h1>
-<p>SableUI is a high-performance C++ UI/application framework that reimagines native UI development by borrowing the best ideas from modern web frameworks.</p>
-<h3 id="react-inspired-components"><a class="header" href="#react-inspired-components">React-Inspired Components</a></h3>
-<p>Components in SableUI work just like React components:</p>
-<pre><code class="language-cpp">class MyComponent : public SableUI::BaseComponent {
-public:
-    void Layout() override {
-        // Element tree starts here
-        Div(bg(32, 32, 32) p(10)) {
-            Text("Hello, World!");
-        }
-    }
-};
+<p>The driving force behind SableUI is to solve a problem with modern UI development. When building an application, web technologies are often preferable, but they come with heavy performance costs and annoying abstraction layers. SableUI brings modern UI development to a lower level with zero runtime overhead.</p>
+<h2 id="core-philosophy"><a class="header" href="#core-philosophy">Core Philosophy</a></h2>
+<p>Traditional C++ UI frameworks require verbose code that’s often hard to read. Web frameworks like react solved this with declarative components, but at the cost of performance and introduces an abstraction layer between UI and application logic. SableUI attempts to bridge this gap.</p>
+<p><strong>Traditional C++ Pseudo-code</strong></p>
+<pre><code class="language-cpp">auto* button = new Button();
+button-&gt;setText("Click me");
+button-&gt;setPosition(10, 10);
+button-&gt;onClick([&amp;]() { count++; updateLabel(); });
+layout-&gt;addWidget(button);
+// OR
+ElementInfo info{};
+info.label = "Click me";
+info.position = vec2(10, 10);
+info.onClick = [&amp;]() { count++; updateLabel(); };
+AddButton(info);
 </code></pre>
-<p>Every component has a <code>Layout()</code> method that can be overriden that describes what should be rendered. When state changes through <code>useState()</code> or otherwise, SableUI manages to only what’s necessary through virtual DOM reconciliation.</p>
-<h3 id="declarative-composable-ui"><a class="header" href="#declarative-composable-ui">Declarative, Composable UI</a></h3>
-<p>Instead of the traditional approach which can get messy with complex layouts:</p>
-<pre><code class="language-cpp">ElementInfo divInfo{};
-divInfo.backgroundColuor = Colour(32, 32, 32);
-divInfo.padding = 10;
-StartDiv(info);
-AddText("Hello world");
-EndDiv();
-</code></pre>
-<p>SableUI utilises macros and RAII to abstract the complexities that come with low-level ui libraries remaing safe and impossible to forget matching a <code>End()</code> to a <code>Start()</code> in the process:</p>
-<pre><code class="language-cpp">Div(bg(32, 32, 32) p(10)) {
-    Text("Hello, World!");
+<p>These solutions are not reactive, meaning manual re-renders will have to be scripted to update the labels, and with more complex heirachies it becomes impossible to manage.</p>
+<p><strong>SableUI:</strong></p>
+<pre><code class="language-cpp">Div(onClick([this]() { setCount(count + 1); })) {
+    Text("Click me");
 }
 </code></pre>
-<p>Both methods however are supported in SableUI, but for more complex layouts, macros are provided to make layouts more readable, easy, and safe. You can understand how to layout elements here. &lt;- TO ADD and the legacy method here. &lt;- TO ADD</p>
-<h3 id="tailwind-inspired-styling"><a class="header" href="#tailwind-inspired-styling">Tailwind-Inspired Styling</a></h3>
-<p>Styling is fast and intuitive with chainable modifiers: &lt;- adding link to styling page</p>
-<pre><code class="language-cpp">Div(
-    w(200) h(100)       // Fixed Width and height
-    bg(45, 45, 45)      // Background color
-    p(10)               // Padding (all around)
-    m(5)                // Margin (all around)
-    rounded(8)          // Border radius (all corners)
-    centerXY            // Center content in both axis
-)
-</code></pre>
-<h3 id="flexible-panel-based-layouts"><a class="header" href="#flexible-panel-based-layouts">Flexible Panel-Based Layouts</a></h3>
-<p>SableUI includes a powerful splitter panel system for complex layouts:</p>
-<pre><code class="language-cpp">int main() {
-    SableUI::Window* window = SableUI::Initialise("My App", 1200, 800);
-    
-    HSplitter() {  // Horizontal splitter
-        VSplitter() {  // Vertical splitter on the left
-            Panel("FileTree");
-            Panel("Editor");
-        }
-        Panel("Console");  // Console on the right
-    }
-    
-    while (SableUI::PollEvents())
-    {
-        SableUI::Render();
-    }
-    
-    SableUI::Shutdown();
-    return 0;
-}
-</code></pre>
-<p>Panels can be resized at runtime (and in the future save their state across multiple sessions), and you can set minimum/maximum bounds for scale-sensitive panels.</p>
-<h2 id="couple-of-noteable-features"><a class="header" href="#couple-of-noteable-features">Couple of noteable features</a></h2>
-<h3 id="component-state"><a class="header" href="#component-state">Component State</a></h3>
-<p>Use <code>useState</code> to create reactive state:</p>
-<pre><code class="language-cpp">class Counter : public SableUI::BaseComponent {
+<p>Concise and reactive (comparable to react), <code>setCount()</code> marks the element as dirty, and will be automatically rerendered next frame.</p>
+<h2 id="key-features"><a class="header" href="#key-features">Key Features</a></h2>
+<h3 id="react-inspired-components"><a class="header" href="#react-inspired-components">React-Inspired components</a></h3>
+<p>Components describe what should be rendered, not requireing definitions on how to update existing UI. State changes trigger automatic efficient rerenders through reconcilliation with a virtual DOM.</p>
+<pre><code class="language-cpp">class TodoList : public SableUI::BaseComponent {
     void Layout() override {
-        Text(SableString::Format("Count: %d", count));
-        
-        Div(onClick([this]() { setCount(count + 1); })) {
-            Text("Increment");
+        for (const auto&amp; todo : todos) {
+            Div(bg(45, 45, 45) p(10) mb(5)) {
+                Text(todo.text);
+            }
         }
     }
 private:
-    useState(count, setCount, int, 0);
-    /* Same as following for react, but implemented *
-     * as a macro due to limitations within c++     *
-     * const [count, setCount] = useState&lt;int&gt;(0);  */
+    // When "todos" changes via "setTodos()", this component will be automatically re-rendered
+    useState(todos, setTodos, std::vector&lt;Todo&gt;, {});
+    /* ^^ This syntax is equivilant to reacts:
+     * const [todos, setTodos] = useState&lt;std::vector&lt;Todo&gt;&gt;({});
+     * but due to limitations within c++, useState is a macro that defines
+     * member variables and setters to the component */
 };
 </code></pre>
-<h3 id="virtual-dom"><a class="header" href="#virtual-dom">Virtual DOM</a></h3>
-<p>SableUI utilises a virtual DOM for comparing new/old trees, and only updating and rendering the changes between them. Reconciliation only occurs on components whose state has been changed or has been manually flagged for reconciliation. This ensures good performance for reactive states, and maintain flexibility for users.</p>
-<h3 id="text-rendering"><a class="header" href="#text-rendering">Text Rendering</a></h3>
-<p>Text rendering is advanced, as if something is even subtly wrong or unsupported it can make an applciation awkward to use, and users would unconsiously prefer web-based apps to ensure good text rendering. Below are features SableUI supports:</p>
-<ul>
-<li>Full Unicode support (including emoji (greyscale only), CJK characters, any range supplied by the bundled font packs)</li>
-<li>Multiple font styles (bold, italic, light)</li>
-<li>Word wrapping and truncation</li>
-<li>LCD subpixel rendering for legibility on older displays</li>
-<li>Cached glyph atlases for performance</li>
-</ul>
-<h2 id="graphics-backend-support"><a class="header" href="#graphics-backend-support">Graphics Backend Support</a></h2>
-<p>Currently supported:</p>
-<ul>
-<li><strong>OpenGL 3.3+</strong> (Fully implemented)</li>
-</ul>
-<p>Planned:</p>
-<ul>
-<li><strong>Vulkan</strong> (In progress)</li>
-<li><strong>Metal</strong> (Will come with VK via MoltenVK)</li>
-</ul>
-<p>You can select the preferred backend at initialisation:</p>
-<pre><code class="language-cpp">SableUI::SetBackend(SableUI::Backend::OpenGL);
-// or via command line: --opengl, --vulkan
+<p>Learn more about components <a href="">here</a> and <code>useState()</code> and reactivity <a href="">here</a>.</p>
+<h3 id="tailwind-inspired-styling"><a class="header" href="#tailwind-inspired-styling">Tailwind-Inspired Styling</a></h3>
+<p>Chainable modifiers make styling fact and readable, macros ensure expand in the pre-processor, ensuring no runtime-performance loss</p>
+<pre><code class="language-cpp">Div(
+    w(200) h(100)        // Fixed width and height
+    bg(45, 45, 45)       // Background colour
+    p(10) m(5)           // Padding &amp; margin
+    rounded(8)           // Border radius
+    centerXY             // Center content on both axis
+)
 </code></pre>
-<blockquote>
-<p>The backend selection ships with the program. I.e. a device compiling the library without the VulkanSDK will not be able to use ship vulkan compatability with their application, for that there will be precompiled binaries (not as of current though).</p>
-</blockquote>
+<h3 id="flexibile-panel-system"><a class="header" href="#flexibile-panel-system">Flexibile Panel System</a></h3>
+<p>Declare layouts directly in source per-window that the user can or cannot modify with resizable splitters, inspired by foobar2000’s ColumnsUI plugin.</p>
+<pre><code class="language-cpp">HSplitter() {
+    Panel("Sidebar");
+    VSplitter() {
+        Panel("Editor");
+        Panel("Console");
+    }
+}
+</code></pre>
+<h3 id="advanced-text-rendering"><a class="header" href="#advanced-text-rendering">Advanced Text Rendering</a></h3>
+<p>Full Unicode support including CJK and greyscale emojis, multiple font styles, LCD subpixel rendering, and cached glyph atlases for performance.</p>
+<pre><code class="language-cpp">TextU32(U"Hello 世界", 
+    fontSize(16) 
+    textColour(255, 255, 255)
+    justify_center);
+</code></pre>
+<h2 id="current-status"><a class="header" href="#current-status">Current Status</a></h2>
+<p>SableUI is approaching v1.0. and the core features are stable, but no limited component library as of current so use cases are slim</p>
+<p>When v1.0. is done, the following features will be fully implmented:</p>
+<ul>
+<li>Vulkan/Metal backends</li>
+<li>Tested linux &amp; macOS support</li>
+<li>Component library (scrollviews, input fields, tab stacks, sliders, etc)</li>
+<li>Expanded documentation</li>
+<li>Shader transpilation across multiple graphics backends</li>
+</ul>
 <h2 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h2>
+<p>…</p>
+<h2 id="graphics-backends"><a class="header" href="#graphics-backends">Graphics Backends</a></h2>
 <ul>
-<li><strong>Windows</strong> (MSVC, WSL) MinGW untested</li>
-<li><strong>Linux</strong> (WSL) GCC &amp; Clang untested</li>
-<li><strong>macOS</strong> Untested</li>
+<li>OpenGL 3.3+: 98% (small bug)</li>
+<li>Vulkan and Metal: coming soon</li>
 </ul>
-<h2 id="whats-next"><a class="header" href="#whats-next">What’s Next?</a></h2>
-<p>If SableUI sounds right for you, you can now <a href="Quick-Start.html">get started</a> with building your first application!</p>
-<p>Or explore:</p>
-<ul>
-<li><strong>Core Concepts</strong></li>
-<li><strong>Examples</strong></li>
-<li><strong>API Reference</strong></li>
-</ul>
+<hr>
+<h3 id="next-steps"><a class="header" href="#next-steps">Next steps:</a></h3>
+<div class="card-grid">
+  
+<div class="card" onclick="window.location.href=&#39;getting-started.html&#39;;" style="cursor: pointer;">
+    <img src="path/to/image2.jpg" alt="Card image">
+    
+<h2>Getting Started</h2>
+
+    
+<p class="subtitle">Build a starter application in under 5 minutes</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image3.jpg" alt="Card image">
+    
+<h2>Core concepts</h2>
+
+    
+<p class="subtitle">Understand concepts such as components, states and more</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image2.jpg" alt="Card image">
+    
+<h2>Examples</h2>
+
+    
+<p class="subtitle">See real applications</p>
+
+  </div>
+
+</div>
 
                     </main>
 
@@ -307,7 +310,7 @@ private:
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="Quick-Start.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="getting-started.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -321,7 +324,7 @@ private:
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="Quick-Start.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="getting-started.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

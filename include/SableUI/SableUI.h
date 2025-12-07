@@ -7,7 +7,7 @@
 #include <SableUI/renderer.h>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
-#include <SableUI/componentRegistry.h>
+#include <SableUI/console.h>
 #include <string>
 
 /* non-macro user api */
@@ -128,6 +128,13 @@ namespace SableUI
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
 #define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+#define ComponentGainRef(name, T, ref, ...) \
+	T* ref = nullptr; \
+	BaseComponent* CONCAT(_comp_, __LINE__) = Component(name, __VA_ARGS__); \
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr) \
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__)); \
+	else \
+		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -223,15 +230,21 @@ namespace SableUI
 	if (queueVar)														\
 		queueVar->queueContext->RemoveQueueReference(queueVar);	
 
-#define onHover(...)						.setOnHover(__VA_ARGS__)
-#define onHoverExit(...)					.setOnHoverExit(__VA_ARGS__)
-#define onClick(...)						.setOnClick(__VA_ARGS__)
-#define onSecondaryClick(...)				.setOnSecondaryClick(__VA_ARGS__)
-#define onDoubleClick(...)					.setOnDoubleClick(__VA_ARGS__)
+#define onHover(...)							.setOnHover(__VA_ARGS__)
+#define onHoverExit(...)						.setOnHoverExit(__VA_ARGS__)
+#define onClick(...)							.setOnClick(__VA_ARGS__)
+#define onSecondaryClick(...)					.setOnSecondaryClick(__VA_ARGS__)
+#define onDoubleClick(...)						.setOnDoubleClick(__VA_ARGS__)
 
-#define HSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
-#define VSplitter()							if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
+#define HSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+#define VSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
-#define EmptyPanel()						SableUI::AddPanel()
-#define PanelWithArgs(T, ...)				SableUI::AddPanel()->AttachComponent<T>(__VA_ARGS__)
-#define Panel(name)							SableUI::AddPanel()->AttachComponent(name)
+#define EmptyPanel()							SableUI::AddPanel()
+#define Panel(name)								SableUI::AddPanel()->AttachComponent(name)
+#define PanelGainRef(name, T, ref)															\
+	T* ref = nullptr;																		\
+	BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);	\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)								\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));									\
+	else																					\
+		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));

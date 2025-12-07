@@ -28,6 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/cards-bc32a73e.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -35,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-43d16bfb.js";
+            window.path_to_searchindex_js = "searchindex-576199e0.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1d456162.js"></script>
+        <script src="toc-e7b6b344.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -175,66 +176,101 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>Welcome to <strong>SableUI</strong> - a modern, high-performance C++ UI/application framework that takes the good from web-based applications without the negative performance impact and removes the bridge between the frontend and the backend for low-level applications.</p>
-<h2 id="who-is-this-for"><a class="header" href="#who-is-this-for">Who Is This For?</a></h2>
-<p>SableUI is designed for C++ developers who want want to write applications without the limitations of the web, featuring:</p>
-<ul>
-<li>Declarative, reactive components</li>
-<li>Cross-platform support</li>
-<li>Full control and open access over rendering and memory management</li>
-</ul>
-<h2 id="philosophy"><a class="header" href="#philosophy">Philosophy</a></h2>
-<p>Traditional C++ UI frameworks are often verbose and fatiguing with large limitations. Web frameworks are often the solution to this, but come with a performance cost and a large abstraction between UI and application. SableUI attempts to bridge this gap by bringing the developer experience of React to C++ while maintaining the speed and control you would get with a native C++ framework.</p>
-<pre><code class="language-cpp">// An example of a counter component
-class Counter : public SableUI::BaseComponent {
-public:
-	void Layout() override {
-		Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10))
-        {
-			Text(SableString::Format("Count: %d", count),
-				fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
-
-			Div(left_right p(4) centerX rounded(9))
-            {
-				Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
-					onClick([=]() { setCount(count + 1); }))
-                {
-					Text("Increment",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
-				}
-
-				Div(bg(255, 120, 120) p(8) rounded(5)
-					onClick([=]() { setCount(count - 1); }))
-                {
-					Text("Decrement",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
-				}
-			}
-		}
-	}
-
+<p><strong>SableUI</strong> is a high-performance C++ UI framework that brings React’s component model and Tailwind’s styling approach to native applications - without the overhead of web technologies.</p>
+<pre><code class="language-cpp">class Counter : public SableUI::BaseComponent {
+    void Layout() override {
+        Div(bg(245, 245, 245) p(30) centerXY rounded(10)) {
+            Text(SableString::Format("Count: %d", count),
+                fontSize(28) mb(20) textColour(20, 20, 20));
+            
+            Div(onClick([=]() { setCount(count + 1); })) {
+                Text("Increment");
+            }
+        }
+    }
 private:
-	useState(count, setCount, int, 0);
+    useState(count, setCount, int, 0);
 };
 </code></pre>
-<h2 id="current-status"><a class="header" href="#current-status">Current Status</a></h2>
-<p>SableUI is incomplete but actively being developed and approaching v1.0. The core features are stable and production-ready, but won’t get most too far, with ongoing work on:</p>
-<ul>
-<li>Vulkan/Metal support</li>
-<li>ID-based components for improved flexibility</li>
-<li>Expansion of component library (scrollable views, input fields, tab stacks, …)</li>
-<li>Documentation and examples</li>
-<li>Panel docking (maybe not v1.0.)</li>
-</ul>
-<hr>
-<p>Want to build something? <a href="Quick-Start.html">Quick Start</a> or <a href="Installation.html">Installation</a></p>
+<div class="warning">
+    test
+</div>
+
+<div class="card-grid">
+  
+<div class="card" onclick="window.location.href=&#39;what-is-sableui.html&#39;;" style="cursor: pointer;">
+    <img src="path/to/image1.jpg" alt="Card image">
+    
+<h2>What is SableUI?</h2>
+
+    
+<p class="subtitle">Purpose and design philosophies</p>
+
+  </div>
+
+  
+<div class="card" onclick="window.location.href=&#39;getting-started.html&#39;;" style="cursor: pointer;">
+    <img src="path/to/image2.jpg" alt="Card image">
+    
+<h2>Getting Started</h2>
+
+    
+<p class="subtitle">Build a starter application in under 5 minutes</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image3.jpg" alt="Card image">
+    
+<h2>Core concepts</h2>
+
+    
+<p class="subtitle">Understand concepts such as components, states and more</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image1.jpg" alt="Card image">
+    
+<h2>API reference</h2>
+
+    
+<p class="subtitle">Learn how to build a anything using SableUI's layout system</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image2.jpg" alt="Card image">
+    
+<h2>Examples</h2>
+
+    
+<p class="subtitle">See real applications</p>
+
+  </div>
+
+  
+<div class="card">
+    <img src="path/to/image3.jpg" alt="Card image">
+    
+<h2>Advanced topics</h2>
+
+    
+<p class="subtitle">To build complex applications and access deeper APIs</p>
+
+  </div>
+
+</div>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next prefetch" href="SableUI-Intro.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="what-is-sableui.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -245,7 +281,7 @@ private:
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next prefetch" href="SableUI-Intro.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="what-is-sableui.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

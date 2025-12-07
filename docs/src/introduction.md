@@ -1,56 +1,60 @@
 # Introduction
-Welcome to **SableUI** - a modern, high-performance C++ UI/application framework that takes the good from web-based applications without the negative performance impact and removes the bridge between the frontend and the backend for low-level applications.
+**SableUI** is a high-performance C++ UI framework that brings React's component model and Tailwind's styling approach to native applications - without the overhead of web technologies.
 
-## Who Is This For?
-SableUI is designed for C++ developers who want want to write applications without the limitations of the web, featuring:
-- Declarative, reactive components
-- Cross-platform support
-- Full control and open access over rendering and memory management
-
-## Philosophy
-Traditional C++ UI frameworks are often verbose and fatiguing with large limitations. Web frameworks are often the solution to this, but come with a performance cost and a large abstraction between UI and application. SableUI attempts to bridge this gap by bringing the developer experience of React to C++ while maintaining the speed and control you would get with a native C++ framework.
 ```cpp
-// An example of a counter component
 class Counter : public SableUI::BaseComponent {
-public:
-	void Layout() override {
-		Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10))
-        {
-			Text(SableString::Format("Count: %d", count),
-				fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
-
-			Div(left_right p(4) centerX rounded(9))
-            {
-				Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
-					onClick([=]() { setCount(count + 1); }))
-                {
-					Text("Increment",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
-				}
-
-				Div(bg(255, 120, 120) p(8) rounded(5)
-					onClick([=]() { setCount(count - 1); }))
-                {
-					Text("Decrement",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
-				}
-			}
-		}
-	}
-
+    void Layout() override {
+        Div(bg(245, 245, 245) p(30) centerXY rounded(10)) {
+            Text(SableString::Format("Count: %d", count),
+                fontSize(28) mb(20) textColour(20, 20, 20));
+            
+            Div(onClick([=]() { setCount(count + 1); })) {
+                Text("Increment");
+            }
+        }
+    }
 private:
-	useState(count, setCount, int, 0);
+    useState(count, setCount, int, 0);
 };
 ```
+<div class="warning">
+    test
+</div>
 
-## Current Status
-SableUI is incomplete but actively being developed and approaching v1.0. The core features are stable and production-ready, but won't get most too far, with ongoing work on:
-- Vulkan/Metal support
-- ID-based components for improved flexibility
-- Expansion of component library (scrollable views, input fields, tab stacks, ...)
-- Documentation and examples
-- Panel docking (maybe not v1.0.)
+<div class="card-grid">
+  <div class="card" onclick="window.location.href='what-is-sableui.html';" style="cursor: pointer;">
+    <img src="path/to/image1.jpg" alt="Card image">
+    <h2>What is SableUI?</h2>
+    <p class="subtitle">Purpose and design philosophies</p>
+  </div>
 
----
+  <div class="card" onclick="window.location.href='getting-started.html';" style="cursor: pointer;">
+    <img src="path/to/image2.jpg" alt="Card image">
+    <h2>Getting Started</h2>
+    <p class="subtitle">Build a starter application in under 5 minutes</p>
+  </div>
 
-Want to build something? [Quick Start](Quick-Start.md) or [Installation](Installation.md)
+  <div class="card">
+    <img src="path/to/image3.jpg" alt="Card image">
+    <h2>Core concepts</h2>
+    <p class="subtitle">Understand concepts such as components, states and more</p>
+  </div>
+
+  <div class="card">
+    <img src="path/to/image1.jpg" alt="Card image">
+    <h2>API reference</h2>
+    <p class="subtitle">Learn how to build a anything using SableUI's layout system</p>
+  </div>
+
+  <div class="card">
+    <img src="path/to/image2.jpg" alt="Card image">
+    <h2>Examples</h2>
+    <p class="subtitle">See real applications</p>
+  </div>
+
+  <div class="card">
+    <img src="path/to/image3.jpg" alt="Card image">
+    <h2>Advanced topics</h2>
+    <p class="subtitle">To build complex applications and access deeper APIs</p>
+  </div>
+</div>
