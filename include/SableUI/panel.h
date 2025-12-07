@@ -102,11 +102,6 @@ namespace SableUI
         void Render() override;
         SplitterPanel* AddSplitter(PanelType type) override;
         ContentPanel* AddPanel() override;
-
-        void CalculateMinBounds() override;
-
-        template<typename T, typename... Args>
-        T* AttachComponent(Args&&... args);
         BaseComponent* AttachComponent(const std::string& componentName);
 
         void Update() override;

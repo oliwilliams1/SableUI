@@ -529,21 +529,6 @@ SableUI::ContentPanel* SableUI::ContentPanel::AddPanel()
 	return nullptr;
 }
 
-void SableUI::ContentPanel::CalculateMinBounds()
-{
-	if (m_component == nullptr || m_component->GetRootElement() == nullptr) return;
-	minBounds = { m_component->GetRootElement()->GetMinWidth(), m_component->GetRootElement()->GetMinHeight() };
-
-	minBounds.x = std::max(minBounds.x, 20);
-	minBounds.y = std::max(minBounds.y, 20);
-
-	if (auto* splitter = dynamic_cast<SplitterPanel*>(parent); splitter != nullptr)
-	{
-		minBounds.x += 2 * splitter->bSize;
-		minBounds.y += 2 * splitter->bSize;
-	}
-}
-
 void SableUI::ContentPanel::Update()
 {
 	if (m_component == nullptr)

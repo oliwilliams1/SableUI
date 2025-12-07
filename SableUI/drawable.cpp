@@ -246,7 +246,71 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 
 void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
+    if (m_type == PanelType::UNDEF || m_type == PanelType::BASE || m_type == PanelType::ROOTNODE)
+        return;
 
+    g_rShader.Use();
+    glUniform1i(g_rUTexBoolLoc, 0);
+    glUniform1f(g_rURadius, 0.0f);
+    glUniform4f(g_rUColourLoc, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
+
+    int startX = std::clamp(m_rect.x, 0, framebuffer->width);
+    int startY = std::clamp(m_rect.y, 0, framebuffer->height);
+    int boundWidth = std::clamp(m_rect.w, 0, framebuffer->width - startX);
+    int boundHeight = std::clamp(m_rect.h, 0, framebuffer->height - startY);
+
+    auto drawRect = [&](float x, float y, float w, float h) {
+        /* normalise from texture bounds to [0, 1] */
+        float normalizedX = (x / static_cast<float>(framebuffer->width));
+        float normalizedY = (y / static_cast<float>(framebuffer->height));
+        float normalizedW = (w / static_cast<float>(framebuffer->width));
+        float normalizedH = (h / static_cast<float>(framebuffer->height));
+
+        /* normalise to opengl NDC [0, 1] -> [-1, 1] */
+        normalizedX = normalizedX * 2.0f - 1.0f;
+        normalizedY = normalizedY * 2.0f - 1.0f;
+        normalizedW *= 2.0f;
+        normalizedH *= 2.0f;
+
+        /* prevent negative scale */
+        normalizedW = std::max(0.0f, normalizedW);
+        normalizedH = std::max(0.0f, normalizedH);
+
+        /* invert y axis */
+        normalizedY *= -1.0f;
+        normalizedH *= -1.0f;
+
+        glUniform4f(g_rURectLoc, normalizedX, normalizedY, normalizedW, normalizedH);
+        glUniform4f(g_rURealRectLoc, x, y, w, h);
+        res.rectObject->AddToDrawStack();
+    };
+
+    if (m_type == PanelType::HORIZONTAL)
+    {
+        for (int offset : m_offsets)
+        {
+            float drawX = startX + static_cast<float>(offset) - m_bSize;
+            float drawWidth = m_bSize * 2.0f;
+
+            if (drawX + drawWidth >= 0 && drawX < framebuffer->width)
+            {
+                drawRect(drawX, static_cast<float>(startY), drawWidth, static_cast<float>(boundHeight));
+            }
+        }
+    }
+    else if (m_type == PanelType::VERTICAL)
+    {
+        for (int offset : m_offsets)
+        {
+            float drawY = startY + static_cast<float>(offset) - m_bSize;
+            float drawHeight = m_bSize * 2.0f;
+
+            if (drawY + drawHeight >= 0 && drawY < framebuffer->height)
+            {
+                drawRect(static_cast<float>(startX), drawY, static_cast<float>(boundWidth), drawHeight);
+            }
+        }
+    }
 }
 
 // ============================================================================

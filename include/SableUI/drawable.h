@@ -16,6 +16,7 @@ namespace SableUI
 	};
 
 	struct GpuObject;
+	struct GpuFramebuffer;
 	struct ContextResources {
 		GpuObject* rectObject = nullptr;
 	};
@@ -25,7 +26,6 @@ namespace SableUI
 	class RendererBackend;
 	ContextResources& GetContextResources(RendererBackend* backend);
 
-	struct GpuFramebuffer;
 	class DrawableBase
 	{
 	public:
@@ -65,7 +65,7 @@ namespace SableUI
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
-		int m_bSize = 0;
+		int m_bSize = 2;
 		std::vector<int> m_offsets;
 		PanelType m_type = PanelType::UNDEF;
 	};

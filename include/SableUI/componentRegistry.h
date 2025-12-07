@@ -7,6 +7,7 @@
 
 namespace SableUI
 {
+    void RegisterSableUIComponents();
     class BaseComponent;
     class ComponentRegistry
     {

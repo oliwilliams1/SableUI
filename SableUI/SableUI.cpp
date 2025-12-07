@@ -39,9 +39,11 @@ void SableUI::SetContext(SableUI::Window* window)
 }
 
 static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };
+static SableUI::ivec2 g_nextPanelMinBounds = { 0, 0 };
 
-void SableUI::SetNextPanelMaxHeight(int height) { g_nextPanelMaxBounds.h = height; }
-void SableUI::SetNextPanelMaxWidth(int width)	{ g_nextPanelMaxBounds.w = width; };
+void SableUI::SetNextPanelMaxHeight(int height)	  { g_nextPanelMaxBounds.h = height; }
+void SableUI::SetNextPanelMaxWidth(int width)	  { g_nextPanelMaxBounds.w = width; };
+void SableUI::SetNextPanelMinBounds(ivec2 bounds) { g_nextPanelMinBounds = bounds; }
 
 // ============================================================================
 // Virtual Node Builder
@@ -141,6 +143,11 @@ SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 	splitter->maxBounds = g_nextPanelMaxBounds;
 	g_nextPanelMaxBounds = { 0, 0 };
 
+	if (g_nextPanelMinBounds.x > 20 || g_nextPanelMinBounds.y > 20)
+	{
+		SableUI_Runtime_Error("You cannot sent min bounds of splitters");
+	}
+
 	s_panelStack.push(s_currentPanel);
 	s_currentPanel = splitter;
 
@@ -175,6 +182,8 @@ SableUI::ContentPanel* SableUI::AddPanel()
 
 	SableUI::ContentPanel* panel = s_currentPanel->AddPanel();
 	panel->maxBounds = g_nextPanelMaxBounds;
+	panel->minBounds = g_nextPanelMinBounds;
+	g_nextPanelMinBounds = { 20, 20 };
 	g_nextPanelMaxBounds = { 0, 0 };
 	return panel;
 }
@@ -503,6 +512,8 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 	{
 		SableUI_Runtime_Error("SableUI has already been initialised");
 	}
+
+	RegisterSableUIComponents();
 
 	if (s_backend == SableUI::Backend::UNDEF)
 	{

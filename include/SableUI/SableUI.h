@@ -54,6 +54,7 @@ namespace SableUI
 
 	void SetNextPanelMaxWidth(int width);
 	void SetNextPanelMaxHeight(int height);
+	void SetNextPanelMinBounds(ivec2 bounds);
 
 	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
 		CustomTargetQueue** queuePtr, const ElementInfo& ElementInfo);
