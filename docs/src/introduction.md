@@ -17,10 +17,11 @@ private:
     useState(count, setCount, int, 0);
 };
 ```
-<div class="warning">
-    test
-</div>
+<br>
 
+---
+
+<br>
 <div class="card-grid">
   <div class="card" onclick="window.location.href='what-is-sableui.html';" style="cursor: pointer;">
     <img src="path/to/image1.jpg" alt="Card image">

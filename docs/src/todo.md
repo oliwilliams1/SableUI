@@ -63,6 +63,7 @@
 - [ ] Image load-by-buffer
 - [ ] Props?
 - [ ] Simplify Panel min bounds thing
+- [ ] Make bold, italic, etc macros
 
 # Beyond 1.0
 - [ ] Docking panels

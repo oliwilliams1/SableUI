@@ -101,7 +101,11 @@ When v1.0. is done, the following features will be fully implmented:
 - OpenGL 3.3+: 98% (small bug)
 - Vulkan and Metal: coming soon
 
+<br><br>
+
 ---
+
+<br>
 
 ### Next steps:
 <div class="card-grid">

@@ -115,10 +115,13 @@ Panel("Counter");
 ```
 Attach registed components to panels, the scope for panel layout is created after window initialisation.
 
+<br><br>
+
 ---
 
 ### Next Steps
 By here, you now have a working SableUI application, you can either get a better understanding on the specifics of certain areas above, or go to the following pages. <br>
+<br>
 <div class="card-grid">
   <div class="card">
     <img src="path/to/image3.jpg" alt="Card image">

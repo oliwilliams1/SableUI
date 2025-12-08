@@ -38,3 +38,16 @@
   color: #666;
   font-size: 1.2rem;
 }
+
+.table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+table {
+  width: 100% !important;
+  table-layout: fixed; /* Ensures columns distribute space evenly */
+}
+table th,
+table td {
+  word-wrap: break-word;
+}

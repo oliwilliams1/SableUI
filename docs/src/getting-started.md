@@ -47,7 +47,11 @@ add_subdirectory(vendor/SableUI)
 add_executable(MyApp main.cpp)
 target_link_libraries(MyApp PRIVATE SableUI)
 ```
+<br><br>
+
 ---
+
+<br>
 
 Having Issues? Check [troubleshooting](troubleshooting-configuration.md)
 

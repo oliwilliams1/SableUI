@@ -3,15 +3,15 @@ A high-performance C++ UI/application framework combining React's component
 and state model, Tailwind's easy styling approach, and foobar2000's ColumnsUI
 flexible panel-based layouts.
 
-![C++17](https://img.shields.io/badge/C%2B%2B-17-blue)
+![C++17](https://img.shields.io/badge/C%2B%2B-20-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-green)
-![Status](https://img.shields.io/badge/Status-Work%20in%20Progress:%20~65%25-yellow)
+![Status](https://img.shields.io/badge/Status-Work%20in%20Progress:%20~70%25-yellow)
 
 ## Features
-- Declarative components with reactive state management
-- Flexible layouts with resizable splitter panels
-- Advanced text rendering with full unicode support, custom styling, and colour
-- Cross-platform compatibility supporting OpenGL (soon supporting Vulkan, DirectX, Metal, GLES)
+- **Declarative components** with reactive state management
+- **Flexible layouts** with resizable splitter panels
+- **Advanced text rendering** with full unicode support, custom styling, and colour
+- **Cross-platform** compatibility supporting OpenGL (soon supporting Vulkan, DirectX, Metal, GLES)
   - Supports Windows, Linux, and macOS (Intel & Apple Silicon)
   <br>macOS untested, but should compile due to Linux support
 
@@ -24,41 +24,29 @@ flexible panel-based layouts.
 ### Example Usage: Counter App
 ![Example counter app](readme-resources/counter-app-example.png)
 ```cpp
-#include <SableUI/SableUI.h> // include core library
-#include <SableUI/components/debugComponents.h> // for element inspector
+#include <SableUI/SableUI.h>
 
-class Counter : public SableUI::BaseComponent
-{
+class Counter : public SableUI::BaseComponent {
 public:
-    Counter() : SableUI::BaseComponent() {}
-
-    void Layout() override
-    {
-        // outer container
-        Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10)) // simmilar to tailwind styling
-        {
-            // formatting strings made easy for text elements
+    void Layout() override {
+        Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10)) {
             Text(SableString::Format("Count: %d", count),
                 fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
 
-            // horizontal row with buttons
-            Div(left_right p(4) centerX rounded(9))
-            {
+            Div(left_right p(4) centerX rounded(9)) {
                 Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
-                    onClick([=]() { setCount(count + 1); })) // lambda event callbacks
-                {
-                    Text("Increment",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+                    onClick([this]() { setCount(count + 1); })) {
+                    Text("Increment", 
+                        textColour(255, 255, 255) fontSize(16) justify_center);
                 }
 
                 Div(bg(255, 120, 120) p(8) rounded(5)
-                    onClick([=]() { setCount(count - 1); }))
-                {
+                    onClick([this]() { setCount(count - 1); })) {
                     Text("Decrement",
-                        mb(2) textColour(255, 255, 255) fontSize(16) justify_center);
+                        textColour(255, 255, 255) fontSize(16) justify_center);
                 }
             }
-        } // macro utilises RAII for proper tree generation and lifetime handling
+        }
     }
 
 private:
@@ -69,58 +57,29 @@ private:
 };
 
 
-int main(int argc, char** argv)
-{
-    SableUI::PreInit(argc, argv); // not neccasary, but there for to switch backends through args
-    SableUI::Window* window = SableUI::Initialise("SableUI App", 800, 600);
+int main(int argc, char** argv) {
+    // Register your component
+    SableUI::RegisterComponent<Counter>("Counter");
 
-    VSplitter()
-    {
-        PanelWith(Counter);
-    }
+    // Initialize window
+    SableUI::Window* window = SableUI::Initialise("Counter App", 800, 600);
 
-    // create an element inspector in a different window
-    SableUI::CreateSecondaryWindow("Debug View", 250, 600);
-    VSplitter()
-    {
-        PanelWith(SableUI::ElementTreeView, window); // focus around this window
-        PanelWith(SableUI::PropertiesView);
-    }
+    // Create layout
+    Panel("Counter");
 
+    // Main loop
     while (SableUI::PollEvents())
         SableUI::Render();
 
     SableUI::Shutdown();
     return 0;
 }
+
 ```
 ---
-## Building
-Requires CMake for creating build files and a C++20 compiler is reccomended.
 
-> NOTE: If building from source you may need development libraries for your
-specific graphics api otherwise CMake will not find libraries and may not be
-able to build with graphics API support, to avoid this check for prebuilt
-binaries in releases (not uploaded until project completion).
-
-Clone with submodules
-```bash
-git clone https://github.com/oliwilliams1/SableUI --recursive
-cd SableUI
-```
-#### Windows
-```bash
-mkdir build && cd build
-setup.bat
-```
-**Compile instructions for MSVC:**<br>
-Open the ```.sln``` in Visual Studio, set ```SableUI``` as current target and build.
-#### Linux/macOS
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
+## Building and Using library
+This project has a [documentation](sableui.oliwilliams.dev/getting-started) with a getting started gyude to build the basic app seen above. Precompiled binaries are not released until v1.0 as things are subject to change.
 
 ## Acknowledgments
 This project uses the following open-source libraries:
