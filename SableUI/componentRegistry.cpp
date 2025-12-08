@@ -93,7 +93,7 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 void SableUI::RegisterSableUIComponents()
 {
     RegisterComponent<MenuBar>("Menu Bar");
-    RegisterComponent<TabStack>("TabStack");
+    RegisterComponent<_TabStackDef>("TabStack");
     RegisterComponent<ElementTreeView>("ElementTreeView");
     RegisterComponent<PropertiesView>("PropertiesView");
 }

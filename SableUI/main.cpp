@@ -294,7 +294,7 @@ int main(int argc, char** argv)
 					HSplitter()
 					{
 						SetNextPanelMinBounds({ 500, 400 });
-						PanelGainRef("TabStack", TabStack, tabStackRef);
+						PanelGainRef("TabStack", _TabStackDef, tabStackRef);
 						tabStackRef->AddTab("Counter");
 						tabStackRef->AddTab("TestComponent");
 						tabStackRef->AddTab("ImageView");

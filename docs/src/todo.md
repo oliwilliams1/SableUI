@@ -1,7 +1,7 @@
 # Roadmap to 1.0
 ### Components
 - [ ] Scroll view
-- [ ] Tab stack with component exposure/initialisation callback
+- [x] Tab stack with component exposure/initialisation callback
 - [ ] Button
 - [ ] Sliders
 - [ ] Input field

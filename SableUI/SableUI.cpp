@@ -17,6 +17,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <SableUI/components/tabStack.h>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;
@@ -431,6 +432,34 @@ void SableUI::EndCustomLayoutScope(
 	s_elementStack.pop();
 
 	s_customLayoutMode = false;
+}
+
+// ============================================================================
+// TabStack scope
+// ============================================================================
+static SableUI::_TabStackDef* s_currentTabStackRef = nullptr;
+void SableUI::SetCurrentTabStackRef(SableUI::_TabStackDef* ref)
+{
+	if (s_currentTabStackRef != nullptr)
+		SableUI_Runtime_Error("TabStack already set, nested tabstacks are not supported");
+
+	s_currentTabStackRef = ref;
+}
+
+void SableUI::RemoveCurrentTabStackRef()
+{
+	if (s_currentTabStackRef == nullptr)
+		SableUI_Runtime_Error("TabStack not set, are you manually callling this RemoveCurrentTabStackRef?");
+
+	s_currentTabStackRef = nullptr;
+}
+
+SableUI::_TabStackDef* SableUI::GetCurrentTabStackRef()
+{
+	if (s_currentTabStackRef == nullptr)
+		SableUI_Runtime_Error("TabItem() called outside a TabStack scope? Or manually calling incorrectly");
+
+	return s_currentTabStackRef;
 }
 
 // ============================================================================

@@ -3,11 +3,12 @@
 #include <SableUI/component.h>
 #include <vector>
 #include <string>
+#include <map>
 #include <SableUI/console.h>
 
 using namespace SableUI;
 
-void TabStack::Layout()
+void _TabStackDef::Layout()
 {
 	Div(w_fill h_fit left_right bg(45, 45, 45))
 	{
@@ -31,7 +32,12 @@ void TabStack::Layout()
 		}
 		else if (activeTab < tabs.size())
 		{
-			Component(tabs[activeTab].component.c_str(), w_fill h_fill bg(32, 32, 32));
+			ComponentGainBaseRef(tabs[activeTab].component.c_str(), ref, w_fill h_fill bg(32, 32, 32));
+
+			if (ref != nullptr && tabs[activeTab].initialiser)
+			{
+				tabs[activeTab].initialiser(ref);
+			}
 		}
 		else
 		{
@@ -40,7 +46,7 @@ void TabStack::Layout()
 	}
 }
 
-static bool TabExists(const std::vector<_TabDef>& tabs, const std::string& tabName)
+bool _TabStackDef::TabExists(const std::string& tabName)
 {
 	for (int i = 0; i < tabs.size(); i++)
 	{
@@ -52,26 +58,24 @@ static bool TabExists(const std::vector<_TabDef>& tabs, const std::string& tabNa
 	return false;
 }
 
-void TabStack::AddTab(const std::string& componentName, const std::string& label)
+void _TabStackDef::AddTab(const std::string& componentName, const std::string& label)
 {
-	if (TabExists(tabs, label))
+	if (TabExists(label))
 	{
 		SableUI_Warn("Tab with label '%s' already exists, will be skipped", label.c_str());
 		return;
 	}
-
-	tabs.push_back({ componentName, label });
+	tabs.push_back({ componentName, label, nullptr });
 	needsRerender = true;
 }
 
-void TabStack::AddTab(const std::string& componentName)
+void _TabStackDef::AddTab(const std::string& componentName)
 {
-	if (TabExists(tabs, componentName))
+	if (TabExists(componentName))
 	{
 		SableUI_Warn("Tab with label '%s' already exists, will be skipped", componentName.c_str());
 		return;
 	}
-
-	tabs.push_back({ componentName, componentName });
+	tabs.push_back({ componentName, componentName, nullptr });
 	needsRerender = true;
 }

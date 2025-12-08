@@ -228,6 +228,8 @@ namespace SableUI
 		uint8_t r, g, b, a;
 	};
 
+	typedef Colour Color;
+
 	enum RectType
 	{
 		UNDEF       = 0x0,

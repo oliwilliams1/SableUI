@@ -8,7 +8,8 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
-#include <SableUI/componentRegistry.h>
+#include <SableUI/componentRegistry.h> // for easy registration, even if not used in this file
+#include <SableUI/components/tabStack.h>
 #include <string>
 
 /* non-macro user api */
@@ -60,6 +61,9 @@ namespace SableUI
 	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
 		CustomTargetQueue** queuePtr, const ElementInfo& ElementInfo);
 	void EndCustomLayoutScope(Window* window, CustomTargetQueue** queuePtr);
+	void SetCurrentTabStackRef(_TabStackDef* ref);
+	void RemoveCurrentTabStackRef();
+	_TabStackDef* GetCurrentTabStackRef();
 
 	struct DivScope
 	{
@@ -118,6 +122,22 @@ namespace SableUI
 		Window* m_window = nullptr;
 		CustomTargetQueue** m_queuePtr = nullptr;
 	};
+	
+	struct TabStackScope
+	{
+		explicit TabStackScope(_TabStackDef* ref)
+		{
+			SableUI::SetCurrentTabStackRef(ref);
+		}
+		~TabStackScope()
+		{
+			SableUI::RemoveCurrentTabStackRef();
+		}
+		TabStackScope(const TabStackScope&) = delete;
+		TabStackScope& operator=(const TabStackScope&) = delete;
+		TabStackScope(TabStackScope&&) = default;
+		TabStackScope& operator=(TabStackScope&&) = default;
+	};
 }
 
 /* scoped RAII rect guard api */
@@ -130,13 +150,9 @@ namespace SableUI
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
 #define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, style(__VA_ARGS__))
-#define ComponentGainRef(name, T, ref, ...) \
-	T* ref = nullptr; \
-	BaseComponent* CONCAT(_comp_, __LINE__) = Component(name, __VA_ARGS__); \
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr) \
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__)); \
-	else \
-		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
+#define ComponentGainBaseRef(name, ref, ...)					\
+	BaseComponent* ref = AddComponent(name);					\
+	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -243,10 +259,22 @@ namespace SableUI
 
 #define EmptyPanel()							SableUI::AddPanel()
 #define Panel(name)								SableUI::AddPanel()->AttachComponent(name)
-#define PanelGainRef(name, T, ref)															\
-	T* ref = nullptr;																		\
-	BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);	\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)								\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));									\
-	else																					\
+#define PanelGainRef(name, T, ref)																	\
+	T* ref = nullptr;																				\
+	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);	\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)										\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));											\
+	else																							\
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
+
+/* components */
+#define TabStack()																							\
+	PanelGainRef("TabStack", SableUI::_TabStackDef, CONCAT(_tab_stack_, __LINE__));							\
+	if (SableUI::TabStackScope CONCAT(_tab_stack_scope_, __LINE__)(CONCAT(_tab_stack_, __LINE__)); true)	\
+
+#define Tab(componentName) \
+	SableUI::GetCurrentTabStackRef()->AddTab(componentName);
+#define TabWithLabel(componentName, label) \
+	SableUI::GetCurrentTabStackRef()->AddTab(componentName, label)
+#define TabWithInitialiser(componentName, label, T, initialiser) \
+	SableUI::GetCurrentTabStackRef()->AddTabWithInitialiser<T>(componentName, label, initialiser)
