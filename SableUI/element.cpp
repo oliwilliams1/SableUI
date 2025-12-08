@@ -1,12 +1,12 @@
 #include <SableUI/element.h>
 #include <SableUI/component.h>
 #include <SableUI/memory.h>
-#include <string>
 #include <SableUI/console.h>
 #include <SableUI/drawable.h>
 #include <SableUI/events.h>
 #include <SableUI/renderer.h>
 #include <SableUI/utils.h>
+#include <string>
 #include <algorithm>
 #include <functional>
 
@@ -144,8 +144,8 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->paddingRight              = info.paddingRight;
     this->fontSize                  = info._fontSize;
     this->lineHeight                = info._lineHeight;
-    this->centerX                   = info._centerX;
-    this->centerY                   = info._centerY;
+    this->_centerX                   = info._centerX;
+    this->_centerY                   = info._centerY;
     this->borderRadius              = info._borderRadius;
     this->wType                     = info.wType;
     this->hType                     = info.hType;
@@ -153,6 +153,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->layoutDirection           = info.layoutDirection;
     this->textColour                = info.textColour;
     this->textJustification         = info.textJustification;
+    this->textWrap                  = info.textWrap;
     this->m_onHoverFunc             = info.onHoverFunc;
     this->m_onHoverExitFunc         = info.onHoverExitFunc;
     this->m_onClickFunc             = info.onClickFunc;
@@ -306,7 +307,7 @@ int SableUI::Element::GetMinWidth()
     {
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
-            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetMinWidth());
+            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetMinWidth(textWrap));
         }
     }
     else
@@ -639,7 +640,7 @@ void SableUI::Element::LayoutChildren()
 
         if (isVerticalFlow)
         {
-            if (childElement->centerX)
+            if (childElement->_centerX)
             {
                 int available = contentAreaSize.x - childTotalWidth;
                 if (available > 0)
@@ -648,7 +649,7 @@ void SableUI::Element::LayoutChildren()
         }
         else
         {
-            if (childElement->centerY)
+            if (childElement->_centerY)
             {
                 int available = contentAreaSize.y - childTotalHeight;
                 if (available > 0)
@@ -658,9 +659,9 @@ void SableUI::Element::LayoutChildren()
 
         if (children.size() == 1)
         {
-            if (childElement->centerX)
+            if (childElement->_centerX)
                 childX = contentAreaPosition.x + (contentAreaSize.x - childTotalWidth) / 2 + childElement->marginLeft;
-            if (childElement->centerY)
+            if (childElement->_centerY)
                 childY = contentAreaPosition.y + (contentAreaSize.y - childTotalHeight) / 2 + childElement->marginTop;
         }
 
@@ -698,8 +699,8 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.paddingRight           = paddingRight;
     info._fontSize              = fontSize;
     info._lineHeight            = lineHeight;
-    info._centerX               = centerX;
-    info._centerY               = centerY;
+    info._centerX               = _centerX;
+    info._centerY               = _centerY;
     info._borderRadius          = borderRadius;
     info.wType                  = wType;
     info.hType                  = hType;
@@ -708,9 +709,11 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.uniqueTextOrPath       = uniqueTextOrPath;
     info.textColour             = textColour;
     info.textJustification      = textJustification;
+    info.textWrap               = textWrap;
 
     return info;
 }
+
 static inline void hash_combine(std::size_t& seed, std::size_t v) {
     seed ^= v + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
 }
@@ -720,39 +723,40 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
 {
     size_t h = 1469598103934665603ULL;
 
+    // Type and content
     hash_combine(h, std::hash<int>()((int)vnode->type));
-
     if (vnode->uniqueTextOrPath.size() != 0)
     {
         std::string s = (std::string)(vnode->uniqueTextOrPath);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
-    hash_combine(h, std::hash<int>()((int)vnode->info.wType));
-    hash_combine(h, std::hash<int>()((int)vnode->info.hType));
+    hash_combine(h, ((int)vnode->info.wType << 8) | (int)vnode->info.hType);
 
-    hash_combine(h, std::hash<int>()(vnode->info.width));
-    hash_combine(h, std::hash<int>()(vnode->info.height));
-    hash_combine(h, std::hash<int>()(vnode->info.minWidth));
-    hash_combine(h, std::hash<int>()(vnode->info.minHeight));
-    hash_combine(h, std::hash<int>()(vnode->info.maxWidth));
-    hash_combine(h, std::hash<int>()(vnode->info.maxHeight));
+    hash_combine(h, (vnode->info.width << 16) | vnode->info.height);
+    hash_combine(h, (vnode->info.minWidth << 16) | vnode->info.minHeight);
+    hash_combine(h, (vnode->info.maxWidth << 16) | vnode->info.maxHeight);
 
-    hash_combine(h, std::hash<int>()(vnode->info.marginTop));
-    hash_combine(h, std::hash<int>()(vnode->info.marginBottom));
-    hash_combine(h, std::hash<int>()(vnode->info.marginLeft));
-    hash_combine(h, std::hash<int>()(vnode->info.marginRight));
-    hash_combine(h, std::hash<int>()(vnode->info.paddingTop));
-    hash_combine(h, std::hash<int>()(vnode->info.paddingBottom));
-    hash_combine(h, std::hash<int>()(vnode->info.paddingLeft));
-    hash_combine(h, std::hash<int>()(vnode->info.paddingRight));
-    hash_combine(h, std::hash<int>()(vnode->info._fontSize));
-	hash_combine(h, std::hash<int>()(vnode->info._lineHeight));
-    hash_combine(h, std::hash<int>()(vnode->info.textColour.r + vnode->info.textColour.g
-                                    + vnode->info.textColour.b + vnode->info.textColour.a));
+    hash_combine(h, (vnode->info.marginTop << 24) | (vnode->info.marginRight << 16) |
+        (vnode->info.marginBottom << 8) | vnode->info.marginLeft);
 
-    hash_combine(h, std::hash<int>()((int)vnode->info.layoutDirection));
-    hash_combine(h, std::hash<int>()((vnode->info.bgColour.r << 16) ^ (vnode->info.bgColour.g << 8) ^ vnode->info.bgColour.b));
+    hash_combine(h, (vnode->info.paddingTop << 24) | (vnode->info.paddingRight << 16) |
+        (vnode->info.paddingBottom << 8) | vnode->info.paddingLeft);
+
+    hash_combine(h, (vnode->info._fontSize << 16) |
+        (static_cast<int>(vnode->info._lineHeight * 1000) & 0xFFFF));
+    hash_combine(h, (vnode->info.textColour.r << 24) | (vnode->info.textColour.g << 16) |
+        (vnode->info.textColour.b << 8) | vnode->info.textColour.a);
+    hash_combine(h, ((int)vnode->info.textJustification << 16) |
+        (vnode->info.textWrap ? 1 : 0));
+
+    hash_combine(h, ((int)vnode->info.layoutDirection << 24) |
+        (vnode->info._centerX ? (1 << 16) : 0) |
+        (vnode->info._centerY ? (1 << 8) : 0) |
+        (static_cast<int>(vnode->info._borderRadius) & 0xFF));
+
+    hash_combine(h, (vnode->info.bgColour.r << 24) | (vnode->info.bgColour.g << 16) |
+        (vnode->info.bgColour.b << 8) | vnode->info.bgColour.a);
 
     return h;
 }
@@ -762,38 +766,38 @@ static size_t ComputeHash(const SableUI::Element* elem)
     size_t h = 1469598103934665603ULL;
 
     hash_combine(h, std::hash<int>()((int)elem->type));
-
     if (elem->uniqueTextOrPath.size() != 0)
     {
         std::string s = (std::string)(elem->uniqueTextOrPath);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
-    hash_combine(h, std::hash<int>()((int)elem->wType));
-    hash_combine(h, std::hash<int>()((int)elem->hType));
+    hash_combine(h, ((int)elem->wType << 8) | (int)elem->hType);
 
-    hash_combine(h, std::hash<int>()(elem->width));
-    hash_combine(h, std::hash<int>()(elem->height));
-    hash_combine(h, std::hash<int>()(elem->minWidth));
-    hash_combine(h, std::hash<int>()(elem->minHeight));
-    hash_combine(h, std::hash<int>()(elem->maxWidth));
-    hash_combine(h, std::hash<int>()(elem->maxHeight));
+    hash_combine(h, (elem->width << 16) | elem->height);
+    hash_combine(h, (elem->minWidth << 16) | elem->minHeight);
+    hash_combine(h, (elem->maxWidth << 16) | elem->maxHeight);
 
-    hash_combine(h, std::hash<int>()(elem->marginTop));
-    hash_combine(h, std::hash<int>()(elem->marginBottom));
-    hash_combine(h, std::hash<int>()(elem->marginLeft));
-    hash_combine(h, std::hash<int>()(elem->marginRight));
-    hash_combine(h, std::hash<int>()(elem->paddingTop));
-    hash_combine(h, std::hash<int>()(elem->paddingBottom));
-    hash_combine(h, std::hash<int>()(elem->paddingLeft));
-    hash_combine(h, std::hash<int>()(elem->paddingRight));
-    hash_combine(h, std::hash<int>()(elem->fontSize));
-    hash_combine(h, std::hash<int>()(elem->lineHeight));
-    hash_combine(h, std::hash<int>()(elem->textColour.r + elem->textColour.g
-                                    + elem->textColour.b + elem->textColour.a));
+    hash_combine(h, (elem->marginTop << 24) | (elem->marginRight << 16) |
+        (elem->marginBottom << 8) | elem->marginLeft);
 
-    hash_combine(h, std::hash<int>()((int)elem->layoutDirection));
-    hash_combine(h, std::hash<int>()((elem->bgColour.r << 16) ^ (elem->bgColour.g << 8) ^ elem->bgColour.b));
+    hash_combine(h, (elem->paddingTop << 24) | (elem->paddingRight << 16) |
+        (elem->paddingBottom << 8) | elem->paddingLeft);
+
+    hash_combine(h, (elem->fontSize << 16) |
+        (static_cast<int>(elem->lineHeight * 1000) & 0xFFFF));
+    hash_combine(h, (elem->textColour.r << 24) | (elem->textColour.g << 16) |
+        (elem->textColour.b << 8) | elem->textColour.a);
+    hash_combine(h, ((int)elem->textJustification << 16) |
+        (elem->textWrap ? 1 : 0));
+
+    hash_combine(h, ((int)elem->layoutDirection << 24) |
+        (elem->_centerX ? (1 << 16) : 0) |
+        (elem->_centerY ? (1 << 8) : 0) |
+        (static_cast<int>(elem->borderRadius) & 0xFF));
+
+    hash_combine(h, (elem->bgColour.r << 24) | (elem->bgColour.g << 16) |
+        (elem->bgColour.b << 8) | elem->bgColour.a);
 
     return h;
 }

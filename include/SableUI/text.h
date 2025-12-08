@@ -59,7 +59,7 @@ namespace SableUI
 			TextJustification justification = TextJustification::Left);
 
 		int UpdateMaxWidth(int maxWidth);
-		int GetMinWidth();
+		int GetMinWidth(bool wrapped);
 		int GetUnwrappedHeight();
 
 		SableString m_content;

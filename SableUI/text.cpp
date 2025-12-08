@@ -363,7 +363,7 @@ public:
 		std::vector<uint32_t>& outIndices,
 		int& outHeight,
 		int& outActualLineWidth);
-	int GetMinWidth(SableUI::_Text* text);
+	int GetMinWidth(SableUI::_Text* text, bool wrapped);
 	
 	void InitFreeType();
 	void ShutdownFreeType();
@@ -1842,53 +1842,93 @@ void FontManager::GetTextVertexData(
 	outActualLineWidth = static_cast<int>(std::ceil(maxActualLineWidth));
 }
 
-int FontManager::GetMinWidth(SableUI::_Text* text)
+int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
 {
-	int maxWordWidth = 0;
-	int currentWordWidth = 0;
-
-	currentFontType = FontType::Regular;
-
-	for (char32_t c : text->m_content)
+	if (wrapped)
 	{
-		if (IsNonPrintableChar(c)) continue;
+		int maxWordWidth = 0;
+		int currentWordWidth = 0;
+		currentFontType = FontType::Regular;
 
-		if (c == U' ' || c == U'\n' || c == U'\t')
+		for (char32_t c : text->m_content)
 		{
-			maxWordWidth = std::max(maxWordWidth, currentWordWidth);
-			currentWordWidth = 0;
-			continue;
-		}
+			if (IsNonPrintableChar(c)) continue;
 
-		SetStyleChar(c);
-
-		char_t charKey = { c, text->m_fontSize, currentFontType };
-		auto it = characters.find(charKey);
-
-		if (it != characters.end())
-		{
-			currentWordWidth += it->second.advance;
-		}
-		else
-		{
-			SableUI::FontRange targetRange;
-			if (FindFontRangeForChar(c, targetRange))
+			if (c == U' ' || c == U'\n' || c == U'\t')
 			{
-				Atlas newAtlas{};
-				newAtlas.fontSize = text->m_fontSize;
-				LoadFontRange(newAtlas, targetRange);
-				auto newIt = characters.find(charKey);
-				if (newIt != characters.end())
+				maxWordWidth = std::max(maxWordWidth, currentWordWidth);
+				currentWordWidth = 0;
+				continue;
+			}
+
+			SetStyleChar(c);
+
+			char_t charKey = { c, text->m_fontSize, currentFontType };
+			auto it = characters.find(charKey);
+
+			if (it != characters.end())
+			{
+				currentWordWidth += it->second.advance;
+			}
+			else
+			{
+				SableUI::FontRange targetRange;
+				if (FindFontRangeForChar(c, targetRange))
 				{
-					currentWordWidth += newIt->second.advance;
+					Atlas newAtlas{};
+					newAtlas.fontSize = text->m_fontSize;
+					LoadFontRange(newAtlas, targetRange);
+					auto newIt = characters.find(charKey);
+					if (newIt != characters.end())
+					{
+						currentWordWidth += newIt->second.advance;
+					}
 				}
 			}
 		}
+
+		currentFontType = FontType::Regular;
+		return std::max(maxWordWidth, currentWordWidth);
 	}
+	else
+	{
+		int totalWidth = 0;
+		currentFontType = FontType::Regular;
 
-	currentFontType = FontType::Regular;
+		for (char32_t c : text->m_content)
+		{
+			if (IsNonPrintableChar(c)) continue;
+			if (c == U'\n') continue;
 
-	return std::max(maxWordWidth, currentWordWidth);
+			SetStyleChar(c);
+
+			char_t charKey = { c, text->m_fontSize, currentFontType };
+			auto it = characters.find(charKey);
+
+			if (it != characters.end())
+			{
+				totalWidth += it->second.advance;
+			}
+			else
+			{
+				SableUI::FontRange targetRange;
+				if (FindFontRangeForChar(c, targetRange))
+				{
+					Atlas newAtlas{};
+					newAtlas.fontSize = text->m_fontSize;
+					LoadFontRange(newAtlas, targetRange);
+					auto newIt = characters.find(charKey);
+					if (newIt != characters.end())
+					{
+						totalWidth += newIt->second.advance;
+					}
+				}
+			}
+		}
+
+		currentFontType = FontType::Regular;
+		return totalWidth;
+	}
 }
 
 SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& maxWidth)
@@ -2011,14 +2051,14 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 }
 
 
-int SableUI::_Text::GetMinWidth()
+int SableUI::_Text::GetMinWidth(bool wrapped)
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
 	
 	fontManager = &FontManager::GetInstance();
 
-	return fontManager->GetMinWidth(this);
+	return fontManager->GetMinWidth(this, wrapped);
 }
 
 int SableUI::_Text::GetUnwrappedHeight()

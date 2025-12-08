@@ -61,6 +61,7 @@ namespace SableUI
 		SableString uniqueTextOrPath = "";
 		Colour textColour = { 255, 255, 255, 255 };
 		TextJustification textJustification = TextJustification::Left;
+		bool textWrap = true;
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
@@ -112,6 +113,7 @@ namespace SableUI
 		ElementInfo& setTextColour(const Colour& v)			{ textColour = v; return *this; }
 		ElementInfo& setJustification(TextJustification v)	{ textJustification = v; return *this; }
 		ElementInfo& setAbsolutePosition(int x, int y) 		{ rect.x = x; rect.y = y; return *this; }
+		ElementInfo& setTextWrap(bool v) 					{ textWrap = v; return *this; }
 
 		// Event functions
 		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc			= func;	return *this; }
@@ -184,8 +186,8 @@ namespace SableUI
 		int paddingRight = 0;
 		int fontSize = 0;
 		int lineHeight = 0.0f;
-		bool centerX = false;
-		bool centerY = false;
+		bool _centerX = false;
+		bool _centerY = false;
 		float borderRadius = 0.0f;
 		RectType wType = RectType::UNDEF;
 		RectType hType = RectType::UNDEF;
@@ -194,6 +196,7 @@ namespace SableUI
 		SableString uniqueTextOrPath;
 		Colour textColour = { 255, 255, 255, 255 };
 		TextJustification textJustification = TextJustification::Left;
+		bool textWrap = false;
 
 		std::function<void()> m_onHoverFunc = nullptr;
 		std::function<void()> m_onHoverExitFunc = nullptr;
@@ -233,8 +236,8 @@ namespace SableUI
 		Element& setFontSize(int v)						{ fontSize = v; return *this; }
 		Element& setLineHeight(float v)					{ lineHeight = v; return *this; }
 
-		Element& setCenterX(bool v)						{ centerX = v; return *this; }
-		Element& setCenterY(bool v)						{ centerY = v; return *this; }
+		Element& setCenterX(bool v)						{ _centerX = v; return *this; }
+		Element& setCenterY(bool v)						{ _centerY = v; return *this; }
 		Element& setBorderRadius(float v)				{ borderRadius = v; return *this; }
 
 		Element& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }

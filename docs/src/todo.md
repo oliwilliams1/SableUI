@@ -43,7 +43,9 @@
 - [ ] Test keyboard events
 
 ### Styling
-- [ ] Themes <-> props
+- [ ] Themes
+- [x] Text wrap property
+- [ ] Inline text colour
 
 ### Panels
 - [ ] Panel builder mode for user building layouts
@@ -54,10 +56,9 @@
 - [ ] Expose titlebar content
 - [ ] Expose icon setting + program to embed
 - [ ] Allow custom fonts
-- [ ] Text no-wrap property
 - [ ] Image lazy-loading
 - [ ] Image load-by-buffer
-- [ ] Inline text colour
+- [ ] Props?
 
 # Beyond 1.0
 - [ ] Docking panels

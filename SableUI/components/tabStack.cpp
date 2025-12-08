@@ -20,7 +20,7 @@ void _TabStackDef::Layout()
 				p(4) mr(4)
 				onClick([this, i]() { setActiveTab(i); }))
 			{
-				Text(tabLabel);
+				Text(tabLabel, wrapText(false));
 			}
 		}
 	}
@@ -32,12 +32,14 @@ void _TabStackDef::Layout()
 		}
 		else if (activeTab < tabs.size())
 		{
-			ComponentGainBaseRef(tabs[activeTab].component.c_str(), ref, w_fill h_fill bg(32, 32, 32));
+			BaseComponent* ref = AddComponent(tabs[activeTab].component.c_str());
 
 			if (ref != nullptr && tabs[activeTab].initialiser)
 			{
 				tabs[activeTab].initialiser(ref);
 			}
+
+			ref->BackendInitialiseChild(tabs[activeTab].component.c_str(), this, style(w_fill h_fill bg(32, 32, 32)));
 		}
 		else
 		{

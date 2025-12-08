@@ -211,6 +211,7 @@ namespace SableUI
 #define justify_right		.setJustification(SableUI::TextJustification::Right)
 #define absolute(x, y)		.setAbsolutePosition(x, y)
 #define dir(value)			.setLayoutDirection(value)
+#define wrapText(v)			.setTextWrap(v)
 
 #define useState(variableName, setterName, T, initialValue)             \
     T variableName = initialValue;                                      \
