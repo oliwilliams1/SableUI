@@ -36,7 +36,6 @@ public:
 
 	void CheckErrors() override;
 
-public:
 	void ClearDrawableStack() override;
 	void ClearDrawable(const DrawableBase* drawable) override;
 

@@ -29,8 +29,10 @@
 - [ ] Draw window border
 - [ ] Fix OpenGL context FBO thing
 - [ ] Triple check refresh things?
-- [ ] Better frame limiting
+- [ ] Better/dynamic frame limiting - check "Event processing" in [glfw website](https://www.glfw.org/docs/3.3/input_guide.html)
 - [ ] Fix resizing iterative thing
+- [ ] Treenode leak
+- [?] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
 
 ### Graphics API
 - [ ] Abstract shaders
@@ -41,6 +43,7 @@
 
 ### Events
 - [ ] Test keyboard events
+- [x] Test scroll events
 
 ### Styling
 - [ ] Themes
@@ -53,12 +56,13 @@
 - [ ] Saving panel state across runs
 
 ### QOL
-- [ ] Expose titlebar content
-- [ ] Expose icon setting + program to embed
+- [ ] Expose titlebar content api
+- [ ] Expose icon setting + program to embed api
 - [ ] Allow custom fonts
 - [ ] Image lazy-loading
 - [ ] Image load-by-buffer
 - [ ] Props?
+- [ ] Simplify Panel min bounds thing
 
 # Beyond 1.0
 - [ ] Docking panels

@@ -549,12 +549,12 @@ void SableUI::ContentPanel::Update()
 
 	m_component->GetRootElement()->SetRect(realRect);
 	m_component->GetRootElement()->LayoutChildren();
-	m_component->GetRootElement()->Render();
+	Render();
 }
 
 void SableUI::ContentPanel::Render()
 {
-	m_component->GetRootElement()->Render();
+	m_component->Render();
 }
 
 void SableUI::ContentPanel::PropagateEvents(const UIEventContext& ctx)

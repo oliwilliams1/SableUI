@@ -30,6 +30,7 @@ namespace SableUI
 		void AddTab(const std::string& componentName);
 
 	private:
+		void ValidateRegistration(const std::string componentName);
 		bool TabExists(const std::string& label);
 		int activeTab = 0; SableUI::StateSetter<int> setActiveTab = SableUI::StateSetter<int>([this](int const& val) { if (!this) return; if (this->activeTab == val) return; this->activeTab = val; this->needsRerender = true; }); struct __StateReg_activeTab {
 			__StateReg_activeTab(SableUI::BaseComponent* comp, int* var) {
@@ -51,6 +52,7 @@ namespace SableUI
 		std::function<void(T*)> initialiser)
 	{
 		static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+		ValidateRegistration(componentName);
 
 		if (TabExists(label))
 		{

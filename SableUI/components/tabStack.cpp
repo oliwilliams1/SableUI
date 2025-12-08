@@ -1,10 +1,10 @@
 #include <SableUI/components/tabStack.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/component.h>
+#include <SableUI/console.h>
+#include <SableUI/componentRegistry.h>
 #include <vector>
 #include <string>
-#include <map>
-#include <SableUI/console.h>
 
 using namespace SableUI;
 
@@ -32,19 +32,24 @@ void _TabStackDef::Layout()
 		}
 		else if (activeTab < tabs.size())
 		{
-			BaseComponent* ref = AddComponent(tabs[activeTab].component.c_str());
-
+			ComponentGainBaseRef(tabs[activeTab].component.c_str(), ref, w_fill h_fill bg(32, 32, 32));
 			if (ref != nullptr && tabs[activeTab].initialiser)
 			{
 				tabs[activeTab].initialiser(ref);
 			}
-
-			ref->BackendInitialiseChild(tabs[activeTab].component.c_str(), this, style(w_fill h_fill bg(32, 32, 32)));
 		}
 		else
 		{
 			Text("Invalid tab index", centerY w_fill justify_center);
 		}
+	}
+}
+
+void SableUI::_TabStackDef::ValidateRegistration(const std::string componentName)
+{
+	if (!ComponentRegistry::GetInstance().IsRegistered(componentName))
+	{
+		SableUI_Runtime_Error("Component '%s' is not registered", componentName.c_str());
 	}
 }
 
@@ -62,6 +67,7 @@ bool _TabStackDef::TabExists(const std::string& tabName)
 
 void _TabStackDef::AddTab(const std::string& componentName, const std::string& label)
 {
+	ValidateRegistration(componentName);
 	if (TabExists(label))
 	{
 		SableUI_Warn("Tab with label '%s' already exists, will be skipped", label.c_str());
@@ -73,6 +79,7 @@ void _TabStackDef::AddTab(const std::string& componentName, const std::string& l
 
 void _TabStackDef::AddTab(const std::string& componentName)
 {
+	ValidateRegistration(componentName);
 	if (TabExists(componentName))
 	{
 		SableUI_Warn("Tab with label '%s' already exists, will be skipped", componentName.c_str());

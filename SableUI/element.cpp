@@ -221,14 +221,26 @@ void SableUI::Element::Render(int z)
 
         for (Child* child : children)
         {
-            Element* childElement = (Element*)*child;
-            childElement->Render(z + 1);
+            child->Render(z + 1);
         }
         break;
     }
 
     default:
         SableUI_Error("Unknown ElementType");
+        break;
+    }
+}
+
+void SableUI::Child::Render(int z)
+{
+    switch (type)
+    {
+    case ChildType::ELEMENT:
+        element->Render(z);
+        break;
+    case ChildType::COMPONENT:
+        component->Render(z);
         break;
     }
 }

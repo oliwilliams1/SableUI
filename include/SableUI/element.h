@@ -296,5 +296,7 @@ namespace SableUI
 		~Child();
 
 		operator SableUI::Element* ();
+
+		void Render(int z);
 	};
 }

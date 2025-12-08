@@ -77,6 +77,7 @@ namespace SableUI
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
 		static void WindowRefreshCallback(GLFWwindow* window);
+		static void ScrollCallback(GLFWwindow* window, double x, double y);
 
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;

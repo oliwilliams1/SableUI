@@ -1,6 +1,5 @@
 #pragma once
-#include "SableUI/console.h"
-#include "SableUI/string.h"
+#include <SableUI/string.h>
 #include <stdio.h>
 #include <cstdint>
 #include <cmath>
@@ -19,6 +18,10 @@ namespace SableUI
 		uvec2() = default;
 		uvec2(unsigned x, unsigned y) : x(x), y(y) {}
 		uvec2(unsigned x) : x(x), y(x) {}
+
+		bool operator==(const uvec2& other) const {
+			return x == other.x && y == other.y;
+		}
 
 		uvec2 operator+(const uvec2& other) const {
 			return { x + other.x, y + other.y };
@@ -55,6 +58,10 @@ namespace SableUI
 		ivec2(int x) : x(x), y(x) {}
 		ivec2(uvec2 v) : x(v.x), y(v.y) {}
 
+		bool operator==(const ivec2& other) const {
+			return x == other.x && y == other.y;
+		}
+
 		ivec2 operator+(const ivec2& other) const {
 			return { x + other.x, y + other.y };
 		}
@@ -88,6 +95,10 @@ namespace SableUI
 		u16vec2(int x, int y) : x(x), y(y) {}
 		u16vec2(uint16_t x) : x(x), y(x) {}
 
+		bool operator==(const u16vec2& other) const {
+			return x == other.x && y == other.y;
+		}
+
 		u16vec2 operator+(const u16vec2& other) const {
 			return { x + other.x, y + other.y };
 		}
@@ -115,6 +126,10 @@ namespace SableUI
 	{
 		float x;
 		float y;
+
+		bool operator==(const vec2& other) const {
+			return x == other.x && y == other.y;
+		}
 
 		vec2() = default;
 		vec2(float x, float y) : x(x), y(y) {}
@@ -159,6 +174,10 @@ namespace SableUI
 		float y;
 		float z;
 
+		bool operator==(const vec3& other) const {
+			return x == other.x && y == other.y && z == other.z;
+		}
+
 		vec3() = default;
 		vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 		vec3(float x) : x(x), y(x), z(x) {}
@@ -193,6 +212,10 @@ namespace SableUI
 		float z;
 		float w;
 
+		bool operator==(const vec4& other) const {
+			return x == other.x && y == other.y && z == other.z && w == other.w;
+		}
+
 		vec4() = default;
 		vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 		vec4(float value) : x(value), y(value), z(value), w(value) {}
@@ -226,6 +249,10 @@ namespace SableUI
 		Colour(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
 		
 		uint8_t r, g, b, a;
+
+		bool operator==(const Colour& other) const {
+			return r == other.r && g == other.g && b == other.b && a == other.a;
+		}
 	};
 
 	typedef Colour Color;
@@ -265,6 +292,10 @@ namespace SableUI
 
 		RectType wType = UNDEF;
 		RectType hType = UNDEF;
+
+		bool operator==(const Rect& other) const {
+			return x == other.x && y == other.y && w == other.w && h == other.h;
+		}
 
 		bool operator !=(const Rect& other) const {
 			return x != other.x || y != other.y || w != other.w || h != other.h;

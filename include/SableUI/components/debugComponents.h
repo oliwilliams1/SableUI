@@ -36,6 +36,16 @@ namespace SableUI
 			{ return !(a == b); }
 	};
 
+	class MemoryDebugger : public SableUI::BaseComponent
+	{
+	public:
+		void Layout() override;
+		void OnUpdate(const UIEventContext& ctx) override;
+
+	private:
+		useState(live, setLive, bool, true);
+	};
+
 	class ElementTreeView : public SableUI::BaseComponent
 	{
 	public:
@@ -55,7 +65,6 @@ namespace SableUI
 		useState(window, setWindow, Window*, nullptr);
 		CustomLayoutContext(queue);
 	};
-
 
 	class PropertiesView : public SableUI::BaseComponent
 	{

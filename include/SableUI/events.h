@@ -157,7 +157,7 @@ namespace SableUI
 
 		ivec2 mousePos = { 0, 0 };
 		ivec2 mouseDelta = { 0, 0 };
-		float scrollDelta = 0.0f;
+		ivec2 scrollDelta = 0;
 
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseDown;
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mousePressed;

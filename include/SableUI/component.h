@@ -66,9 +66,9 @@ namespace SableUI
 
         virtual void Layout() {};
         void LayoutWrapper();
-        virtual void OnHover() {};
         void BackendInitialisePanel(RendererBackend* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
+        void Render(int z = 0);
 
         BaseComponent* AddComponent(const std::string& componentName);
 
@@ -108,7 +108,7 @@ namespace SableUI
 
         Element* rootElement = nullptr;
 
-    protected:
+    protected:        
         std::vector<BaseComponent*> m_garbageChildren;
         std::vector<StateBlock> m_stateBlocks;
         std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;

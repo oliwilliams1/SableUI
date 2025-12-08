@@ -10,6 +10,7 @@
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
 #include <SableUI/componentRegistry.h>
+#include <SableUI/components/tabStack.h>
 #include <stack>
 #include <thread>
 #include <cstring>
@@ -17,7 +18,6 @@
 #include <chrono>
 #include <string>
 #include <vector>
-#include <SableUI/components/tabStack.h>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;

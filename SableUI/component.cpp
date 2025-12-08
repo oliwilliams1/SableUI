@@ -95,6 +95,11 @@ static size_t GetHash(int n, const char* name)
 	return h;
 }
 
+void SableUI::BaseComponent::Render(int z)
+{
+	rootElement->Render(z);
+}
+
 void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info)
 {
 	int n = parent->GetNumChildren();
@@ -144,7 +149,7 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
-	rootElement->Render();
+	Render();
 
 	needsRerender = false;
 	return false;

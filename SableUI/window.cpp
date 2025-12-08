@@ -173,6 +173,20 @@ void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
 	instance->m_needsRefresh = true;
 }
 
+void SableUI::Window::ScrollCallback(GLFWwindow* window, double x, double y)
+{
+	glfwMakeContextCurrent(window);
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance)
+	{
+		SableUI_Runtime_Error("Could not get window instance");
+		return;
+	}
+	SetGLFWContext(window, instance);
+
+	instance->ctx.scrollDelta = { static_cast<int>(x), static_cast<int>(y) };
+}
+
 // ============================================================================
 // Window
 // ============================================================================
@@ -237,6 +251,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetMouseButtonCallback(m_window, MouseButtonCallback);
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 	glfwSetWindowRefreshCallback(m_window, WindowRefreshCallback);
+	glfwSetScrollCallback(m_window, ScrollCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
 }
@@ -351,6 +366,7 @@ bool SableUI::Window::PollEvents()
 	ctx.mousePressed.reset();
 	ctx.mouseReleased.reset();
 	ctx.mouseDoubleClicked.reset();
+	ctx.scrollDelta = { 0, 0 };
 
 	return !glfwWindowShouldClose(m_window);
 }

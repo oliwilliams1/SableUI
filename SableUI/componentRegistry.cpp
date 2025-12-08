@@ -95,5 +95,6 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MenuBar>("Menu Bar");
     RegisterComponent<_TabStackDef>("TabStack");
     RegisterComponent<ElementTreeView>("ElementTreeView");
+    RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesView>("PropertiesView");
 }

@@ -213,8 +213,8 @@ namespace SableUI
 #define dir(value)			.setLayoutDirection(value)
 #define wrapText(v)			.setTextWrap(v)
 
-#define useState(variableName, setterName, T, initialValue)             \
-    T variableName = initialValue;                                      \
+#define useState(variableName, setterName, T, ...)			            \
+    T variableName = __VA_ARGS__;                                      \
     SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
         [this](T const& val) {                                          \
             if (!this) return;						                    \
@@ -227,8 +227,8 @@ namespace SableUI
         { if (comp) comp->RegisterState(var); }							\
     } __stateReg_##variableName{this, &variableName}
 
-#define useRef(variableName, T, initalValue)                            \
-	T variableName = initalValue;                                       \
+#define useRef(variableName, T, ...)		                            \
+	T variableName = __VA_ARGS__;                                       \
 	struct __RefReg_##variableName {                                    \
 		__RefReg_##variableName(SableUI::BaseComponent* comp, T* var)   \
 		{ if (comp) comp->RegisterReference(var); }						\
