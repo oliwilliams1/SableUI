@@ -334,7 +334,6 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 
 	OpenGLMesh& mesh = it->second;
 
-	// Clean up OpenGL resources
 	if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
 	if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
 	if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
@@ -344,7 +343,7 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 	s_numGpuObjects--;
 
 	obj->m_context = nullptr;
-	SableMemory::SB_delete(obj);  // This calls the destructor
+	SableMemory::SB_delete(obj);
 }
 
 bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
@@ -355,7 +354,7 @@ bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 
 	std::sort(m_drawStack.begin(), m_drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
 		return a->m_zIndex < b->m_zIndex;
-		});
+	});
 
 	std::set<unsigned int> drawnUUIDs;
 
@@ -377,7 +376,7 @@ bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 					drawable->scissorRect.y != currentScissorRect.y ||
 					drawable->scissorRect.width != currentScissorRect.width ||
 					drawable->scissorRect.height != currentScissorRect.height
-					)))
+				)))
 			{
 				if (drawable->scissorEnabled)
 				{
@@ -420,6 +419,7 @@ void OpenGL3Backend::AddToDrawStack(const GpuObject* obj)
 		SableUI_Error("Invalid GPU object");
 		return;
 	}
+
 	glBindVertexArray(mesh.vao);
 	glDrawElements(GL_TRIANGLES, obj->numIndices, GL_UNSIGNED_INT, 0);
 }

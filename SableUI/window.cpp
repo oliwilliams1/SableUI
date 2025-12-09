@@ -1,6 +1,11 @@
-#include <SableUI/window.h>
-
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iterator>
+#include <string>
+#include <vector>
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
@@ -8,12 +13,7 @@
 #include <dwmapi.h>
 #endif
 
-#include <GLFW/glfw3.h>
-#include <cmath>
-#include <cstdlib>
-#include <iterator>
-#include <string>
-#include <vector>
+#include <SableUI/window.h>
 #include <SableUI/renderer.h>
 #include <SableUI/memory.h>
 #include <SableUI/textCache.h>
@@ -23,22 +23,9 @@
 #include <SableUI/panel.h>
 #include <SableUI/texture.h>
 #include <SableUI/utils.h>
-#include <SableUI/SableUI.h>
 #include <SableUI/element.h>
-#include <GL/glew.h>
 
 using namespace SableMemory;
-
-static void SetGLFWContext(GLFWwindow* window, SableUI::Window* sableWindow)
-{
-	static GLFWwindow* prevContext = nullptr;
-
-	if (prevContext != window)
-	{
-		glfwMakeContextCurrent(window);
-		SableUI::SetCurrentContext(sableWindow);
-	}
-}
 
 static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 {
@@ -138,7 +125,6 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 }
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
-	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
@@ -146,7 +132,6 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 		return;
 	}
 
-	SetGLFWContext(window, instance);
 	instance->m_windowSize = ivec2(width, height);
 	instance->m_renderer->Viewport(0, 0, width, height);
 
@@ -161,28 +146,24 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 
 void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
 {
-	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
 		SableUI_Runtime_Error("Could not get window instance");
 		return;
 	}
-	SetGLFWContext(window, instance);
 
 	instance->m_needsRefresh = true;
 }
 
 void SableUI::Window::ScrollCallback(GLFWwindow* window, double x, double y)
 {
-	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
 		SableUI_Runtime_Error("Could not get window instance");
 		return;
 	}
-	SetGLFWContext(window, instance);
 
 	instance->ctx.scrollDelta = { static_cast<int>(x), static_cast<int>(y) };
 }
@@ -192,14 +173,12 @@ void SableUI::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int
 	if (action == GLFW_REPEAT) return;
 	if (0 > key || key > SABLE_MAX_KEYS) return;
 
-	glfwMakeContextCurrent(window);
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	if (!instance)
 	{
 		SableUI_Runtime_Error("Could not get window instance");
 		return;
 	}
-	SetGLFWContext(window, instance);
 
 	if (action == GLFW_PRESS)
 	{
@@ -234,7 +213,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
 	}
 
-	SetGLFWContext(m_window, this);
+	glfwMakeContextCurrent(m_window);
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
@@ -372,7 +351,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 
 bool SableUI::Window::PollEvents()
 {
-	SetGLFWContext(m_window, this);
+	glfwMakeContextCurrent(m_window);
 	glfwPollEvents();
 
 	if (m_needsRefresh)
@@ -401,7 +380,7 @@ bool SableUI::Window::PollEvents()
 
 void SableUI::Window::Draw()
 {
-	SetGLFWContext(m_window, this);
+	glfwMakeContextCurrent(m_window);
 
 #ifdef _WIN32
 	MSG msg;
@@ -480,6 +459,11 @@ void SableUI::Window::Draw()
 		m_renderer->CheckErrors();
 		m_renderer->Flush();
 	}
+}
+
+void SableUI::Window::SetTitleBar(const SableString& title)
+{
+	glfwSetWindowTitle(m_window, std::string(title).c_str());
 }
 
 SableUI::RootPanel* SableUI::Window::GetRoot()
@@ -930,4 +914,9 @@ void SableUI::SableUI_Window_Initalise_GLFW()
 void SableUI::SableUI_Window_Terminate_GLFW()
 {
 	glfwTerminate();
+}
+
+void* SableUI::GetCurrentContext_voidType()
+{
+	return static_cast<void*>(glfwGetCurrentContext());
 }

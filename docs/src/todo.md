@@ -27,12 +27,15 @@
 
 ### Bug fixes
 - [ ] Draw window border
-- [ ] Fix OpenGL context FBO thing
+- [ ] Fix OpenGL context problems
 - [ ] Triple check refresh things?
 - [ ] Better/dynamic frame limiting - check "Event processing" in [glfw website](https://www.glfw.org/docs/3.3/input_guide.html)
 - [ ] Fix resizing iterative thing
 - [ ] Treenode leak
-- [?] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
+- [x] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
+- [ ] Overdraw ignored with scrollbale on certain components (console > counter)
+- [ ] Scrollable child state lost on scroll
+- [ ] Scroll bar doesn't update on init / resize
 
 ### Graphics API
 - [ ] Abstract shaders
@@ -42,7 +45,7 @@
 - [ ] Vulkan & Metal support
 
 ### Events
-- [ ] Test keyboard events
+- [x] Test keyboard events
 - [x] Test scroll events
 
 ### Styling

@@ -33,7 +33,7 @@ static std::stack<SableUI::RendererBackend*> s_rendererStack;
 
 using namespace SableMemory;
 
-void SableUI::SetContext(SableUI::Window* window)
+static void SetContext(SableUI::Window* window)
 {
 	s_currentContext = window;
 	s_currentPanel = s_currentContext->GetRoot();
@@ -489,16 +489,6 @@ private:
 static App* s_app = nullptr;
 static SableUI::Backend s_backend = SableUI::Backend::UNDEF;
 
-void* SableUI::GetCurrentContext_voidType()
-{
-	return static_cast<void*>(s_currentContext);
-}
-
-void SableUI::SetCurrentContext(Window* window)
-{
-	s_currentContext = window;
-}
-
 void SableUI::PreInit(int argc, char** argv)
 {
 	if (s_app != nullptr)
@@ -611,7 +601,7 @@ App::App(const char* name, int width, int height, int x, int y)
 
 	SableUI::InitFontManager();
 	SableUI::InitDrawables();
-	SableUI::SetContext(m_mainWindow);
+	SetContext(m_mainWindow);
 }
 
 SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
@@ -620,7 +610,7 @@ SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int hei
 
 	SableUI::Window* window = SB_new<SableUI::Window>(s_backend, s_app->m_mainWindow, name, width, height, x, y);
 	m_secondaryWindows.push_back(window);
-	SableUI::SetContext(window);
+	SetContext(window);
 	return window;
 }
 

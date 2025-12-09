@@ -18,21 +18,18 @@ namespace SableUI
 	struct ElementInfo;
 	class Element;
 
-	void* GetCurrentContext_voidType();
-	void SetCurrentContext(Window* window);
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
 	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
-	void SetMaxFPS(int fps);
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
+	void SetMaxFPS(int fps);
 	void Shutdown();
 
 	bool PollEvents();
 	void Render();
 
 	void SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual);
-	void SetContext(Window* window);
 	Element* GetCurrentElement();
 	VirtualNode* GetVirtualRootNode();
 

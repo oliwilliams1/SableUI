@@ -19,6 +19,7 @@ namespace SableUI
 {
 	void SableUI_Window_Initalise_GLFW();
 	void SableUI_Window_Terminate_GLFW();
+	void* GetCurrentContext_voidType();
 
 	struct ResizeState
 	{
@@ -44,6 +45,7 @@ namespace SableUI
 		void Draw();
 		bool m_needsStaticRedraw = false;
 		bool m_needsRefresh = false;
+		void SetTitleBar(const SableString& title);
 
 		RootPanel* GetRoot();
 
