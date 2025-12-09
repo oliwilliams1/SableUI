@@ -123,6 +123,10 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 
 SableUI::Element* SableUI::BaseComponent::GetRootElement()
 {
+	if (rootElement == nullptr)
+	{
+		SableUI_Runtime_Error("Attempt to access rootElement before is was initialised. Are you calling GetRootElement() inside of Layout()? -> this is unsupported, wrap your layout logic inside another div instead.");
+	}
 	return rootElement;
 }
 

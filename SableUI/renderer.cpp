@@ -1,11 +1,12 @@
 #include <cstdint>
-
+#include <algorithm>
 #include <SableUI/renderer.h>
 #include <SableUI/memory.h>
 #include <SableUI/drawable.h>
 #include <SableUI/element.h> // For SB_delete (~Element())
 #include <SableUI/window.h>
 #include <SableUI/utils.h>
+#include <SableUI/console.h>
 
 uint32_t SableUI::RendererBackend::AllocateHandle()
 {
@@ -53,4 +54,38 @@ void SableUI::CustomTargetQueue::AddRect(const Rect& rect, const Colour& colour,
 	DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
 	drRect->Update(rect, colour, borderRadius);
 	drawables.push_back(drRect);
+}
+
+void SableUI::RendererBackend::PushScissor(int x, int y, int width, int height)
+{
+    Rect newRect = { x, y, width, height };
+
+    if (!m_scissorStack.empty())
+    {
+        const Rect& parentRect = m_scissorStack.back();
+
+        int newX = std::max(parentRect.x, x);
+        int newY = std::max(parentRect.y, y);
+        int newRight = std::min(parentRect.x + parentRect.width, x + width);
+        int newBottom = std::min(parentRect.y + parentRect.height, y + height);
+
+        newRect.x = newX;
+        newRect.y = newY;
+        newRect.width = std::max(0, newRight - newX);
+        newRect.height = std::max(0, newBottom - newY);
+    }
+
+    m_scissorStack.push_back(newRect);
+}
+
+void SableUI::RendererBackend::PopScissor()
+{
+    if (!m_scissorStack.empty())
+    {
+        m_scissorStack.pop_back();
+    }
+    else
+    {
+        SableUI_Error("Attempted to pop empty scissor stack");
+    }
 }

@@ -72,7 +72,7 @@ namespace SableUI
 
         BaseComponent* AddComponent(const std::string& componentName);
 
-        virtual Element* GetRootElement();
+        Element* GetRootElement();
         void SetRootElement(Element* element) { rootElement = element; }
         int GetNumChildren() const { return m_childCount; }
         bool Rerender(bool* hasContentsChanged = nullptr);
@@ -106,14 +106,13 @@ namespace SableUI
 
         std::vector<BaseComponent*> m_componentChildren;
 
-        Element* rootElement = nullptr;
-
     protected:        
         std::vector<BaseComponent*> m_garbageChildren;
         std::vector<StateBlock> m_stateBlocks;
         std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;
 
     private:
+        Element* rootElement = nullptr;
         size_t m_hash = 0;
         RendererBackend* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };

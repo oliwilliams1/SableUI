@@ -1,6 +1,7 @@
 #pragma once
+#include <SableUI/utils.h>
 #include <bitset>
-#include "SableUI/utils.h"
+#include <cstdint>
 
 /* Borrowed from GLFW key codes for ease of use 
  * Printable Keys */
@@ -164,9 +165,9 @@ namespace SableUI
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseReleased;
 		std::bitset<SABLE_MAX_MOUSE_BUTTONS> mouseDoubleClicked;
 
-		std::bitset<SABLE_MAX_KEYS> keyDown;
-		std::bitset<SABLE_MAX_KEYS> keyPressed;
-		std::bitset<SABLE_MAX_KEYS> keyReleased;
+		std::bitset<SABLE_MAX_KEYS> isKeyDown;
+		std::bitset<SABLE_MAX_KEYS> keyPressedEvent;
+		std::bitset<SABLE_MAX_KEYS> keyReleasedEvent;
 	};
 
 	inline bool IsMouseDown(const UIEventContext& ctx, uint8_t button) { return ctx.mouseDown.test(button); }

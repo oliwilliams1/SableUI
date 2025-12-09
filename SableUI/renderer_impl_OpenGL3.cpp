@@ -1,8 +1,3 @@
-#include <SableUI/renderer.h>
-#include <SableUI/memory.h>
-#include <SableUI/drawable.h>
-#include <SableUI/utils.h>
-
 #include <algorithm>
 #include <set>
 #include <GL/glew.h>
@@ -12,6 +7,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <SableUI/renderer.h>
+#include <SableUI/memory.h>
+#include <SableUI/drawable.h>
+#include <SableUI/utils.h>
 
 #include <SableUI/console.h>
 #undef SABLEUI_SUBSYSTEM
@@ -229,6 +229,16 @@ void OpenGL3Backend::ClearDrawable(const DrawableBase* drawable)
 
 void OpenGL3Backend::AddToDrawStack(DrawableBase* drawable)
 {
+	if (!m_scissorStack.empty())
+	{
+		drawable->scissorEnabled = true;
+		drawable->scissorRect = m_scissorStack.back();
+	}
+	else
+	{
+		drawable->scissorEnabled = false;
+	}
+
 	m_drawStack.push_back(drawable);
 }
 
@@ -345,20 +355,58 @@ bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 
 	std::sort(m_drawStack.begin(), m_drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
 		return a->m_zIndex < b->m_zIndex;
-	});
+		});
 
 	std::set<unsigned int> drawnUUIDs;
 
-	// iterate through queue and draw all types of drawables
+	bool currentScissorState = false;
+	Rect currentScissorRect = { 0, 0, 0, 0 };
+
+	glDisable(GL_SCISSOR_TEST);
+
 	for (DrawableBase* drawable : m_drawStack)
 	{
 		if (drawable)
 		{
 			if (drawnUUIDs.find(drawable->uuid) != drawnUUIDs.end()) continue;
 			drawnUUIDs.insert(drawable->uuid);
+
+			if (drawable->scissorEnabled != currentScissorState ||
+				(drawable->scissorEnabled && (
+					drawable->scissorRect.x != currentScissorRect.x ||
+					drawable->scissorRect.y != currentScissorRect.y ||
+					drawable->scissorRect.width != currentScissorRect.width ||
+					drawable->scissorRect.height != currentScissorRect.height
+					)))
+			{
+				if (drawable->scissorEnabled)
+				{
+					if (!currentScissorState) glEnable(GL_SCISSOR_TEST);
+
+					int invY = framebuffer->height - (drawable->scissorRect.y + drawable->scissorRect.height);
+
+					glScissor(
+						drawable->scissorRect.x,
+						invY,
+						drawable->scissorRect.width,
+						drawable->scissorRect.height
+					);
+
+					currentScissorRect = drawable->scissorRect;
+				}
+				else
+				{
+					glDisable(GL_SCISSOR_TEST);
+				}
+				currentScissorState = drawable->scissorEnabled;
+			}
+
 			drawable->Draw(framebuffer, res);
 		}
 	}
+
+	// Cleanup
+	if (currentScissorState) glDisable(GL_SCISSOR_TEST);
 
 	m_drawStack.clear();
 	return true;

@@ -166,7 +166,7 @@ namespace SableUI
 #define w(value)			.setWidth(value).setMinWidth(value)
 #define minW(value)			.setMinWidth(value)
 #define maxW(value)			.setMaxWidth(value)
-#define h(value)			.setHeight(value).setMinWidth(value)
+#define h(value)			.setHeight(value).setMinHeight(value)
 #define minH(value)			.setMinHeight(value)
 #define maxH(value)			.setMaxHeight(value)
 #define w_fill				.setWType(SableUI::RectType::FILL)
@@ -199,6 +199,7 @@ namespace SableUI
 #define centerY				.setCenterY(true)
 #define centerXY			.setCenterX(true).setCenterY(true)
 #define rounded(value)		.setBorderRadius(value)
+#define overflowHidden		.setClipChildren(true)
 
 #define left_right			.setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
 #define right_left			.setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)

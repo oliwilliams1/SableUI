@@ -39,6 +39,8 @@ namespace SableUI
 		float m_borderRadius = 0.0f;
 		unsigned int uuid = 0;
 		bool orphan = false;
+		bool scissorEnabled = false;
+		Rect scissorRect = { 0, 0, 0, 0 };
 	private:
 		unsigned int GetUUID();
 	};

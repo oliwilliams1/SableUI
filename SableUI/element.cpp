@@ -144,9 +144,10 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->paddingRight              = info.paddingRight;
     this->fontSize                  = info._fontSize;
     this->lineHeight                = info._lineHeight;
-    this->_centerX                   = info._centerX;
-    this->_centerY                   = info._centerY;
+    this->_centerX                  = info._centerX;
+    this->_centerY                  = info._centerY;
     this->borderRadius              = info._borderRadius;
+    this->clipChildren              = info.clipChildren;
     this->wType                     = info.wType;
     this->hType                     = info.hType;
     this->bgColour                  = info.bgColour;
@@ -219,9 +220,19 @@ void SableUI::Element::Render(int z)
 			SableUI_Error("Dynamic cast failed");
         }
 
+        if (clipChildren)
+        {
+            renderer->PushScissor(rect.x, rect.y, rect.w, rect.h);
+        }
+
         for (Child* child : children)
         {
             child->Render(z + 1);
+        }
+
+        if (clipChildren)
+        {
+            renderer->PopScissor();
         }
         break;
     }
@@ -293,6 +304,8 @@ int SableUI::Element::GetMinWidth()
 {
     int calculatedMinWidth = minWidth;
 
+    if (clipChildren) return calculatedMinWidth + paddingLeft + paddingRight;
+
     if (type == ElementType::DIV)
     {
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
@@ -333,6 +346,8 @@ int SableUI::Element::GetMinWidth()
 int SableUI::Element::GetMinHeight()
 {
     int calculatedMinHeight = minHeight;
+
+    if (clipChildren) return calculatedMinHeight + paddingTop + paddingBottom;
 
     if (type == ElementType::DIV)
     {
@@ -714,6 +729,7 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info._centerX               = _centerX;
     info._centerY               = _centerY;
     info._borderRadius          = borderRadius;
+    info.clipChildren           = clipChildren;
     info.wType                  = wType;
     info.hType                  = hType;
     info.type                   = type;

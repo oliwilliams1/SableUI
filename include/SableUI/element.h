@@ -54,6 +54,7 @@ namespace SableUI
 		bool _centerX = false;
 		bool _centerY = false;
 		float _borderRadius = 0.0f;
+		bool clipChildren = false;
 		RectType wType = RectType::UNDEF;
 		RectType hType = RectType::UNDEF;
 		ElementType type = ElementType::UNDEF;
@@ -106,6 +107,7 @@ namespace SableUI
 		ElementInfo& setCenterX(bool v)						{ _centerX = v; return *this; }
 		ElementInfo& setCenterY(bool v)						{ _centerY = v; return *this; }
 		ElementInfo& setBorderRadius(float v)				{ _borderRadius = v; return *this; }
+		ElementInfo& setClipChildren(bool v)				{ clipChildren = v; return *this; }
 
 		ElementInfo& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
@@ -189,6 +191,7 @@ namespace SableUI
 		bool _centerX = false;
 		bool _centerY = false;
 		float borderRadius = 0.0f;
+		bool clipChildren = false;
 		RectType wType = RectType::UNDEF;
 		RectType hType = RectType::UNDEF;
 		Colour bgColour = Colour(128, 128, 128);
@@ -239,6 +242,7 @@ namespace SableUI
 		Element& setCenterX(bool v)						{ _centerX = v; return *this; }
 		Element& setCenterY(bool v)						{ _centerY = v; return *this; }
 		Element& setBorderRadius(float v)				{ borderRadius = v; return *this; }
+		Element& setClipChildren(bool v)				{ clipChildren = v; return *this; }
 
 		Element& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
 		Element& setType(ElementType v)					{ type = v; return *this; }

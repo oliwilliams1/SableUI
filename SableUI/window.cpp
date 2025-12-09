@@ -187,6 +187,33 @@ void SableUI::Window::ScrollCallback(GLFWwindow* window, double x, double y)
 	instance->ctx.scrollDelta = { static_cast<int>(x), static_cast<int>(y) };
 }
 
+void SableUI::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_REPEAT) return;
+	if (0 > key || key > SABLE_MAX_KEYS) return;
+
+	glfwMakeContextCurrent(window);
+	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	if (!instance)
+	{
+		SableUI_Runtime_Error("Could not get window instance");
+		return;
+	}
+	SetGLFWContext(window, instance);
+
+	if (action == GLFW_PRESS)
+	{
+		instance->ctx.keyPressedEvent.set(key, true);
+		instance->ctx.isKeyDown.set(key, true);
+	}
+
+	if (action == GLFW_RELEASE)
+	{
+		instance->ctx.keyReleasedEvent.set(key, true);
+		instance->ctx.isKeyDown.set(key, false);
+	}
+}
+
 // ============================================================================
 // Window
 // ============================================================================
@@ -252,6 +279,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetWindowSizeCallback(m_window, ResizeCallback);
 	glfwSetWindowRefreshCallback(m_window, WindowRefreshCallback);
 	glfwSetScrollCallback(m_window, ScrollCallback);
+	glfwSetKeyCallback(m_window, KeyCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
 }
