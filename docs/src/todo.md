@@ -1,6 +1,6 @@
 # Roadmap to 1.0
 ### Components
-- [ ] Scroll view
+- [x] Scroll view - test component
 - [x] Tab stack with component exposure/initialisation callback
 - [ ] Button
 - [ ] Sliders
@@ -33,9 +33,9 @@
 - [ ] Fix resizing iterative thing
 - [ ] Treenode leak
 - [x] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
-- [ ] Overdraw ignored with scrollbale on certain components (console > counter)
-- [ ] Scrollable child state lost on scroll
-- [ ] Scroll bar doesn't update on init / resize
+- [x] Overdraw with scrollview
+- [x] Child component state losses
+- [x] Scroll bar doesn't update on init / resize
 
 ### Graphics API
 - [ ] Abstract shaders
@@ -59,7 +59,7 @@
 - [ ] Saving panel state across runs
 
 ### QOL
-- [ ] Expose titlebar content api
+- [x] Expose titlebar content api
 - [ ] Expose icon setting + program to embed api
 - [ ] Allow custom fonts
 - [ ] Image lazy-loading
@@ -70,7 +70,6 @@
 
 # Beyond 1.0
 - [ ] Docking panels
-- [ ] Custom titlebar
 - [ ] Web support?
 - [ ] Mobile support?
 - [ ] Touch support

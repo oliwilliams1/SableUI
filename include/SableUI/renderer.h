@@ -196,8 +196,6 @@ namespace SableUI
 			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
 
 		bool isDirty() const { return !m_drawStack.empty(); };
-		void PushScissor(int x, int y, int width, int height);
-		void PopScissor();
 
 	protected:
 		uint32_t AllocateHandle();
@@ -208,7 +206,6 @@ namespace SableUI
 
 		bool m_directDraw = false;
 		std::vector<DrawableBase*> m_drawStack;
-		std::vector<Rect> m_scissorStack;
 	};
 
 	enum class TextureFormat

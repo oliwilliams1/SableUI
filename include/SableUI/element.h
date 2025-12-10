@@ -259,7 +259,7 @@ namespace SableUI
 
 		ElementInfo GetInfo() const;
 
-		/* internal functions */
+		// internal functions
 		bool Reconcile(VirtualNode* vnode);
 		void BuildRealSubtreeFromVirtual(VirtualNode* vnode);
 		void BuildSingleElementFromVirtual(VirtualNode* vnode);
@@ -272,6 +272,8 @@ namespace SableUI
 		// rendering
 		void Render(int z = 1);
 		Rect rect = { 0, 0, 0, 0 };
+		bool clipEnabled = false;
+		Rect clipRect = { 0, 0, 0, 0 };
 
 		// children handling
 		void LayoutChildren();
@@ -300,7 +302,5 @@ namespace SableUI
 		~Child();
 
 		operator SableUI::Element* ();
-
-		void Render(int z);
 	};
 }

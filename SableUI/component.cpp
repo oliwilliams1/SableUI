@@ -106,13 +106,9 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 
 	m_hash = GetHash(n, name);
 
-	for (int c = 0; c < n; c++)
-	{
-		BaseComponent* child = parent->m_componentChildren[c];
-
-		if (child->m_hash == m_hash)
-			CopyStateFrom(*child);
-	}
+	for (BaseComponent* c : parent->m_garbageChildren)
+		if (c->m_hash == m_hash)
+			CopyStateFrom(*c);
 
 	m_renderer = parent->m_renderer;
 

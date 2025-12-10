@@ -41,6 +41,7 @@ namespace SableUI
 		bool orphan = false;
 		bool scissorEnabled = false;
 		Rect scissorRect = { 0, 0, 0, 0 };
+
 	private:
 		unsigned int GetUUID();
 	};
@@ -51,7 +52,8 @@ namespace SableUI
 		DrawableRect();
 		~DrawableRect();
 		static int GetNumInstances();
-		void Update(const Rect& rect, Colour colour, float borderRadius);
+		void Update(const Rect& rect, Colour colour, float borderRadius,
+			bool clipEnabled, const Rect& clipRect);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 	};
@@ -78,7 +80,8 @@ namespace SableUI
 		DrawableImage();
 		~DrawableImage();
 		static int GetNumInstances();
-		void Update(Rect& rect, float borderRadius);
+		void Update(Rect& rect, float borderRadius,
+			bool clipEnabled, const Rect& clipRect);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		Texture m_texture;
 	};
@@ -89,7 +92,8 @@ namespace SableUI
 		DrawableText();
 		~DrawableText();
 		static int GetNumInstances();
-		void Update(Rect& rect) { this->m_rect = rect; };
+		void Update(Rect& rect, bool clipEnabled,
+			const Rect& clipRect);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		_Text m_text;
 	};

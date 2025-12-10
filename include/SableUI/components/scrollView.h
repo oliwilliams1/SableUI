@@ -1,0 +1,35 @@
+#pragma once
+#include <string>
+#include <SableUI/SableUI.h>
+#include <SableUI/component.h>
+#include <SableUI/events.h>
+#include <SableUI/utils.h>
+
+namespace SableUI
+{
+	struct ScrollData {
+		ScrollData() = default;
+		ScrollData(const ivec2& viewportSize, const ivec2& contentSize)
+			: viewportSize(viewportSize), contentSize(contentSize) {};
+		vec2 viewportSize = { 0, 0 };
+		vec2 contentSize = { 0, 0 };
+
+		const auto operator<=>(const ScrollData&) const = default;
+	};
+
+	class ScrollView : public SableUI::BaseComponent
+	{
+	public:
+		void AttachChild(const std::string& p_childID);
+		void Layout() override;
+		void OnUpdate(const UIEventContext& ctx) override;
+
+
+	private:
+		const int scrollMultiplier = 100;
+		useState(barHovered, setBarHovered, bool, false);
+		useState(scrollData, setScrollData, ScrollData, {});
+		useState(scrollPos, setScrollPos, SableUI::vec2, { 0, 0 });
+		std::string childID = "";
+	};
+}

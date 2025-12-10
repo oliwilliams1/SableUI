@@ -18,6 +18,7 @@ namespace SableUI
 		Rect rect;
 		Rect minBoundsRect;
 		ElementInfo elInfo;
+		Rect clipRect;
 		size_t uuid = 0;
 
 		friend bool operator==(const TreeNode& a, const TreeNode& b)
@@ -27,6 +28,7 @@ namespace SableUI
 			if (a.children.size() != b.children.size())	return false;
 			if (a.rect != b.rect) return false;
 			if (a.minBoundsRect != b.minBoundsRect) return false;
+			if (a.clipRect != b.clipRect) return false;
 
 			for (int i = 0; i < a.children.size(); i++)
 				if (a.children[i] != b.children[i]) return false;

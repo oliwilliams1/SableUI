@@ -196,7 +196,7 @@ namespace SableUI
 #define centerY				.setCenterY(true)
 #define centerXY			.setCenterX(true).setCenterY(true)
 #define rounded(value)		.setBorderRadius(value)
-#define overflowHidden		.setClipChildren(true)
+#define overflow_hidden		.setClipChildren(true)
 
 #define left_right			.setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
 #define right_left			.setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)

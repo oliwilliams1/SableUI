@@ -166,11 +166,13 @@ int DrawableRect::GetNumInstances()
     return s_drawableRectCount;
 }
 
-void DrawableRect::Update(const Rect& rect, Colour colour, float borderRadius)
+void DrawableRect::Update(const Rect& rect, Colour colour, float borderRadius, bool clipEnabled, const Rect& clipRect)
 {
     this->m_rect = rect;
     this->m_colour = colour;
     this->m_borderRadius = borderRadius;
+    this->scissorEnabled = clipEnabled;
+    this->scissorRect = clipRect;
 }
 
 void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
@@ -334,10 +336,12 @@ int DrawableImage::GetNumInstances()
     return s_drawableImageCount;
 }
 
-void SableUI::DrawableImage::Update(Rect& rect, float borderRadius)
+void SableUI::DrawableImage::Update(Rect& rect, float borderRadius, bool clipEnabled, const Rect& clipRect)
 {
     this->m_rect = rect;
     this->m_borderRadius = borderRadius;
+    this->scissorEnabled = clipEnabled;
+    this->scissorRect = clipRect;
 }
 
 void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
@@ -392,6 +396,13 @@ int DrawableText::GetNumInstances()
 {
     return s_drawableTextCount;
 }
+
+void SableUI::DrawableText::Update(Rect& rect, bool clipEnabled, const Rect& clipRect)
+{
+    this->m_rect = rect;
+    this->scissorEnabled = clipEnabled;
+    this->scissorRect = clipRect;
+};
 
 void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {

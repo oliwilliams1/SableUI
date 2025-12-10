@@ -1,8 +1,9 @@
 #pragma once
 #include <SableUI/string.h>
-#include <stdio.h>
 #include <cstdint>
 #include <cmath>
+#include <cstdio>
+#include <algorithm>
 
 typedef SableUI::String SableString;
 
@@ -92,7 +93,7 @@ namespace SableUI
 
 		u16vec2() = default;
 		u16vec2(uint16_t x, uint16_t y) : x(x), y(y) {}
-		u16vec2(int x, int y) : x(x), y(y) {}
+		u16vec2(int x, int y) : x(static_cast<uint16_t>(x)), y(static_cast<uint16_t>(y)) {}
 		u16vec2(uint16_t x) : x(x), y(x) {}
 
 		bool operator==(const u16vec2& other) const {
@@ -134,8 +135,8 @@ namespace SableUI
 		vec2() = default;
 		vec2(float x, float y) : x(x), y(y) {}
 		vec2(float x)          : x(x), y(x) {}
-		vec2(int x, int y)     : x(static_cast<float>(x)),   y(static_cast<float>(y)) {}
-		vec2(int x)            : x(static_cast<float>(x)),   y(static_cast<float>(x)) {}
+		vec2(int x, int y)     : x(static_cast<float>(x)),    y(static_cast<float>(y)) {}
+		vec2(int x)            : x(static_cast<float>(x)),    y(static_cast<float>(x)) {}
 		vec2(ivec2 v)          : x(static_cast<float>(v.x)), y(static_cast<float>(v.y)) {}
 
 		vec2 operator+(const vec2& other) const {
@@ -297,12 +298,30 @@ namespace SableUI
 			return x == other.x && y == other.y && w == other.w && h == other.h;
 		}
 
-		bool operator !=(const Rect& other) const {
+		bool operator!=(const Rect& other) const {
 			return x != other.x || y != other.y || w != other.w || h != other.h;
 		}
 
 		SableString ToString() const {
 			return SableString::Format("{ x: %d, y: %d, width: %d, height: %d }", x, y, w, h);
+		}
+
+		bool intersect(const Rect& other) const {
+			if (x + w <= other.x) return false;
+			if (other.x + other.w <= x) return false;
+
+			if (y + h <= other.y) return false;
+			if (other.y + other.h <= y) return false;
+
+			return true;
+		}
+
+		Rect getIntersection(const Rect& other) {
+			int newX = (std::max)(x, other.x);
+			int newY = (std::max)(y, other.y);
+			int newRight = (std::min)(x + w, other.x + other.w);
+			int newBottom = (std::min)(y + h, other.y + other.h);
+			return { newX, newY, (std::max)(0, newRight - newX), (std::max)(0, newBottom - newY) };
 		}
 	};
 

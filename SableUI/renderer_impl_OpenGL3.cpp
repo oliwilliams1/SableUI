@@ -227,21 +227,6 @@ void OpenGL3Backend::ClearDrawable(const DrawableBase* drawable)
 			m_drawStack.erase(std::remove(m_drawStack.begin(), m_drawStack.end(), d), m_drawStack.end());
 }
 
-void OpenGL3Backend::AddToDrawStack(DrawableBase* drawable)
-{
-	if (!m_scissorStack.empty())
-	{
-		drawable->scissorEnabled = true;
-		drawable->scissorRect = m_scissorStack.back();
-	}
-	else
-	{
-		drawable->scissorEnabled = false;
-	}
-
-	m_drawStack.push_back(drawable);
-}
-
 static int s_numGpuObjects = 0;
 GpuObject* OpenGL3Backend::CreateGpuObject(
 	const void* vertices, uint32_t numVertices,
@@ -348,67 +333,65 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 
 bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 {
-	if (m_drawStack.size() == 0) return false;
+	if (m_drawStack.empty()) return false;
 
 	ContextResources& res = GetContextResources(this);
 
-	std::sort(m_drawStack.begin(), m_drawStack.end(), [](const DrawableBase* a, const DrawableBase* b) {
-		return a->m_zIndex < b->m_zIndex;
-	});
-
 	std::set<unsigned int> drawnUUIDs;
 
-	bool currentScissorState = false;
-	Rect currentScissorRect = { 0, 0, 0, 0 };
-
-	glDisable(GL_SCISSOR_TEST);
+	bool scissorActive = false;
+	Rect currentScissor;
 
 	for (DrawableBase* drawable : m_drawStack)
 	{
-		if (drawable)
+		if (!drawable) continue;
+		if (!drawnUUIDs.insert(drawable->uuid).second) continue;
+
+		bool wantScissor = drawable->scissorEnabled;
+
+		if (wantScissor)
 		{
-			if (drawnUUIDs.find(drawable->uuid) != drawnUUIDs.end()) continue;
-			drawnUUIDs.insert(drawable->uuid);
+			Rect newScissor = drawable->scissorRect;
 
-			if (drawable->scissorEnabled != currentScissorState ||
-				(drawable->scissorEnabled && (
-					drawable->scissorRect.x != currentScissorRect.x ||
-					drawable->scissorRect.y != currentScissorRect.y ||
-					drawable->scissorRect.width != currentScissorRect.width ||
-					drawable->scissorRect.height != currentScissorRect.height
-				)))
+			newScissor.y = framebuffer->height - (newScissor.y + newScissor.h);
+
+			if (!scissorActive || currentScissor != newScissor)
 			{
-				if (drawable->scissorEnabled)
-				{
-					if (!currentScissorState) glEnable(GL_SCISSOR_TEST);
+				if (!scissorActive)
+					glEnable(GL_SCISSOR_TEST);
 
-					int invY = framebuffer->height - (drawable->scissorRect.y + drawable->scissorRect.height);
+				int finalY = std::max(0, newScissor.y);
 
-					glScissor(
-						drawable->scissorRect.x,
-						invY,
-						drawable->scissorRect.width,
-						drawable->scissorRect.height
-					);
-
-					currentScissorRect = drawable->scissorRect;
-				}
-				else
-				{
-					glDisable(GL_SCISSOR_TEST);
-				}
-				currentScissorState = drawable->scissorEnabled;
+				glScissor(newScissor.x, finalY, newScissor.w, newScissor.h);
+				currentScissor = newScissor;
+				scissorActive = true;
 			}
-
-			drawable->Draw(framebuffer, res);
 		}
+		else
+		{
+			if (scissorActive)
+			{
+				glDisable(GL_SCISSOR_TEST);
+				scissorActive = false;
+			}
+		}
+
+		drawable->Draw(framebuffer, res);
+
+		if (drawable->orphan)
+			SableMemory::SB_delete(drawable);
 	}
 
-	// Cleanup
-	if (currentScissorState) glDisable(GL_SCISSOR_TEST);
+	if (scissorActive)
+		glDisable(GL_SCISSOR_TEST);
 
 	m_drawStack.clear();
 	return true;
+}
+
+void OpenGL3Backend::AddToDrawStack(DrawableBase* drawable)
+{
+	m_drawStack.push_back(drawable);
 }
 
 void OpenGL3Backend::AddToDrawStack(const GpuObject* obj)

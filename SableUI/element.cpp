@@ -88,14 +88,14 @@ void SableUI::Element::SetRect(const Rect& r)
     {
     case ElementType::RECT:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-            drRect->Update(rect, bgColour, borderRadius);
+            drRect->Update(rect, bgColour, borderRadius, clipEnabled, clipRect);
         else
             SableUI_Error("Dynamic cast failed");
         break;
 
     case ElementType::IMAGE:
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-            drImage->Update(rect, borderRadius);
+            drImage->Update(rect, borderRadius, clipEnabled, clipRect);
         else
             SableUI_Error("Dynamic cast failed");
         break;
@@ -105,7 +105,7 @@ void SableUI::Element::SetRect(const Rect& r)
         {
             rect.h = drText->m_text.UpdateMaxWidth(rect.w);
             height = rect.h;
-            drText->Update(rect);
+            drText->Update(rect, clipEnabled, clipRect);
         }
         else
             SableUI_Error("Dynamic cast failed");
@@ -113,7 +113,7 @@ void SableUI::Element::SetRect(const Rect& r)
 
     case ElementType::DIV:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-            drRect->Update(rect, bgColour, borderRadius);
+            drRect->Update(rect, bgColour, borderRadius, clipEnabled, clipRect);
         else
             SableUI_Error("Dynamic cast failed");
         break;
@@ -164,6 +164,22 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
 
 void SableUI::Element::Render(int z)
 {
+    if (clipEnabled)
+    {
+        if (!rect.intersect(clipRect))
+        {
+            if (type == ElementType::DIV)
+            {
+                for (Child* child : children)
+                {
+                    Element* childElement = (Element*)*child;
+                    childElement->Render(z + 1);
+                }
+            }
+            return;
+        };
+    }
+
     switch (type)
     {
     case ElementType::RECT:
@@ -220,38 +236,16 @@ void SableUI::Element::Render(int z)
 			SableUI_Error("Dynamic cast failed");
         }
 
-        if (clipChildren)
-        {
-            renderer->PushScissor(rect.x, rect.y, rect.w, rect.h);
-        }
-
         for (Child* child : children)
         {
-            child->Render(z + 1);
-        }
-
-        if (clipChildren)
-        {
-            renderer->PopScissor();
+            Element* childElement = (Element*)*child;
+            childElement->Render(z + 1);
         }
         break;
     }
 
     default:
         SableUI_Error("Unknown ElementType");
-        break;
-    }
-}
-
-void SableUI::Child::Render(int z)
-{
-    switch (type)
-    {
-    case ChildType::ELEMENT:
-        element->Render(z);
-        break;
-    case ChildType::COMPONENT:
-        component->Render(z);
         break;
     }
 }
@@ -406,7 +400,6 @@ void SableUI::Element::LayoutChildren()
 
     if (containerSize.x <= 0 || containerSize.y <= 0)
     {
-        SableUI_Warn("Container has zero or negative size ID: \"%s\"", ((std::string)ID).c_str());
         // Set all children to zero size
         for (Child* child : children)
         {
@@ -420,7 +413,7 @@ void SableUI::Element::LayoutChildren()
     // Calculate content area (after padding)
     ivec2 contentAreaPosition = { rect.x + paddingLeft, rect.y + paddingTop };
     ivec2 contentAreaSize = { std::max(0, containerSize.x - paddingLeft - paddingRight),
-                                     std::max(0, containerSize.y - paddingTop - paddingBottom) };
+                              std::max(0, containerSize.y - paddingTop - paddingBottom) };
 
     if (contentAreaSize.x <= 0 || contentAreaSize.y <= 0)
     {
@@ -444,6 +437,35 @@ void SableUI::Element::LayoutChildren()
     for (Child* child : children)
     {
         Element* childElement = (Element*)*child;
+
+        Rect currentConstraint = { 0, 0, 0, 0 };
+        bool hasConstraint = false;
+
+        if (this->clipChildren)
+        {
+            currentConstraint = { rect.x, rect.y, rect.w, rect.h };
+            hasConstraint = true;
+        }
+
+        if (this->clipEnabled)
+        {
+            if (hasConstraint)
+            {
+                currentConstraint = currentConstraint.getIntersection(this->clipRect);
+            }
+            else
+            {
+                currentConstraint = this->clipRect;
+                hasConstraint = true;
+            }
+        }
+
+        // 3. Apply final constraint to child
+        if (hasConstraint)
+        {
+            childElement->clipEnabled = true;
+            childElement->clipRect = currentConstraint;
+        }
 
         if (isVerticalFlow)
         {

@@ -166,6 +166,7 @@ TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element, size_t&
 	
 	node.elInfo = element->GetInfo();
 	node.uuid = uuidCounter++;
+	node.clipRect = element->clipRect;
 
 	for (Child* child : element->children)
 	{
@@ -452,6 +453,9 @@ void SableUI::PropertiesView::Layout()
 		Text("Positioning", textColour(180, 180, 180) mb(2));
 		Text(SableString::Format("Center X: %s", selected.elInfo._centerX ? "true" : "false"), mb(2));
 		Text(SableString::Format("Center Y: %s", selected.elInfo._centerY ? "true" : "false"), mb(8));
+
+		Text("Clip rect", textColour(180, 180, 180) mb(2));
+		Text(selected.clipRect.ToString());
 
 		Text("Background Colour", textColour(180, 180, 180) mb(2));
 		Rect(w(20) h(20) bg(selected.elInfo.bgColour));

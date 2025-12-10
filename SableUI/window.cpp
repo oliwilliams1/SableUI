@@ -165,7 +165,7 @@ void SableUI::Window::ScrollCallback(GLFWwindow* window, double x, double y)
 		return;
 	}
 
-	instance->ctx.scrollDelta = { static_cast<int>(x), static_cast<int>(y) };
+	instance->ctx.scrollDelta = { static_cast<float>(x), static_cast<float>(y) };
 }
 
 void SableUI::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
