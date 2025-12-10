@@ -20,12 +20,11 @@
     - [Element Type]()
     - [Panels]()
     - [State Management]()
-    - [Events]()
+    - [Events](events.md)
     - [SableString](sablestring.md)
     - [Utilities]()
 
 - [Examples](examples.md)
-    - [Counter (basic state)]()
     - [Todo List]()
     - [Modal](modal.md)
 
