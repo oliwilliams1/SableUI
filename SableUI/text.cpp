@@ -1,4 +1,4 @@
-#include "SableUI/text.h"
+#include <SableUI/text.h>
 
 #include <filesystem>
 #include <map>
@@ -14,9 +14,6 @@
 #include <utility>
 #include <string>
 #include <cstring>
-
-#include <freetype/config/ftheader.h>
-#include <freetype/fttypes.h>
 #include <corecrt.h>
 #include <string.h>
 #include <chrono>
@@ -24,15 +21,18 @@
 #include <cmath>
 #include <cstdint>
 #include <exception>
-#include <SableUI/renderer.h>
-#include <SableUI/utils.h>
+
+#include <freetype/config/ftheader.h>
+#include <freetype/fttypes.h>
 #include FT_FREETYPE_H
 #include FT_LCD_FILTER_H
 
+#include <SableUI/renderer.h>
+#include <SableUI/utils.h>
+#include <SableUI/console.h>
+#include <SableUI/textCache.h>
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Text"
-#include "SableUI/console.h"
-#include "SableUI/textCache.h"
 
 constexpr int ATLAS_WIDTH = 512;
 constexpr int ATLAS_HEIGHT = 512;

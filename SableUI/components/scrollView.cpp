@@ -1,13 +1,13 @@
-#include <algorithm>
-#include <string>
 #include <SableUI/components/scrollView.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
 #include <SableUI/events.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/utils.h>
+#include <algorithm>
+#include <string>
 
-void SableUI::ScrollView::AttachChild(const std::string& p_childID)
+void SableUI::ScrollView::AttachChild(const std::string& p_childID, const ElementInfo& childInfo)
 {
 	if (!childID.empty())
 	{
@@ -15,6 +15,7 @@ void SableUI::ScrollView::AttachChild(const std::string& p_childID)
 		return;
 	}
 	this->childID = p_childID;
+	this->childElInfo = childInfo;
 	needsRerender = true;
 }
 
@@ -34,7 +35,8 @@ void SableUI::ScrollView::Layout()
 			}
 			else
 			{
-				Component(childID.c_str(), w_fill h_fill);
+				AddComponent(childID.c_str())->BackendInitialiseChild(childID.c_str(), this,
+					childElInfo.setWType(SableUI::RectType::FILL).setHType(SableUI::RectType::FILL));
 			}
 		}
 
@@ -46,13 +48,17 @@ void SableUI::ScrollView::Layout()
 		int parentPadding = 4;
 		float topMargin = progress * (scrollData.viewportSize.y - thumbHeight - parentPadding * 2.0f);
 
-		if (barHovered) {
-			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(28, 28, 28)) {
+		if (barHovered)
+		{
+			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(28, 28, 28))
+			{
 				Rect(w(6) h((int)thumbHeight) mt((int)topMargin) rounded(3) bg(149, 149, 149));
 			}
 		}
-		else {
-			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(32, 32, 32)) {
+		else
+		{
+			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(32, 32, 32))
+			{
 				Rect(w(2) m(2) h((int)thumbHeight) mt((int)topMargin) rounded(1) bg(128, 128, 128));
 			}
 		}
@@ -71,23 +77,66 @@ void SableUI::ScrollView::OnUpdate(const UIEventContext& ctx)
 
 	setScrollData(tempData);
 
-	if (!RectBoundingBox(viewportEl->rect, ctx.mousePos))
+	if (isDragging)
+	{
+		if (ctx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
+		{
+			setIsDragging(false);
+			setBarHovered(false);
+		}
+		else
+		{
+			float viewportH = tempData.viewportSize.y;
+			float contentH = tempData.contentSize.y;
+
+			float padding = 4.0f * 2.0f;
+
+			float fac = viewportH / contentH;
+			float thumbHeight = fac * viewportH;
+
+			float trackScrollableRange = viewportH - thumbHeight - padding;
+			float contentScrollableRange = contentH - viewportH;
+
+			if (trackScrollableRange > 0)
+			{
+				float ratio = contentScrollableRange / trackScrollableRange;
+				float mouseDeltaY = static_cast<float>(ctx.mousePos.y - dragOrigPos.y);
+				float newScrollY = dragStartScrollY + (mouseDeltaY * ratio);
+
+				newScrollY = std::clamp(newScrollY, 0.0f, contentScrollableRange);
+
+				if (newScrollY != scrollPos.y)
+					setScrollPos({ scrollPos.x, newScrollY });
+			}
+		}
+
 		return;
+	}
 
-	vec2 newPos = scrollPos;
+	if (RectBoundingBox(viewportEl->rect, ctx.mousePos))
+	{
+		vec2 newPos = scrollPos;
+		newPos = newPos - ctx.scrollDelta * scrollMultiplier;
 
-	newPos = newPos - ctx.scrollDelta * scrollMultiplier;
+		if (contentEl->rect.h > viewportEl->rect.h)
+			newPos.y = std::clamp(newPos.y, 0.0f, static_cast<float>(contentEl->rect.h - viewportEl->rect.h));
+		else
+			newPos.y = 0.0f;
 
-	if (contentEl->rect.h > viewportEl->rect.h)
-		newPos.y = std::clamp(newPos.y, 0.0f, static_cast<float>(contentEl->rect.h - viewportEl->rect.h));
-	else
-		newPos.y = 0.0f;
-
-	if (newPos != scrollPos)
-		setScrollPos(newPos);
+		if (newPos != scrollPos)
+			setScrollPos(newPos);
+	}
 
 	Element* barEl = GetElementById("Bar");
 	if (!barEl) return;
 
-	setBarHovered(RectBoundingBox(barEl->rect, ctx.mousePos));
+	bool hover = RectBoundingBox(barEl->rect, ctx.mousePos);
+	if (barHovered != hover) setBarHovered(hover);
+
+	if (hover && ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+	{
+		setIsDragging(true);
+		setDragOrigPos(ctx.mousePos);
+		setDragStartScrollY(scrollPos.y);
+	}
 }

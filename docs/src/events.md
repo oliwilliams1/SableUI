@@ -4,7 +4,7 @@ SableUI provides a safe event system that allows you to create interactive compo
 ## Inline Events
 SableUI provides simple callbacks that are element-specific, perfect for the common use cases.
 
-> Other events such as scrolling, all keyboard events, and non-standard mouse events are packaged alone with the [`UIEventContext`](events.md#ui-event-context).
+> Other events such as scrolling, all keyboard events, and non-standard mouse events are packaged alone with the `UIEventContext`.
 
 ### onClick
 Triggered when the left mouse button is clicked on an element.
@@ -197,7 +197,7 @@ void OnUpdate(const UIEventContext& ctx) override {
     }
 }
 ```
-> `deltaTime` is in seconds, so if `speed = 100.0f`, the object moves at 100 pixels per second.
+`deltaTime` is in seconds, so if `speed = 100.0f`, the object moves at 100 pixels per second.
 
 <br><br>
 

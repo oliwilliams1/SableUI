@@ -147,8 +147,17 @@ namespace SableUI
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
 #define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, style(__VA_ARGS__))
-#define ComponentGainBaseRef(name, ref, ...)					\
-	BaseComponent* ref = AddComponent(name);					\
+#define ComponentGainBaseRef(name, ref, ...)																\
+	SableUI::BaseComponent* ref = AddComponent(name);														\
+	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+
+#define ComponentGainRef(name, T, ref, ...)																	\
+	T* ref = nullptr;																						\
+	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = AddComponent(name);									\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
+	else																									\
+		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
 	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
 
 #define CONCAT_IMPL(a, b) a##b
@@ -258,22 +267,36 @@ namespace SableUI
 
 #define EmptyPanel()							SableUI::AddPanel()
 #define Panel(name)								SableUI::AddPanel()->AttachComponent(name)
-#define PanelGainRef(name, T, ref)																	\
-	T* ref = nullptr;																				\
-	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);	\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)										\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));											\
-	else																							\
+#define PanelGainRef(name, T, ref)																			\
+	T* ref = nullptr;																						\
+	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);			\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
+	else																									\
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
 
-/* components */
+#include <SableUI/components/scrollView.h>
+// Base scrollable component
+#define ScrollableComponent(name, ...)																		\
+	ComponentGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),				\
+		__VA_ARGS__ w_fill h_fill);																			\
+	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name, style(__VA_ARGS__))
+
+// Scrollable Panels
+#define ScrollablePanel(name)																				\
+	PanelGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_panel_, __LINE__))					\
+	CONCAT(_scrollable_panel_, __LINE__)->AttachChild(name)
+
+// TabStack
 #define TabStack()																							\
 	PanelGainRef("TabStack", SableUI::_TabStackDef, CONCAT(_tab_stack_, __LINE__));							\
 	if (SableUI::TabStackScope CONCAT(_tab_stack_scope_, __LINE__)(CONCAT(_tab_stack_, __LINE__)); true)	\
 
-#define Tab(componentName) \
+#define Tab(componentName)																					\
 	SableUI::GetCurrentTabStackRef()->AddTab(componentName);
-#define TabWithLabel(componentName, label) \
+
+#define TabWithLabel(componentName, label)																	\
 	SableUI::GetCurrentTabStackRef()->AddTab(componentName, label)
-#define TabWithInitialiser(componentName, label, T, initialiser) \
+
+#define TabWithInitialiser(componentName, label, T, initialiser)											\
 	SableUI::GetCurrentTabStackRef()->AddTabWithInitialiser<T>(componentName, label, initialiser)

@@ -1,6 +1,6 @@
 # Roadmap to 1.0
 ### Components
-- [x] Scroll view - test component
+- [x] Scroll view
 - [x] Tab stack with component exposure/initialisation callback
 - [ ] Button
 - [ ] Sliders
@@ -12,6 +12,7 @@
 - [ ] Dropdown
 - [ ] Listbox
 - [ ] Keyboard chip
+- [ ] Context menu
 - [ ] Link?
 - [ ] Popover
 - [ ] Radio
@@ -67,6 +68,7 @@
 - [ ] Props?
 - [ ] Simplify Panel min bounds thing
 - [ ] Make bold, italic, etc macros
+- [x] Click and drag scroll bar thumb
 
 # Beyond 1.0
 - [ ] Docking panels
