@@ -160,6 +160,22 @@ namespace SableUI
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
 	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
 
+#define ComponentGainRefNoInit(name, T, ref, ...)															\
+	T* ref = nullptr;																						\
+	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = AddComponent(name);									\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
+	else																									\
+		SableUI_Runtime_Error("Component '%s' does not match required type: %s", name, STRINGIFY(T))
+
+#define ComponentInitialize(ref, name, ...)																	\
+	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+
+#define ComponentGainRefWithInit(name, T, ref, initFunc, ...)												\
+	ComponentGainRefNoInit(name, T, ref, __VA_ARGS__);														\
+	initFunc;																								\
+	ComponentInitialize(ref, name, __VA_ARGS__)
+
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
@@ -300,3 +316,27 @@ namespace SableUI
 
 #define TabWithInitialiser(componentName, label, T, initialiser)											\
 	SableUI::GetCurrentTabStackRef()->AddTabWithInitialiser<T>(componentName, label, initialiser)
+
+#include <SableUI/components/button.h>
+
+#define ButtonComponent(label, callback, ...)																\
+	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),						\
+		CONCAT(_button_, __LINE__)->Init(label, callback), __VA_ARGS__)
+
+#define ButtonWithVariant(label, callback, variant, ...)													\
+	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),						\
+		CONCAT(_button_, __LINE__)->Init(label, callback, variant), __VA_ARGS__)
+
+#define ButtonComponentRef(ref, label, callback, ...)														\
+	ComponentGainRefWithInit("Button", SableUI::Button, ref,												\
+		ref->Init(label, callback), __VA_ARGS__)
+
+#include <SableUI/components/checkbox.h>
+
+#define CheckboxComponent(label, checked, onChange, ...)													\
+	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
+		CONCAT(_checkbox_, __LINE__)->Init(label, checked, onChange), __VA_ARGS__)
+
+#define CheckboxComponentRef(ref, label, checked, onChange, ...)											\
+	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, ref,											\
+		ref->Init(label, checked, onChange), __VA_ARGS__)

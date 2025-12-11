@@ -90,6 +90,8 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 #include <SableUI/components/debugComponents.h>
 #include <SableUI/components/tabStack.h>
 #include <SableUI/components/scrollView.h>
+#include <SableUI/components/button.h>
+#include <SableUI/components/checkbox.h>
 
 void SableUI::RegisterSableUIComponents()
 {
@@ -99,4 +101,6 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesView>("PropertiesView");
     RegisterComponent<ScrollView>("ScrollView");
+    RegisterComponent<Button>("Button");
+    RegisterComponent<Checkbox>("Checkbox");
 }

@@ -352,7 +352,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 bool SableUI::Window::PollEvents()
 {
 	glfwMakeContextCurrent(m_window);
-	glfwPollEvents();
+	glfwWaitEventsTimeout(0.05);
 
 	if (m_needsRefresh)
 	{

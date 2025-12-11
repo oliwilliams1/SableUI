@@ -2,12 +2,12 @@
 ### Components
 - [x] Scroll view
 - [x] Tab stack with component exposure/initialisation callback
-- [ ] Button
+- [x] Button
 - [ ] Sliders
 - [ ] Input field
 - [ ] Large text field
 - [ ] Modal
-- [ ] Checkbox
+- [x] Checkbox
 - [ ] Progress
 - [ ] Dropdown
 - [ ] Listbox
@@ -69,6 +69,7 @@
 - [ ] Simplify Panel min bounds thing
 - [ ] Make bold, italic, etc macros
 - [x] Click and drag scroll bar thumb
+- [ ] Add selection between PollEvents/WaitEvents/WaitEventsTimeout + add default, maybe allow components to be able to change mode?
 
 # Beyond 1.0
 - [ ] Docking panels
