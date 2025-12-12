@@ -1,3 +1,15 @@
+#include <SableUI/window.h>
+#include <SableUI/renderer.h>
+#include <SableUI/memory.h>
+#include <SableUI/textCache.h>
+#include <SableUI/console.h>
+#include <SableUI/drawable.h>
+#include <SableUI/events.h>
+#include <SableUI/panel.h>
+#include <SableUI/texture.h>
+#include <SableUI/utils.h>
+#include <SableUI/element.h>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -12,18 +24,6 @@
 #include <windows.h>
 #include <dwmapi.h>
 #endif
-
-#include <SableUI/window.h>
-#include <SableUI/renderer.h>
-#include <SableUI/memory.h>
-#include <SableUI/textCache.h>
-#include <SableUI/console.h>
-#include <SableUI/drawable.h>
-#include <SableUI/events.h>
-#include <SableUI/panel.h>
-#include <SableUI/texture.h>
-#include <SableUI/utils.h>
-#include <SableUI/element.h>
 
 using namespace SableMemory;
 
@@ -349,10 +349,9 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 	return cursorToSet;
 }
 
-bool SableUI::Window::PollEvents()
+bool SableUI::Window::Update()
 {
 	glfwMakeContextCurrent(m_window);
-	glfwWaitEventsTimeout(0.05);
 
 	if (m_needsRefresh)
 	{
@@ -914,6 +913,26 @@ void SableUI::SableUI_Window_Initalise_GLFW()
 void SableUI::SableUI_Window_Terminate_GLFW()
 {
 	glfwTerminate();
+}
+
+void SableUI::SableUI_Window_PollEvents_GLFW()
+{
+	glfwPollEvents();
+}
+
+void SableUI::SableUI_Window_WaitEvents_GLFW()
+{
+	glfwWaitEvents();
+}
+
+void SableUI::SableUI_Window_PostEmptyEvent_GLFW()
+{
+	glfwPostEmptyEvent();
+}
+
+void SableUI::SableUI_Window_WaitEventsTimeout_GLFW(double timeout)
+{
+	glfwWaitEventsTimeout(timeout);
 }
 
 void* SableUI::GetCurrentContext_voidType()

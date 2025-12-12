@@ -186,8 +186,11 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            drawable->setZ(z);
-            renderer->AddToDrawStack(drRect);
+            if (bgColour.a > 0)
+            {
+                drawable->setZ(z);
+                renderer->AddToDrawStack(drRect);
+            }
         }
         else
         {
@@ -228,8 +231,11 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            drawable->setZ(z);
-            renderer->AddToDrawStack(drRect);
+            if (bgColour.a > 0)
+            {
+                drawable->setZ(z);
+                renderer->AddToDrawStack(drRect);
+            }
         }
         else
         {

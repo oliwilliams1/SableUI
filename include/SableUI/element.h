@@ -34,7 +34,7 @@ namespace SableUI
 		SableString id;
 
 		// attribs
-		Colour bgColour = Colour(128, 128, 128);
+		Colour bgColour = Colour(0, 0, 0, 0);
 		int width = 0;
 		int height = 0;
 		int minWidth = 0;
@@ -194,7 +194,7 @@ namespace SableUI
 		bool clipChildren = false;
 		RectType wType = RectType::UNDEF;
 		RectType hType = RectType::UNDEF;
-		Colour bgColour = Colour(128, 128, 128);
+		Colour bgColour = Colour(0, 0, 0, 0);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath;
 		Colour textColour = { 255, 255, 255, 255 };

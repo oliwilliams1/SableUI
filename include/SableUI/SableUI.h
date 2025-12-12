@@ -23,11 +23,15 @@ namespace SableUI
 
 	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
-	void SetMaxFPS(int fps);
 	void Shutdown();
 
 	bool PollEvents();
+	bool WaitEvents();
+	bool WaitEventsTimeout(double timeout);
+
 	void Render();
+
+	void PostEmptyEvent();
 
 	void SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual);
 	Element* GetCurrentElement();
@@ -237,18 +241,19 @@ namespace SableUI
 #define wrapText(v)			.setTextWrap(v)
 
 #define useState(variableName, setterName, T, ...)			            \
-    T variableName = __VA_ARGS__;                                      \
-    SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
-        [this](T const& val) {                                          \
-            if (!this) return;						                    \
-            if (this->variableName == val) return;                      \
-            this->variableName = val;                                   \
-            this->needsRerender = true;                                 \
-        });                                                             \
-    struct __StateReg_##variableName {                                  \
-        __StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
-        { if (comp) comp->RegisterState(var); }							\
-    } __stateReg_##variableName{this, &variableName}
+	T variableName = __VA_ARGS__;										\
+	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
+		[this](T const& val) {                                          \
+			if (!this) return;						                    \
+			if (this->variableName == val) return;                      \
+			this->variableName = val;                                   \
+			this->needsRerender = true;									\
+			SableUI::PostEmptyEvent();									\
+		});                                                             \
+	struct __StateReg_##variableName {                                  \
+		__StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
+		{ if (comp) comp->RegisterState(var); }							\
+	} __stateReg_##variableName{this, &variableName}
 
 #define useRef(variableName, T, ...)		                            \
 	T variableName = __VA_ARGS__;                                       \
@@ -293,7 +298,7 @@ namespace SableUI
 
 #include <SableUI/components/scrollView.h>
 // Base scrollable component
-#define ScrollableComponent(name, ...)																		\
+#define ScrollView(name, ...)																		\
 	ComponentGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),				\
 		__VA_ARGS__ w_fill h_fill);																			\
 	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name, style(__VA_ARGS__))
@@ -319,12 +324,12 @@ namespace SableUI
 
 #include <SableUI/components/button.h>
 
-#define ButtonComponent(label, callback, ...)																\
-	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),						\
+#define Button(label, callback, ...)																		\
+	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),							\
 		CONCAT(_button_, __LINE__)->Init(label, callback), __VA_ARGS__)
 
 #define ButtonWithVariant(label, callback, variant, ...)													\
-	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),						\
+	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),							\
 		CONCAT(_button_, __LINE__)->Init(label, callback, variant), __VA_ARGS__)
 
 #define ButtonComponentRef(ref, label, callback, ...)														\
@@ -333,7 +338,7 @@ namespace SableUI
 
 #include <SableUI/components/checkbox.h>
 
-#define CheckboxComponent(label, checked, onChange, ...)													\
+#define Checkbox(label, checked, onChange, ...)																\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
 		CONCAT(_checkbox_, __LINE__)->Init(label, checked, onChange), __VA_ARGS__)
 

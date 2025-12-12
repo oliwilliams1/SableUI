@@ -19,7 +19,13 @@ namespace SableUI
 {
 	void SableUI_Window_Initalise_GLFW();
 	void SableUI_Window_Terminate_GLFW();
+	void SableUI_Window_PollEvents_GLFW();
+	void SableUI_Window_WaitEvents_GLFW();
+	void SableUI_Window_PostEmptyEvent_GLFW();
+	void SableUI_Window_WaitEventsTimeout_GLFW(double timeout);
 	void* GetCurrentContext_voidType();
+
+	void SomeFunction();
 
 	struct ResizeState
 	{
@@ -41,7 +47,7 @@ namespace SableUI
 		Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x = -1, int y = -1);
 		~Window();
 
-		bool PollEvents();
+		bool Update();
 		void Draw();
 		bool m_needsStaticRedraw = false;
 		bool m_needsRefresh = false;

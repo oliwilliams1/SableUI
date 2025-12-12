@@ -58,7 +58,7 @@ namespace SableUI
 		void OnUpdate(const UIEventContext& ctx) override;
 		void PreserveExpandedState(const TreeNode& oldNode, TreeNode& newNode);
 		void FindAndToggleNode(size_t node);
-		void SetWindow(Window* window) { setWindow(window); }
+		void SetWindow(Window* window);
 
 	private:
 		useState(highlightElements, setHighlightElements, bool, false);

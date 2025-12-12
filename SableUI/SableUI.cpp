@@ -12,10 +12,8 @@
 #include <SableUI/componentRegistry.h>
 #include <SableUI/components/tabStack.h>
 #include <stack>
-#include <thread>
 #include <cstring>
 #include <string.h>
-#include <chrono>
 #include <string>
 #include <vector>
 
@@ -474,16 +472,12 @@ public:
 	SableUI::Window* CreateSecondaryWindow(const char* name, int width, int height, int x, int y);
 
 	bool PollEvents();
+	bool WaitEvents();
+	bool WaitEventsTimeout(double timeout);
 	void Render();
 
 	SableUI::Window* m_mainWindow = nullptr;
 	std::vector<SableUI::Window*> m_secondaryWindows;
-
-	std::chrono::milliseconds m_frameDuration = std::chrono::milliseconds(16);
-
-private:
-	using clock = std::chrono::high_resolution_clock;
-	std::chrono::time_point<clock> m_nextFrameTime = clock::now();
 };
 
 static App* s_app = nullptr;
@@ -544,17 +538,6 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 	return s_app->m_mainWindow;
 }
 
-void SableUI::SetMaxFPS(int fps)
-{
-	if (s_app == nullptr)
-	{
-		SableUI_Runtime_Error("SableUI has not been initialised");
-		return;
-	}
-
-	s_app->m_frameDuration = std::chrono::milliseconds(1000 / fps);
-}
-
 void SableUI::Shutdown()
 {
 	if (s_app == nullptr)
@@ -586,10 +569,38 @@ bool SableUI::PollEvents()
 	return s_app->PollEvents();
 }
 
+bool SableUI::WaitEvents()
+{
+	if (s_app == nullptr) return false;
+
+	SableMemory::CompactPools();
+
+	return s_app->WaitEvents();
+}
+
+bool SableUI::WaitEventsTimeout(double timeout)
+{
+	if (s_app == nullptr) return false;
+
+	SableMemory::CompactPools();
+
+	return s_app->WaitEventsTimeout(timeout);
+}
+
 void SableUI::Render()
 {
 	if (s_app == nullptr) return;
 	s_app->Render();
+}
+
+static bool s_eventPostedThisFrame = false;
+void SableUI::PostEmptyEvent()
+{
+	if (!s_eventPostedThisFrame)
+	{
+		SableUI_Window_PostEmptyEvent_GLFW();
+		s_eventPostedThisFrame = true;
+	}
 }
 
 App::App(const char* name, int width, int height, int x, int y)
@@ -616,13 +627,66 @@ SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int hei
 
 bool App::PollEvents()
 {
+	s_eventPostedThisFrame = false;
 	if (m_mainWindow == nullptr) return false;
-	if (!m_mainWindow->PollEvents()) return false;
+	SableUI::SableUI_Window_PollEvents_GLFW();
+
+	if (!m_mainWindow->Update()) return false;
 
 	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
 	{
 		SableUI::Window* window = *it;
-		if (!window->PollEvents())
+		if (!window->Update())
+		{
+			SB_delete(window);
+			it = m_secondaryWindows.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+	return true;
+}
+
+bool App::WaitEvents()
+{
+	s_eventPostedThisFrame = false;
+	if (m_mainWindow == nullptr) return false;
+	SableUI::SableUI_Window_WaitEvents_GLFW();
+
+	if (!m_mainWindow->Update()) return false;
+
+	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
+	{
+		SableUI::Window* window = *it;
+		if (!window->Update())
+		{
+			SB_delete(window);
+			it = m_secondaryWindows.erase(it);
+		}
+		else
+		{
+			it++;
+		}
+	}
+
+	return true;
+}
+
+bool App::WaitEventsTimeout(double timeout)
+{
+	s_eventPostedThisFrame = false;
+	if (m_mainWindow == nullptr) return false;
+	SableUI::SableUI_Window_WaitEventsTimeout_GLFW(timeout);
+
+	if (!m_mainWindow->Update()) return false;
+
+	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
+	{
+		SableUI::Window* window = *it;
+		if (!window->Update())
 		{
 			SB_delete(window);
 			it = m_secondaryWindows.erase(it);
@@ -640,13 +704,6 @@ void App::Render()
 {
 	if (m_mainWindow == nullptr)
 		return;
-
-	auto now = clock::now();
-
-	if (now < m_nextFrameTime)
-		std::this_thread::sleep_until(m_nextFrameTime);
-
-	m_nextFrameTime = clock::now() + m_frameDuration;
 
 	m_mainWindow->Draw();
 

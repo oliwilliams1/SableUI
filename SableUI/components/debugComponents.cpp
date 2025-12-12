@@ -407,6 +407,9 @@ void SableUI::ElementTreeView::FindAndToggleNode(size_t uuid)
 	needsRerender = true;
 }
 
+void SableUI::ElementTreeView::SetWindow(Window* window)
+	{ setWindow(window); }
+
 // ============================================================================
 // Properties Viewer
 // ============================================================================
