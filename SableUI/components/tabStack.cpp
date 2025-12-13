@@ -2,6 +2,7 @@
 #include <SableUI/SableUI.h>
 #include <SableUI/component.h>
 #include <SableUI/console.h>
+#include <SableUI/events.h>
 #include <SableUI/componentRegistry.h>
 #include <vector>
 #include <string>
@@ -36,6 +37,8 @@ void _TabStackDef::Layout()
 			if (ref != nullptr && tabs[activeTab].initialiser)
 			{
 				tabs[activeTab].initialiser(ref);
+				UIEventContext dummyCtx{};
+				ref->OnUpdate(dummyCtx);
 			}
 			ref->BackendInitialiseChild(tabs[activeTab].component.c_str(), this, style(w_fill h_fill bg(32, 32, 32)));
 		}

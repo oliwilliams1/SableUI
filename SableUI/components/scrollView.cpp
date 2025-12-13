@@ -21,13 +21,12 @@ void SableUI::ScrollView::AttachChild(const std::string& p_childID, const Elemen
 
 void SableUI::ScrollView::Layout()
 {
-	Div(ID("Viewport") w_fill h_fill left_right overflow_hidden bg(32, 32, 32))
+	Div(ID("Viewport") w_fill h_fill left_right overflow_hidden)
 	{
 		Div(ID("Content")
 			w_fill h_fit
 			ml(-scrollPos.x)
-			mt(-scrollPos.y)
-			bg(32, 32, 32))
+			mt(-scrollPos.y))
 		{
 			if (childID.empty())
 			{
@@ -35,8 +34,8 @@ void SableUI::ScrollView::Layout()
 			}
 			else
 			{
-				AddComponent(childID.c_str())->BackendInitialiseChild(childID.c_str(), this,
-					childElInfo.setWType(SableUI::RectType::FILL).setHType(SableUI::RectType::FILL));
+				childElInfo.setWType(SableUI::RectType::FILL).setHType(SableUI::RectType::FILL);
+				AddComponent(childID.c_str())->BackendInitialiseChild(childID.c_str(), this, childElInfo);
 			}
 		}
 
@@ -50,14 +49,14 @@ void SableUI::ScrollView::Layout()
 
 		if (barHovered)
 		{
-			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(28, 28, 28))
+			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(28, 28, 28) rounded(4))
 			{
 				Rect(w(6) h((int)thumbHeight) mt((int)topMargin) rounded(3) bg(149, 149, 149));
 			}
 		}
 		else
 		{
-			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(32, 32, 32))
+			Div(ID("Bar") w_fit p(parentPadding) h_fill bg(32, 32, 32) rounded(4))
 			{
 				Rect(w(2) m(2) h((int)thumbHeight) mt((int)topMargin) rounded(1) bg(128, 128, 128));
 			}

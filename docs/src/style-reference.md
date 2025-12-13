@@ -70,7 +70,8 @@
 | Macro | Description | Example |
 |-------|-------------|---------|
 | `rounded(n)` | Border radius | `rounded(8)` |
-| `absolute(x,y)` | Absolute position | `absolute(100,50)` |
+| `absolutePos(x,y)` | Absolute position | `absolute(100,50)` |
+
 > [!WARNING]
     Absolute positioning can mess up the layout tree significantly. For most use cases that require absolute positioning, it is recomended you use them with a [`CustomTargetQueue`](custom-render-targets.md) which is seperate to the default element tree. You can find out more about it in [Advanced Topics](custom-render-targets.md) and can view [documented implmentations](examples.md) of specific use cases like that require absolute positioning and [custom render targets](custom-render-targets.md) like [modals](modal.md).
 

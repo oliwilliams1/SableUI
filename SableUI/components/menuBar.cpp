@@ -93,7 +93,7 @@ void MenuBar::DrawDropdownMenu()
 	SableUI::ElementInfo elInfo = window->GetElementInfoById(activeMenu);
 
 	UseCustomLayoutContext(queue, window, window->GetSurface(),
-		absolute(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
+		absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
 		ID("menu-dropdown")
 	)
 	{

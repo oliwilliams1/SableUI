@@ -236,7 +236,7 @@ namespace SableUI
 #define justify_left		.setJustification(SableUI::TextJustification::Left)
 #define justify_center		.setJustification(SableUI::TextJustification::Center)
 #define justify_right		.setJustification(SableUI::TextJustification::Right)
-#define absolute(x, y)		.setAbsolutePosition(x, y)
+#define absolutePos(x, y)	.setAbsolutePosition(x, y)
 #define dir(value)			.setLayoutDirection(value)
 #define wrapText(v)			.setTextWrap(v)
 
@@ -298,10 +298,10 @@ namespace SableUI
 
 #include <SableUI/components/scrollView.h>
 // Base scrollable component
-#define ScrollView(name, ...)																		\
-	ComponentGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),				\
-		__VA_ARGS__ w_fill h_fill);																			\
-	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name, style(__VA_ARGS__))
+#define ScrollView(name, ...)																				\
+	ComponentGainRefWithInit("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),		\
+	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name,													\
+		style(__VA_ARGS__ w_fill h_fill)), __VA_ARGS__ w_fill h_fill)
 
 // Scrollable Panels
 #define ScrollablePanel(name)																				\

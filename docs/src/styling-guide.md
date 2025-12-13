@@ -210,7 +210,7 @@ TextU32(message);
 This will probably me improved with macros
 ### Absolute Positioning
 ```cpp
-Div(absolute(100, 50)) {
+Div(absolutePos(100, 50)) {
     Text("At x:100, y:50");
 }
 ```

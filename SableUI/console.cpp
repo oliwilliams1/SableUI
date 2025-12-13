@@ -2,28 +2,33 @@
 #include <windows.h>
 #endif
 
-#include "SableUI/console.h"
+#include <SableUI/console.h>
+#include <SableUI/SableUI.h>
+#include <filesystem>
+#include <corecrt.h>
 #include <iostream>
+#include <cstdlib>
+#include <sstream>
 #include <iomanip>
 #include <cstdarg>
 #include <cstdio>
 #include <chrono>
+#include <string>
+#include <vector>
 #include <ctime>
-#include <filesystem>
 
-using namespace SableUI;
 
-static void SetConsoleColour(LogColourANSI colour)
+static void SetConsoleColour(SableUI::LogColourANSI colour)
 {
 	std::cout << "\033[" << colour << "m";
 }
 
 static void ResetColour()
 {
-	std::cout << "\033[" << RESET << "m";
+	std::cout << "\033[" << SableUI::RESET << "m";
 }
 
-static Console* s_ConsoleInstance = nullptr;
+static SableUI::Console* s_ConsoleInstance = nullptr;
 
 static std::tm getLocalTime() {
 	std::time_t now_time_t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -38,18 +43,18 @@ static std::tm getLocalTime() {
 	return now_tm;
 }
 
-void Console::Init()
+void SableUI::Console::Init()
 {
     s_ConsoleInstance = new Console();
 }
 
-void Console::Shutdown()
+void SableUI::Console::Shutdown()
 {
     delete s_ConsoleInstance;
 	s_ConsoleInstance = nullptr;
 }
 
-std::string Console::EnumToString(LogType type)
+std::string SableUI::Console::EnumToString(SableUI::LogType type)
 {
 	switch (type)
 	{
@@ -66,7 +71,7 @@ std::string Console::EnumToString(LogType type)
 	}
 }
 
-Console::Console() {};
+SableUI::Console::Console() {};
 
 static std::string GetTime()
 {
@@ -94,15 +99,15 @@ static std::string GetTime()
 static std::string GetFileLine(const char* file, int line)
 {
 #ifdef _DEBUG
-	std::filesystem::path p(file);
+	std::filesystem::path path(file);
 	
-	return p.filename().string() + ':' + std::to_string(line) + ' ';
+	return path.filename().string() + ':' + std::to_string(line) + ' ';
 #else
 	return "";
 #endif
 }
 
-void Console::Log(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void SableUI::Console::Log(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
     std::string time = GetTime();
 
@@ -118,9 +123,11 @@ void Console::Log(const char* format, const char* file, int line, const char* fu
     std::cout << finalMessage << std::endl;
     m_Logs.push_back({ LogType::SBUI_LOG, finalMessage, file, line, func, subsystem });
     ResetColour();
+
+    SableUI::PostEmptyEvent();
 }
 
-void Console::Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void SableUI::Console::Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
     std::string time = GetTime();
 
@@ -136,9 +143,11 @@ void Console::Warn(const char* format, const char* file, int line, const char* f
     std::cout << finalMessage << std::endl;
     m_Logs.push_back({ LogType::SBUI_WARNING, finalMessage, file, line, func, subsystem });
     ResetColour();
+
+    SableUI::PostEmptyEvent();
 }
 
-void Console::Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void SableUI::Console::Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
     std::string time = GetTime();
 
@@ -154,9 +163,11 @@ void Console::Error(const char* format, const char* file, int line, const char* 
     std::cout << finalMessage << std::endl;
     m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
     ResetColour();
+
+    SableUI::PostEmptyEvent();
 }
 
-void Console::NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void SableUI::Console::NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
     std::string time = GetTime();
 
@@ -173,12 +184,14 @@ void Console::NotifyError(const char* format, const char* file, int line, const 
     m_Logs.push_back({ LogType::SBUI_ERROR, finalMessage, file, line, func, subsystem });
     ResetColour();
 
+    SableUI::PostEmptyEvent();
+
 #ifdef _WIN32
     MessageBoxA(nullptr, finalMessage.c_str(), "Runtime Error", MB_OK | MB_ICONERROR);
 #endif
 }
 
-void Console::RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
+void SableUI::Console::RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...)
 {
     std::string time = GetTime();
 
@@ -201,14 +214,16 @@ void Console::RuntimeError(const char* format, const char* file, int line, const
 #else
     throw std::runtime_error(finalMessage);
 #endif
+
+    SableUI::PostEmptyEvent();
 }
 
-void Console::Clear()
+void SableUI::Console::Clear()
 {
 	m_Logs.clear();
 }
 
-std::vector<LogData>& Console::GetLogs()
+std::vector<SableUI::LogData>& SableUI::Console::GetLogs()
 {
 	return m_Logs;
 }

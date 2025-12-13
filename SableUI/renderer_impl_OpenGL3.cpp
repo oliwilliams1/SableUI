@@ -46,7 +46,7 @@ public:
 	GpuObject* CreateGpuObject(
 		const void* vertices, uint32_t numVertices,
 		const uint32_t* indices, uint32_t numIndices,
-		const VertexLayout& layout);
+		const VertexLayout& layout) override;
 	void DestroyGpuObject(GpuObject* obj) override;
 	void BeginRenderPass(const GpuFramebuffer* fbo) override;
 	void EndRenderPass() override;

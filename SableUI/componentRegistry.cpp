@@ -53,7 +53,7 @@ BaseComponent* ContentPanel::AttachComponent(const std::string& componentName)
 
     m_component = comp;
     m_component->BackendInitialisePanel(m_renderer);
-
+    
     Update();
     return comp;
 }
