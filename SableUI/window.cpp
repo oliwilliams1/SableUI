@@ -123,6 +123,7 @@ void SableUI::Window::MouseButtonCallback(GLFWwindow* window, int button, int ac
 		ctx.mouseReleased.set(button, true);
 	}
 }
+
 void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 {
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -133,11 +134,25 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	}
 
 	instance->m_windowSize = ivec2(width, height);
+
+	if (width <= 0 || height <= 0)
+	{
+		instance->m_isMinimized = true;
+		return;
+	}
+
+	instance->m_isMinimized = false;
+	instance->MakeContextCurrent();
+
 	instance->m_renderer->Viewport(0, 0, width, height);
 
-	instance->m_colourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-	instance->m_framebuffer.SetSize(width, height);
-	instance->m_windowSurface.SetSize(width, height);
+	if (width > 0 && height > 0)
+	{
+		instance->m_colourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		instance->m_framebuffer.SetSize(width, height);
+		instance->m_windowSurface.SetSize(width, height);
+	}
+
 	instance->m_root->Resize(width, height);
 	instance->RecalculateNodes();
 	instance->RerenderAllNodes();
@@ -153,6 +168,7 @@ void SableUI::Window::WindowRefreshCallback(GLFWwindow* window)
 		return;
 	}
 
+	instance->m_needsStaticRedraw = true;
 	instance->m_needsRefresh = true;
 }
 
@@ -200,7 +216,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 {
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
 	m_windowSize = ivec2(width, height);
 
 	if (primary == nullptr)
@@ -209,11 +225,11 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	}
 	else
 	{
-		// Share resources
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
 	}
 
-	glfwMakeContextCurrent(m_window);
+	MakeContextCurrent();
+	glfwSwapInterval(1);
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
@@ -233,12 +249,13 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_renderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	m_renderer->Flush();
-
-	m_colourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-	m_framebuffer.SetSize(m_windowSize.x, m_windowSize.y);
-	m_framebuffer.AttachColour(&m_colourAttachment, 0);
-	m_framebuffer.Bake();
+	if (width > 0 && height > 0)
+	{
+		m_colourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		m_framebuffer.SetSize(m_windowSize.x, m_windowSize.y);
+		m_framebuffer.AttachColour(&m_colourAttachment, 0);
+		m_framebuffer.Bake();
+	}
 
 	m_windowSurface.SetIsWindowSurface(true);
 	m_windowSurface.SetSize(m_windowSize.x, m_windowSize.y);
@@ -261,6 +278,20 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetKeyCallback(m_window, KeyCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
+}
+
+
+void SableUI::Window::MakeContextCurrent()
+{
+	if (m_window)
+	{
+		glfwMakeContextCurrent(m_window);
+	}
+}
+
+bool SableUI::Window::IsMinimized() const
+{
+	return m_windowSize.x <= 0 || m_windowSize.y <= 0;
 }
 
 void SableUI::Window::HandleResize()
@@ -321,6 +352,8 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 			case PanelType::HORIZONTAL:
 				cursorToSet = m_hResizeCursor;
 				break;
+			default:
+				break;
 			}
 
 			if (!m_resizing && IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
@@ -351,7 +384,12 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 
 bool SableUI::Window::Update()
 {
-	glfwMakeContextCurrent(m_window);
+	if (IsMinimized())
+	{
+		return !glfwWindowShouldClose(m_window);
+	}
+
+	MakeContextCurrent();
 
 	if (m_needsRefresh)
 	{
@@ -379,7 +417,12 @@ bool SableUI::Window::Update()
 
 void SableUI::Window::Draw()
 {
-	glfwMakeContextCurrent(m_window);
+	if (IsMinimized())
+	{
+		return;
+	}
+
+	MakeContextCurrent();
 
 #ifdef _WIN32
 	MSG msg;
@@ -394,69 +437,76 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool blitted = false;
-	bool wasDirty = false;
-	bool needsFlush = false;
+	bool needsRedraw = false;
+	bool hasWindowSurfaceQueue = false;
 
-	// if layout is dirty rerender to windows custom framebuffer
-	if (m_renderer->isDirty())
+	// check if any custom queue renders to window surface
+	for (CustomTargetQueue* queue : m_customTargetQueues)
 	{
-		wasDirty = true;
-		m_renderer->BeginRenderPass(&m_framebuffer);
-		bool res = m_renderer->Draw(&m_framebuffer);
-		m_renderer->EndRenderPass();
-
-		needsFlush = needsFlush || res;
+		if (queue->target == &m_windowSurface)
+		{
+			hasWindowSurfaceQueue = true;
+			break;
+		}
 	}
 
-	if (m_customTargetQueues.size() != 0)
+	// render main content to offscreen framebuffer
+	if (m_renderer->isDirty() || m_needsStaticRedraw)
 	{
-		// track if we need to blit custom targets to window surface
-		bool needsToBlitDefault = false;
-		for (CustomTargetQueue* queue : m_customTargetQueues)
-			needsToBlitDefault = needsToBlitDefault || queue->target == &m_windowSurface;
+		needsRedraw = true;
 
-		// if we do, blit old non-dirty custom fbo to window surface
-		if (needsToBlitDefault)
-		{
-			m_renderer->BlitToScreen(&m_framebuffer);
-			blitted = true;
-		}
+		m_renderer->BeginRenderPass(&m_framebuffer);
+		m_renderer->Draw(&m_framebuffer);
+		m_renderer->EndRenderPass();
+	}
+
+	// blit the base framebuffer to screen if we need it
+	if (needsRedraw || hasWindowSurfaceQueue)
+	{
+		m_renderer->BlitToScreen(&m_framebuffer);
 	}
 
 	// execute custom queues
-	for (CustomTargetQueue* queue : m_customTargetQueues)
+	if (!m_customTargetQueues.empty())
 	{
-		bool res = false;
-		if (queue->drawables.size() != 0)
-			res = true;
-
-		for (DrawableBase* dr : queue->drawables)
-			m_renderer->AddToDrawStack(dr);
-
-		if (queue->root)
+		for (CustomTargetQueue* queue : m_customTargetQueues)
 		{
-			res = true;
-			queue->root->LayoutChildren();
-			queue->root->Render();
+			if (!queue->drawables.empty() || queue->root)
+			{
+				for (DrawableBase* dr : queue->drawables)
+					m_renderer->AddToDrawStack(dr);
+
+				if (queue->root)
+				{
+					queue->root->LayoutChildren();
+					queue->root->Render();
+				}
+
+				// rf rendering to window surface, render directly to back buffer (framebuffer 0)
+				if (queue->target == &m_windowSurface)
+				{
+					needsRedraw = true;
+					m_renderer->BeginRenderPass(&m_windowSurface);
+					m_renderer->Draw(&m_windowSurface);
+					m_renderer->EndRenderPass();
+				}
+				else
+				{
+					// render to custom framebuffer
+					m_renderer->BeginRenderPass(queue->target);
+					m_renderer->Draw(queue->target);
+					m_renderer->EndRenderPass();
+				}
+			}
 		}
-
-		m_renderer->BeginRenderPass(queue->target);
-		if (m_renderer->Draw(queue->target));
-			res = true;
-
-		m_renderer->EndRenderPass();
-
-		needsFlush = needsFlush || res;
 	}
 
-	if ((wasDirty && !blitted))
-		m_renderer->BlitToScreen(&m_framebuffer);
-
-	if (needsFlush) // has surface changed? flush changes
+	// swap buffers if anything was drawn
+	if (needsRedraw)
 	{
 		m_renderer->CheckErrors();
-		m_renderer->Flush();
+		glfwSwapBuffers(m_window);
+		m_needsStaticRedraw = false;
 	}
 }
 
@@ -843,6 +893,8 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 		FixHeight(state.selectedPanel);
 		break;
 	}
+	default:
+		break;
 	}
 
 	state.selectedPanel->parent->CalculateScales();
@@ -893,14 +945,24 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 
 SableUI::Window::~Window()
 {
-	glfwMakeContextCurrent(m_window);
+	if (m_window)
+	{
+		MakeContextCurrent();
+	}
+
 	SB_delete(m_root);
 	DestroyDrawables();
+
 	TextCacheFactory::ShutdownFactory(m_renderer);
 
 	SB_delete(m_renderer);
-	glfwDestroyWindow(m_window);
+
+	if (m_window)
+	{
+		glfwDestroyWindow(m_window);
+	}
 }
+
 
 void SableUI::SableUI_Window_Initalise_GLFW()
 {

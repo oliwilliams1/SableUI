@@ -244,7 +244,6 @@ namespace SableUI
 	T variableName = __VA_ARGS__;										\
 	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
 		[this](T const& val) {                                          \
-			if (!this) return;						                    \
 			if (this->variableName == val) return;                      \
 			this->variableName = val;                                   \
 			this->needsRerender = true;									\

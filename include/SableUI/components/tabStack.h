@@ -32,7 +32,7 @@ namespace SableUI
 	private:
 		void ValidateRegistration(const std::string componentName);
 		bool TabExists(const std::string& label);
-		int activeTab = 0; SableUI::StateSetter<int> setActiveTab = SableUI::StateSetter<int>([this](int const& val) { if (!this) return; if (this->activeTab == val) return; this->activeTab = val; this->needsRerender = true; }); struct __StateReg_activeTab {
+		int activeTab = 0; SableUI::StateSetter<int> setActiveTab = SableUI::StateSetter<int>([this](int const& val) { if (this->activeTab == val) return; this->activeTab = val; this->needsRerender = true; }); struct __StateReg_activeTab {
 			__StateReg_activeTab(SableUI::BaseComponent* comp, int* var) {
 				if (comp) comp->RegisterState(var);
 			}

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <memory>
-#include <chrono>
+#include <cstdint>
 
 namespace SableUI
 {

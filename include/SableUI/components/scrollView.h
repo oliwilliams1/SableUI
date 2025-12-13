@@ -15,7 +15,10 @@ namespace SableUI
 		vec2 viewportSize = { 0, 0 };
 		vec2 contentSize = { 0, 0 };
 
-		const auto operator<=>(const ScrollData&) const = default;
+		bool operator==(const ScrollData& other) const
+		{
+			return viewportSize == other.viewportSize && contentSize == other.contentSize;
+		};
 	};
 
 	class ScrollView : public SableUI::BaseComponent

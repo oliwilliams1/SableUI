@@ -975,6 +975,9 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
         AddImage((std::string)(vnode->uniqueTextOrPath), vnode->info);
         break;
     }
+    
+	default:
+		break;
     }
 }
 

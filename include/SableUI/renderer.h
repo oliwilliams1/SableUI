@@ -67,6 +67,7 @@ namespace SableUI
 		case VertexFormat::Int2: return 8;
 		case VertexFormat::Int3: return 12;
 		case VertexFormat::Int4: return 16;
+		default: return 0;
 		}
 		return 0;
 	}
@@ -164,13 +165,12 @@ namespace SableUI
 	{
 	public:
 		static RendererBackend* Create(Backend backend);
-		~RendererBackend() = default;
+		virtual ~RendererBackend() = default;
 		virtual void Initalise() = 0;
 		virtual void Clear(float r, float g, float b, float a) = 0;
 		virtual void Viewport(int x, int y, int width, int height) = 0;
 		virtual void SetBlending(bool enabled) = 0;
 		virtual void SetBlendFunction(BlendFactor src, BlendFactor dst) = 0;
-		virtual void Flush() = 0;
 		virtual void CheckErrors() = 0;
 		
 		virtual void ClearDrawableStack() = 0;

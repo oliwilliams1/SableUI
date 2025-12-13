@@ -32,7 +32,6 @@ public:
 	void Viewport(int x, int y, int width, int height) override;
 	void SetBlending(bool enabled) override;
 	void SetBlendFunction(BlendFactor src, BlendFactor dst) override;
-	void Flush() override;
 
 	void CheckErrors() override;
 
@@ -142,11 +141,6 @@ void OpenGL3Backend::Clear(float r, float g, float b, float a)
 {
 	glClearColor(r, g, b, a);
 	glClear(GL_COLOR_BUFFER_BIT);
-}
-
-void OpenGL3Backend::Flush()
-{
-	glFlush();
 }
 
 void OpenGL3Backend::Viewport(int x, int y, int width, int height)
@@ -280,6 +274,7 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 		case VertexFormat::Int2: count = 2; type = GL_INT; isInteger = true; break;
 		case VertexFormat::Int3: count = 3; type = GL_INT; isInteger = true; break;
 		case VertexFormat::Int4: count = 4; type = GL_INT; isInteger = true; break;
+		default: break;
 		}
 
 		if (isInteger)

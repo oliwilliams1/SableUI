@@ -28,10 +28,9 @@
 
 ### Bug fixes
 - [ ] Draw window border
-- [ ] Fix OpenGL context problems
-- [ ] Triple check refresh things?
-- [ ] Better/dynamic frame limiting - check "Event processing" in [glfw website](https://www.glfw.org/docs/3.3/input_guide.html)
-- [ ] Fix resizing iterative thing
+- [x] Fix OpenGL context problems
+- [x] Triple check refresh things?
+- [x] Better/dynamic frame limiting - check "Event processing" in [glfw website](https://www.glfw.org/docs/3.3/input_guide.html)
 - [ ] Treenode leak
 - [x] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
 - [x] Overdraw with scrollview

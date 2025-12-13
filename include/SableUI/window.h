@@ -25,8 +25,6 @@ namespace SableUI
 	void SableUI_Window_WaitEventsTimeout_GLFW(double timeout);
 	void* GetCurrentContext_voidType();
 
-	void SomeFunction();
-
 	struct ResizeState
 	{
 		BasePanel* selectedPanel = nullptr;
@@ -66,6 +64,9 @@ namespace SableUI
 		void RemoveQueueReference(CustomTargetQueue* queue);
 		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
 		RendererBackend* m_renderer = nullptr;
+
+		void MakeContextCurrent();
+		bool IsMinimized() const;
 	
 	private:
 		GpuFramebuffer m_framebuffer;
@@ -80,6 +81,7 @@ namespace SableUI
 
 		RootPanel* m_root = nullptr;
 		bool m_resizing = false;
+		bool m_isMinimized = false;
 
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

@@ -76,6 +76,27 @@ void SableUI::ScrollView::OnUpdate(const UIEventContext& ctx)
 
 	setScrollData(tempData);
 
+	if (false) // scroll to end logic (to add)
+	{
+		float maxScrollY = 0.0f;
+		if (contentEl->rect.h > viewportEl->rect.h)
+		{
+			maxScrollY = static_cast<float>(contentEl->rect.h - viewportEl->rect.h);
+		}
+
+		if (scrollPos.y != maxScrollY)
+		{
+			setScrollPos({ scrollPos.x, maxScrollY });
+		}
+	}
+
+	Element* barEl = GetElementById("Bar");
+	if (barEl)
+	{
+		bool hover = RectBoundingBox(barEl->rect, ctx.mousePos);
+		if (barHovered != hover) setBarHovered(hover);
+	}
+
 	if (isDragging)
 	{
 		if (ctx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
@@ -126,7 +147,6 @@ void SableUI::ScrollView::OnUpdate(const UIEventContext& ctx)
 			setScrollPos(newPos);
 	}
 
-	Element* barEl = GetElementById("Bar");
 	if (!barEl) return;
 
 	bool hover = RectBoundingBox(barEl->rect, ctx.mousePos);
