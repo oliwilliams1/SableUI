@@ -29,7 +29,7 @@ namespace SableUI
 		void OnUpdate(const UIEventContext& ctx) override;
 
 	private:
-		const int scrollMultiplier = 100;
+		const int scrollMultiplier = 50;
 		useState(barHovered, setBarHovered, bool, false);
 		useState(scrollData, setScrollData, ScrollData, {});
 		useState(scrollPos, setScrollPos, vec2, { 0, 0 });

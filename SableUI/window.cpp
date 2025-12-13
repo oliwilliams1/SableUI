@@ -9,9 +9,11 @@
 #include <SableUI/texture.h>
 #include <SableUI/utils.h>
 #include <SableUI/element.h>
+#include <SableUI/generated/resources.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <stb_image.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -229,6 +231,17 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	}
 
 	MakeContextCurrent();
+	
+	int iconWidth = 0, iconHeight = 0, iconChannels = 0;
+	unsigned char* iconData = stbi_load_from_memory(sableui_256x_png_data, sableui_256x_png_size, &iconWidth, &iconHeight, &iconChannels, 4);
+	GLFWimage image{};
+	image.width = iconWidth;
+	image.height = iconHeight;
+	image.pixels = iconData;
+
+	glfwSetWindowIcon(m_window, 1, &image);
+	stbi_image_free(iconData);
+
 	glfwSwapInterval(1);
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
@@ -279,7 +292,6 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
 }
-
 
 void SableUI::Window::MakeContextCurrent()
 {
