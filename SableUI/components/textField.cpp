@@ -22,54 +22,43 @@ void SableUI::TextField::Layout()
 void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
 {
     if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
-	{
+    {
         Element* el = GetElementById("TextField");
-        
         if (!el) return;
 
         if (RectBoundingBox(el->rect, ctx.mousePos))
-			setIsFocused(true);
+            setIsFocused(true);
         else
         {
-		    setIsFocused(false);
+            setIsFocused(false);
             RemoveQueueFromContext(queue);
         }
-	}
+    }
 
     if (!isFocused) return;
-    bool contentChanged = false;
+
     if (ctx.typedChar != '\0')
-    {
         setTextVal(textVal + (char32_t)ctx.typedChar);
-        contentChanged = true;
-    }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_BACKSPACE))
-    {
         setTextVal(textVal.substr(0, textVal.size() - 1));
-        contentChanged = true;
-    }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_ENTER))
-    {
         setTextVal(textVal + '\n');
-        contentChanged = true;
-    }
+}
 
-    if (!m_window)
-    {
-        SableUI_Warn("Text field has no window, special visual features will be disabled");
-        return;
-    }
+void SableUI::TextField::OnPostLayoutUpdate(const UIEventContext& ctx)
+{
+    if (!isFocused || !m_window) return;
 
     UseCustomLayoutContext(queue, m_window, m_window->GetSurface())
     {
         Element* text = GetElementById("TextFieldText");
         if (!text) return;
-	
+
         Rect highlightRect = text->rect;
         highlightRect.h += text->lineHeight * text->fontSize;
 
-	    queue->AddRect(highlightRect, Colour(100, 180, 255, 120));
+        queue->AddRect(highlightRect, Colour(100, 180, 255, 120));
     }
 }

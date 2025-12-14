@@ -9,7 +9,6 @@
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
 #include <SableUI/componentRegistry.h> // for easy registration, even if not used in this file
-#include <SableUI/components/tabStack.h>
 #include <string>
 
 /* non-macro user api */
@@ -59,6 +58,7 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
+	class _TabStackDef;
 	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
 		CustomTargetQueue** queuePtr, const ElementInfo& ElementInfo);
 	void EndCustomLayoutScope(Window* window, CustomTargetQueue** queuePtr);
@@ -295,8 +295,8 @@ namespace SableUI
 	else																									\
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
 
-#include <SableUI/components/scrollView.h>
 // Base scrollable component
+#include <SableUI/components/scrollView.h>
 #define ScrollView(name, ...)																				\
 	ComponentGainRefWithInit("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),		\
 	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name,													\
@@ -308,6 +308,7 @@ namespace SableUI
 	CONCAT(_scrollable_panel_, __LINE__)->AttachChild(name)
 
 // TabStack
+#include <SableUI/components/tabStack.h>
 #define TabStack()																							\
 	PanelGainRef("TabStack", SableUI::_TabStackDef, CONCAT(_tab_stack_, __LINE__));							\
 	if (SableUI::TabStackScope CONCAT(_tab_stack_scope_, __LINE__)(CONCAT(_tab_stack_, __LINE__)); true)	\

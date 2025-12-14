@@ -5,6 +5,7 @@
 #include <functional>
 #include <type_traits>
 #include <SableUI/console.h>
+#include <SableUI/SableUI.h>
 
 namespace SableUI
 {
@@ -32,17 +33,9 @@ namespace SableUI
 	private:
 		void ValidateRegistration(const std::string componentName);
 		bool TabExists(const std::string& label);
-		int activeTab = 0; SableUI::StateSetter<int> setActiveTab = SableUI::StateSetter<int>([this](int const& val) { if (this->activeTab == val) return; this->activeTab = val; this->needsRerender = true; }); struct __StateReg_activeTab {
-			__StateReg_activeTab(SableUI::BaseComponent* comp, int* var) {
-				if (comp) comp->RegisterState(var);
-			}
-		} __stateReg_activeTab{ this, &activeTab };
-		std::vector<_TabDef> tabs = {}; struct __RefReg_tabs {
-			__RefReg_tabs(SableUI::BaseComponent* comp, std::vector<_TabDef>* var) {
-				if (comp) comp->RegisterReference(var);
-			}
-		} __refReg_tabs{ this, &tabs };
-		// ^^ Expanded from useState and useRef to remove circular dependency
+		
+		useState(activeTab, setActiveTab, int, 0);
+		useRef(tabs, std::vector<_TabDef>, {});
 	};
 
 	template <typename T>

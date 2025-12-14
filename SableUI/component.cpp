@@ -161,6 +161,13 @@ void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 	rootElement->el_PropagateEvents(ctx);
 }
 
+void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext& ctx)
+{
+	OnPostLayoutUpdate(ctx);
+	for (auto* child : m_componentChildren)
+		child->comp_PropagatePostLayoutEvents(ctx);
+}
+
 bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasContentsChanged)
 {
 	bool res = rootElement->el_PropagateComponentStateChanges(hasContentsChanged);

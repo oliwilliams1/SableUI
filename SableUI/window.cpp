@@ -188,7 +188,6 @@ void SableUI::Window::ScrollCallback(GLFWwindow* window, double x, double y)
 
 void SableUI::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (action == GLFW_REPEAT) return;
 	if (0 > key || key > SABLE_MAX_KEYS) return;
 
 	Window* instance = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
@@ -198,7 +197,7 @@ void SableUI::Window::KeyCallback(GLFWwindow* window, int key, int scancode, int
 		return;
 	}
 
-	if (action == GLFW_PRESS)
+	if (action == GLFW_PRESS || action == GLFW_REPEAT)
 	{
 		instance->ctx.keyPressedEvent.set(key, true);
 		instance->ctx.isKeyDown.set(key, true);
@@ -413,9 +412,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 bool SableUI::Window::Update()
 {
 	if (IsMinimized())
-	{
 		return !glfwWindowShouldClose(m_window);
-	}
 
 	MakeContextCurrent();
 
@@ -429,6 +426,7 @@ bool SableUI::Window::Update()
 
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();
+	m_root->PropagatePostLayoutEvents(ctx);
 
 	StepCachedTexturesCleaner();
 	TextCacheFactory::CleanCache(m_renderer);
@@ -450,9 +448,7 @@ bool SableUI::Window::Update()
 void SableUI::Window::Draw()
 {
 	if (IsMinimized())
-	{
 		return;
-	}
 
 	MakeContextCurrent();
 
@@ -463,9 +459,7 @@ void SableUI::Window::Draw()
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		if (msg.message == WM_QUIT)
-		{
 			exit(0);
-		}
 	}
 #endif
 
@@ -494,9 +488,7 @@ void SableUI::Window::Draw()
 
 	// blit the base framebuffer to screen if we need it
 	if (needsRedraw || hasWindowSurfaceQueue)
-	{
 		m_renderer->BlitToScreen(&m_framebuffer);
-	}
 
 	// execute custom queues
 	if (!m_customTargetQueues.empty())
@@ -609,14 +601,11 @@ void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
 // ============================================================================
 static void FixWidth(SableUI::BasePanel* panel)
 {
-	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE) {
+	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE)
 		return;
-	}
 
 	for (SableUI::BasePanel* child : panel->children)
-	{
 		FixWidth(child);
-	}
 
 	bool resized = false;
 	int deficit = 0;
@@ -718,12 +707,11 @@ static void FixWidth(SableUI::BasePanel* panel)
 
 static void FixHeight(SableUI::BasePanel* panel)
 {
-	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE) return;
+	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE)
+		return;
 
 	for (SableUI::BasePanel* child : panel->children)
-	{
 		FixHeight(child);
-	}
 
 	bool resized = false;
 	int deficit = 0;
@@ -978,9 +966,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 SableUI::Window::~Window()
 {
 	if (m_window)
-	{
 		MakeContextCurrent();
-	}
 
 	SB_delete(m_root);
 	DestroyDrawables();
@@ -990,18 +976,14 @@ SableUI::Window::~Window()
 	SB_delete(m_renderer);
 
 	if (m_window)
-	{
 		glfwDestroyWindow(m_window);
-	}
 }
 
 
 void SableUI::SableUI_Window_Initalise_GLFW()
 {
 	if (!glfwInit())
-	{
 		SableUI_Runtime_Error("Could not initialize GLFW");
-	}
 }
 
 void SableUI::SableUI_Window_Terminate_GLFW()

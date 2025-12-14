@@ -61,10 +61,13 @@ namespace SableUI
     {
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
-        ~BaseComponent();
         static int GetNumInstances();
+        ~BaseComponent();
 
         virtual void Layout() {};
+        virtual void OnUpdate(const UIEventContext& ctx) {};
+        virtual void OnPostLayoutUpdate(const UIEventContext& ctx) {};
+        
         void LayoutWrapper();
         void BackendInitialisePanel(RendererBackend* renderer);
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
@@ -78,10 +81,9 @@ namespace SableUI
         bool Rerender(bool* hasContentsChanged = nullptr);
 
         bool needsRerender = false;
-        virtual void comp_PropagateEvents(const UIEventContext& ctx);
-        virtual bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
-
-        virtual void OnUpdate(const UIEventContext& ctx) {}; // user override
+        void comp_PropagateEvents(const UIEventContext& ctx);
+        bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
+        void comp_PropagatePostLayoutEvents(const UIEventContext& ctx);
 
         template<typename T>
         void RegisterState(T* variable)

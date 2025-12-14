@@ -34,14 +34,20 @@ int SableUI::BasePanel::GetNumInstances()
 
 void SableUI::BasePanel::PropagateEvents(const UIEventContext& ctx)
 {
-	for (SableUI::BasePanel* child : children)
+	for (BasePanel* child : children)
 		child->PropagateEvents(ctx);
+}
+
+void SableUI::BasePanel::PropagatePostLayoutEvents(const UIEventContext& ctx)
+{
+	for (BasePanel* child : children)
+		child->PropagatePostLayoutEvents(ctx);
 }
 
 bool SableUI::BasePanel::PropagateComponentStateChanges()
 {
 	bool res = false;
-	for (SableUI::BasePanel* child : children)
+	for (BasePanel* child : children)
 		res = res || child->PropagateComponentStateChanges();
 
 	return res;
@@ -560,6 +566,11 @@ void SableUI::ContentPanel::Render()
 void SableUI::ContentPanel::PropagateEvents(const UIEventContext& ctx)
 {
 	m_component->comp_PropagateEvents(ctx);
+}
+
+void SableUI::ContentPanel::PropagatePostLayoutEvents(const UIEventContext& ctx)
+{
+	m_component->comp_PropagatePostLayoutEvents(ctx);
 }
 
 bool SableUI::ContentPanel::PropagateComponentStateChanges()
