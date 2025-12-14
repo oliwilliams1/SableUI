@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
-#include <cstddef>
-#include <utility>
+#include <type_traits>
 
 namespace SableUI
 {
@@ -45,6 +44,10 @@ namespace SableUI
 		String& operator=(String&& other) noexcept;
 		String operator+(const String& other) const;
 		bool operator==(const String& other) const;
+		String operator+(const char32_t other) const;
+		String operator+(const char other) const;
+
+		String substr(size_t pos, size_t count = static_cast<size_t>(-1)) const;
 
 		size_t size() const noexcept { return m_size; }
 		bool empty() const noexcept { return m_size == 0; }
@@ -61,9 +64,9 @@ namespace SableUI
 		const_iterator begin() const noexcept { return m_data; }
 		const_iterator end() const noexcept { return m_data + m_size; }
 
-	private:
 		void clear() noexcept;
-
+	
+	private:
 		char32_t* m_data;
 		size_t m_size;
 	};

@@ -36,7 +36,7 @@ namespace SableUI
 	// Object
 	enum class VertexFormat : uint16_t
 	{
-		UNDEF,
+		Undef,
 		Float1,
 		Float2,
 		Float3,
@@ -75,7 +75,7 @@ namespace SableUI
 	struct VertexAttribute
 	{
 		uint16_t offset;
-		VertexFormat format = VertexFormat::UNDEF;
+		VertexFormat format = VertexFormat::Undef;
 		bool normalised = false;
 	};
 
@@ -112,7 +112,7 @@ namespace SableUI
 	};
 
 	// Renderer
-	enum class Backend { UNDEF, OpenGL, Vulkan, DirectX, Metal };
+	enum class Backend { Undef, OpenGL, Vulkan, DirectX, Metal };
 
 	enum class BlendFactor
 	{
@@ -202,7 +202,7 @@ namespace SableUI
 		void FreeHandle(uint32_t handle);
 		uint32_t m_nextHandle = 0;
 		std::vector<uint32_t> m_freeHandles;
-		Backend m_backend = Backend::UNDEF;
+		Backend m_backend = Backend::Undef;
 
 		bool m_directDraw = false;
 		std::vector<DrawableBase*> m_drawStack;

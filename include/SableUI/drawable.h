@@ -12,7 +12,7 @@ namespace SableUI
 		BASE = 0x01,
 		VERTICAL = 0x02,
 		HORIZONTAL = 0x03,
-		UNDEF = 0xFF
+		Undef = 0xFF
 	};
 
 	struct GpuObject;
@@ -71,7 +71,7 @@ namespace SableUI
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 2;
 		std::vector<int> m_offsets;
-		PanelType m_type = PanelType::UNDEF;
+		PanelType m_type = PanelType::Undef;
 	};
 
 	class DrawableImage : public DrawableBase

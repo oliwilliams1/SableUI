@@ -74,8 +74,8 @@ void SableUI::BaseComponent::BackendInitialisePanel(RendererBackend* renderer)
 
 	rootElement = SB_new<Element>(renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
-	rootElement->setWType(RectType::FILL);
-	rootElement->setHType(RectType::FILL);
+	rootElement->setWType(RectType::Fill);
+	rootElement->setHType(RectType::Fill);
 
 	SetElementBuilderContext(renderer, rootElement, false);
 	LayoutWrapper();
@@ -187,7 +187,7 @@ bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasConten
 
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 {
-	size_t minSize = std::min(m_stateBlocks.size(), other.m_stateBlocks.size());
+	size_t minSize = (std::min)(m_stateBlocks.size(), other.m_stateBlocks.size());
 
 	if (m_stateBlocks.size() != other.m_stateBlocks.size())
 	{
@@ -204,7 +204,10 @@ void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
 {
 	if (!rootElement)
+	{
+		SableUI_Warn("GetElementById() returned nullptr for ID: %s" , std::string(id).c_str());
 		return nullptr;
+	}
 
 	return rootElement->GetElementById(id);
 }

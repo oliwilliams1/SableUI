@@ -215,3 +215,42 @@ void SableUI::String::push_back(char32_t c)
 	m_data = newData;
 	m_size += 1;
 }
+
+String String::operator+(const char32_t other) const
+{
+	String result;
+	result.m_size = m_size + 1;
+	result.m_data = new char32_t[result.m_size + 1];
+
+	if (m_data)
+		std::copy(m_data, m_data + m_size, result.m_data);
+
+	result.m_data[m_size] = other;
+	result.m_data[result.m_size] = U'\0';
+
+	return result;
+}
+
+String String::operator+(const char other) const
+{
+	return *this + static_cast<char32_t>(other);
+}
+
+String String::substr(size_t pos, size_t count) const
+{
+	if (!m_data || pos >= m_size)
+		return String();
+
+	size_t maxCount = m_size - pos;
+	if (count > maxCount)
+		count = maxCount;
+
+	String result;
+	result.m_size = count;
+	result.m_data = new char32_t[count + 1];
+
+	std::copy(m_data + pos, m_data + pos + count, result.m_data);
+	result.m_data[count] = U'\0';
+
+	return result;
+}

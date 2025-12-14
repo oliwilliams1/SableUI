@@ -89,6 +89,7 @@ namespace SableUI
 		static void WindowRefreshCallback(GLFWwindow* window);
 		static void ScrollCallback(GLFWwindow* window, double x, double y);
 		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void CharCallback(GLFWwindow* window, unsigned int codepoint);
 
 		GLFWwindow* m_window = nullptr;
 		bool m_initialized = false;

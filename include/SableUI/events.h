@@ -168,6 +168,8 @@ namespace SableUI
 		std::bitset<SABLE_MAX_KEYS> isKeyDown;
 		std::bitset<SABLE_MAX_KEYS> keyPressedEvent;
 		std::bitset<SABLE_MAX_KEYS> keyReleasedEvent;
+
+		char typedChar = '\0';
 	};
 
 	inline bool IsMouseDown(const UIEventContext& ctx, uint8_t button) { return ctx.mouseDown.test(button); }

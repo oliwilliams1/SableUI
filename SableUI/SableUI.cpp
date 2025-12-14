@@ -240,8 +240,8 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (s_reconciliationMode) return StartDivVirtual(p_info, child);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
+	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -284,8 +284,8 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddRectVirtual(p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
+	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -305,8 +305,8 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddImageVirtual(path, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FIT_CONTENT;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
+	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -328,8 +328,8 @@ void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddTextVirtual(text, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (info.wType == RectType::Undef) info.wType = RectType::Fill;
+	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -351,8 +351,8 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddTextU32Virtual(text, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::UNDEF) info.wType = RectType::FILL;
-	if (info.hType == RectType::UNDEF) info.hType = RectType::FIT_CONTENT;
+	if (info.wType == RectType::Undef) info.wType = RectType::Fill;
+	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -409,8 +409,8 @@ void SableUI::StartCustomLayoutScope(
 	s_rendererStack.push(window->m_renderer);
 	Element* queueRoot = SB_new<Element>(window->m_renderer, ElementType::DIV);
 	queueRoot->SetInfo(ElementInfo);
-	queueRoot->setWType(RectType::FIT_CONTENT);
-	queueRoot->setHType(RectType::FIT_CONTENT);
+	queueRoot->setWType(RectType::FitContent);
+	queueRoot->setHType(RectType::FitContent);
 
 	(*queuePtr)->root = queueRoot;
 	s_elementStack.push(queueRoot);
@@ -481,7 +481,7 @@ public:
 };
 
 static App* s_app = nullptr;
-static SableUI::Backend s_backend = SableUI::Backend::UNDEF;
+static SableUI::Backend s_backend = SableUI::Backend::Undef;
 
 void SableUI::PreInit(int argc, char** argv)
 {
@@ -513,7 +513,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 		return;
 	}
 
-	if (s_backend != SableUI::Backend::UNDEF) return;
+	if (s_backend != SableUI::Backend::Undef) return;
 
 	s_backend = backend;
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
@@ -528,7 +528,7 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 
 	RegisterSableUIComponents();
 
-	if (s_backend == SableUI::Backend::UNDEF)
+	if (s_backend == SableUI::Backend::Undef)
 	{
 		s_backend = SableUI::Backend::OpenGL;
 	}

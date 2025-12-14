@@ -92,6 +92,7 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 #include <SableUI/components/scrollView.h>
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
+#include <SableUI/components/textField.h>
 
 void SableUI::RegisterSableUIComponents()
 {
@@ -103,4 +104,5 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<ScrollView>("ScrollView");
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");
+    RegisterComponent<TextField>("TextField");
 }

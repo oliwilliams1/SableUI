@@ -13,7 +13,7 @@ namespace SableUI
 {
 	enum class ElementType
 	{
-		UNDEF = 0x0,
+		Undef = 0x0,
 		RECT = 0x1,
 		IMAGE = 0x2,
 		TEXT = 0x3,
@@ -55,9 +55,9 @@ namespace SableUI
 		bool _centerY = false;
 		float _borderRadius = 0.0f;
 		bool clipChildren = false;
-		RectType wType = RectType::UNDEF;
-		RectType hType = RectType::UNDEF;
-		ElementType type = ElementType::UNDEF;
+		RectType wType = RectType::Undef;
+		RectType hType = RectType::Undef;
+		ElementType type = ElementType::Undef;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath = "";
 		Colour textColour = { 255, 255, 255, 255 };
@@ -75,10 +75,10 @@ namespace SableUI
 		// setter functions for macros
 		ElementInfo& setID(const SableString& v)			{ id = v; return *this; }
 		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
-		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
+		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::Fixed; return *this; }
 		ElementInfo& setMinWidth(int v)						{ minWidth = v; return *this; }
 		ElementInfo& setMaxWidth(int v)						{ maxWidth = v; return *this; }
-		ElementInfo& setHeight(int v)						{ height = v; hType = RectType::FIXED; return *this; }
+		ElementInfo& setHeight(int v)						{ height = v; hType = RectType::Fixed; return *this; }
 		ElementInfo& setMinHeight(int v)					{ minHeight = v; return *this; }
 		ElementInfo& setMaxHeight(int v)					{ maxHeight = v; return *this; }
 
@@ -133,7 +133,7 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		ElementType type = ElementType::UNDEF;
+		ElementType type = ElementType::Undef;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
 		SableString uniqueTextOrPath;
@@ -157,7 +157,7 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		ElementType type = ElementType::UNDEF;
+		ElementType type = ElementType::Undef;
 		
 		// functions for engine
 		void Init(RendererBackend* renderer, ElementType type);
@@ -187,13 +187,13 @@ namespace SableUI
 		int paddingLeft = 0;
 		int paddingRight = 0;
 		int fontSize = 0;
-		int lineHeight = 0.0f;
+		float lineHeight = 0.0f;
 		bool _centerX = false;
 		bool _centerY = false;
 		float borderRadius = 0.0f;
 		bool clipChildren = false;
-		RectType wType = RectType::UNDEF;
-		RectType hType = RectType::UNDEF;
+		RectType wType = RectType::Undef;
+		RectType hType = RectType::Undef;
 		Colour bgColour = Colour(0, 0, 0, 0);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
 		SableString uniqueTextOrPath;
@@ -210,10 +210,10 @@ namespace SableUI
 		// setter functions for macros
 		Element& setID(const SableString& v)			{ ID = v; return *this; }
 		Element& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
-		Element& setWidth(int v)						{ width = v; wType = RectType::FIXED; return *this; }
+		Element& setWidth(int v)						{ width = v; wType = RectType::Fixed; return *this; }
 		Element& setMinWidth(int v)						{ minWidth = v; return *this; }
 		Element& setMaxWidth(int v)						{ maxWidth = v; return *this; }
-		Element& setHeight(int v)						{ height = v; hType = RectType::FIXED; return *this; }
+		Element& setHeight(int v)						{ height = v; hType = RectType::Fixed; return *this; }
 		Element& setMinHeight(int v)					{ minHeight = v; return *this; }
 		Element& setMaxHeight(int v)					{ maxHeight = v; return *this; }
 		

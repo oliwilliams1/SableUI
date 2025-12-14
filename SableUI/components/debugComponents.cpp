@@ -34,7 +34,7 @@ static SableString GetPanelName(BasePanel* panel)
 	case PanelType::BASE: return "content panel";
 	case PanelType::HORIZONTAL: return "h-splitter";
 	case PanelType::VERTICAL: return "v-splitter";
-	case PanelType::UNDEF: return "undefined panel type";
+	case PanelType::Undef: return "undefined panel type";
 	case PanelType::ROOTNODE: return "root";
 	default: return "unknown panel type";
 	}
@@ -44,7 +44,7 @@ static SableString ElementTypeToString(ElementType type)
 {
 	switch (type)
 	{
-	case ElementType::UNDEF: return "undefined element";
+	case ElementType::Undef: return "undefined element";
 	case ElementType::RECT: return "rect";
 	case ElementType::IMAGE: return "image";
 	case ElementType::TEXT: return "text";

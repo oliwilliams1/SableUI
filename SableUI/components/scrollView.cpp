@@ -34,7 +34,7 @@ void SableUI::ScrollView::Layout()
 			}
 			else
 			{
-				childElInfo.setWType(SableUI::RectType::FILL).setHType(SableUI::RectType::FILL);
+				childElInfo.setWType(SableUI::RectType::Fill).setHType(SableUI::RectType::Fill);
 				AddComponent(childID.c_str())->BackendInitialiseChild(childID.c_str(), this, childElInfo);
 			}
 		}

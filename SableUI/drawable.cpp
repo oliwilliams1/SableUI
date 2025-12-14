@@ -190,8 +190,8 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
     h *= 2.0f;
 
     /* prevent negative scale */
-    w = std::max(0.0f, w);
-    h = std::max(0.0f, h);
+    w = (std::max)(0.0f, w);
+    h = (std::max)(0.0f, h);
 
     /* invert y axis */
     y *= -1.0f;
@@ -248,7 +248,7 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 
 void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
-    if (m_type == PanelType::UNDEF || m_type == PanelType::BASE || m_type == PanelType::ROOTNODE)
+    if (m_type == PanelType::Undef || m_type == PanelType::BASE || m_type == PanelType::ROOTNODE)
         return;
 
     g_rShader.Use();
@@ -275,8 +275,8 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
         normalizedH *= 2.0f;
 
         /* prevent negative scale */
-        normalizedW = std::max(0.0f, normalizedW);
-        normalizedH = std::max(0.0f, normalizedH);
+        normalizedW = (std::max)(0.0f, normalizedW);
+        normalizedH = (std::max)(0.0f, normalizedH);
 
         /* invert y axis */
         normalizedY *= -1.0f;
@@ -359,8 +359,8 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
     h *= 2.0f;
 
     /* prevent negative scale */
-    w = std::max(0.0f, w);
-    h = std::max(0.0f, h);
+    w = (std::max)(0.0f, w);
+    h = (std::max)(0.0f, h);
 
     /* invert y axis */
     y *= -1.0f;

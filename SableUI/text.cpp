@@ -1615,8 +1615,7 @@ void FontManager::GetTextVertexData(
 			}
 			else
 			{
-				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph. Text: %s",
-					c, std::string(text->m_content).c_str());
+				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph.",c);
 				charData = Character{};
 			}
 		}

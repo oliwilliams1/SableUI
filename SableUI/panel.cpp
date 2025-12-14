@@ -16,8 +16,8 @@ static int s_basePanelCount = 0;
 SableUI::BasePanel::BasePanel(BasePanel* parent, RendererBackend* renderer) : parent(parent), m_renderer(renderer)
 {
 	type = PanelType::BASE;
-	rect.wType = RectType::FILL;
-	rect.hType = RectType::FILL;
+	rect.wType = RectType::Fill;
+	rect.hType = RectType::Fill;
 	
 	s_basePanelCount++;
 }
@@ -228,11 +228,11 @@ void SableUI::SplitterPanel::CalculateScales()
 		for (BasePanel* child : children)
 		{
 			child->rect.h = rect.h;
-			child->rect.hType = RectType::FILL;
+			child->rect.hType = RectType::Fill;
 
-			if (child->rect.wType == RectType::FIXED || child->rect.wType == RectType::FIT_CONTENT)
+			if (child->rect.wType == RectType::Fixed || child->rect.wType == RectType::FitContent)
 			{
-				child->rect.w = (child->rect.wType == RectType::FIXED) ? child->rect.w : std::max(0, child->minBounds.x);
+				child->rect.w = (child->rect.wType == RectType::Fixed) ? child->rect.w : std::max(0, child->minBounds.x);
 
 				if (child->maxBounds.x > 0 && child->rect.w > child->maxBounds.x)
 				{
@@ -272,7 +272,7 @@ void SableUI::SplitterPanel::CalculateScales()
 					{
 						int excess = calculatedWidth - fillChildren[i]->maxBounds.x;
 						fillChildren[i]->rect.w = fillChildren[i]->maxBounds.x;
-						fillChildren[i]->rect.wType = RectType::FIXED;
+						fillChildren[i]->rect.wType = RectType::Fixed;
 
 						if (i + 1 < fillChildren.size())
 						{
@@ -303,11 +303,11 @@ void SableUI::SplitterPanel::CalculateScales()
 		for (BasePanel* child : children)
 		{
 			child->rect.w = rect.w;
-			child->rect.wType = RectType::FILL;
+			child->rect.wType = RectType::Fill;
 
-			if (child->rect.hType == RectType::FIXED || child->rect.hType == RectType::FIT_CONTENT)
+			if (child->rect.hType == RectType::Fixed || child->rect.hType == RectType::FitContent)
 			{
-				child->rect.h = (child->rect.hType == RectType::FIXED) ? child->rect.h : std::max(0, child->minBounds.y);
+				child->rect.h = (child->rect.hType == RectType::Fixed) ? child->rect.h : std::max(0, child->minBounds.y);
 
 				if (child->maxBounds.y > 0 && child->rect.h > child->maxBounds.y)
 				{
@@ -347,7 +347,7 @@ void SableUI::SplitterPanel::CalculateScales()
 					{
 						int excess = calculatedHeight - fillChildren[i]->maxBounds.y;
 						fillChildren[i]->rect.h = fillChildren[i]->maxBounds.y;
-						fillChildren[i]->rect.hType = RectType::FIXED;
+						fillChildren[i]->rect.hType = RectType::Fixed;
 
 						if (i + 1 < fillChildren.size())
 						{
@@ -445,8 +445,8 @@ void SableUI::SplitterPanel::CalculateMinBounds()
 		for (BasePanel* child : children)
 		{
 			child->CalculateMinBounds();
-			totalWidth += child->rect.wType == SableUI::FILL ? child->minBounds.x : child->rect.w;
-			maxHeight = std::max(maxHeight, child->rect.hType == SableUI::FILL ? child->minBounds.y : child->rect.h);
+			totalWidth += child->rect.wType == SableUI::Fill ? child->minBounds.x : child->rect.w;
+			maxHeight = std::max(maxHeight, child->rect.hType == SableUI::Fill ? child->minBounds.y : child->rect.h);
 		}
 
 		minBounds = { totalWidth, maxHeight };
@@ -459,8 +459,8 @@ void SableUI::SplitterPanel::CalculateMinBounds()
 		for (BasePanel* child : children)
 		{
 			child->CalculateMinBounds();
-			totalHeight += child->rect.hType == SableUI::FILL ? child->minBounds.y : child->rect.h;
-			maxWidth = std::max(maxWidth, child->rect.wType == SableUI::FILL ? child->minBounds.x : child->rect.w);
+			totalHeight += child->rect.hType == SableUI::Fill ? child->minBounds.y : child->rect.h;
+			maxWidth = std::max(maxWidth, child->rect.wType == SableUI::Fill ? child->minBounds.x : child->rect.w);
 		}
 
 		minBounds = { maxWidth, totalHeight };

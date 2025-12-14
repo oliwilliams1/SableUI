@@ -477,16 +477,16 @@ void SableUI::Element::LayoutChildren()
         {
             totalMarginMainAxis += childElement->marginTop + childElement->marginBottom;
 
-            if (childElement->hType == RectType::FIXED)
+            if (childElement->hType == RectType::Fixed)
             {
                 totalFixedMainAxis += std::min(std::max(childElement->height, childElement->minHeight), childElement->maxHeight > 0 ? childElement->maxHeight : childElement->height);
             }
-            else if (childElement->hType == RectType::FIT_CONTENT)
+            else if (childElement->hType == RectType::FitContent)
             {
                 int minHeight = childElement->GetMinHeight();
                 totalFixedMainAxis += std::min(std::max(0, minHeight), childElement->maxHeight > 0 ? childElement->maxHeight : minHeight);
             }
-            else if (childElement->hType == RectType::FILL)
+            else if (childElement->hType == RectType::Fill)
             {
                 fillMainAxisCount++;
                 totalPaddingOfFillElementsMainAxis += childElement->paddingTop + childElement->paddingBottom;
@@ -496,16 +496,16 @@ void SableUI::Element::LayoutChildren()
         {
             totalMarginMainAxis += childElement->marginLeft + childElement->marginRight;
 
-            if (childElement->wType == RectType::FIXED)
+            if (childElement->wType == RectType::Fixed)
             {
                 totalFixedMainAxis += std::min(std::max(childElement->width, childElement->minWidth), childElement->maxWidth > 0 ? childElement->maxWidth : childElement->width);
             }
-            else if (childElement->wType == RectType::FIT_CONTENT)
+            else if (childElement->wType == RectType::FitContent)
             {
                 int minWidth = childElement->GetMinWidth();
                 totalFixedMainAxis += std::min(std::max(0, minWidth), childElement->maxWidth > 0 ? childElement->maxWidth : minWidth);
             }
-            else if (childElement->wType == RectType::FILL)
+            else if (childElement->wType == RectType::Fill)
             {
                 fillMainAxisCount++;
                 totalPaddingOfFillElementsMainAxis += childElement->paddingLeft + childElement->paddingRight;
@@ -536,11 +536,11 @@ void SableUI::Element::LayoutChildren()
 
         if (isVerticalFlow)
         {
-            if (childElement->wType == RectType::FIXED)
+            if (childElement->wType == RectType::Fixed)
             {
                 childContentWidth = childElement->width;
             }
-            else if (childElement->type == ElementType::TEXT || childElement->wType == RectType::FIT_CONTENT)
+            else if (childElement->type == ElementType::TEXT || childElement->wType == RectType::FitContent)
             {
                 childContentWidth = std::max(0, contentAreaSize.x - childMarginWidth);
             }
@@ -565,11 +565,11 @@ void SableUI::Element::LayoutChildren()
                     childContentHeight = childElement->height;
                 }
             }
-            else if (childElement->hType == RectType::FIXED)
+            else if (childElement->hType == RectType::Fixed)
             {
                 childContentHeight = childElement->height;
             }
-            else if (childElement->hType == RectType::FIT_CONTENT)
+            else if (childElement->hType == RectType::FitContent)
             {
                 childContentHeight = std::max(0, childElement->GetMinHeight() - childElement->paddingTop - childElement->paddingBottom);
             }
@@ -585,11 +585,11 @@ void SableUI::Element::LayoutChildren()
             childContentHeight = std::max(childContentHeight, childElement->minHeight);
             childContentHeight = (childElement->maxHeight > 0) ? std::min(childContentHeight, childElement->maxHeight) : childContentHeight;
 
-            if (childElement->wType == RectType::FIXED)
+            if (childElement->wType == RectType::Fixed)
             {
                 childContentWidth = childElement->width;
             }
-            else if (childElement->wType == RectType::FIT_CONTENT)
+            else if (childElement->wType == RectType::FitContent)
             {
                 childContentWidth = std::max(0, childElement->GetMinWidth() - childElement->paddingLeft - childElement->paddingRight);
             }
@@ -603,11 +603,11 @@ void SableUI::Element::LayoutChildren()
         }
         else
         {
-            if (childElement->wType == RectType::FIXED)
+            if (childElement->wType == RectType::Fixed)
             {
                 childContentWidth = childElement->width;
             }
-            else if (childElement->wType == RectType::FIT_CONTENT)
+            else if (childElement->wType == RectType::FitContent)
             {
                 childContentWidth = std::max(0, childElement->GetMinWidth() - childElement->paddingLeft - childElement->paddingRight);
             }
@@ -621,11 +621,11 @@ void SableUI::Element::LayoutChildren()
                 }
             }
 
-            if (childElement->hType == RectType::FIXED)
+            if (childElement->hType == RectType::Fixed)
             {
                 childContentHeight = childElement->height;
             }
-            else if (childElement->hType == RectType::FIT_CONTENT)
+            else if (childElement->hType == RectType::FitContent)
             {
                 childContentHeight = std::max(0, childElement->GetMinHeight() - childElement->paddingTop - childElement->paddingBottom);
             }

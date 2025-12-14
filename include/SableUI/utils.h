@@ -260,10 +260,10 @@ namespace SableUI
 
 	enum RectType
 	{
-		UNDEF       = 0x0,
-		FILL        = 0x1,
-		FIXED       = 0x2,
-		FIT_CONTENT = 0x3
+		Undef       = 0x0,
+		Fill        = 0x1,
+		Fixed       = 0x2,
+		FitContent	= 0x3
 	};
 
 	struct Rect
@@ -291,8 +291,8 @@ namespace SableUI
 			};
 		};
 
-		RectType wType = UNDEF;
-		RectType hType = UNDEF;
+		RectType wType = Undef;
+		RectType hType = Undef;
 
 		bool operator==(const Rect& other) const {
 			return x == other.x && y == other.y && w == other.w && h == other.h;
