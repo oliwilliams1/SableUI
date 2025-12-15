@@ -762,7 +762,7 @@ SableUI::ElementInfo SableUI::Element::GetInfo() const
     info.hType                  = hType;
     info.type                   = type;
     info.layoutDirection        = layoutDirection;
-    info.uniqueTextOrPath       = uniqueTextOrPath;
+    info.text                   = text;
     info.textColour             = textColour;
     info.textJustification      = textJustification;
     info.textWrap               = textWrap;
@@ -781,9 +781,9 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
 
     // Type and content
     hash_combine(h, std::hash<int>()((int)vnode->type));
-    if (vnode->uniqueTextOrPath.size() != 0)
+    if (vnode->text.size() != 0)
     {
-        std::string s = (std::string)(vnode->uniqueTextOrPath);
+        std::string s = (std::string)(vnode->text);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
@@ -822,9 +822,9 @@ static size_t ComputeHash(const SableUI::Element* elem)
     size_t h = 1469598103934665603ULL;
 
     hash_combine(h, std::hash<int>()((int)elem->type));
-    if (elem->uniqueTextOrPath.size() != 0)
+    if (elem->text.size() != 0)
     {
-        std::string s = (std::string)(elem->uniqueTextOrPath);
+        std::string s = (std::string)(elem->text);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
@@ -960,19 +960,19 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
     case ElementType::TEXT:
     {
-        AddText((std::string)(vnode->uniqueTextOrPath), vnode->info);
+        AddText((std::string)(vnode->text), vnode->info);
         break;
     }
 
     case ElementType::TEXT_U32:
     {
-        AddTextU32(vnode->uniqueTextOrPath, vnode->info);
+        AddTextU32(vnode->text, vnode->info);
         break;
     }
 
     case ElementType::IMAGE:
     {
-        AddImage((std::string)(vnode->uniqueTextOrPath), vnode->info);
+        AddImage((std::string)(vnode->text), vnode->info);
         break;
     }
     

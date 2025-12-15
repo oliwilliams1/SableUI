@@ -84,7 +84,7 @@ void SableUI::AddTextVirtual(const std::string& text, const SableUI::ElementInfo
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::TEXT;
-	vnode->uniqueTextOrPath = text;
+	vnode->text = text;
 	vnode->info = info;
 
 	if (parent) parent->children.push_back(vnode);
@@ -96,7 +96,7 @@ void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::TEXT_U32;
-	vnode->uniqueTextOrPath = text;
+	vnode->text = text;
 	vnode->info = info;
 
 	if (parent) parent->children.push_back(vnode);
@@ -108,7 +108,7 @@ void SableUI::AddImageVirtual(const std::string& path, const SableUI::ElementInf
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::IMAGE;
-	vnode->uniqueTextOrPath = path;
+	vnode->text = path;
 	vnode->info = info;
 
 	if (parent) parent->children.push_back(vnode);
@@ -201,7 +201,7 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 		s_virtualRoot = SB_new<VirtualNode>();
 		s_virtualRoot->info = rootElement->GetInfo();
 		s_virtualRoot->type = rootElement->type;
-		s_virtualRoot->uniqueTextOrPath = rootElement->uniqueTextOrPath;
+		s_virtualRoot->text = rootElement->text;
 		s_virtualStack.push(s_virtualRoot);
 	}
 	else
@@ -317,7 +317,7 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	Element* parent = s_elementStack.top();
 	Element* newImage = SB_new<Element>(s_rendererStack.top(), ElementType::IMAGE);
 
-	newImage->uniqueTextOrPath = path;
+	newImage->text = path;
 	newImage->SetInfo(info);
 	newImage->SetImage(path);
 	parent->AddChild(newImage);
@@ -340,7 +340,7 @@ void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
 	Element* parent = s_elementStack.top();
 	Element* newText = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
-	newText->uniqueTextOrPath = text;
+	newText->text = text;
 	newText->SetInfo(info);
 	newText->SetText(text);
 	parent->AddChild(newText);
@@ -363,7 +363,7 @@ void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
 	Element* parent = s_elementStack.top();
 	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
-	newTextU32->uniqueTextOrPath = text;
+	newTextU32->text = text;
 	newTextU32->SetInfo(info);
 	newTextU32->SetText(text);
 	parent->AddChild(newTextU32);

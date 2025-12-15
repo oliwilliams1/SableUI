@@ -221,7 +221,7 @@ void SableUI::Window::CharCallback(GLFWwindow* window, unsigned int codepoint)
 
 	if (codepoint > 31 && codepoint < 127)
 	{
-		instance->ctx.typedChar = codepoint;
+		instance->ctx.typedCharBuffer.push_back(codepoint);
 	}
 }
 
@@ -436,11 +436,10 @@ bool SableUI::Window::Update()
 	ctx.mousePressed.reset();
 	ctx.mouseReleased.reset();
 	ctx.mouseDoubleClicked.reset();
-	ctx.isKeyDown.reset();
 	ctx.keyPressedEvent.reset();
 	ctx.keyReleasedEvent.reset();
 	ctx.scrollDelta = { 0, 0 };
-	ctx.typedChar = '\0';
+	ctx.typedCharBuffer.clear();
 
 	return !glfwWindowShouldClose(m_window);
 }

@@ -13,12 +13,15 @@ namespace SableUI
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
 		void OnPostLayoutUpdate(const UIEventContext& ctx) override;
-		void SetWindow(Window* window) { m_window = window; };
+		void InitData(Window* window)
+			{ m_window = window; };
 
 	private:
 		CustomLayoutContext(queue);
 		useState(textVal, setTextVal, SableString, U"");
 		useState(isFocused, setIsFocused, bool, false);
+		useState(cursorPos, setCursorPos, int, 0);
+		useState(initialCursorPos, setInitialCursorPos, int, -1);
 		Window* m_window = nullptr;
 	};
 }

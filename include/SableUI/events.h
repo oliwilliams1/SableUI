@@ -2,6 +2,7 @@
 #include <SableUI/utils.h>
 #include <bitset>
 #include <cstdint>
+#include <vector>
 
 /* Borrowed from GLFW key codes for ease of use 
  * Printable Keys */
@@ -169,7 +170,7 @@ namespace SableUI
 		std::bitset<SABLE_MAX_KEYS> keyPressedEvent;
 		std::bitset<SABLE_MAX_KEYS> keyReleasedEvent;
 
-		char typedChar = '\0';
+		std::vector<unsigned int> typedCharBuffer{};
 	};
 
 	inline bool IsMouseDown(const UIEventContext& ctx, uint8_t button) { return ctx.mouseDown.test(button); }

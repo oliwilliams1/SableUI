@@ -2,14 +2,13 @@
 #include <GL/glew.h>
 #include <string>
 #include <vector>
-#include <chrono>
-#include <unordered_map>
 #include <cstdint>
-#include "SableUI/utils.h"
+#include <SableUI/utils.h>
 
 namespace SableUI
 {
-	struct FontRange {
+	struct FontRange
+	{
 		FontRange();
 		FontRange(char32_t start, char32_t end, std::string fontPath);
 		FontRange(const FontRange& other);
@@ -23,7 +22,8 @@ namespace SableUI
 		bool operator<(const FontRange& other) const;
 	};
 
-	struct FontPack {
+	struct FontPack
+	{
 		FontPack();
 		FontPack(const FontPack& other);
 		FontPack(FontPack&& other) noexcept;
@@ -35,11 +35,45 @@ namespace SableUI
 		std::vector<FontRange> fontRanges;
 	};
 	
-	enum class TextJustification {
+	enum class TextJustification
+	{
 		Left,
 		Center,
 		Right
 	};
+
+	struct TextSizeResult
+	{
+		int width;
+		int height;
+		int lineCount;
+	};
+	
+	TextSizeResult QueryTextSize(
+		const SableString& text,
+		int maxWidth,
+		int fontSize = 11,
+		float lineSpacing = 1.15f,
+		TextJustification justification = TextJustification::Left,
+		int maxHeight = -1
+	);
+
+	struct CursorPosition
+	{
+		int x;
+		int y;
+		int lineHeight;
+		int lineIndex;
+	};
+
+	CursorPosition QueryCursorPosition(
+		const SableString& text,
+		size_t cursorIndex,
+		int maxWidth,
+		int fontSize = 11,
+		float lineSpacing = 1.15f,
+		TextJustification justification = TextJustification::Left
+	);
 
 	class RendererBackend;
 	struct GpuObject;
@@ -54,9 +88,15 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		int SetContent(RendererBackend* renderer, const SableString& str,
-			int maxWidth, int fontSize = 10, int maxHeight = -1, float lineSpacing = 1.15f,
-			TextJustification justification = TextJustification::Left);
+		int SetContent(
+			RendererBackend* renderer,
+			const SableString& str,
+			int maxWidth,
+			int fontSize = 10,
+			int maxHeight = -1,
+			float lineSpacing = 1.15f,
+			TextJustification justification = TextJustification::Left
+		);
 
 		int UpdateMaxWidth(int maxWidth);
 		int GetMinWidth(bool wrapped);

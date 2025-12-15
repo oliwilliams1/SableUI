@@ -370,7 +370,7 @@ public:
 	FT_Library ft_library = nullptr;
 
 	void ResizeTextureArray(int newDepth);
-	void BindTextAtlasTexture() { atlasTextureArray.Bind(); }
+	void BindTextAtlasTexture() const { atlasTextureArray.Bind(); }
 
 	std::map<char_t, Character> characters;
 	bool FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange);
@@ -380,6 +380,7 @@ public:
 	void LoadFontPack(const std::string& fontFilename);
 	std::string SuggestFontPackForChar(char32_t c);
 	bool LoadFontPackByFilename(const std::string& fontDir, const std::string& filename);
+	bool SetStyleChar(char32_t c);
 
 	SableUI::GpuTexture2DArray atlasTextureArray;
 	int atlasDepth = MIN_ATLAS_DEPTH;
@@ -412,7 +413,6 @@ private:
 	const std::vector<FontPackHint>& GetCurrentFontPackHints();
 	std::string GetPrimaryFontFilename() const;
 
-	bool SetStyleChar(char32_t c);
 };
 
 static FontManager* fontManager = nullptr;
@@ -1703,7 +1703,7 @@ void FontManager::GetTextVertexData(
 		currentLineWidth += token.width;
 	}
 
-	if (!currentLine.empty() && !truncated)
+	if (!truncated)
 		lines.push_back(currentLine);
 
 	if (truncated && !lines.empty())
@@ -1960,6 +1960,235 @@ void SableUI::BindTextAtlasTexture()
 		FontManager::GetInstance().Initialize();
 
 	return FontManager::GetInstance().BindTextAtlasTexture();
+}
+
+// ============================================================================
+// Size queries
+// ============================================================================
+SableUI::CursorPosition SableUI::QueryCursorPosition(
+	const SableString& text,
+	size_t cursorIndex,
+	int maxWidth,
+	int fontSize,
+	float lineSpacing,
+	SableUI::TextJustification justification
+)
+{
+	if (!FontManager::GetInstance().isInitialized)
+		FontManager::GetInstance().Initialize();
+
+	FontManager& fontManager = FontManager::GetInstance();
+
+	CursorPosition result = { 0, 0, 0, 0 };
+	int lineSpacingPx = static_cast<int>(fontSize * lineSpacing);
+	result.lineHeight = lineSpacingPx;
+
+	float currentLineWidth = 0.0f;
+	float currentWordWidth = 0.0f;
+	int currentLine = 0;
+	size_t charIndex = 0;
+	bool inWord = false;
+
+	FontType currentFontType = FontType::Regular;
+
+	for (auto it = text.begin(); it != text.end() && charIndex < cursorIndex; it++, charIndex++)
+	{
+		char32_t c = *it;
+
+		if (fontManager.SetStyleChar(c))
+		{
+			cursorIndex++;
+			continue;
+		}
+
+		if (c == U'\n')
+		{
+			currentLineWidth = 0.0f;
+			currentWordWidth = 0.0f;
+			currentLine++;
+			inWord = false;
+			continue;
+		}
+
+		if (IsNonPrintableChar(c))
+		{
+			cursorIndex++;
+			continue;
+		}
+
+		char_t charKey = { c, fontSize, currentFontType };
+		auto charIt = fontManager.characters.find(charKey);
+
+		Character charData;
+		if (charIt != fontManager.characters.end())
+		{
+			charData = charIt->second;
+		}
+		else
+		{
+			FontRange targetRange;
+			if (fontManager.FindFontRangeForChar(c, targetRange))
+			{
+				Atlas newAtlas{};
+				newAtlas.fontSize = fontSize;
+				fontManager.LoadFontRange(newAtlas, targetRange);
+
+				auto newIt = fontManager.characters.find(charKey);
+				if (newIt != fontManager.characters.end())
+				{
+					charData = newIt->second;
+				}
+			}
+		}
+
+		float charAdvance = charData.advance;
+
+		if (std::iswspace(static_cast<wint_t>(c)))
+		{
+			if (inWord)
+			{
+				currentLineWidth += currentWordWidth;
+				currentWordWidth = 0.0f;
+				inWord = false;
+			}
+			currentLineWidth += charAdvance;
+		}
+		else
+		{
+			currentWordWidth += charAdvance;
+			inWord = true;
+
+			if (maxWidth > 0 && currentLineWidth > 0 &&
+				(currentLineWidth + currentWordWidth > maxWidth))
+			{
+				currentLine++;
+				currentLineWidth = 0.0f;
+			}
+		}
+	}
+
+	result.x = static_cast<int>(std::round(currentLineWidth + currentWordWidth));
+	result.y = currentLine * lineSpacingPx;
+	result.lineIndex = currentLine;
+
+	return result;
+}
+
+SableUI::TextSizeResult SableUI::QueryTextSize(
+	const SableString& text,
+	int maxWidth,
+	int fontSize,
+	float lineSpacing,
+	SableUI::TextJustification justification,
+	int maxHeight
+)
+{
+	if (!FontManager::GetInstance().isInitialized)
+		FontManager::GetInstance().Initialize();
+
+	FontManager& fontManager = FontManager::GetInstance();
+
+	TextSizeResult result = { 0, 0, 0 };
+
+	int lineSpacingPx = static_cast<int>(fontSize * lineSpacing);
+
+	std::vector<float> lineWidths;
+	float currentLineWidth = 0.0f;
+	float currentWordWidth = 0.0f;
+	bool inWord = false;
+
+	FontType currentFontType = FontType::Regular;
+
+	for (char32_t c : text)
+	{
+		if (fontManager.SetStyleChar(c))
+			continue;
+
+		if (c == U'\n')
+		{
+			lineWidths.push_back(currentLineWidth + currentWordWidth);
+			currentLineWidth = 0.0f;
+			currentWordWidth = 0.0f;
+			inWord = false;
+			continue;
+		}
+
+		if (IsNonPrintableChar(c))
+			continue;
+
+		char_t charKey = { c, fontSize, currentFontType };
+		auto it = fontManager.characters.find(charKey);
+
+		Character charData;
+		if (it != fontManager.characters.end())
+		{
+			charData = it->second;
+		}
+		else
+		{
+			FontRange targetRange;
+			if (fontManager.FindFontRangeForChar(c, targetRange))
+			{
+				Atlas newAtlas{};
+				newAtlas.fontSize = fontSize;
+				fontManager.LoadFontRange(newAtlas, targetRange);
+
+				auto newIt = fontManager.characters.find(charKey);
+				if (newIt != fontManager.characters.end())
+				{
+					charData = newIt->second;
+				}
+			}
+		}
+
+		float charAdvance = charData.advance;
+
+		if (std::iswspace(static_cast<wint_t>(c)))
+		{
+			if (inWord)
+			{
+				currentLineWidth += currentWordWidth;
+				currentWordWidth = 0.0f;
+				inWord = false;
+			}
+			currentLineWidth += charAdvance;
+		}
+		else
+		{
+			currentWordWidth += charAdvance;
+			inWord = true;
+
+			if (maxWidth > 0 && currentLineWidth > 0 &&
+				(currentLineWidth + currentWordWidth > maxWidth))
+			{
+				lineWidths.push_back(currentLineWidth);
+				currentLineWidth = 0.0f;
+
+				if (maxHeight > 0)
+				{
+					int potentialLines = lineWidths.size() + 1;
+					if (potentialLines * lineSpacingPx > maxHeight)
+					{
+						currentWordWidth = 0.0f;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if (currentLineWidth > 0 || currentWordWidth > 0)
+		lineWidths.push_back(currentLineWidth + currentWordWidth);
+
+	result.lineCount = lineWidths.empty() ? 1 : lineWidths.size();
+	result.height = result.lineCount * lineSpacingPx;
+
+	for (float width : lineWidths)
+		result.width = std::max(result.width, static_cast<int>(std::ceil(width)));
+
+	currentFontType = FontType::Regular;
+
+	return result;
 }
 
 // ============================================================================
