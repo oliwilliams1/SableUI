@@ -44,15 +44,13 @@ namespace SableUI
 	void EndDivVirtual();
 	void AddRectVirtual(const ElementInfo& info = {});
 	void AddImageVirtual(const std::string& path, const ElementInfo& info = {});
-	void AddTextVirtual(const std::string& text, const ElementInfo& info = {});
-	void AddTextU32Virtual(const SableString& text, const ElementInfo& info = {});
+	void AddTextVirtual(const SableString& text, const ElementInfo& info = {});
 
 	void StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
 	void EndDiv();
 	void AddRect(const ElementInfo& info = {});
 	void AddImage(const std::string& path, const ElementInfo& info = {});
-	void AddText(const std::string& text, const ElementInfo& info = {});
-	void AddTextU32(const SableString& text, const ElementInfo& info = {});
+	void AddText(const SableString& text, const ElementInfo& info = {});
 
 	void SetNextPanelMaxWidth(int width);
 	void SetNextPanelMaxHeight(int height);
@@ -146,7 +144,6 @@ namespace SableUI
 #define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
 #define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__)
 #define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__)
-#define TextU32(text, ...) AddTextU32(text, SableUI::ElementInfo{} __VA_ARGS__)
 
 #define STRINGIFY(x) #x
 #define style(...) SableUI::ElementInfo{} __VA_ARGS__
@@ -175,9 +172,9 @@ namespace SableUI
 #define ComponentInitialize(ref, name, ...)																	\
 	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
 
-#define ComponentGainRefWithInit(name, T, ref, initFunc, ...)												\
+#define ComponentGainRefWithInit(name, T, ref, initLines, ...)												\
 	ComponentGainRefNoInit(name, T, ref, __VA_ARGS__);														\
-	initFunc;																								\
+	initLines;																								\
 	ComponentInitialize(ref, name, __VA_ARGS__)
 
 #define CONCAT_IMPL(a, b) a##b
@@ -302,6 +299,11 @@ namespace SableUI
 	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name,													\
 		style(__VA_ARGS__ w_fill h_fill)), __VA_ARGS__ w_fill h_fill)
 
+#define ScrollViewWithInitialiser(name, T, initialiser, ...)												\
+	ComponentGainRefWithInit("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),		\
+	CONCAT(_scrollable_comp_, __LINE__)->AttachChildWithInitialiser<T>(name, initialiser,					\
+		style(__VA_ARGS__ w_fill h_fill)), __VA_ARGS__ w_fill h_fill)
+
 // Scrollable Panels
 #define ScrollablePanel(name)																				\
 	PanelGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_panel_, __LINE__))					\
@@ -345,3 +347,26 @@ namespace SableUI
 #define CheckboxComponentRef(ref, label, checked, onChange, ...)											\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, ref,											\
 		ref->Init(label, checked, onChange), __VA_ARGS__)
+
+// Splitter components
+#define SplitterHorizontal(...) \
+	Div(mx(2) my(4) h(1) w_fill bg(70, 70, 70) __VA_ARGS__)
+
+#define SplitterVertical(...) \
+	Div(my(4) mx(2) h_fill w(1) bg(70, 70, 70) __VA_ARGS__)
+
+#define SplitterWithText(label, ...)						\
+	Div(left_right h_fit w_fill centerY mt(8))				\
+	{														\
+		Div(mx(2) h(1) w(10) bg(70, 70, 70) centerY);		\
+		Text(label, w_fit wrapText(false) mx(4) mb(4));		\
+		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
+	}
+
+#define SplitterWithTextCenter(label, ...)					\
+	Div(left_right h_fit w_fill centerY mt(8))				\
+	{														\
+		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
+		Text(label, w_fit wrapText(false) mx(4) mb(4));		\
+		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
+	}

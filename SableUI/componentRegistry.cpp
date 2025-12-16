@@ -93,14 +93,18 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
 #include <SableUI/components/textField.h>
+#include <SableUI/components/memLeakTimer.h>
 
 void SableUI::RegisterSableUIComponents()
 {
-    RegisterComponent<MenuBar>("Menu Bar");
-    RegisterComponent<_TabStackDef>("TabStack");
+    RegisterComponent<LayoutDebugger>("LayoutDebugger");
     RegisterComponent<ElementTreeView>("ElementTreeView");
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
-    RegisterComponent<PropertiesView>("PropertiesView");
+    RegisterComponent<PropertiesPanel>("PropertiesPanel");
+    RegisterComponent<MemLeakTimer>("MemLeakTimer");
+
+    RegisterComponent<MenuBar>("MenuBar");
+    RegisterComponent<_TabStackDef>("TabStack");
     RegisterComponent<ScrollView>("ScrollView");
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");

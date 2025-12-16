@@ -978,7 +978,6 @@ SableUI::Window::~Window()
 		glfwDestroyWindow(m_window);
 }
 
-
 void SableUI::SableUI_Window_Initalise_GLFW()
 {
 	if (!glfwInit())

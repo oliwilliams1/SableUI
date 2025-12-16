@@ -17,8 +17,7 @@ namespace SableUI
 		RECT = 0x1,
 		IMAGE = 0x2,
 		TEXT = 0x3,
-		DIV = 0x4,
-		TEXT_U32 = 0x5
+		DIV = 0x4
 	};
 
 	enum class LayoutDirection

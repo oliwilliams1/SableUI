@@ -79,23 +79,11 @@ void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
 	else s_virtualRoot = vnode;
 }
 
-void SableUI::AddTextVirtual(const std::string& text, const SableUI::ElementInfo& info)
+void SableUI::AddTextVirtual(const SableString& text, const SableUI::ElementInfo& info)
 {
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::TEXT;
-	vnode->text = text;
-	vnode->info = info;
-
-	if (parent) parent->children.push_back(vnode);
-	else s_virtualRoot = vnode;
-}
-
-void SableUI::AddTextU32Virtual(const SableString& text, const ElementInfo& info)
-{
-	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
-	auto* vnode = SB_new<VirtualNode>();
-	vnode->type = ElementType::TEXT_U32;
 	vnode->text = text;
 	vnode->info = info;
 
@@ -323,32 +311,9 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	parent->AddChild(newImage);
 }
 
-void SableUI::AddText(const std::string& text, const ElementInfo& p_info)
+void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 {
 	if (s_reconciliationMode) return AddTextVirtual(text, p_info);
-	SableUI::ElementInfo info = p_info;
-
-	if (info.wType == RectType::Undef) info.wType = RectType::Fill;
-	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
-
-	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
-	{
-		SableUI_Error("Element context not set. Call SetElementBuilderContext() first");
-		return;
-	}
-
-	Element* parent = s_elementStack.top();
-	Element* newText = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
-
-	newText->text = text;
-	newText->SetInfo(info);
-	newText->SetText(text);
-	parent->AddChild(newText);
-}
-
-void SableUI::AddTextU32(const SableString& text, const ElementInfo& p_info)
-{
-	if (s_reconciliationMode) return AddTextU32Virtual(text, p_info);
 	SableUI::ElementInfo info = p_info;
 
 	if (info.wType == RectType::Undef) info.wType = RectType::Fill;

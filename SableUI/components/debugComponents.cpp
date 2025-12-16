@@ -1,27 +1,27 @@
 #include <SableUI/components/debugComponents.h>
-#include <string>
-#include <utility>
 #include <SableUI/component.h>
-#include <SableUI/drawable.h>
-#include <SableUI/element.h>
-#include <SableUI/events.h>
-#include <SableUI/panel.h>
-#include <SableUI/renderer.h>
-#include <SableUI/SableUI.h>
-#include <SableUI/string.h>
-#include <SableUI/text.h>
-#include <SableUI/texture.h>
-#include <SableUI/utils.h>
-#include <SableUI/window.h>
 #include <SableUI/textCache.h>
+#include <SableUI/renderer.h>
+#include <SableUI/drawable.h>
+#include <SableUI/texture.h>
+#include <SableUI/SableUI.h>
+#include <SableUI/element.h>
+#include <SableUI/string.h>
+#include <SableUI/events.h>
+#include <SableUI/window.h>
 #include <SableUI/memory.h>
+#include <SableUI/panel.h>
+#include <SableUI/utils.h>
+#include <SableUI/text.h>
+#include <string>
 
 using namespace SableUI;
 
-static TreeNode g_selectedNode;
-static TreeNode g_hoveredNode;
-static TreeNode g_lastDrawnHoveredNode;
-static size_t g_currentHoveredUUID = 0;
+static size_t g_selectedHash = 0;
+static size_t g_hoveredHash = 0;
+static Rect g_hoveredRect = {};
+static ElementInfo g_hoveredInfo = {};
+static Rect g_hoveredMinBounds = {};
 static bool g_needsTransparencyUpdate = false;
 
 // ============================================================================
@@ -49,7 +49,6 @@ static SableString ElementTypeToString(ElementType type)
 	case ElementType::IMAGE: return "image";
 	case ElementType::TEXT: return "text";
 	case ElementType::DIV: return "div";
-	case ElementType::TEXT_U32: return "text u32";
 	default: return "unknown element type";
 	}
 }
@@ -82,69 +81,62 @@ static SableString TextJustificationToString(TextJustification justify)
 // ============================================================================
 void SableUI::MemoryDebugger::Layout()
 {
-	Text(SableString::Format("Click to toggle live update: %s", (live) ? "true" : "false"),
-		onClick([this]() { setLive(!live); }));
-
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-	Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
-	Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
-	Text(SableString::Format("Splitter Panels: %d", SplitterPanel::GetNumInstances()));
-	Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
-
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
-	Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
-
-	Text(SableString::Format("Elements: %d    (%zukb)",
-		Element::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::Element).sizeInKB));
-
-	Text(SableString::Format("Virtual Elements: %d    (%zukb)",
-		VirtualNode::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
-
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-
-	Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
-
-	Text(SableString::Format("Drawable Text: %d    (%zukb)",
-		DrawableText::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::DrawableText).sizeInKB));
-
-	Text(SableString::Format("Drawable Rect: %d    (%zukb)",
-		DrawableRect::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::DrawableRect).sizeInKB));
-
-	Text(SableString::Format("Drawable Splitter: %d    (%zukb)",
-		DrawableSplitter::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::DrawableSplitter).sizeInKB));
-
-	Text(SableString::Format("Drawable Image: %d    (%zukb)",
-		DrawableImage::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
-
-	Text(SableString::Format("GPU Objects: %d    (%zukb)",
-		GpuObject::GetNumInstances(),
-		SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
-
-	Text(SableString::Format("CustomDrawTargets: %d",
-		CustomTargetQueue::GetNumInstances()));
-
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-	Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
-	Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
-	Text(SableString::Format("Strings: %d", String::GetNumInstances()));
-
-	Rect(mx(2) mt(8) mb(4) h(1) w_fill bg(67, 67, 67));
-	Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
-	Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
-
-	int instanceCount = 0;
-	for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
+	Div(p(6) w_fill h_fill)
 	{
-		instanceCount++;
-		Text(SableString::Format("Instance %d Text Cache: %d",
-			instanceCount, factory->GetNumInstances()));
+		Text(SableString::Format("Click to toggle live update: %s", (live) ? "true" : "false"),
+			onClick([this]() { setLive(!live); }));
+
+		SplitterWithText("Panels");
+		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
+		Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
+		Text(SableString::Format("Splitter Panels: %d", SplitterPanel::GetNumInstances()));
+		Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
+
+		SplitterWithText("Layout Elements");
+		Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
+		Text(SableString::Format("Elements: %d    (%zukb)",
+			Element::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::Element).sizeInKB));
+		Text(SableString::Format("Virtual Elements: %d    (%zukb)",
+			VirtualNode::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
+
+		SplitterWithText("Drawables");
+		Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
+		Text(SableString::Format("Drawable Text: %d    (%zukb)",
+			DrawableText::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableText).sizeInKB));
+		Text(SableString::Format("Drawable Rect: %d    (%zukb)",
+			DrawableRect::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableRect).sizeInKB));
+		Text(SableString::Format("Drawable Splitter: %d    (%zukb)",
+			DrawableSplitter::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableSplitter).sizeInKB));
+		Text(SableString::Format("Drawable Image: %d    (%zukb)",
+			DrawableImage::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
+		Text(SableString::Format("GPU Objects: %d    (%zukb)",
+			GpuObject::GetNumInstances(),
+			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
+		Text(SableString::Format("CustomDrawTargets: %d",
+			CustomTargetQueue::GetNumInstances()));
+
+		SplitterWithText("Utilities");
+		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
+		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
+		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
+
+		SplitterWithText("Font Manager");
+		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
+		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
+
+		int instanceCount = 0;
+		for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
+		{
+			instanceCount++;
+			Text(SableString::Format("Instance %d Text Cache: %d",
+				instanceCount, factory->GetNumInstances()));
+		}
 	}
 }
 
@@ -154,215 +146,244 @@ void SableUI::MemoryDebugger::OnUpdate(const UIEventContext& ctx)
 }
 
 // ============================================================================
-// Element Tree Viewer
+// Layout Debugger
 // ============================================================================
-TreeNode SableUI::ElementTreeView::GenerateElementTree(Element* element, size_t& uuidCounter)
+void SableUI::LayoutDebugger::Layout()
 {
-	TreeNode node;
-	node.name = ElementTypeToString(element->type);
-	node.rect = element->rect;
-	if (highlightElements)
-		node.minBoundsRect = { element->rect.x, element->rect.y, element->GetMinWidth(), element->GetMinHeight() };
-	
-	node.elInfo = element->GetInfo();
-	node.uuid = uuidCounter++;
-	node.clipRect = element->clipRect;
-
-	for (Child* child : element->children)
+	Div(p(6) w_fill h_fill)
 	{
-		Element* el = (Element*)*child;
-		node.children.push_back(GenerateElementTree(el, uuidCounter));
+		SableString toggleHighlightElements = highlightElements ? "off" : "on";
+		Text("Turn " + toggleHighlightElements + " highlight selected elements",
+			mb(4)
+			onClick([this]() {
+				setHighlightElements(!highlightElements);
+			}));
+
+		SableString transparencyValueStr = SableString::Format("%d",
+			((transparency * 100 / 255 + 10) / 20) * 20);
+		Text("Set transparency " + transparencyValueStr + "%",
+			mb(4)
+			onClick([this]() {
+				setTransparency(transparency + 52);
+				if (transparency >= 255)
+					setTransparency(0);
+				g_needsTransparencyUpdate = true;
+			}));
+
+		ScrollViewWithInitialiser("ElementTreeView", ElementTreeView,
+			[this](ElementTreeView* comp) {
+				comp->InitData(window, highlightElements, transparency);
+			},
+			h_fill w_fill bg(24, 24, 24)
+		);
 	}
-	return node;
 }
 
-TreeNode SableUI::ElementTreeView::GeneratePanelTree(BasePanel* panel, size_t& uuidCounter)
+// ============================================================================
+// Element Tree View
+// ============================================================================
+void SableUI::ElementTreeView::InitData(Window* window, bool highlightElements, int transparency)
 {
-	TreeNode node;
-	node.name = GetPanelName(panel);
-	node.rect = panel->rect;
-	node.minBoundsRect = { panel->rect.x, panel->rect.y, panel->minBounds.x, panel->minBounds.y };
-	node.uuid = uuidCounter++;
-
-	for (BasePanel* child : panel->children)
-		node.children.push_back(GeneratePanelTree(child, uuidCounter));
-
-	if (panel->children.empty())
-		if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
-			node.children.push_back(GenerateElementTree(p->GetComponent()->GetRootElement(), uuidCounter));
-
-	return node;
+	this->window = window;
+	this->highlightElements = highlightElements;
+	this->transparency = transparency;
 }
 
-int SableUI::ElementTreeView::DrawTreeNode(TreeNode& node, int depth, int line)
+size_t SableUI::ElementTreeView::ComputeHash(const void* ptr, size_t parentHash) const
 {
+	size_t h = reinterpret_cast<size_t>(ptr);
+	h ^= parentHash + 0x9e3779b9 + (h << 6) + (h >> 2);
+	return h;
+}
+
+void SableUI::ElementTreeView::DrawElementTree(Element* element, int depth, int& line, size_t parentHash)
+{
+	if (!element) return;
+
 	line++;
-	SableString indent = std::string(2 * depth, ' ');
+	size_t nodeHash = ComputeHash(element, parentHash);
+	bool isExpanded = expandedNodes.count(nodeHash) > 0;
+	bool hasChildren = !element->children.empty();
 
-	SableString prefix;
-	if (!node.children.empty())
-		prefix = node.isExpanded ? U"\u25BE " : U"\u25B8 ";
-	else
-		prefix = "    ";
-	
-	TreeNode nodeCopy = node;
-	size_t nodeUUID = node.uuid;
+	SableString indent = std::string(2 * depth, ' ');
+	SableString prefix = hasChildren ? (isExpanded ? U"\u25BE " : U"\u25B8 ") : U"    ";
+	SableString name = element->ID.empty() ? ElementTypeToString(element->type) : element->ID;
 
 	Div(h_fit w_fill bg(line % 2 == 0 ? rgb(40, 40, 40) : rgb(43, 43, 43)))
 	{
-		TextU32(indent + prefix + node.name,
-			onDoubleClick([&, nodeUUID]() {
-				FindAndToggleNode(nodeUUID);
+		Text(indent + prefix + name,
+			onDoubleClick([this, nodeHash, isExpanded]() {
+				auto newExpanded = expandedNodes;
+				if (isExpanded)
+					newExpanded.erase(nodeHash);
+				else
+					newExpanded.insert(nodeHash);
+				setExpandedNodes(newExpanded);
 			})
-			onClick([nodeCopy]() {
-				g_selectedNode = nodeCopy;
+			onClick([nodeHash, element]() {
+				g_selectedHash = nodeHash;
 			})
-			onHover([nodeCopy]() {
-				g_currentHoveredUUID = nodeCopy.uuid;
-				g_hoveredNode = nodeCopy;
+			onHover([this, nodeHash, element]() {
+				if (g_hoveredHash != nodeHash) {
+					g_hoveredHash = nodeHash;
+					g_hoveredRect = element->rect;
+					g_hoveredInfo = element->GetInfo();
+					if (highlightElements) {
+						g_hoveredMinBounds = {
+							element->rect.x, element->rect.y,
+							element->GetMinWidth(), element->GetMinHeight()
+						};
+					}
+				}
 			})
 		);
 	}
 
-	if (node.isExpanded)
-		for (TreeNode& child : node.children)
-			line = DrawTreeNode(child, depth + 1, line);
+	if (isExpanded)
+	{
+		for (Child* child : element->children)
+		{
+			Element* el = (Element*)*child;
+			DrawElementTree(el, depth + 1, line, nodeHash);
+		}
+	}
+}
 
-	return line;
+void SableUI::ElementTreeView::DrawPanelTree(BasePanel* panel, int depth, int& line, size_t parentHash)
+{
+	if (!panel) return;
+
+	line++;
+	size_t nodeHash = ComputeHash(panel, parentHash);
+	bool isExpanded = expandedNodes.count(nodeHash) > 0;
+	bool hasChildren = !panel->children.empty();
+
+	SableString indent = std::string(2 * depth, ' ');
+	SableString prefix = hasChildren ? (isExpanded ? U"\u25BE " : U"\u25B8 ") : U"    ";
+	SableString name = GetPanelName(panel);
+
+	Div(h_fit w_fill bg(line % 2 == 0 ? rgb(40, 40, 40) : rgb(43, 43, 43)))
+	{
+		Text(indent + prefix + name,
+			onDoubleClick([this, nodeHash, isExpanded]() {
+				auto newExpanded = expandedNodes;
+				if (isExpanded)
+					newExpanded.erase(nodeHash);
+				else
+					newExpanded.insert(nodeHash);
+				setExpandedNodes(newExpanded);
+			})
+			onClick([nodeHash, panel]() {
+				g_selectedHash = nodeHash;
+			})
+			onHover([this, nodeHash, panel]() {
+				if (g_hoveredHash != nodeHash) {
+					g_hoveredHash = nodeHash;
+					g_hoveredRect = panel->rect;
+					g_hoveredInfo = ElementInfo{};
+					if (highlightElements) {
+						g_hoveredMinBounds = {
+							panel->rect.x, panel->rect.y,
+							panel->minBounds.x, panel->minBounds.y
+						};
+					}
+				}
+			})
+		);
+	}
+
+	if (isExpanded)
+	{
+		for (BasePanel* child : panel->children)
+		{
+			DrawPanelTree(child, depth + 1, line, nodeHash);
+		}
+
+		if (panel->children.empty())
+		{
+			if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
+			{
+				DrawElementTree(p->GetComponent()->GetRootElement(), depth + 1, line, nodeHash);
+			}
+		}
+	}
 }
 
 void SableUI::ElementTreeView::Layout()
 {
 	if (window == nullptr)
 	{
-		Text("Window is not set, call use, create ElementTreeView via PanelGainRef() then call SetWindow() on the reference",
+		Text("Window is not set",
 			centerY textColour(255, 0, 0));
 		return;
 	}
 
-	SableString toggleHighlightElements = highlightElements ? "off" : "on";
-	Text("Turn " + toggleHighlightElements + " highlight selected elements",
-		mb(4)
-		onClick([this]() {
-			setHighlightElements(!highlightElements);
-		}
-	));
-
-	SableString transparencyValueStr = SableString::Format("%d", ((transparency * 100 / 255 + 10) / 20) * 20);
-	Text("Set transparency " + transparencyValueStr + "%",
-		mb(4)
-		onClick([&]() {
-			setTransparency(transparency + 52);
-			if (transparency >= 255)
-				setTransparency(0);
-
-			g_needsTransparencyUpdate = true;
-		})
-	);
-
-	DrawTreeNode(rootNode, 0);
+	int line = 0;
+	DrawPanelTree(window->GetRoot(), 0, line, 0);
 }
 
 void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 {
 	if (window == nullptr) return;
-	size_t uuidCounter = 0;
-	TreeNode newRoot = GeneratePanelTree(window->GetRoot(), uuidCounter);
-	PreserveExpandedState(rootNode, newRoot);
-	
-	if (newRoot != rootNode)
-		setRootNode(std::move(newRoot));
 
-	if ((highlightElements && g_hoveredNode != g_lastDrawnHoveredNode) || g_needsTransparencyUpdate && highlightElements)
+	if (highlightElements &&
+		(g_hoveredHash != lastDrawnHoveredHash || g_needsTransparencyUpdate))
 	{
 		UseCustomLayoutContext(queue, window, window->GetSurface())
 		{
-			queue->AddRect(rootNode.rect, Colour(0, 0, 0, transparency));
+			queue->AddRect(window->GetRoot()->rect, Colour(0, 0, 0, transparency));
 			g_needsTransparencyUpdate = false;
 
-			g_lastDrawnHoveredNode = g_hoveredNode;
-			const Rect& rect = g_hoveredNode.rect;
-			const ElementInfo& info = g_hoveredNode.elInfo;
+			lastDrawnHoveredHash = g_hoveredHash;
+			const Rect& rect = g_hoveredRect;
+			const ElementInfo& info = g_hoveredInfo;
 
-			// Padding
+			// padding
 			if (info.paddingTop > 0) {
-				Rect paddingTop = {
-					rect.x + info.paddingLeft,
-					rect.y,
-					rect.w - info.paddingLeft - info.paddingRight,
-					info.paddingTop
-				};
-				queue->AddRect(paddingTop, Colour(140, 200, 140, 120));
+				queue->AddRect({ rect.x + info.paddingLeft, rect.y,
+					rect.w - info.paddingLeft - info.paddingRight, info.paddingTop },
+					Colour(140, 200, 140, 120));
 			}
 			if (info.paddingBottom > 0) {
-				Rect paddingBottom = {
-					rect.x + info.paddingLeft,
+				queue->AddRect({ rect.x + info.paddingLeft,
 					rect.y + rect.h - info.paddingBottom,
-					rect.w - info.paddingLeft - info.paddingRight,
-					info.paddingBottom
-				};
-				queue->AddRect(paddingBottom, Colour(140, 200, 140, 120));
+					rect.w - info.paddingLeft - info.paddingRight, info.paddingBottom },
+					Colour(140, 200, 140, 120));
 			}
 			if (info.paddingLeft > 0) {
-				Rect paddingLeft = {
-					rect.x,
-					rect.y,
-					info.paddingLeft,
-					rect.h
-				};
-				queue->AddRect(paddingLeft, Colour(140, 200, 140, 120));
+				queue->AddRect({ rect.x, rect.y, info.paddingLeft, rect.h },
+					Colour(140, 200, 140, 120));
 			}
 			if (info.paddingRight > 0) {
-				Rect paddingRight = {
-					rect.x + rect.w - info.paddingRight,
-					rect.y,
-					info.paddingRight,
-					rect.h
-				};
-				queue->AddRect(paddingRight, Colour(140, 200, 140, 120));
+				queue->AddRect({ rect.x + rect.w - info.paddingRight, rect.y,
+					info.paddingRight, rect.h },
+					Colour(140, 200, 140, 120));
 			}
 
-			// Margins
+			// margin
 			if (info.marginTop > 0) {
-				Rect marginTop = {
-					rect.x,
-					rect.y - info.marginTop,
-					rect.w,
-					info.marginTop
-				};
-				queue->AddRect(marginTop, Colour(255, 180, 100, 120));
+				queue->AddRect({ rect.x, rect.y - info.marginTop, rect.w, info.marginTop },
+					Colour(255, 180, 100, 120));
 			}
 			if (info.marginBottom > 0) {
-				Rect marginBottom = {
-					rect.x,
-					rect.y + rect.h,
-					rect.w,
-					info.marginBottom
-				};
-				queue->AddRect(marginBottom, Colour(255, 180, 100, 120));
+				queue->AddRect({ rect.x, rect.y + rect.h, rect.w, info.marginBottom },
+					Colour(255, 180, 100, 120));
 			}
 			if (info.marginLeft > 0) {
-				Rect marginLeft = {
-					rect.x - info.marginLeft,
-					rect.y - info.marginTop,
-					info.marginLeft,
-					rect.h + info.marginTop + info.marginBottom
-				};
-				queue->AddRect(marginLeft, Colour(255, 180, 100, 120));
+				queue->AddRect({ rect.x - info.marginLeft, rect.y - info.marginTop,
+					info.marginLeft, rect.h + info.marginTop + info.marginBottom },
+					Colour(255, 180, 100, 120));
 			}
 			if (info.marginRight > 0) {
-				Rect marginRight = {
-					rect.x + rect.w,
-					rect.y - info.marginTop,
-					info.marginRight,
-					rect.h + info.marginTop + info.marginBottom
-				};
-				queue->AddRect(marginRight, Colour(255, 180, 100, 120));
+				queue->AddRect({ rect.x + rect.w, rect.y - info.marginTop,
+					info.marginRight, rect.h + info.marginTop + info.marginBottom },
+					Colour(255, 180, 100, 120));
 			}
 
-			queue->AddRect(g_hoveredNode.minBoundsRect, Colour(255, 180, 100, 120));
+			// min bounds
+			queue->AddRect(g_hoveredMinBounds, Colour(255, 180, 100, 120));
 
-			// Content area
+			// content area
 			Rect contentRect = {
 				rect.x + info.paddingLeft,
 				rect.y + info.paddingTop,
@@ -378,95 +399,64 @@ void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
 	}
 }
 
-void SableUI::ElementTreeView::PreserveExpandedState(const TreeNode& oldNode, TreeNode& newNode)
-{
-	if (oldNode.name == newNode.name)
-		newNode.isExpanded = oldNode.isExpanded;
-
-	for (size_t i = 0; i < newNode.children.size(); ++i)
-		if (i < oldNode.children.size())
-			PreserveExpandedState(oldNode.children[i], newNode.children[i]);
-}
-
-void SableUI::ElementTreeView::FindAndToggleNode(size_t uuid)
-{
-	auto toggle = [](TreeNode& n, size_t id, auto& self) -> bool
-	{
-		if (n.uuid == id)
-		{
-			n.isExpanded = !n.isExpanded;
-			return true;
-		}
-		for (auto& child : n.children)
-			if (self(child, id, self)) return true;
-
-		return false;
-	};
-
-	toggle(rootNode, uuid, toggle);
-	needsRerender = true;
-}
-
-void SableUI::ElementTreeView::SetWindow(Window* window)
-	{ setWindow(window); }
-
 // ============================================================================
-// Properties Viewer
+// Properties Panel
 // ============================================================================
-void SableUI::PropertiesView::Layout()
+void SableUI::PropertiesPanel::Layout()
 {
-	Div(left_right w_fill h_fit bg(32, 32, 32) p(6))
-	{
-		Text(SableString("Properties").bold(), w_fill fontSize(14));
-		Text(selected.elInfo.id.size() > 0 ? selected.elInfo.id : "Element", 
-			w_fill justify_right textColour(180, 180, 180));
-	}
+	Text(SableString("Properties").bold(), w_fill fontSize(14) m(6) mb(0));
 
-	Rect(mx(2) mt(4) h(1) w_fill bg(67, 67, 67));
+	SableString title = selectedInfo.id.empty() ? "Element" : selectedInfo.id;
+	SplitterWithText(title);
 
 	Div(bg(32, 32, 32) p(6) w_fill)
 	{
 		Text("Bounding Box", textColour(180, 180, 180) mb(2));
-		Text(selected.rect.ToString(), mb(8));
+		Text(selectedRect.ToString(), mb(8));
 
 		Text("Layout Direction", textColour(180, 180, 180) mb(2));
-		Text(LayoutDirectionToString(selected.elInfo.layoutDirection), mb(8));
+		Text(LayoutDirectionToString(selectedInfo.layoutDirection), mb(8));
 
-		Text("Contraints", textColour(180, 180, 180) mb(2));
-		SableString wConstraints = SableString::Format("{ min-h: %d, max-h: %d}", selected.elInfo.minHeight, selected.elInfo.maxHeight);
-		Text(wConstraints, mb(2));
-		SableString hConstraints = SableString::Format("{ min-w: %d, max-w: %d}", selected.elInfo.minWidth, selected.elInfo.maxWidth);
-		Text(hConstraints, mb(8));
+		Text("Constraints", textColour(180, 180, 180) mb(2));
+		Text(SableString::Format("{ min-h: %d, max-h: %d}",
+			selectedInfo.minHeight, selectedInfo.maxHeight), mb(2));
+		Text(SableString::Format("{ min-w: %d, max-w: %d}",
+			selectedInfo.minWidth, selectedInfo.maxWidth), mb(8));
 
 		Text("Margins", textColour(180, 180, 180) mb(2));
-		SableString margins = SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			selected.elInfo.marginTop, selected.elInfo.marginRight, selected.elInfo.marginBottom, selected.elInfo.marginLeft);
-		Text(margins, mb(8));
+		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
+			selectedInfo.marginTop, selectedInfo.marginRight,
+			selectedInfo.marginBottom, selectedInfo.marginLeft), mb(8));
 
 		Text("Padding", textColour(180, 180, 180) mb(2));
-		SableString paddings = SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			selected.elInfo.paddingTop, selected.elInfo.paddingRight, selected.elInfo.paddingBottom, selected.elInfo.paddingLeft);
-		Text(paddings, mb(8));
+		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
+			selectedInfo.paddingTop, selectedInfo.paddingRight,
+			selectedInfo.paddingBottom, selectedInfo.paddingLeft), mb(8));
 
 		Text("Text Properties", textColour(180, 180, 180) mb(2));
-		Text("Font Size: " + std::to_string(selected.elInfo._fontSize), mb(2));
-		Text("Line Height: " + std::to_string(selected.elInfo._lineHeight), mb(2));
-		Text("Text justification: " + TextJustificationToString(selected.elInfo.textJustification), mb(8));
+		Text("Font Size: " + std::to_string(selectedInfo._fontSize), mb(2));
+		Text("Line Height: " + std::to_string(selectedInfo._lineHeight), mb(2));
+		Text("Text justification: " + TextJustificationToString(selectedInfo.textJustification), mb(8));
 
 		Text("Positioning", textColour(180, 180, 180) mb(2));
-		Text(SableString::Format("Center X: %s", selected.elInfo._centerX ? "true" : "false"), mb(2));
-		Text(SableString::Format("Center Y: %s", selected.elInfo._centerY ? "true" : "false"), mb(8));
+		Text(SableString::Format("Center X: %s", selectedInfo._centerX ? "true" : "false"), mb(2));
+		Text(SableString::Format("Center Y: %s", selectedInfo._centerY ? "true" : "false"), mb(8));
 
 		Text("Clip rect", textColour(180, 180, 180) mb(2));
-		Text(selected.clipRect.ToString());
+		Text(selectedClipRect.ToString(), mb(8));
 
 		Text("Background Colour", textColour(180, 180, 180) mb(2));
-		Rect(w(20) h(20) bg(selected.elInfo.bgColour));
+		Rect(w(20) h(20) bg(selectedInfo.bgColour));
 	}
 }
 
-void SableUI::PropertiesView::OnUpdate(const UIEventContext& ctx)
+void SableUI::PropertiesPanel::OnUpdate(const UIEventContext& ctx)
 {
-	if (selected != g_selectedNode)
-		setSelected(g_selectedNode);
+	if (lastSelectedHash != g_selectedHash)
+	{
+		setLastSelectedHash(g_selectedHash);
+		setSelectedRect(g_hoveredRect);
+		setSelectedInfo(g_hoveredInfo);
+		setSelectedClipRect({});
+	}
 }

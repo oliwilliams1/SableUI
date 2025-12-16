@@ -1,8 +1,9 @@
 #include <SableUI/components/scrollView.h>
+#include <SableUI/component.h>
+#include <SableUI/SableUI.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
 #include <SableUI/events.h>
-#include <SableUI/SableUI.h>
 #include <SableUI/utils.h>
 #include <algorithm>
 #include <string>
@@ -35,7 +36,14 @@ void SableUI::ScrollView::Layout()
 			else
 			{
 				childElInfo.setWType(SableUI::RectType::Fill).setHType(SableUI::RectType::Fill);
-				AddComponent(childID.c_str())->BackendInitialiseChild(childID.c_str(), this, childElInfo);
+				BaseComponent* ref = AddComponent(childID.c_str());
+				if (ref != nullptr && childInitialiser)
+				{
+					childInitialiser(ref);
+					UIEventContext dummyCtx{};
+					ref->OnUpdate(dummyCtx);
+				}
+				ref->BackendInitialiseChild(childID.c_str(), this, childElInfo);
 			}
 		}
 

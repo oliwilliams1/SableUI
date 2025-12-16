@@ -1,11 +1,11 @@
 #pragma once
 #include <SableUI/component.h>
-#include <vector>
-#include <string>
-#include <functional>
-#include <type_traits>
 #include <SableUI/console.h>
 #include <SableUI/SableUI.h>
+#include <type_traits>
+#include <functional>
+#include <vector>
+#include <string>
 
 namespace SableUI
 {

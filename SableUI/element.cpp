@@ -960,13 +960,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
     case ElementType::TEXT:
     {
-        AddText((std::string)(vnode->text), vnode->info);
-        break;
-    }
-
-    case ElementType::TEXT_U32:
-    {
-        AddTextU32(vnode->text, vnode->info);
+        AddText(vnode->text, vnode->info);
         break;
     }
 
