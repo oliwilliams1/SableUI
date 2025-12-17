@@ -9,8 +9,8 @@ void Button::Layout()
 	Colour textColour = GetTextColour();
 
 	Div(bg(bgColour)
-		p(12) px(20)
-		rounded(6)
+		p(6) px(12)
+		rounded(4)
 		w_fit h_fit
 		centerX
 		onHover([this]() {
@@ -28,7 +28,6 @@ void Button::Layout()
 	{
 		Text(label,
 			textColour(textColour)
-			fontSize(14)
 			justify_center
 			wrapText(false));
 	}

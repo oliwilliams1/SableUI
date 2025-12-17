@@ -313,9 +313,6 @@ namespace SableUI
 		tabContext.changed = false;		\
 	}
 
-#define ScrollUpdateHandler(scrollCtx)						\
-	SableUI::ProcessScroll(this, scrollCtx, ctx)			\
-
 // Splitter components
 #define SplitterHorizontal(...) \
 	Div(mx(2) my(4) h(1) w_fill bg(70, 70, 70) __VA_ARGS__)

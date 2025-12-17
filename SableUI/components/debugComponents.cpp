@@ -84,8 +84,7 @@ void SableUI::MemoryDebugger::Layout()
 {
 	Div(p(6) w_fill h_fill)
 	{
-		Text(SableString::Format("Click to toggle live update: %s", (live) ? "true" : "false"),
-			onClick([this]() { setLive(!live); }));
+		Checkbox("Live update", live, [this](bool checked) { setLive(checked); });
 
 		SplitterWithText("Panels");
 		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
@@ -166,12 +165,7 @@ void SableUI::LayoutDebugger::Layout()
 		{
 			Div(p(6) w_fill h_fill)
 			{
-				SableString toggleHighlightElements = highlightElements ? "off" : "on";
-				Text("Turn " + toggleHighlightElements + " highlight selected elements",
-					mb(4)
-					onClick([this]() {
-						setHighlightElements(!highlightElements);
-						}));
+				Checkbox("Highlight Elements", highlightElements, [this](bool checked) { setHighlightElements(checked); });
 
 				SableString transparencyValueStr = SableString::Format("%d",
 					((transparency * 100 / 255 + 10) / 20) * 20);
@@ -182,7 +176,7 @@ void SableUI::LayoutDebugger::Layout()
 						if (transparency >= 255)
 							setTransparency(0);
 						g_needsTransparencyUpdate = true;
-						}));
+					}));
 
 				ScrollViewCtx(treeScroll, bg(24, 24, 24))
 				{
@@ -213,6 +207,11 @@ void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
 {
 	TabUpdateHandler(tabs);
 	ScrollUpdateHandler(treeScroll);
+}
+
+void SableUI::LayoutDebugger::OnPostLayoutUpdate(const UIEventContext& ctx)
+{
+	ScrollUpdatePostLayoutHandler(treeScroll);
 }
 
 // ============================================================================

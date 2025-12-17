@@ -26,6 +26,7 @@ namespace SableUI
 		LayoutDebugger();
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
+		void OnPostLayoutUpdate(const UIEventContext& ctx) override;
 		void InitData(Window* window) { this->window = window; }
 
 	private:

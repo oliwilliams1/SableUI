@@ -12,8 +12,6 @@ void Checkbox::Layout()
 	Colour boxFill = checked ? (disabled ? Colour(120, 120, 120) : Colour(90, 160, 255)) :
 		Colour(40, 40, 40);
 
-	Colour textColour = disabled ? Colour(120, 120, 120) : Colour(200, 200, 200);
-
 	Div(left_right w_fit h_fit
 		onHover([this]() {
 			if (!disabled) setIsHovered(true);
@@ -25,15 +23,11 @@ void Checkbox::Layout()
 			HandleClick();
 		}))
 	{
-		Rect(w(20) h(20) bg(boxFill) rounded(4) mr(8) centerY);
+		Rect(w(15) h(15) bg(boxFill) rounded(4) mr(4) centerY);
 
 		if (label.size() > 0)
 		{
-			Text(label,
-				textColour(textColour)
-				fontSize(14)
-				centerY
-				wrapText(false));
+			Text(label, centerY wrapText(false));
 		}
 	}
 }
