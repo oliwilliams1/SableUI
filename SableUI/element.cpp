@@ -306,6 +306,11 @@ int SableUI::Element::GetMinWidth()
 
     if (clipChildren) return calculatedMinWidth + paddingLeft + paddingRight;
 
+    if (wType == RectType::Fixed)
+    {
+        return std::max(calculatedMinWidth, width) + paddingLeft + paddingRight;
+    }
+
     if (type == ElementType::DIV)
     {
         bool isVerticalFlow = (layoutDirection == LayoutDirection::UP_DOWN || layoutDirection == LayoutDirection::DOWN_UP);
@@ -348,6 +353,11 @@ int SableUI::Element::GetMinHeight()
     int calculatedMinHeight = minHeight;
 
     if (clipChildren) return calculatedMinHeight + paddingTop + paddingBottom;
+
+    if (hType == RectType::Fixed)
+    {
+        return std::max(calculatedMinHeight, height) + paddingTop + paddingBottom;
+    }
 
     if (type == ElementType::DIV)
     {

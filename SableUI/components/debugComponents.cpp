@@ -149,44 +149,69 @@ void SableUI::MemoryDebugger::OnUpdate(const UIEventContext& ctx)
 // ============================================================================
 // Layout Debugger
 // ============================================================================
+SableUI::LayoutDebugger::LayoutDebugger() : BaseComponent()
+{
+	tabs.Add("Layout Debugger").Add("Memory Diagnostics");
+}
+
 void SableUI::LayoutDebugger::Layout()
 {
-	Div(p(6) w_fill h_fill)
+	SableUI::RenderTabHeader(tabs);
+
+	Div(w_fill h_fill)
 	{
-		SableString toggleHighlightElements = highlightElements ? "off" : "on";
-		Text("Turn " + toggleHighlightElements + " highlight selected elements",
-			mb(4)
-			onClick([this]() {
-				setHighlightElements(!highlightElements);
-			}));
-
-		SableString transparencyValueStr = SableString::Format("%d",
-			((transparency * 100 / 255 + 10) / 20) * 20);
-		Text("Set transparency " + transparencyValueStr + "%",
-			mb(4)
-			onClick([this]() {
-				setTransparency(transparency + 52);
-				if (transparency >= 255)
-					setTransparency(0);
-				g_needsTransparencyUpdate = true;
-			}));
-
-		ScrollViewCtx(treeScroll, bg(24, 24, 24))
+		switch (tabs.activeTab)
 		{
-			for (int i = 0; i < 50; i++)
+		case 0:
+		{
+			Div(p(6) w_fill h_fill)
 			{
-				Div(w(50) h(50) m(4) bg(255, 0, 0)
-					onDoubleClick([i]() { SableUI_Log("Clicked %d", i); }))
+				SableString toggleHighlightElements = highlightElements ? "off" : "on";
+				Text("Turn " + toggleHighlightElements + " highlight selected elements",
+					mb(4)
+					onClick([this]() {
+						setHighlightElements(!highlightElements);
+						}));
+
+				SableString transparencyValueStr = SableString::Format("%d",
+					((transparency * 100 / 255 + 10) / 20) * 20);
+				Text("Set transparency " + transparencyValueStr + "%",
+					mb(4)
+					onClick([this]() {
+						setTransparency(transparency + 52);
+						if (transparency >= 255)
+							setTransparency(0);
+						g_needsTransparencyUpdate = true;
+						}));
+
+				ScrollViewCtx(treeScroll, bg(24, 24, 24))
 				{
-					Text(std::to_string(i), fontSize(24));
+					for (int i = 0; i < 50; i++)
+					{
+						Div(w(50) h(50) m(4) bg(255, 0, 0)
+							onDoubleClick([i]() { SableUI_Log("Clicked %d", i); }))
+						{
+							Rect(w(25) h(25) bg(0, 255, 0));
+						}
+					}
 				}
 			}
+			break;
+		}
+		case 1:
+		{
+			Component("MemoryDebugger", w_fill h_fill bg(32, 32, 32));
+			break;
+		}
+		default:
+			Text("Underfined tab content", w_fill h_fill);
 		}
 	}
 }
 
 void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
 {
+	TabUpdateHandler(tabs);
 	ScrollUpdateHandler(treeScroll);
 }
 

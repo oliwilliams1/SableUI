@@ -9,11 +9,16 @@
 
 namespace SableUI
 {
+    struct ScrollData
+    {
+        vec2 viewportSize = { 0, 0 };
+        vec2 contentSize = { 0, 0 };
+    };
+
     struct ScrollContext
     {
         vec2 scrollPos = { 0, 0 };
-        vec2 viewportSize = { 0, 0 };
-        vec2 contentSize = { 0, 0 };
+        ScrollData scrollData;
 
         bool isDragging = false;
         ivec2 dragOrigPos = { 0, 0 };
@@ -31,15 +36,15 @@ namespace SableUI
 
         Element* viewportEl = comp->GetElementById(ctx.GetViewportID());
         Element* contentEl = comp->GetElementById(ctx.GetContentID());
-        Element* barEl = comp->GetElementById(ctx.GetBarID());
 
-        if (viewportEl && contentEl)
-        {
-            ctx.viewportSize = vec2(viewportEl->rect.w, viewportEl->rect.h);
-            ctx.contentSize = vec2(contentEl->rect.w, contentEl->rect.h);
-        }
+        if (!viewportEl || !contentEl) return;
 
-        if (viewportEl && contentEl && RectBoundingBox(viewportEl->rect, eventCtx.mousePos))
+        ScrollData tempData{};
+        tempData.viewportSize = vec2(viewportEl->rect.w, viewportEl->rect.h);
+        tempData.contentSize = vec2(contentEl->rect.w, contentEl->rect.h);
+        ctx.scrollData = tempData;
+
+        if (RectBoundingBox(viewportEl->rect, eventCtx.mousePos))
         {
             if (eventCtx.scrollDelta.y != 0)
             {
@@ -47,15 +52,77 @@ namespace SableUI
                 newPos.y -= eventCtx.scrollDelta.y * 50.0f;
 
                 if (contentEl->rect.h > viewportEl->rect.h)
-                    newPos.y = std::clamp(newPos.y, 0.0f, static_cast<float>(contentEl->rect.h - viewportEl->rect.h));
+                {
+                    float maxScrollY = static_cast<float>(contentEl->rect.h - viewportEl->rect.h);
+                    newPos.y = std::clamp(newPos.y, 0.0f, maxScrollY);
+                }
                 else
+                {
                     newPos.y = 0.0f;
+                }
 
                 if (newPos.y != ctx.scrollPos.y)
                 {
                     ctx.scrollPos = newPos;
                     needsRerender = true;
                 }
+            }
+        }
+
+        Element* barEl = comp->GetElementById(ctx.GetBarID());
+        if (barEl)
+        {
+            bool hover = RectBoundingBox(barEl->rect, eventCtx.mousePos);
+            if (hover != ctx.barHovered)
+            {
+                ctx.barHovered = hover;
+                needsRerender = true;
+            }
+
+            if (ctx.isDragging)
+            {
+                if (eventCtx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
+                {
+                    ctx.isDragging = false;
+                    ctx.barHovered = false;
+                    needsRerender = true;
+                }
+                else
+                {
+                    float viewportH = tempData.viewportSize.y;
+                    float contentH = tempData.contentSize.y;
+
+                    if (contentH > viewportH)
+                    {
+                        float padding = 4.0f * 2.0f;
+                        float fac = viewportH / contentH;
+                        float thumbHeight = fac * viewportH;
+                        float trackScrollableRange = viewportH - thumbHeight - padding;
+                        float contentScrollableRange = contentH - viewportH;
+
+                        if (trackScrollableRange > 0)
+                        {
+                            float ratio = contentScrollableRange / trackScrollableRange;
+                            float mouseDeltaY = static_cast<float>(eventCtx.mousePos.y - ctx.dragOrigPos.y);
+                            float newScrollY = ctx.dragStartScrollY + (mouseDeltaY * ratio);
+
+                            newScrollY = std::clamp(newScrollY, 0.0f, contentScrollableRange);
+
+                            if (newScrollY != ctx.scrollPos.y)
+                            {
+                                ctx.scrollPos.y = newScrollY;
+                                needsRerender = true;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (hover && eventCtx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+            {
+                ctx.isDragging = true;
+                ctx.dragOrigPos = eventCtx.mousePos;
+                ctx.dragStartScrollY = ctx.scrollPos.y;
+                needsRerender = true;
             }
         }
 
@@ -67,32 +134,50 @@ namespace SableUI
     {
         ScrollContext& ctx;
 
-        explicit ScrollViewScope(ScrollContext& context, ElementInfo& info)
+        explicit ScrollViewScope(ScrollContext& context, ElementInfo info)
             : ctx(context)
         {
-            // viewport
-            SableUI::StartDiv(style(ID(ctx.GetViewportID()) w_fill h_fill overflow_hidden));
+            SableUI::StartDiv(style(ID(ctx.GetViewportID()) w_fill h_fill left_right overflow_hidden));
 
-            // content
-            SableUI::StartDiv(info ID(ctx.GetContentID()) w_fill h_fit mt(-ctx.scrollPos.y));
+            info.setID(ctx.GetContentID())
+                .setWType(SableUI::RectType::Fill)
+                .setHType(SableUI::RectType::FitContent)
+                .setMarginTop(-static_cast<int>(ctx.scrollPos.y));
+
+            SableUI::StartDiv(info);
         }
 
         ~ScrollViewScope()
         {
             SableUI::EndDiv();
 
-            if (ctx.contentSize.y > 0 && ctx.viewportSize.y > 0)
+            if (ctx.scrollData.contentSize.y > 0 && ctx.scrollData.viewportSize.y > 0)
             {
-                float fac = ctx.viewportSize.y / ctx.contentSize.y;
+                float fac = ctx.scrollData.viewportSize.y / ctx.scrollData.contentSize.y;
                 if (fac < 1.0f)
                 {
-                    float thumbHeight = fac * ctx.viewportSize.y;
-                    float maxScroll = ctx.contentSize.y - ctx.viewportSize.y;
-                    float progress = ctx.scrollPos.y / maxScroll;
+                    float thumbHeight = fac * ctx.scrollData.viewportSize.y;
+                    float maxScroll = ctx.scrollData.contentSize.y - ctx.scrollData.viewportSize.y;
+                    float progress = (maxScroll > 0) ? (ctx.scrollPos.y / maxScroll) : 0.0f;
 
                     int padding = 4;
-                    float trackRange = ctx.viewportSize.y - thumbHeight - (padding * 2);
+                    float trackRange = ctx.scrollData.viewportSize.y - thumbHeight - (padding * 2);
                     float topMargin = progress * trackRange;
+
+                    if (ctx.barHovered)
+                    {
+                        Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(28, 28, 28) rounded(4))
+                        {
+                            Rect(w(6) h(static_cast<int>(thumbHeight)) mt(static_cast<int>(topMargin)) rounded(3) bg(149, 149, 149));
+                        }
+                    }
+                    else
+                    {
+                        Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(32, 32, 32) rounded(4))
+                        {
+                            Rect(w(2) m(2) h(static_cast<int>(thumbHeight)) mt(static_cast<int>(topMargin)) rounded(1) bg(128, 128, 128));
+                        }
+                    }
                 }
             }
 
@@ -101,4 +186,4 @@ namespace SableUI
     };
 }
 
-#define ScrollViewCtx(ctx, ...) if (SableUI::ScrollViewScope _sv_scope(ctx, style(h_fill w_fill __VA_ARGS__)); true)
+#define ScrollViewCtx(ctx, ...) if (SableUI::ScrollViewScope _sv_scope(ctx, style(__VA_ARGS__)); true)

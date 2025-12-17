@@ -7,6 +7,7 @@
 #include <SableUI/events.h>
 #include <SableUI/panel.h>
 #include <unordered_set>
+#include <SableUI/tabContext.h>
 
 namespace SableUI
 {
@@ -22,6 +23,7 @@ namespace SableUI
 	class LayoutDebugger : public SableUI::BaseComponent
 	{
 	public:
+		LayoutDebugger();
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
 		void InitData(Window* window) { this->window = window; }
@@ -31,6 +33,7 @@ namespace SableUI
 		useState(transparency, setTransparency, int, 0);
 		Window* window = nullptr;
 		SableUI::ScrollContext treeScroll;
+		SableUI::TabContext tabs;
 	};
 
 	class ElementTreeView : public SableUI::BaseComponent
