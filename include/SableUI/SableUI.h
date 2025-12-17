@@ -8,7 +8,6 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
-#include <SableUI/componentRegistry.h> // for easy registration, even if not used in this file
 #include <string>
 
 /* non-macro user api */
@@ -56,13 +55,9 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
-	class _TabStackDef;
 	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
 		CustomTargetQueue** queuePtr, const ElementInfo& ElementInfo);
 	void EndCustomLayoutScope(Window* window, CustomTargetQueue** queuePtr);
-	void SetCurrentTabStackRef(_TabStackDef* ref);
-	void RemoveCurrentTabStackRef();
-	_TabStackDef* GetCurrentTabStackRef();
 
 	struct DivScope
 	{
@@ -120,22 +115,6 @@ namespace SableUI
 	private:
 		Window* m_window = nullptr;
 		CustomTargetQueue** m_queuePtr = nullptr;
-	};
-	
-	struct TabStackScope
-	{
-		explicit TabStackScope(_TabStackDef* ref)
-		{
-			SableUI::SetCurrentTabStackRef(ref);
-		}
-		~TabStackScope()
-		{
-			SableUI::RemoveCurrentTabStackRef();
-		}
-		TabStackScope(const TabStackScope&) = delete;
-		TabStackScope& operator=(const TabStackScope&) = delete;
-		TabStackScope(TabStackScope&&) = default;
-		TabStackScope& operator=(TabStackScope&&) = default;
 	};
 }
 
@@ -283,46 +262,24 @@ namespace SableUI
 #define VSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
 #define EmptyPanel()							SableUI::AddPanel()
-#define Panel(name)								SableUI::AddPanel()->AttachComponent(name)
-#define PanelGainRef(name, T, ref)																			\
+#define Panel(name)								SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel();
+
+#define PanelGainRefNoInit(name, T, ref)																	\
 	T* ref = nullptr;																						\
 	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);			\
 	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
 		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
 	else																									\
-		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));
+		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T))
 
-// Base scrollable component
-#include <SableUI/components/scrollView.h>
-#define ScrollView(name, ...)																				\
-	ComponentGainRefWithInit("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),		\
-	CONCAT(_scrollable_comp_, __LINE__)->AttachChild(name,													\
-		style(__VA_ARGS__ w_fill h_fill)), __VA_ARGS__ w_fill h_fill)
+#define PanelGainRef(name, T, ref)																			\
+	PanelGainRefNoInit(name, T, ref);																		\
+	CONCAT(_comp_, __LINE__)->BackendInitialisePanel()
 
-#define ScrollViewWithInitialiser(name, T, initialiser, ...)												\
-	ComponentGainRefWithInit("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_comp_, __LINE__),		\
-	CONCAT(_scrollable_comp_, __LINE__)->AttachChildWithInitialiser<T>(name, initialiser,					\
-		style(__VA_ARGS__ w_fill h_fill)), __VA_ARGS__ w_fill h_fill)
-
-// Scrollable Panels
-#define ScrollablePanel(name)																				\
-	PanelGainRef("ScrollView", SableUI::ScrollView, CONCAT(_scrollable_panel_, __LINE__))					\
-	CONCAT(_scrollable_panel_, __LINE__)->AttachChild(name)
-
-// TabStack
-#include <SableUI/components/tabStack.h>
-#define TabStack()																							\
-	PanelGainRef("TabStack", SableUI::_TabStackDef, CONCAT(_tab_stack_, __LINE__));							\
-	if (SableUI::TabStackScope CONCAT(_tab_stack_scope_, __LINE__)(CONCAT(_tab_stack_, __LINE__)); true)	\
-
-#define Tab(componentName)																					\
-	SableUI::GetCurrentTabStackRef()->AddTab(componentName);
-
-#define TabWithLabel(componentName, label)																	\
-	SableUI::GetCurrentTabStackRef()->AddTab(componentName, label)
-
-#define TabWithInitialiser(componentName, label, T, initialiser)											\
-	SableUI::GetCurrentTabStackRef()->AddTabWithInitialiser<T>(componentName, label, initialiser)
+#define PanelGainRefWithInit(name, T, ref, initLines)														\
+	PanelGainRefNoInit(name, T, ref);																		\
+	initLines;																								\
+	CONCAT(_comp_, __LINE__)->BackendInitialisePanel();
 
 #include <SableUI/components/button.h>
 
@@ -339,6 +296,7 @@ namespace SableUI
 		ref->Init(label, callback), __VA_ARGS__)
 
 #include <SableUI/components/checkbox.h>
+#include <SableUI/scrollContext.h>
 
 #define Checkbox(label, checked, onChange, ...)																\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
@@ -347,6 +305,16 @@ namespace SableUI
 #define CheckboxComponentRef(ref, label, checked, onChange, ...)											\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, ref,											\
 		ref->Init(label, checked, onChange), __VA_ARGS__)
+
+#define TabUpdateHandler(tabContext)	\
+	if (tabContext.changed)				\
+	{									\
+		needsRerender = true;			\
+		tabContext.changed = false;		\
+	}
+
+#define ScrollUpdateHandler(scrollCtx)						\
+	SableUI::ProcessScroll(this, scrollCtx, ctx)			\
 
 // Splitter components
 #define SplitterHorizontal(...) \

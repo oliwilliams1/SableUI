@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <SableUI/scrollContext.h>
 #include <SableUI/component.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/element.h>
@@ -22,12 +23,14 @@ namespace SableUI
 	{
 	public:
 		void Layout() override;
+		void OnUpdate(const UIEventContext& ctx) override;
 		void InitData(Window* window) { this->window = window; }
 
 	private:
 		useState(highlightElements, setHighlightElements, bool, false);
 		useState(transparency, setTransparency, int, 0);
 		Window* window = nullptr;
+		SableUI::ScrollContext treeScroll;
 	};
 
 	class ElementTreeView : public SableUI::BaseComponent
@@ -42,7 +45,6 @@ namespace SableUI
 		void DrawPanelTree(BasePanel* panel, int depth, int& line, size_t parentHash);
 		size_t ComputeHash(const void* ptr, size_t parentHash) const;
 
-		// Store only expanded state by hash
 		useState(expandedNodes, setExpandedNodes, std::unordered_set<size_t>, {});
 
 		Window* window = nullptr;
@@ -50,7 +52,6 @@ namespace SableUI
 		int transparency = 0;
 		CustomLayoutContext(queue);
 
-		// Cache for hover overlay data
 		size_t lastDrawnHoveredHash = 0;
 	};
 
@@ -62,7 +63,7 @@ namespace SableUI
 
 	private:
 		useState(selectedRect, setSelectedRect, Rect, {});
-		useState(selectedInfo, setSelectedInfo, ElementInfo, {});
+		useRef(selectedInfo, ElementInfo, {});
 		useState(selectedClipRect, setSelectedClipRect, Rect, {});
 		useState(lastSelectedHash, setLastSelectedHash, size_t, 0);
 	};

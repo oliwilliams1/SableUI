@@ -31,6 +31,9 @@ static void DeleteSelection(SableString& text, int& cursorPos, int& initialCurso
 
 void SableUI::TextField::Layout()
 {
+    if (!m_window)
+        Text("Component does not have m_window defined", textColour(255, 0, 0) mb(4));
+
     Div(ID("TextField") w_fill h_fit p(8) bg(40, 40, 40) rounded(4))
     {
         if (textVal.empty() && !isFocused)

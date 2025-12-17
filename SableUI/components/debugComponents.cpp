@@ -1,4 +1,5 @@
 #include <SableUI/components/debugComponents.h>
+#include <SableUI/scrollContext.h>
 #include <SableUI/component.h>
 #include <SableUI/textCache.h>
 #include <SableUI/renderer.h>
@@ -170,13 +171,23 @@ void SableUI::LayoutDebugger::Layout()
 				g_needsTransparencyUpdate = true;
 			}));
 
-		ScrollViewWithInitialiser("ElementTreeView", ElementTreeView,
-			[this](ElementTreeView* comp) {
-				comp->InitData(window, highlightElements, transparency);
-			},
-			h_fill w_fill bg(24, 24, 24)
-		);
+		ScrollViewCtx(treeScroll, bg(24, 24, 24))
+		{
+			for (int i = 0; i < 50; i++)
+			{
+				Div(w(50) h(50) m(4) bg(255, 0, 0)
+					onDoubleClick([i]() { SableUI_Log("Clicked %d", i); }))
+				{
+					Text(std::to_string(i), fontSize(24));
+				}
+			}
+		}
 	}
+}
+
+void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
+{
+	ScrollUpdateHandler(treeScroll);
 }
 
 // ============================================================================
@@ -456,7 +467,7 @@ void SableUI::PropertiesPanel::OnUpdate(const UIEventContext& ctx)
 	{
 		setLastSelectedHash(g_selectedHash);
 		setSelectedRect(g_hoveredRect);
-		setSelectedInfo(g_hoveredInfo);
+		selectedInfo = g_hoveredInfo;
 		setSelectedClipRect({});
 	}
 }

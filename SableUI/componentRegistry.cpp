@@ -52,9 +52,8 @@ BaseComponent* ContentPanel::AttachComponent(const std::string& componentName)
     }
 
     m_component = comp;
-    m_component->BackendInitialisePanel(m_renderer);
+    m_component->SetRenderer(m_renderer);
     
-    Update();
     return comp;
 }
 
@@ -88,8 +87,6 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 
 #include <SableUI/components/menuBar.h>
 #include <SableUI/components/debugComponents.h>
-#include <SableUI/components/tabStack.h>
-#include <SableUI/components/scrollView.h>
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
 #include <SableUI/components/textField.h>
@@ -104,8 +101,6 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MemLeakTimer>("MemLeakTimer");
 
     RegisterComponent<MenuBar>("MenuBar");
-    RegisterComponent<_TabStackDef>("TabStack");
-    RegisterComponent<ScrollView>("ScrollView");
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");
     RegisterComponent<TextField>("TextField");

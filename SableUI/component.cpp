@@ -66,18 +66,19 @@ void SableUI::BaseComponent::LayoutWrapper()
 	m_componentChildren.resize(m_childCount);
 }
 
-void SableUI::BaseComponent::BackendInitialisePanel(RendererBackend* renderer)
+void SableUI::BaseComponent::BackendInitialisePanel()
 {
 	if (rootElement) SB_delete(rootElement);
 
-	m_renderer = renderer;
+	if (!m_renderer)
+		SableUI_Runtime_Error("Renderer has not been initialised for component");
 
-	rootElement = SB_new<Element>(renderer, ElementType::DIV);
+	rootElement = SB_new<Element>(m_renderer, ElementType::DIV);
 	rootElement->setBgColour(m_bgColour);
 	rootElement->setWType(RectType::Fill);
 	rootElement->setHType(RectType::Fill);
 
-	SetElementBuilderContext(renderer, rootElement, false);
+	SetElementBuilderContext(m_renderer, rootElement, false);
 	LayoutWrapper();
 
 	rootElement->LayoutChildren();

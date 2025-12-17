@@ -69,7 +69,8 @@ namespace SableUI
         virtual void OnPostLayoutUpdate(const UIEventContext& ctx) {};
         
         void LayoutWrapper();
-        void BackendInitialisePanel(RendererBackend* renderer);
+        void BackendInitialisePanel();
+        void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
         void BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info);
         void Render(int z = 0);
 
