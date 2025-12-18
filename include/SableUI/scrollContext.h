@@ -36,15 +36,19 @@ namespace SableUI
     // Called during OnUpdate, handling user input
     void ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIEventContext& eventCtx);
 
-    // Called during OnPostLayoutUpdate, handling Element Sizes
+    // Called during OnUpdatePostLayout, handling Element Sizes
     void ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx);
 
     struct ScrollViewScope
     {
+    public:
         ScrollContext& ctx;
 
         explicit ScrollViewScope(ScrollContext& context, ElementInfo info);
         ~ScrollViewScope();
+    
+    private:
+        Colour bgColour;
     };
 }
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <type_traits>
+#include <string>
 
 namespace SableUI
 {
@@ -49,9 +49,9 @@ namespace SableUI
 
 		String substr(size_t pos, size_t count = static_cast<size_t>(-1)) const;
 
-		size_t size() const noexcept { return m_size; }
-		bool empty() const noexcept { return m_size == 0; }
-		char32_t operator[](size_t index) const noexcept { return m_data[index]; }
+		size_t size() const noexcept;
+		bool empty() const noexcept;
+		char32_t operator[](size_t index) const noexcept;
 
 		operator std::string() const;
 
@@ -59,16 +59,31 @@ namespace SableUI
 		using const_iterator = const char32_t*;
 		void push_back(char32_t);
 
-		iterator begin() noexcept { return m_data; }
-		iterator end() noexcept { return m_data + m_size; }
-		const_iterator begin() const noexcept { return m_data; }
-		const_iterator end() const noexcept { return m_data + m_size; }
+		iterator begin() noexcept;
+		iterator end() noexcept;
+		const_iterator begin() const noexcept;
+		const_iterator end() const noexcept;
 
 		void clear() noexcept;
-	
+
 	private:
-		char32_t* m_data;
-		size_t m_size;
+		struct StringData
+		{
+			char32_t* data = nullptr;
+			size_t size = 0;
+			size_t refCount = 1;
+
+			StringData() = default;
+			StringData(const char32_t* str, size_t len);
+			~StringData();
+		};
+
+		StringData* m_data;
+		size_t m_size; // Keep for quick access
+
+		void AddRef();
+		void Release();
+		void MakeUnique();
 	};
 
 	inline String operator+(const char32_t* lhs, const String& rhs)

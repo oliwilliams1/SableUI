@@ -1,5 +1,11 @@
 #pragma once
 #include <SableUI/scrollContext.h>
+#include <SableUI/component.h>
+#include <SableUI/SableUI.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
+#include <SableUI/utils.h>
+#include <algorithm>
 
 bool SableUI::ScrollData::operator!=(const ScrollData& other) const
 {
@@ -142,6 +148,8 @@ SableUI::ScrollViewScope::ScrollViewScope(ScrollContext& context, ElementInfo in
 {
     SableUI::StartDiv(style(ID(ctx.GetViewportID()) w_fill h_fill left_right overflow_hidden));
 
+    bgColour = info.bgColour;
+
     info.setID(ctx.GetContentID())
         .setWType(SableUI::RectType::Fill)
         .setHType(SableUI::RectType::FitContent)
@@ -169,14 +177,14 @@ SableUI::ScrollViewScope::~ScrollViewScope()
 
             if (ctx.barHovered)
             {
-                Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(28, 28, 28) rounded(4))
+                Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(bgColour) rounded(4))
                 {
                     Rect(w(6) h(static_cast<int>(thumbHeight)) mt(static_cast<int>(topMargin)) rounded(3) bg(149, 149, 149));
                 }
             }
             else
             {
-                Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(32, 32, 32) rounded(4))
+                Div(ID(ctx.GetBarID()) w_fit p(padding) h_fill bg(bgColour) rounded(4))
                 {
                     Rect(w(2) m(2) h(static_cast<int>(thumbHeight)) mt(static_cast<int>(topMargin)) rounded(1) bg(128, 128, 128));
                 }

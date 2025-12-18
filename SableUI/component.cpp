@@ -1,13 +1,12 @@
-#include "SableUI/component.h"
-#include "SableUI/SableUI.h"
-#include "SableUI/memory.h"
-#include <cstring>
+#include <SableUI/component.h>
+#include <SableUI/renderer.h>
+#include <SableUI/SableUI.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
 #include <SableUI/events.h>
-#include <SableUI/renderer.h>
+#include <SableUI/memory.h>
 #include <SableUI/utils.h>
-#include <SableUI/window.h>
+#include <cstring>
 
 using namespace SableMemory;
 
@@ -141,6 +140,7 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 	for (BaseComponent* garbage : m_garbageChildren)
 		SB_delete(garbage);
+
 	m_garbageChildren.clear();
 
 	rootElement->LayoutChildren();
@@ -164,7 +164,7 @@ void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 
 void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext& ctx)
 {
-	OnPostLayoutUpdate(ctx);
+	OnUpdatePostLayout(ctx);
 	for (auto* child : m_componentChildren)
 		child->comp_PropagatePostLayoutEvents(ctx);
 }

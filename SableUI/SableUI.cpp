@@ -83,8 +83,8 @@ void SableUI::AddTextVirtual(const SableString& text, const SableUI::ElementInfo
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::TEXT;
-	vnode->text = text;
 	vnode->info = info;
+	vnode->info.text = text;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -95,8 +95,8 @@ void SableUI::AddImageVirtual(const std::string& path, const SableUI::ElementInf
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->type = ElementType::IMAGE;
-	vnode->text = path;
 	vnode->info = info;
+	vnode->info.text = path;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -187,8 +187,8 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 		s_virtualStack = std::stack<VirtualNode*>();
 		s_virtualRoot = SB_new<VirtualNode>();
 		s_virtualRoot->info = rootElement->GetInfo();
+		s_virtualRoot->info.text = rootElement->text;
 		s_virtualRoot->type = rootElement->type;
-		s_virtualRoot->text = rootElement->text;
 		s_virtualStack.push(s_virtualRoot);
 	}
 	else

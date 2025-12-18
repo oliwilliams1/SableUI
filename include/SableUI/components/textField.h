@@ -12,7 +12,7 @@ namespace SableUI
 	public:
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
-		void OnPostLayoutUpdate(const UIEventContext& ctx) override;
+		void OnUpdatePostLayout(const UIEventContext& ctx) override;
 		void InitData(Window* window)
 			{ m_window = window; };
 

@@ -9,6 +9,7 @@
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
 #include <string>
+#include <cstdint>
 
 /* non-macro user api */
 namespace SableUI
@@ -159,8 +160,13 @@ namespace SableUI
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
-#define rgb(r, g, b) SableUI::Colour(r, g, b)
-#define rgba(r, g, b, a) SableUI::Colour(r, g, b, a)
+inline constexpr SableUI::Colour rgb(uint8_t r, uint8_t g, uint8_t b) {
+	return SableUI::Colour{ r, g, b, 255 };
+}
+
+inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+	return SableUI::Colour{ r, g, b, a };
+}
 
 /* style modifiers */
 #define ID(value)			.setID(value)
@@ -296,7 +302,6 @@ namespace SableUI
 		ref->Init(label, callback), __VA_ARGS__)
 
 #include <SableUI/components/checkbox.h>
-#include <SableUI/scrollContext.h>
 
 #define Checkbox(label, checked, onChange, ...)																\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\

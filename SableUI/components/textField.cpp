@@ -199,7 +199,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     }
 }
 
-void SableUI::TextField::OnPostLayoutUpdate(const UIEventContext& ctx)
+void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
 {
     if (!isFocused || !m_window) return;
 

@@ -25,6 +25,7 @@ namespace SableMemory
 		}
 	}
 
+
 	void DestroyPools();
 	void InitPools();
 	void CompactPools();

@@ -791,9 +791,9 @@ static size_t ComputeHash(const SableUI::VirtualNode* vnode)
 
     // Type and content
     hash_combine(h, std::hash<int>()((int)vnode->type));
-    if (vnode->text.size() != 0)
+    if (vnode->info.text.size() != 0)
     {
-        std::string s = (std::string)(vnode->text);
+        std::string s = (std::string)(vnode->info.text);
         hash_combine(h, std::hash<std::string>()(s));
     }
 
@@ -970,13 +970,13 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
     case ElementType::TEXT:
     {
-        AddText(vnode->text, vnode->info);
+        AddText(vnode->info.text, vnode->info);
         break;
     }
 
     case ElementType::IMAGE:
     {
-        AddImage((std::string)(vnode->text), vnode->info);
+        AddImage((std::string)(vnode->info.text), vnode->info);
         break;
     }
     

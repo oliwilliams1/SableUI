@@ -1,9 +1,9 @@
 #pragma once
 #include <SableUI/string.h>
-#include <cstdint>
-#include <cmath>
-#include <cstdio>
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cmath>
 
 typedef SableUI::String SableString;
 
@@ -246,13 +246,12 @@ namespace SableUI
 
 	struct Colour
 	{
-		Colour() : r(0), g(0), b(0), a(255) {}
-		Colour(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
-		
-		uint8_t r, g, b, a;
+		uint8_t r = 0, g = 0, b = 0, a = 255;
 
-		bool operator==(const Colour& other) const {
-			return r == other.r && g == other.g && b == other.b && a == other.a;
+		constexpr bool operator==(const Colour& other) const
+		{
+			return r == other.r && g == other.g &&
+				b == other.b && a == other.a;
 		}
 	};
 

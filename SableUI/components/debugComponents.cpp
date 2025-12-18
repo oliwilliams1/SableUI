@@ -84,8 +84,6 @@ void SableUI::MemoryDebugger::Layout()
 {
 	Div(p(6) w_fill h_fill)
 	{
-		Checkbox("Live update", live, [this](bool checked) { setLive(checked); });
-
 		SplitterWithText("Panels");
 		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
 		Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
@@ -209,7 +207,7 @@ void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
 	ScrollUpdateHandler(treeScroll);
 }
 
-void SableUI::LayoutDebugger::OnPostLayoutUpdate(const UIEventContext& ctx)
+void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIEventContext& ctx)
 {
 	ScrollUpdatePostLayoutHandler(treeScroll);
 }

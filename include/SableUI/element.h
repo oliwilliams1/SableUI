@@ -58,7 +58,7 @@ namespace SableUI
 		RectType hType = RectType::Undef;
 		ElementType type = ElementType::Undef;
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString text = "";
+		SableString text = U"";
 		Colour textColour = { 255, 255, 255, 255 };
 		TextJustification textJustification = TextJustification::Left;
 		bool textWrap = true;
@@ -135,7 +135,6 @@ namespace SableUI
 		ElementType type = ElementType::Undef;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
-		SableString text;
 		BaseComponent* childComp = nullptr;
 	};
 
@@ -195,7 +194,7 @@ namespace SableUI
 		RectType hType = RectType::Undef;
 		Colour bgColour = Colour(0, 0, 0, 0);
 		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString text;
+		SableString text = U"";
 		Colour textColour = { 255, 255, 255, 255 };
 		TextJustification textJustification = TextJustification::Left;
 		bool textWrap = false;

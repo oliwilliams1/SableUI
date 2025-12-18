@@ -66,7 +66,7 @@ namespace SableUI
 
         virtual void Layout() {};
         virtual void OnUpdate(const UIEventContext& ctx) {};
-        virtual void OnPostLayoutUpdate(const UIEventContext& ctx) {};
+        virtual void OnUpdatePostLayout(const UIEventContext& ctx) {};
         
         void LayoutWrapper();
         void BackendInitialisePanel();
@@ -120,5 +120,37 @@ namespace SableUI
         RendererBackend* m_renderer = nullptr;
         Colour m_bgColour = Colour{ 32, 32, 32 };
         int m_childCount = 0;
+    };
+
+    template<typename T>
+    class State {
+    public:
+        State() = delete;
+        State(BaseComponent* owner, T initialValue)
+            : m_value(initialValue), m_owner(owner)
+        {
+             owner->RegisterState(&m_value);
+        }
+
+        const T& get() const { return m_value; }
+
+        void set(const T& newValue) {
+            if (m_value == newValue) return;
+            m_value = newValue;
+            m_owner->needsRerender = true;
+        }
+
+        // allow direct usage: if (count > 0)
+        operator const T& () const { return m_value; }
+
+        // allow: count = 5
+        State& operator=(const T& newValue) {
+            set(newValue);
+            return *this;
+        }
+
+    private:
+        T m_value;
+        BaseComponent* m_owner;
     };
 }
