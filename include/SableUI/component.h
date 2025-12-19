@@ -1,59 +1,19 @@
 #pragma once
-#include <SableUI/element.h>
-#include <SableUI/memory.h>
-#include <SableUI/events.h>
 #include <SableUI/renderer.h>
+#include <SableUI/element.h>
+#include <SableUI/events.h>
 #include <SableUI/utils.h>
-
-#include <functional>
-#include <type_traits>
-#include <utility>
+#include <concepts>
 #include <vector>
+#include <string>
 
 namespace SableUI
 {
-    template<typename T>
-    struct StateSetter
+    class StateBase
     {
-        StateSetter(std::function<void(const T&)> setter)
-            : m_setter(setter) {
-        };
-
-        void operator()(const T& value) const { m_setter(value); }
-        void set(const T& value) const { m_setter(value); }
-
-        StateSetter(const StateSetter& other) = delete;
-        StateSetter& operator=(const StateSetter& other) = delete;
-
-    private:
-        std::function<void(const T&)> m_setter;
-    };
-
-    class Element;
-
-    class StateBlock
-    {
-        StateBlock(void* ptr, std::function<void(void*, const void*)> copier) : ptr(ptr), copier(copier) {}
-
-        void* ptr;
-        std::function<void(void*, const void*)> copier;
-
     public:
-        template<typename T>
-        static StateBlock Create(T* variable)
-        {
-            return StateBlock(
-                variable,
-                [](void* dst, const void* src)
-                {
-                    *static_cast<T*>(dst) = *static_cast<const T*>(src);
-                });
-        }
-
-        void CopyFrom(const StateBlock& other) const
-        {
-            copier(ptr, other.ptr);
-        }
+        virtual ~StateBase() = default;
+        virtual void Sync(StateBase* other) = 0;
     };
 
     class Window;
@@ -62,12 +22,12 @@ namespace SableUI
     public:
         BaseComponent(Colour colour = Colour{ 32, 32, 32 });
         static int GetNumInstances();
-        ~BaseComponent();
+        virtual ~BaseComponent();
 
         virtual void Layout() {};
         virtual void OnUpdate(const UIEventContext& ctx) {};
         virtual void OnUpdatePostLayout(const UIEventContext& ctx) {};
-        
+
         void LayoutWrapper();
         void BackendInitialisePanel();
         void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
@@ -86,33 +46,16 @@ namespace SableUI
         bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
         void comp_PropagatePostLayoutEvents(const UIEventContext& ctx);
 
-        template<typename T>
-        void RegisterState(T* variable)
-        {
-            m_stateBlocks.push_back(StateBlock::Create(variable));
-        }
-
-        template<typename T>
-        void RegisterReference(T* variable)
-        {
-            m_stateBlocks.push_back(StateBlock::Create(variable));
-        }
-
-        void RegisterQueue(CustomTargetQueue** queuePtrAddr)
-        {
-            m_customTargetQueuePtrs.push_back(queuePtrAddr);
-        }
+        void RegisterState(StateBase* state) { m_states.push_back(state); }
 
         void CopyStateFrom(const BaseComponent& other);
-
         Element* GetElementById(const SableString& id);
 
         std::vector<BaseComponent*> m_componentChildren;
 
-    protected:        
+    protected:
         std::vector<BaseComponent*> m_garbageChildren;
-        std::vector<StateBlock> m_stateBlocks;
-        std::vector<CustomTargetQueue**> m_customTargetQueuePtrs;
+        std::vector<StateBase*> m_states;
 
     private:
         Element* rootElement = nullptr;
@@ -122,14 +65,21 @@ namespace SableUI
         int m_childCount = 0;
     };
 
+    void _priv_comp_PostEmptyEvent();
+
     template<typename T>
-    class State {
+    concept HasEqualityOperator = requires(const T & a, const T & b) {
+        { a == b } -> std::same_as<bool>;
+    };
+
+    template<typename T>
+    class State : public StateBase {
+        static_assert(HasEqualityOperator<T>, "State<T> requires operator== overloaded");
+
     public:
-        State() = delete;
         State(BaseComponent* owner, T initialValue)
-            : m_value(initialValue), m_owner(owner)
-        {
-             owner->RegisterState(&m_value);
+            : m_value(initialValue), m_owner(owner) {
+            owner->RegisterState(this);
         }
 
         const T& get() const { return m_value; }
@@ -138,12 +88,17 @@ namespace SableUI
             if (m_value == newValue) return;
             m_value = newValue;
             m_owner->needsRerender = true;
+            _priv_comp_PostEmptyEvent();
         }
 
-        // allow direct usage: if (count > 0)
+        void Sync(StateBase* other) override {
+            if (!other) return;
+            auto* otherPtr = static_cast<State<T>*>(other);
+            this->m_value = otherPtr->m_value;
+        }
+
         operator const T& () const { return m_value; }
 
-        // allow: count = 5
         State& operator=(const T& newValue) {
             set(newValue);
             return *this;
@@ -152,5 +107,36 @@ namespace SableUI
     private:
         T m_value;
         BaseComponent* m_owner;
+    };
+
+    template<typename T>
+    class Ref : public StateBase {
+    public:
+        Ref(BaseComponent* owner, T initialValue)
+            : m_value(initialValue) {
+            owner->RegisterState(this);
+        }
+
+        void Sync(StateBase* other) override {
+            if (!other) return;
+            auto* otherPtr = static_cast<Ref<T>*>(other);
+            this->m_value = otherPtr->m_value;
+        }
+
+        T& get() { return m_value; }
+
+        void set(const T& newValue) {
+            m_value = newValue;
+        }
+
+        operator const T& () const { return m_value; }
+
+        Ref& operator=(const T& newValue) {
+            m_value = newValue;
+            return *this;
+        }
+
+    private:
+        T m_value;
     };
 }

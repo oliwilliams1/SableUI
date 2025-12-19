@@ -14,19 +14,19 @@ void Button::Layout()
 		w_fit h_fit
 		centerX
 		onHover([this]() {
-			if (!disabled) setIsHovered(true);
+			if (!disabled.get()) isHovered.set(true);
 		})
 		onHoverExit([this]() {
-			setIsHovered(false);
-			setIsPressed(false);
+			isHovered.set(false);
+			isPressed.set(false);
 		})
 		onClick([this]() {
-			if (!disabled && onClickCallback) {
-				onClickCallback();
+			if (!disabled.get() && onClickCallback.get()) {
+				onClickCallback.get()();
 			}
 		}))
 	{
-		Text(label,
+		Text(label.get(),
 			textColour(textColour)
 			justify_center
 			wrapText(false));
@@ -35,37 +35,37 @@ void Button::Layout()
 
 void Button::OnUpdate(const UIEventContext& ctx)
 {
-	if (!disabled && isHovered)
+	if (!disabled.get() && isHovered.get())
 	{
 		if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
 		{
-			setIsPressed(true);
+			isPressed.set(true);
 		}
 		else if (ctx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
 		{
-			setIsPressed(false);
+			isPressed.set(false);
 		}
 	}
 	else
 	{
-		if (isPressed)
-			setIsPressed(false);
+		if (isPressed.get())
+			isPressed.set(false);
 	}
 }
 
-void SableUI::Button::Init(const SableString& label, std::function<void()> callback, ButtonVariant variant, bool disabled)
+void SableUI::Button::Init(const SableString& p_label, std::function<void()> p_callback, ButtonVariant p_variant, bool p_disabled)
 {
-	setLabel(label);
-	onClickCallback = callback;
-	setVariant(variant);
-	setDisabled(disabled);
+	label.set(p_label);
+	onClickCallback.set(p_callback);
+	variant.set(p_variant);
+	disabled.set(p_disabled);
 }
 
 Colour Button::GetBackgroundColour() const
 {
-	if (disabled)
+	if (disabled.get())
 	{
-		switch (variant)
+		switch (variant.get())
 		{
 		case ButtonVariant::Primary:    return Colour(120, 120, 120);
 		case ButtonVariant::Secondary:  return Colour(100, 100, 100);
@@ -74,9 +74,9 @@ Colour Button::GetBackgroundColour() const
 		}
 	}
 
-	if (isPressed)
+	if (isPressed.get())
 	{
-		switch (variant)
+		switch (variant.get())
 		{
 		case ButtonVariant::Primary:    return Colour(70, 130, 220);
 		case ButtonVariant::Secondary:  return Colour(60, 60, 60);
@@ -85,9 +85,9 @@ Colour Button::GetBackgroundColour() const
 		}
 	}
 
-	if (isHovered)
+	if (isHovered.get())
 	{
-		switch (variant)
+		switch (variant.get())
 		{
 		case ButtonVariant::Primary:    return Colour(80, 150, 240);
 		case ButtonVariant::Secondary:  return Colour(70, 70, 70);
@@ -96,7 +96,7 @@ Colour Button::GetBackgroundColour() const
 		}
 	}
 
-	switch (variant)
+	switch (variant.get())
 	{
 	case ButtonVariant::Primary:    return Colour(90, 160, 255);
 	case ButtonVariant::Secondary:  return Colour(80, 80, 80);
@@ -108,12 +108,12 @@ Colour Button::GetBackgroundColour() const
 
 Colour Button::GetTextColour() const
 {
-	if (disabled)
+	if (disabled.get())
 	{
 		return Colour(150, 150, 150);
 	}
 
-	switch (variant)
+	switch (variant.get())
 	{
 	case ButtonVariant::Primary:    return Colour(255, 255, 255);
 	case ButtonVariant::Secondary:  return Colour(200, 200, 200);

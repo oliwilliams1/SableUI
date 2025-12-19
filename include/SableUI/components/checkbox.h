@@ -13,19 +13,18 @@ namespace SableUI
 		void Init(const SableString& label, bool checked, std::function<void(bool)> onChange,
 			bool disabled = false);
 
-		void SetLabel(const SableString& label) { setLabel(label); }
-		void SetChecked(bool checked) { setChecked(checked); }
-		void SetOnChange(std::function<void(bool)> callback) { onChangeCallback = callback; }
-		void SetDisabled(bool disabled) { setDisabled(disabled); }
-		bool IsChecked() const { return checked; }
+		void SetLabel(const SableString& p_label) { label.set(p_label); }
+		void SetChecked(bool p_checked) { checked.set(p_checked); }
+		void SetOnChange(std::function<void(bool)> callback) { onChangeCallback.set(callback); }
+		void SetDisabled(bool p_disabled) { disabled.set(p_disabled); }
+		bool IsChecked() const { return checked.get(); }
 
 	private:
-		useState(label, setLabel, SableString, "");
-		useState(checked, setChecked, bool, false);
-		useState(disabled, setDisabled, bool, false);
-		useState(isHovered, setIsHovered, bool, false);
-
-		useRef(onChangeCallback, std::function<void(bool)>, nullptr);
+		State<SableString> label{ this, "" };
+		State<bool> checked{ this, false };
+		State<bool> disabled{ this, false };
+		State<bool> isHovered{ this, false };
+		Ref<std::function<void(bool)>> onChangeCallback{ this, nullptr };
 
 		void HandleClick();
 	};

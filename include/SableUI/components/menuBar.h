@@ -17,12 +17,12 @@ namespace SableUI
 
 		void Layout() override;
 		void OnUpdate(const SableUI::UIEventContext& ctx) override;
-		void SetWindow(Window* window) { setWindow(window); };
+		void SetWindow(Window* p_window) { window.set(p_window); };
 
 	private:
-		CustomLayoutContext(queue);
-		useState(activeMenu, setActiveMenu, SableString, "");
-		useState(window, setWindow, SableUI::Window*, nullptr);
+		///CustomLayoutContext(queue);
+		State<SableString> activeMenu{ this, U"" };
+		State<Window*> window{ this, nullptr };
 		std::map<std::string, std::vector<std::string>> m_menuItems;
 	
 		void DrawMenuBarItem(const std::string& text);

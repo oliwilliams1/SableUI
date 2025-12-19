@@ -57,8 +57,8 @@ namespace SableUI
 	void SetNextPanelMinBounds(ivec2 bounds);
 
 	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
-		CustomTargetQueue** queuePtr, const ElementInfo& ElementInfo);
-	void EndCustomLayoutScope(Window* window, CustomTargetQueue** queuePtr);
+		CustomTargetQueue* queuePtr, const ElementInfo& ElementInfo);
+	void EndCustomLayoutScope(Window* window, CustomTargetQueue* queuePtr);
 
 	struct DivScope
 	{
@@ -99,7 +99,7 @@ namespace SableUI
 	public:
 		explicit CustomLayoutScope(
 			Window* window, const GpuFramebuffer* surface,
-			CustomTargetQueue** queuePtr, ElementInfo info)
+			CustomTargetQueue* queuePtr, ElementInfo info)
 			: m_window(window), m_queuePtr(queuePtr)
 		{
 			SableUI::StartCustomLayoutScope(window, surface, queuePtr, info);
@@ -115,7 +115,7 @@ namespace SableUI
 
 	private:
 		Window* m_window = nullptr;
-		CustomTargetQueue** m_queuePtr = nullptr;
+		CustomTargetQueue* m_queuePtr = nullptr;
 	};
 }
 
@@ -222,34 +222,13 @@ inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a
 #define dir(value)			.setLayoutDirection(value)
 #define wrapText(v)			.setTextWrap(v)
 
-#define useState(variableName, setterName, T, ...)			            \
-	T variableName = __VA_ARGS__;										\
-	SableUI::StateSetter<T> setterName = SableUI::StateSetter<T>(       \
-		[this](T const& val) {                                          \
-			if (this->variableName == val) return;                      \
-			this->variableName = val;                                   \
-			this->needsRerender = true;									\
-			SableUI::PostEmptyEvent();									\
-		});                                                             \
-	struct __StateReg_##variableName {                                  \
-		__StateReg_##variableName(SableUI::BaseComponent* comp, T* var) \
-		{ if (comp) comp->RegisterState(var); }							\
-	} __stateReg_##variableName{this, &variableName}
-
-#define useRef(variableName, T, ...)		                            \
-	T variableName = __VA_ARGS__;                                       \
-	struct __RefReg_##variableName {                                    \
-		__RefReg_##variableName(SableUI::BaseComponent* comp, T* var)   \
-		{ if (comp) comp->RegisterReference(var); }						\
-	} __refReg_##variableName{this, &variableName}
-
-#define CustomLayoutContext(queueVar)									\
-	useRef(queueVar, SableUI::CustomTargetQueue*, nullptr);				\
-	struct __LayCtxReg_##queueVar {										\
-		__LayCtxReg_##queueVar(SableUI::BaseComponent* comp,			\
-							   SableUI::CustomTargetQueue** var)		\
-		{ if (comp) comp->RegisterQueue(var); }							\
-	} __LayCtxReg_##queueVar{ this, &queueVar }
+//#define CustomLayoutContext(queueVar)									\
+//	Ref<SableUI::CustomTargetQueue*> queueVar{ this, nullptr };			\
+//	struct __LayCtxReg_##queueVar {										\
+//		__LayCtxReg_##queueVar(SableUI::BaseComponent* comp,			\
+//							   Ref<CustomTargetQueue*>* var)			\
+//		{ if (comp) comp->RegisterQueue(var); }							\
+//	} __LayCtxReg_##queueVar{ this, &queueVar }
 
 #define UseCustomLayoutContext(queueVar, window, surface, ...)			\
 	if (SableUI::CustomLayoutScope CONCAT(_lay_ctx_guard_, __LINE__)(window, surface, &queueVar, style(__VA_ARGS__)); true)

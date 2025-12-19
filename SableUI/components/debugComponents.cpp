@@ -163,16 +163,16 @@ void SableUI::LayoutDebugger::Layout()
 		{
 			Div(p(6) w_fill h_fill)
 			{
-				Checkbox("Highlight Elements", highlightElements, [this](bool checked) { setHighlightElements(checked); });
+				Checkbox("Highlight Elements", highlightElements.get(), [this](bool checked) { highlightElements.set(checked); });
 
 				SableString transparencyValueStr = SableString::Format("%d",
 					((transparency * 100 / 255 + 10) / 20) * 20);
 				Text("Set transparency " + transparencyValueStr + "%",
 					mb(4)
 					onClick([this]() {
-						setTransparency(transparency + 52);
-						if (transparency >= 255)
-							setTransparency(0);
+						transparency.set(transparency.get() + 52);
+						if (transparency.get() >= 255)
+							transparency.set(0);
 						g_needsTransparencyUpdate = true;
 					}));
 
@@ -213,273 +213,55 @@ void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIEventContext& ctx)
 }
 
 // ============================================================================
-// Element Tree View
-// ============================================================================
-void SableUI::ElementTreeView::InitData(Window* window, bool highlightElements, int transparency)
-{
-	this->window = window;
-	this->highlightElements = highlightElements;
-	this->transparency = transparency;
-}
-
-size_t SableUI::ElementTreeView::ComputeHash(const void* ptr, size_t parentHash) const
-{
-	size_t h = reinterpret_cast<size_t>(ptr);
-	h ^= parentHash + 0x9e3779b9 + (h << 6) + (h >> 2);
-	return h;
-}
-
-void SableUI::ElementTreeView::DrawElementTree(Element* element, int depth, int& line, size_t parentHash)
-{
-	if (!element) return;
-
-	line++;
-	size_t nodeHash = ComputeHash(element, parentHash);
-	bool isExpanded = expandedNodes.count(nodeHash) > 0;
-	bool hasChildren = !element->children.empty();
-
-	SableString indent = std::string(2 * depth, ' ');
-	SableString prefix = hasChildren ? (isExpanded ? U"\u25BE " : U"\u25B8 ") : U"    ";
-	SableString name = element->ID.empty() ? ElementTypeToString(element->type) : element->ID;
-
-	Div(h_fit w_fill bg(line % 2 == 0 ? rgb(40, 40, 40) : rgb(43, 43, 43)))
-	{
-		Text(indent + prefix + name,
-			onDoubleClick([this, nodeHash, isExpanded]() {
-				auto newExpanded = expandedNodes;
-				if (isExpanded)
-					newExpanded.erase(nodeHash);
-				else
-					newExpanded.insert(nodeHash);
-				setExpandedNodes(newExpanded);
-			})
-			onClick([nodeHash, element]() {
-				g_selectedHash = nodeHash;
-			})
-			onHover([this, nodeHash, element]() {
-				if (g_hoveredHash != nodeHash) {
-					g_hoveredHash = nodeHash;
-					g_hoveredRect = element->rect;
-					g_hoveredInfo = element->GetInfo();
-					if (highlightElements) {
-						g_hoveredMinBounds = {
-							element->rect.x, element->rect.y,
-							element->GetMinWidth(), element->GetMinHeight()
-						};
-					}
-				}
-			})
-		);
-	}
-
-	if (isExpanded)
-	{
-		for (Child* child : element->children)
-		{
-			Element* el = (Element*)*child;
-			DrawElementTree(el, depth + 1, line, nodeHash);
-		}
-	}
-}
-
-void SableUI::ElementTreeView::DrawPanelTree(BasePanel* panel, int depth, int& line, size_t parentHash)
-{
-	if (!panel) return;
-
-	line++;
-	size_t nodeHash = ComputeHash(panel, parentHash);
-	bool isExpanded = expandedNodes.count(nodeHash) > 0;
-	bool hasChildren = !panel->children.empty();
-
-	SableString indent = std::string(2 * depth, ' ');
-	SableString prefix = hasChildren ? (isExpanded ? U"\u25BE " : U"\u25B8 ") : U"    ";
-	SableString name = GetPanelName(panel);
-
-	Div(h_fit w_fill bg(line % 2 == 0 ? rgb(40, 40, 40) : rgb(43, 43, 43)))
-	{
-		Text(indent + prefix + name,
-			onDoubleClick([this, nodeHash, isExpanded]() {
-				auto newExpanded = expandedNodes;
-				if (isExpanded)
-					newExpanded.erase(nodeHash);
-				else
-					newExpanded.insert(nodeHash);
-				setExpandedNodes(newExpanded);
-			})
-			onClick([nodeHash, panel]() {
-				g_selectedHash = nodeHash;
-			})
-			onHover([this, nodeHash, panel]() {
-				if (g_hoveredHash != nodeHash) {
-					g_hoveredHash = nodeHash;
-					g_hoveredRect = panel->rect;
-					g_hoveredInfo = ElementInfo{};
-					if (highlightElements) {
-						g_hoveredMinBounds = {
-							panel->rect.x, panel->rect.y,
-							panel->minBounds.x, panel->minBounds.y
-						};
-					}
-				}
-			})
-		);
-	}
-
-	if (isExpanded)
-	{
-		for (BasePanel* child : panel->children)
-		{
-			DrawPanelTree(child, depth + 1, line, nodeHash);
-		}
-
-		if (panel->children.empty())
-		{
-			if (ContentPanel* p = dynamic_cast<ContentPanel*>(panel))
-			{
-				DrawElementTree(p->GetComponent()->GetRootElement(), depth + 1, line, nodeHash);
-			}
-		}
-	}
-}
-
-void SableUI::ElementTreeView::Layout()
-{
-	if (window == nullptr)
-	{
-		Text("Window is not set",
-			centerY textColour(255, 0, 0));
-		return;
-	}
-
-	int line = 0;
-	DrawPanelTree(window->GetRoot(), 0, line, 0);
-}
-
-void SableUI::ElementTreeView::OnUpdate(const UIEventContext& ctx)
-{
-	if (window == nullptr) return;
-
-	if (highlightElements &&
-		(g_hoveredHash != lastDrawnHoveredHash || g_needsTransparencyUpdate))
-	{
-		UseCustomLayoutContext(queue, window, window->GetSurface())
-		{
-			queue->AddRect(window->GetRoot()->rect, Colour(0, 0, 0, transparency));
-			g_needsTransparencyUpdate = false;
-
-			lastDrawnHoveredHash = g_hoveredHash;
-			const Rect& rect = g_hoveredRect;
-			const ElementInfo& info = g_hoveredInfo;
-
-			// padding
-			if (info.paddingTop > 0) {
-				queue->AddRect({ rect.x + info.paddingLeft, rect.y,
-					rect.w - info.paddingLeft - info.paddingRight, info.paddingTop },
-					Colour(140, 200, 140, 120));
-			}
-			if (info.paddingBottom > 0) {
-				queue->AddRect({ rect.x + info.paddingLeft,
-					rect.y + rect.h - info.paddingBottom,
-					rect.w - info.paddingLeft - info.paddingRight, info.paddingBottom },
-					Colour(140, 200, 140, 120));
-			}
-			if (info.paddingLeft > 0) {
-				queue->AddRect({ rect.x, rect.y, info.paddingLeft, rect.h },
-					Colour(140, 200, 140, 120));
-			}
-			if (info.paddingRight > 0) {
-				queue->AddRect({ rect.x + rect.w - info.paddingRight, rect.y,
-					info.paddingRight, rect.h },
-					Colour(140, 200, 140, 120));
-			}
-
-			// margin
-			if (info.marginTop > 0) {
-				queue->AddRect({ rect.x, rect.y - info.marginTop, rect.w, info.marginTop },
-					Colour(255, 180, 100, 120));
-			}
-			if (info.marginBottom > 0) {
-				queue->AddRect({ rect.x, rect.y + rect.h, rect.w, info.marginBottom },
-					Colour(255, 180, 100, 120));
-			}
-			if (info.marginLeft > 0) {
-				queue->AddRect({ rect.x - info.marginLeft, rect.y - info.marginTop,
-					info.marginLeft, rect.h + info.marginTop + info.marginBottom },
-					Colour(255, 180, 100, 120));
-			}
-			if (info.marginRight > 0) {
-				queue->AddRect({ rect.x + rect.w, rect.y - info.marginTop,
-					info.marginRight, rect.h + info.marginTop + info.marginBottom },
-					Colour(255, 180, 100, 120));
-			}
-
-			// min bounds
-			queue->AddRect(g_hoveredMinBounds, Colour(255, 180, 100, 120));
-
-			// content area
-			Rect contentRect = {
-				rect.x + info.paddingLeft,
-				rect.y + info.paddingTop,
-				rect.w - info.paddingLeft - info.paddingRight,
-				rect.h - info.paddingTop - info.paddingBottom
-			};
-			queue->AddRect(contentRect, Colour(100, 180, 255, 120));
-		}
-	}
-	else
-	{
-		RemoveQueueFromContext(queue);
-	}
-}
-
-// ============================================================================
 // Properties Panel
 // ============================================================================
 void SableUI::PropertiesPanel::Layout()
 {
 	Text(SableString("Properties").bold(), w_fill fontSize(14) m(6) mb(0));
 
-	SableString title = selectedInfo.id.empty() ? "Element" : selectedInfo.id;
+	const ElementInfo& info = selectedInfo.get();
+
+	SableString title = info.id.empty() ? "Element" : info.id;
 	SplitterWithText(title);
 
 	Div(bg(32, 32, 32) p(6) w_fill)
 	{
 		Text("Bounding Box", textColour(180, 180, 180) mb(2));
-		Text(selectedRect.ToString(), mb(8));
+		Text(selectedRect.get().ToString(), mb(8));
 
 		Text("Layout Direction", textColour(180, 180, 180) mb(2));
-		Text(LayoutDirectionToString(selectedInfo.layoutDirection), mb(8));
+		Text(LayoutDirectionToString(info.layoutDirection), mb(8));
 
 		Text("Constraints", textColour(180, 180, 180) mb(2));
 		Text(SableString::Format("{ min-h: %d, max-h: %d}",
-			selectedInfo.minHeight, selectedInfo.maxHeight), mb(2));
+			info.minHeight, info.maxHeight), mb(2));
 		Text(SableString::Format("{ min-w: %d, max-w: %d}",
-			selectedInfo.minWidth, selectedInfo.maxWidth), mb(8));
+			info.minWidth, info.maxWidth), mb(8));
 
 		Text("Margins", textColour(180, 180, 180) mb(2));
 		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			selectedInfo.marginTop, selectedInfo.marginRight,
-			selectedInfo.marginBottom, selectedInfo.marginLeft), mb(8));
+			info.marginTop, info.marginRight,
+			info.marginBottom, info.marginLeft), mb(8));
 
 		Text("Padding", textColour(180, 180, 180) mb(2));
 		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			selectedInfo.paddingTop, selectedInfo.paddingRight,
-			selectedInfo.paddingBottom, selectedInfo.paddingLeft), mb(8));
+			info.paddingTop, info.paddingRight,
+			info.paddingBottom, info.paddingLeft), mb(8));
 
 		Text("Text Properties", textColour(180, 180, 180) mb(2));
-		Text("Font Size: " + std::to_string(selectedInfo._fontSize), mb(2));
-		Text("Line Height: " + std::to_string(selectedInfo._lineHeight), mb(2));
-		Text("Text justification: " + TextJustificationToString(selectedInfo.textJustification), mb(8));
+		Text("Font Size: " + std::to_string(info._fontSize), mb(2));
+		Text("Line Height: " + std::to_string(info._lineHeight), mb(2));
+		Text("Text justification: " + TextJustificationToString(info.textJustification), mb(8));
 
 		Text("Positioning", textColour(180, 180, 180) mb(2));
-		Text(SableString::Format("Center X: %s", selectedInfo._centerX ? "true" : "false"), mb(2));
-		Text(SableString::Format("Center Y: %s", selectedInfo._centerY ? "true" : "false"), mb(8));
+		Text(SableString::Format("Center X: %s", info._centerX ? "true" : "false"), mb(2));
+		Text(SableString::Format("Center Y: %s", info._centerY ? "true" : "false"), mb(8));
 
 		Text("Clip rect", textColour(180, 180, 180) mb(2));
-		Text(selectedClipRect.ToString(), mb(8));
+		Text(selectedClipRect.get().ToString(), mb(8));
 
 		Text("Background Colour", textColour(180, 180, 180) mb(2));
-		Rect(w(20) h(20) bg(selectedInfo.bgColour));
+		Rect(w(20) h(20) bg(info.bgColour));
 	}
 }
 
@@ -487,9 +269,9 @@ void SableUI::PropertiesPanel::OnUpdate(const UIEventContext& ctx)
 {
 	if (lastSelectedHash != g_selectedHash)
 	{
-		setLastSelectedHash(g_selectedHash);
-		setSelectedRect(g_hoveredRect);
-		selectedInfo = g_hoveredInfo;
-		setSelectedClipRect({});
+		lastSelectedHash.set(g_selectedHash);
+		selectedRect.set(g_hoveredRect);
+		selectedInfo.set(g_hoveredInfo);
+		selectedClipRect.set({});
 	}
 }

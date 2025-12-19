@@ -340,7 +340,7 @@ bool s_customLayoutMode = false;
 void SableUI::StartCustomLayoutScope(
 	Window* window,
 	const GpuFramebuffer* surface,
-	CustomTargetQueue** queuePtr,
+	CustomTargetQueue* queuePtr,
 	const ElementInfo& ElementInfo)
 {
 	if (s_customLayoutMode)
@@ -348,27 +348,27 @@ void SableUI::StartCustomLayoutScope(
 	if (s_reconciliationMode)
 		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
 
-	if (*queuePtr != nullptr)
+	if (queuePtr != nullptr)
 	{
-		window->RemoveQueueReference(*queuePtr);
-		if ((*queuePtr)->root)
+		window->RemoveQueueReference(queuePtr);
+		if (queuePtr->root)
 		{
-			SB_delete((*queuePtr)->root);
-			(*queuePtr)->root = nullptr;
+			SB_delete(queuePtr->root);
+			queuePtr->root = nullptr;
 
-			for (DrawableBase* dr : (*queuePtr)->drawables)
+			for (DrawableBase* dr : queuePtr->drawables)
 				SB_delete(dr);
 			
-			(*queuePtr)->drawables.clear();
+			queuePtr->drawables.clear();
 		}
 	}
 	else
 	{
-		*queuePtr = SB_new<CustomTargetQueue>(surface);
-		(*queuePtr)->queueContext = window;
+		queuePtr = SB_new<CustomTargetQueue>(surface);
+		queuePtr->queueContext = window;
 	}
 
-	(*queuePtr)->target = surface;
+	queuePtr->target = surface;
 
 	s_rendererStack.push(window->m_renderer);
 	Element* queueRoot = SB_new<Element>(window->m_renderer, ElementType::DIV);
@@ -376,19 +376,19 @@ void SableUI::StartCustomLayoutScope(
 	queueRoot->setWType(RectType::FitContent);
 	queueRoot->setHType(RectType::FitContent);
 
-	(*queuePtr)->root = queueRoot;
+	queuePtr->root = queueRoot;
 	s_elementStack.push(queueRoot);
 	s_customLayoutMode = true;
 }
 
 void SableUI::EndCustomLayoutScope(
 	Window* window, 
-	CustomTargetQueue** queuePtr)
+	CustomTargetQueue* queuePtr)
 {
 	if (!s_customLayoutMode)
 		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
 
-	window->SubmitCustomQueue(*queuePtr);
+	window->SubmitCustomQueue(queuePtr);
 	s_elementStack.top()->LayoutChildren();
 	s_rendererStack.pop();
 	s_elementStack.pop();

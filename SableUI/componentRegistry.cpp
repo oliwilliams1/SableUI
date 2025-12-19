@@ -95,7 +95,6 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 void SableUI::RegisterSableUIComponents()
 {
     RegisterComponent<LayoutDebugger>("LayoutDebugger");
-    RegisterComponent<ElementTreeView>("ElementTreeView");
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesPanel>("PropertiesPanel");
     RegisterComponent<MemLeakTimer>("MemLeakTimer");
@@ -103,5 +102,5 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MenuBar>("MenuBar");
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");
-    RegisterComponent<TextField>("TextField");
+    //RegisterComponent<TextField>("TextField");
 }

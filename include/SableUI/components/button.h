@@ -22,19 +22,18 @@ namespace SableUI
 		void Init(const SableString& label, std::function<void()> callback,
 			ButtonVariant variant = ButtonVariant::Primary, bool disabled = false);
 
-		void SetLabel(const SableString& label) { setLabel(label); }
+		void SetLabel(const SableString& p_label) { label.set(p_label); }
 		void SetOnClick(std::function<void()> callback) { onClickCallback = callback; }
-		void SetVariant(ButtonVariant variant) { setVariant(variant); }
-		void SetDisabled(bool disabled) { setDisabled(disabled); }
+		void SetVariant(ButtonVariant p_variant) { variant.set(p_variant); }
+		void SetDisabled(bool p_disabled) { disabled.set(p_disabled); }
 
 	private:
-		useState(label, setLabel, SableString, "Button");
-		useState(variant, setVariant, ButtonVariant, ButtonVariant::Primary);
-		useState(disabled, setDisabled, bool, false);
-		useState(isHovered, setIsHovered, bool, false);
-		useState(isPressed, setIsPressed, bool, false);
-
-		useRef(onClickCallback, std::function<void()>, nullptr);
+		State<SableString> label{ this, "Label" };
+		State<ButtonVariant> variant{ this, ButtonVariant::Primary };
+		State<bool> disabled{ this, false };
+		State<bool> isHovered{ this, false };
+		State<bool> isPressed{ this, false };
+		Ref<std::function<void()>> onClickCallback{ this, nullptr };
 
 		Colour GetBackgroundColour() const;
 		Colour GetTextColour() const;

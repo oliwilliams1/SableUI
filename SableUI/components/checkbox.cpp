@@ -5,19 +5,19 @@ using namespace SableUI;
 
 void Checkbox::Layout()
 {
-	Colour boxBorder = disabled ? Colour(100, 100, 100) :
+	Colour boxBorder = disabled.get() ? Colour(100, 100, 100) :
 		isHovered ? Colour(120, 180, 255) :
 		Colour(100, 100, 100);
 
-	Colour boxFill = checked ? (disabled ? Colour(120, 120, 120) : Colour(90, 160, 255)) :
+	Colour boxFill = checked ? (disabled.get() ? Colour(120, 120, 120) : Colour(90, 160, 255)) :
 		Colour(40, 40, 40);
 
 	Div(left_right w_fit h_fit
 		onHover([this]() {
-			if (!disabled) setIsHovered(true);
+			if (!disabled.get()) isHovered.set(true);
 		})
 		onHoverExit([this]() {
-			setIsHovered(false);
+			isHovered.set(false);
 		})
 		onClick([this]() {
 			HandleClick();
@@ -25,30 +25,29 @@ void Checkbox::Layout()
 	{
 		Rect(w(15) h(15) bg(boxFill) rounded(4) mr(4) centerY);
 
-		if (label.size() > 0)
+		if (label.get().size() > 0)
 		{
 			Text(label, centerY wrapText(false));
 		}
 	}
 }
 
-void SableUI::Checkbox::Init(const SableString& label, bool checked, std::function<void(bool)> onChange, bool disabled)
+void SableUI::Checkbox::Init(const SableString& p_label, bool p_checked, std::function<void(bool)> p_onChange, bool p_disabled)
 {
-	setLabel(label);
-	setChecked(checked);
-	onChangeCallback = onChange;
-	setDisabled(disabled);
+	label.set(p_label);
+	checked.set(p_checked);
+	onChangeCallback.set(p_onChange);
+	disabled.set(p_disabled);
 }
 
 void Checkbox::HandleClick()
 {
 	if (disabled) return;
 
-	bool newChecked = !checked;
-	setChecked(newChecked);
+	checked.set(!checked.get());
 
-	if (onChangeCallback)
+	if (onChangeCallback.get())
 	{
-		onChangeCallback(newChecked);
+		onChangeCallback.get()(checked.get());
 	}
 }

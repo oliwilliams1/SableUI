@@ -1,11 +1,11 @@
-#include <cstdint>
-#include <algorithm>
-#include <SableUI/renderer.h>
-#include <SableUI/memory.h>
 #include <SableUI/drawable.h>
+#include <SableUI/renderer.h>
 #include <SableUI/element.h> // For SB_delete (~Element())
+#include <SableUI/console.h>
+#include <SableUI/memory.h>
 #include <SableUI/window.h>
 #include <SableUI/utils.h>
+#include <cstdint>
 
 uint32_t SableUI::RendererBackend::AllocateHandle()
 {
@@ -26,8 +26,8 @@ void SableUI::RendererBackend::FreeHandle(uint32_t handle)
 static int s_targetQueueinstances = 0;
 SableUI::CustomTargetQueue::CustomTargetQueue(const GpuFramebuffer* target)
 {
-	this->target = target;
 	s_targetQueueinstances++;
+	this->target = target;
 }
 
 SableUI::CustomTargetQueue::~CustomTargetQueue()
@@ -50,6 +50,9 @@ int SableUI::CustomTargetQueue::GetNumInstances()
 
 void SableUI::CustomTargetQueue::AddRect(const Rect& rect, const Colour& colour, float borderRadius)
 {
+	if (!target)
+		SableUI_Runtime_Error("CustomTargetQueue has not been initialised");
+
 	DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
 	drRect->Update(rect, colour, borderRadius, false, {});
 	drawables.push_back(drRect);

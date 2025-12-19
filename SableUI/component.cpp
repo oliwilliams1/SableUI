@@ -1,12 +1,13 @@
 #include <SableUI/component.h>
-#include <SableUI/renderer.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/console.h>
 #include <SableUI/element.h>
 #include <SableUI/events.h>
 #include <SableUI/memory.h>
 #include <SableUI/utils.h>
+#include <algorithm>
 #include <cstring>
+#include <string>
 
 using namespace SableMemory;
 
@@ -33,16 +34,16 @@ SableUI::BaseComponent::~BaseComponent()
 
 	m_garbageChildren.clear();
 
-	for (CustomTargetQueue** queuePtr : m_customTargetQueuePtrs)
-	{
-		if (queuePtr && *queuePtr)
-		{
-			SB_delete(*queuePtr);
-			*queuePtr = nullptr;
-		}
-	}
+	//for (Ref<CustomTargetQueue*>* queuePtr : m_customTargetQueuePtrs)
+	//{
+	//	if (queuePtr && *queuePtr)
+	//	{
+	//		SB_delete(queuePtr->get());
+	//		*queuePtr = nullptr;
+	//	}
+	//}
 
-	m_customTargetQueuePtrs.clear();
+	//m_customTargetQueuePtrs.clear();
 }
 
 int SableUI::BaseComponent::GetNumInstances()
@@ -195,17 +196,20 @@ bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasConten
 
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 {
-	size_t minSize = (std::min)(m_stateBlocks.size(), other.m_stateBlocks.size());
-
-	if (m_stateBlocks.size() != other.m_stateBlocks.size())
+	/* Ensure both components have the same number of states,
+	 * Since components are defined at compile time it should always match, 
+	 * but sanity check >> */
+	if (m_states.size() != other.m_states.size())
 	{
-		SableUI_Warn("Component state block count mismatch (this: %zu, other: %zu). Copying %zu blocks.",
-			m_stateBlocks.size(), other.m_stateBlocks.size(), minSize);
+		SableUI_Warn("State count mismatch in CopyStateFrom (this: %zu, other: %zu)",
+			m_states.size(), other.m_states.size());
 	}
 
-	for (size_t i = 0; i < minSize; i++)
+	size_t count = std::min(m_states.size(), other.m_states.size());
+	for (size_t i = 0; i < count; i++)
 	{
-		m_stateBlocks[i].CopyFrom(other.m_stateBlocks[i]);
+		// Polymorphic call to State<T>::Sync or Ref<T>::Sync
+		m_states[i]->Sync(other.m_states[i]);
 	}
 }
 
@@ -218,4 +222,9 @@ SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
 	}
 
 	return rootElement->GetElementById(id);
+}
+
+void SableUI::_priv_comp_PostEmptyEvent()
+{
+	SableUI::PostEmptyEvent();
 }

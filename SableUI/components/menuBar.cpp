@@ -37,22 +37,22 @@ void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
 {
 	if (window == nullptr) return;
 
-	if (activeMenu.size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
+	if (activeMenu.get().size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
 	{
-		SableUI::ElementInfo menuBarInfo = window->GetElementInfoById("menu-bar");
-		SableUI::ElementInfo dropdownInfo = window->GetElementInfoById("menu-dropdown");
+		SableUI::ElementInfo menuBarInfo = window.get()->GetElementInfoById("menu-bar");
+		SableUI::ElementInfo dropdownInfo = window.get()->GetElementInfoById("menu-dropdown");
 
 		bool mouseOverMenuBar = RectBoundingBox(menuBarInfo.rect, ctx.mousePos);
 		bool mouseOverDropdown = RectBoundingBox(dropdownInfo.rect, ctx.mousePos);
 
-		if (!mouseOverMenuBar && !mouseOverDropdown)
-		{
-			setActiveMenu("");
-			RemoveQueueFromContext(queue);
-		}
+		//if (!mouseOverMenuBar && !mouseOverDropdown)
+		//{
+		//	activeMenu.set("");
+		//	RemoveQueueFromContext(queue);
+		//}
 	}
 
-	if (activeMenu.size() > 0)
+	if (activeMenu.get().size() > 0)
 	{
 		DrawDropdownMenu();
 	}
@@ -60,27 +60,27 @@ void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
 
 void MenuBar::DrawMenuBarItem(const std::string& text)
 {
-	bool isSelected = (activeMenu == text);
+	bool isSelected = (activeMenu.get() == text);
 
 	Div(p(2) h_fill w_fit ID(text) rounded(4)
 		bg(isSelected ? rgb(64, 64, 64) : rgb(51, 51, 51))
 
 		onHover([this, text]() {
-			if (activeMenu.size() > 0 && activeMenu != text)
+			if (activeMenu.get().size() > 0 && activeMenu.get() != text)
 			{
-				setActiveMenu(text);
+				activeMenu.set(text);
 			}
-			})
+		})
 	)
 	{
 		Text(text, justify_center w_fit px(4)
 			onClick([this, text]() {
-				if (activeMenu == text) {
-					setActiveMenu("");
-					RemoveQueueFromContext(queue);
+				if (activeMenu.get() == text) {
+					activeMenu.set("");
+					//RemoveQueueFromContext(queue);
 				}
 				else {
-					setActiveMenu(text);
+					activeMenu.set(text);
 				}
 			})
 		);
@@ -90,35 +90,35 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 void MenuBar::DrawDropdownMenu()
 {
 	if (window == nullptr) return;
-	SableUI::ElementInfo elInfo = window->GetElementInfoById(activeMenu);
+	SableUI::ElementInfo elInfo = window.get()->GetElementInfoById(activeMenu);
 
-	UseCustomLayoutContext(queue, window, window->GetSurface(),
-		absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
-		ID("menu-dropdown")
-	)
-	{
-		Div(bg(45, 45, 45) p(5) minW(150) h_fit rounded(4) up_down)
-		{
-			auto it = m_menuItems.find(std::string(activeMenu));
-			if (it != m_menuItems.end())
-			{
-				for (const auto& item : it->second)
-				{
-					Div(w_fill bg(45, 45, 45) h_fit p(2) rounded(4))
-					{
-						Text(item, px(4)
-							onClick([this, item]() {
-								setActiveMenu("");
-								RemoveQueueFromContext(queue);
-							})
-						);
-					}
-				}
-			}
-			else
-			{
-				Text(SableString::Format("No items for %s", std::string(activeMenu).c_str()), justify_center);
-			}
-		}
-	}
+	//UseCustomLayoutContext(queue, window.get(), window.get()->GetSurface(),
+	//	absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
+	//	ID("menu-dropdown")
+	//)
+	//{
+	//	Div(bg(45, 45, 45) p(5) minW(150) h_fit rounded(4) up_down)
+	//	{
+	//		auto it = m_menuItems.find(std::string(activeMenu.get()));
+	//		if (it != m_menuItems.end())
+	//		{
+	//			for (const auto& item : it->second)
+	//			{
+	//				Div(w_fill bg(45, 45, 45) h_fit p(2) rounded(4))
+	//				{
+	//					Text(item, px(4)
+	//						onClick([this, item]() {
+	//							activeMenu.set("");
+	//							RemoveQueueFromContext(queue);
+	//						})
+	//					);
+	//				}
+	//			}
+	//		}
+	//		else
+	//		{
+	//			Text(SableString::Format("No items for %s", std::string(activeMenu.get()).c_str()), justify_center);
+	//		}
+	//	}
+	//}
 }
