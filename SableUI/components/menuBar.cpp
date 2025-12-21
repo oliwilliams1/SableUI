@@ -45,11 +45,11 @@ void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
 		bool mouseOverMenuBar = RectBoundingBox(menuBarInfo.rect, ctx.mousePos);
 		bool mouseOverDropdown = RectBoundingBox(dropdownInfo.rect, ctx.mousePos);
 
-		//if (!mouseOverMenuBar && !mouseOverDropdown)
-		//{
-		//	activeMenu.set("");
-		//	RemoveQueueFromContext(queue);
-		//}
+		if (!mouseOverMenuBar && !mouseOverDropdown)
+		{
+			activeMenu.set("");
+			queue.window->RemoveQueueReference(&queue);
+		}
 	}
 
 	if (activeMenu.get().size() > 0)
@@ -77,7 +77,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 			onClick([this, text]() {
 				if (activeMenu.get() == text) {
 					activeMenu.set("");
-					//RemoveQueueFromContext(queue);
+					queue.window->RemoveQueueReference(&queue);
 				}
 				else {
 					activeMenu.set(text);
@@ -92,33 +92,41 @@ void MenuBar::DrawDropdownMenu()
 	if (window == nullptr) return;
 	SableUI::ElementInfo elInfo = window.get()->GetElementInfoById(activeMenu);
 
-	//UseCustomLayoutContext(queue, window.get(), window.get()->GetSurface(),
-	//	absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2)
-	//	ID("menu-dropdown")
-	//)
-	//{
-	//	Div(bg(45, 45, 45) p(5) minW(150) h_fit rounded(4) up_down)
-	//	{
-	//		auto it = m_menuItems.find(std::string(activeMenu.get()));
-	//		if (it != m_menuItems.end())
-	//		{
-	//			for (const auto& item : it->second)
-	//			{
-	//				Div(w_fill bg(45, 45, 45) h_fit p(2) rounded(4))
-	//				{
-	//					Text(item, px(4)
-	//						onClick([this, item]() {
-	//							activeMenu.set("");
-	//							RemoveQueueFromContext(queue);
-	//						})
-	//					);
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			Text(SableString::Format("No items for %s", std::string(activeMenu.get()).c_str()), justify_center);
-	//		}
-	//	}
-	//}
+	if (!queueInitialised)
+	{
+		queue.window = window.get();
+		queue.target = window.get()->GetSurface();
+		queueInitialised = true;
+	}
+
+	StartCustomLayoutScope(
+		&queue, 
+		style(absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2) ID("menu-dropdown"))
+	);
+
+	Div(bg(45, 45, 45) p(5) minW(150) h_fit rounded(4) up_down)
+	{
+		auto it = m_menuItems.find(std::string(activeMenu.get()));
+		if (it != m_menuItems.end())
+		{
+			for (const auto& item : it->second)
+			{
+				Div(w_fill bg(45, 45, 45) h_fit p(2) rounded(4))
+				{
+					Text(item, px(4)
+						onClick([this, item]() {
+							activeMenu.set("");
+							queue.window->RemoveQueueReference(&queue);
+						})
+					);
+				}
+			}
+		}
+		else
+		{
+			Text(SableString::Format("No items for %s", std::string(activeMenu.get()).c_str()), justify_center);
+		}
+	}
+
+	EndCustomLayoutScope(&queue);
 }

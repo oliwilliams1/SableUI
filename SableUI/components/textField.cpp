@@ -1,4 +1,4 @@
-/*#include <SableUI/components/textField.h>
+#include <SableUI/components/textField.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/element.h>
 #include <SableUI/events.h>
@@ -24,14 +24,22 @@ static void DeleteSelection(SableString& text, int& cursorPos, const int& initia
     int selStart = std::min(cursorPos, initialCursorPos);
     int selEnd = std::max(cursorPos, initialCursorPos);
 
-    text = text.substr(0, selStart) + text.substr(selEnd);
+    selStart = std::max(0, selStart);
+    selEnd = std::max(0, selEnd);
+
+    text = text.substr(0, static_cast<size_t>(selStart)) +
+           text.substr(static_cast<size_t>(selEnd));
+
     cursorPos = selStart;
 }
 
 void SableUI::TextField::Layout()
 {
     if (!m_window)
+    {
         Text("Component does not have m_window defined", textColour(255, 0, 0) mb(4));
+        return;
+    }
 
     Div(ID("TextField") w_fill h_fit p(8) bg(40, 40, 40) rounded(4))
     {
@@ -56,8 +64,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         if (initialCursorPos == -1)
         {
             isFocused.set(false);
-            // RemoveQueueFromContext(queue);
-            queue.get().queueContext->RemoveQueueReference(&queue.get());;
+            queue.window->RemoveQueueReference(&queue);
         }
 
         initialCursorPos.set(-1);
@@ -72,8 +79,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         else
         {
             isFocused.set(false);
-            // RemoveQueueFromContext(queue);
-            queue.get().queueContext->RemoveQueueReference(&queue.get());;
+            queue.window->RemoveQueueReference(&queue);
 
         }
     }
@@ -205,52 +211,59 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
 {
     if (!isFocused || !m_window) return;
 
-    if (SableUI::CustomLayoutScope _lay_ctx_guard_205(m_window, m_window->GetSurface(), &queue.get(), SableUI::ElementInfo{}); true)
+    if (!queueInitialised)
     {
-        Element* text = GetElementById("TextFieldText");
-        if (!text) return;
+        queue.window = m_window;
+        queue.target = m_window->GetSurface();
+        queueInitialised = true;
+    }
 
-        auto cursorInfo = QueryCursorPosition(
+    StartCustomLayoutScope(&queue);
+
+    Element* text = GetElementById("TextFieldText");
+    if (!text) return;
+
+    auto cursorInfo = QueryCursorPosition(
+        textVal,
+        cursorPos,
+        text->rect.w,
+        text->fontSize,
+        text->lineHeight,
+        text->textJustification
+    );
+
+    Rect cursorRect = {
+        text->rect.x + cursorInfo.x,
+        text->rect.y + cursorInfo.y,
+        1,
+        cursorInfo.lineHeight
+    };
+
+    queue.AddRect(cursorRect, Colour(220, 220, 220));
+
+    if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
+    {
+        auto initialCursorInfo = QueryCursorPosition(
             textVal,
-            cursorPos,
+            initialCursorPos,
             text->rect.w,
             text->fontSize,
             text->lineHeight,
             text->textJustification
         );
 
-        Rect cursorRect = {
-            text->rect.x + cursorInfo.x,
-            text->rect.y + cursorInfo.y,
-            1,
-            cursorInfo.lineHeight
-        };
-
-        queue.get().AddRect(cursorRect, Colour(220, 220, 220));
-
-        if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
+        if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
         {
-            auto initialCursorInfo = QueryCursorPosition(
-                textVal,
-                initialCursorPos,
-                text->rect.w,
-                text->fontSize,
-                text->lineHeight,
-                text->textJustification
-            );
+            Rect highlightRect = {
+                text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
+                text->rect.y + cursorInfo.y,
+                std::abs(initialCursorInfo.x - cursorInfo.x),
+                cursorInfo.lineHeight
+            };
 
-            if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
-            {
-                Rect highlightRect = {
-                    text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
-                    text->rect.y + cursorInfo.y,
-                    std::abs(initialCursorInfo.x - cursorInfo.x),
-                    cursorInfo.lineHeight
-                };
-
-                queue.get().AddRect(highlightRect, Colour(100, 180, 255, 120));
-                return;
-            }
+            queue.AddRect(highlightRect, Colour(100, 180, 255, 120));
         }
     }
-}*/
+
+    EndCustomLayoutScope(&queue);
+}

@@ -11,17 +11,13 @@ using namespace SableUI;
 static int s_numComponents = 0;
 
 String::StringData::StringData(const char32_t* str, size_t len)
-	: size(len), refCount(1)
+	: size(len), refCount(1), data(nullptr)
 {
-	if (len > 0)
-	{
-		data = new char32_t[len + 1];
-		if (str)
-		{
-			std::copy(str, str + len, data);
-		}
-		data[len] = U'\0';
-	}
+	data = new char32_t[len + 1];
+	if (str && len > 0)
+		std::copy(str, str + len, data);
+
+	data[len] = U'\0';
 }
 
 String::StringData::~StringData()
@@ -309,20 +305,18 @@ String String::operator+(const char other) const
 
 String String::substr(size_t pos, size_t count) const
 {
-	if (!m_data || !m_data->data || pos >= m_size)
+	if (!m_data || !m_data->data)
 		return String();
 
-	size_t maxCount = m_size - pos;
-	if (count > maxCount)
-		count = maxCount;
+	if (pos > m_size)
+		pos = m_size;
+
+	if (count == size_t(-1) || pos + count > m_size)
+		count = m_size - pos;
 
 	String result;
 	result.m_size = count;
-	result.m_data = new StringData(nullptr, count);
-
-	std::copy(m_data->data + pos, m_data->data + pos + count, result.m_data->data);
-	result.m_data->data[count] = U'\0';
-
+	result.m_data = new StringData(m_data->data + pos, count);
 	return result;
 }
 

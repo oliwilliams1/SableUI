@@ -145,10 +145,10 @@ namespace SableUI
 	struct CustomTargetQueue
 	{
 	public:
-		CustomTargetQueue(const GpuFramebuffer* target);
+		CustomTargetQueue();
 		~CustomTargetQueue();
 		static int GetNumInstances();
-		Window* queueContext = nullptr;
+		Window* window = nullptr;
 		const GpuFramebuffer* target = nullptr;
 		Element* root = nullptr;
 		std::vector<DrawableBase*> drawables;

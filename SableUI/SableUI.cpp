@@ -338,19 +338,24 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 // ============================================================================
 bool s_customLayoutMode = false;
 void SableUI::StartCustomLayoutScope(
-	Window* window,
-	const GpuFramebuffer* surface,
 	CustomTargetQueue* queuePtr,
 	const ElementInfo& ElementInfo)
 {
 	if (s_customLayoutMode)
 		SableUI_Runtime_Error("Cannot nest custom layouts");
+
 	if (s_reconciliationMode)
 		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
 
+	if (!queuePtr->window)
+		SableUI_Runtime_Error("Custom target queue does not have a context");
+
+	if (!queuePtr->target)
+		SableUI_Runtime_Error("Custom target queue does not have a target");
+
 	if (queuePtr != nullptr)
 	{
-		window->RemoveQueueReference(queuePtr);
+		queuePtr->window->RemoveQueueReference(queuePtr);
 		if (queuePtr->root)
 		{
 			SB_delete(queuePtr->root);
@@ -364,14 +369,11 @@ void SableUI::StartCustomLayoutScope(
 	}
 	else
 	{
-		queuePtr = SB_new<CustomTargetQueue>(surface);
-		queuePtr->queueContext = window;
+		SableUI_Runtime_Error("Custom target queue not initialised");
 	}
 
-	queuePtr->target = surface;
-
-	s_rendererStack.push(window->m_renderer);
-	Element* queueRoot = SB_new<Element>(window->m_renderer, ElementType::DIV);
+	s_rendererStack.push(queuePtr->window->m_renderer);
+	Element* queueRoot = SB_new<Element>(queuePtr->window->m_renderer, ElementType::DIV);
 	queueRoot->SetInfo(ElementInfo);
 	queueRoot->setWType(RectType::FitContent);
 	queueRoot->setHType(RectType::FitContent);
@@ -382,13 +384,18 @@ void SableUI::StartCustomLayoutScope(
 }
 
 void SableUI::EndCustomLayoutScope(
-	Window* window, 
 	CustomTargetQueue* queuePtr)
 {
 	if (!s_customLayoutMode)
 		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
 
-	window->SubmitCustomQueue(queuePtr);
+	if (!queuePtr)
+		SableUI_Runtime_Error("Custom target queue not initialised");
+
+	if (!queuePtr->window)
+		SableUI_Runtime_Error("Custom target queue does not have a context");
+
+	queuePtr->window->SubmitCustomQueue(queuePtr);
 	s_elementStack.top()->LayoutChildren();
 	s_rendererStack.pop();
 	s_elementStack.pop();

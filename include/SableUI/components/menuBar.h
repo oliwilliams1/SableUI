@@ -1,12 +1,11 @@
 #pragma once
-#include <map>
-#include <string>
-#include <vector>
 #include <SableUI/component.h>
-#include <SableUI/SableUI.h>
 #include <SableUI/window.h>
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
+#include <string>
+#include <vector>
+#include <map>
 
 namespace SableUI
 {
@@ -22,8 +21,11 @@ namespace SableUI
 	private:
 		///CustomLayoutContext(queue);
 		State<SableString> activeMenu{ this, U"" };
-		State<Window*> window{ this, nullptr };
 		std::map<std::string, std::vector<std::string>> m_menuItems;
+
+		bool queueInitialised = false;
+		CustomTargetQueue queue;
+		State<Window*> window{ this, nullptr };
 	
 		void DrawMenuBarItem(const std::string& text);
 		void DrawDropdownMenu();

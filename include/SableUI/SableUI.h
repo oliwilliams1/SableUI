@@ -56,9 +56,8 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
-	void StartCustomLayoutScope(Window* window, const GpuFramebuffer* surface,
-		CustomTargetQueue* queuePtr, const ElementInfo& ElementInfo);
-	void EndCustomLayoutScope(Window* window, CustomTargetQueue* queuePtr);
+	void StartCustomLayoutScope(CustomTargetQueue* queuePtr, const ElementInfo& ElementInfo = {});
+	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
 
 	struct DivScope
 	{
@@ -92,30 +91,6 @@ namespace SableUI
 		SplitterScope& operator=(const SplitterScope&) = delete;
 		SplitterScope(SplitterScope&&) = default;
 		SplitterScope& operator=(SplitterScope&&) = default;
-	};
-
-	struct CustomLayoutScope
-	{
-	public:
-		explicit CustomLayoutScope(
-			Window* window, const GpuFramebuffer* surface,
-			CustomTargetQueue* queuePtr, ElementInfo info)
-			: m_window(window), m_queuePtr(queuePtr)
-		{
-			SableUI::StartCustomLayoutScope(window, surface, queuePtr, info);
-		}
-		~CustomLayoutScope()
-		{
-			SableUI::EndCustomLayoutScope(m_window, m_queuePtr);
-		}
-		CustomLayoutScope(const CustomLayoutScope&) = delete;
-		CustomLayoutScope& operator=(const CustomLayoutScope&) = delete;
-		CustomLayoutScope(CustomLayoutScope&&) = default;
-		CustomLayoutScope& operator=(CustomLayoutScope&&) = default;
-
-	private:
-		Window* m_window = nullptr;
-		CustomTargetQueue* m_queuePtr = nullptr;
 	};
 }
 
@@ -221,21 +196,6 @@ inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a
 #define absolutePos(x, y)	.setAbsolutePosition(x, y)
 #define dir(value)			.setLayoutDirection(value)
 #define wrapText(v)			.setTextWrap(v)
-
-//#define CustomLayoutContext(queueVar)									\
-//	Ref<SableUI::CustomTargetQueue*> queueVar{ this, nullptr };			\
-//	struct __LayCtxReg_##queueVar {										\
-//		__LayCtxReg_##queueVar(SableUI::BaseComponent* comp,			\
-//							   Ref<CustomTargetQueue*>* var)			\
-//		{ if (comp) comp->RegisterQueue(var); }							\
-//	} __LayCtxReg_##queueVar{ this, &queueVar }
-
-#define UseCustomLayoutContext(queueVar, window, surface, ...)			\
-	if (SableUI::CustomLayoutScope CONCAT(_lay_ctx_guard_, __LINE__)(window, surface, &queueVar, style(__VA_ARGS__)); true)
-
-#define RemoveQueueFromContext(queueVar)								\
-	if (queueVar)														\
-		queueVar->queueContext->RemoveQueueReference(queueVar);	
 
 #define onHover(...)							.setOnHover(__VA_ARGS__)
 #define onHoverExit(...)						.setOnHoverExit(__VA_ARGS__)

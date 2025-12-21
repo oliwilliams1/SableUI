@@ -585,6 +585,8 @@ void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)
 
 void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
 {
+	if (!reference->window || !reference->target) return;
+
 	for (int i = 0; i < m_customTargetQueues.size(); i++)
 	{
 		if (m_customTargetQueues[i] == reference)

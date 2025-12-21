@@ -24,10 +24,9 @@ void SableUI::RendererBackend::FreeHandle(uint32_t handle)
 }
 
 static int s_targetQueueinstances = 0;
-SableUI::CustomTargetQueue::CustomTargetQueue(const GpuFramebuffer* target)
+SableUI::CustomTargetQueue::CustomTargetQueue()
 {
 	s_targetQueueinstances++;
-	this->target = target;
 }
 
 SableUI::CustomTargetQueue::~CustomTargetQueue()
@@ -39,8 +38,8 @@ SableUI::CustomTargetQueue::~CustomTargetQueue()
 	for (DrawableBase* dr : drawables)
 		SableMemory::SB_delete(dr);
 
-	if (queueContext)
-		queueContext->RemoveQueueReference(this);
+	if (window)
+		window->RemoveQueueReference(this);
 }
 
 int SableUI::CustomTargetQueue::GetNumInstances()
