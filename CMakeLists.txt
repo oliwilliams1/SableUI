@@ -47,7 +47,7 @@ set(WEBP_UNICODE            OFF)
 add_subdirectory("vendor/libwebp")
 
 # SableUI
-file(GLOB_RECURSE SABLE_UI_SOURCES "SableUI/*.cpp" "SableUI/*.h" "include/*.h")
+file(GLOB_RECURSE SABLE_UI_SOURCES "SableUI/*.cpp" "include/*.h" "include/*.hpp")
 
 # Embed shaders
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)

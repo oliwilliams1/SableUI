@@ -10,6 +10,7 @@
 #include <SableUI/utils.h>
 #include <SableUI/element.h>
 #include <SableUI/generated/resources.h>
+#include <SableUI/worker_pool.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -405,7 +406,6 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 	if (!IsMouseDown(ctx, SABLE_MOUSE_BUTTON_LEFT))
 		m_resizing = false;
 
-
 	return cursorToSet;
 }
 
@@ -424,9 +424,13 @@ bool SableUI::Window::Update()
 		m_needsRefresh = false;
 	}
 
+	WorkerPool::PauseAll();
+
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();
 	m_root->PropagatePostLayoutEvents(ctx);
+
+	WorkerPool::ResumeAll();
 
 	StepCachedTexturesCleaner();
 	TextCacheFactory::CleanCache(m_renderer);

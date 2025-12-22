@@ -91,6 +91,7 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 #include <SableUI/components/checkbox.h>
 #include <SableUI/components/textField.h>
 #include <SableUI/components/memLeakTimer.h>
+#include <SableUI/components/worker_test_component.h>
 
 void SableUI::RegisterSableUIComponents()
 {
@@ -103,4 +104,5 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");
     RegisterComponent<TextField>("TextField");
+    RegisterComponent<WorkerTestComponent>("WorkerTestComponent");
 }

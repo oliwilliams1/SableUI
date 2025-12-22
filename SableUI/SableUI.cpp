@@ -10,6 +10,7 @@
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
 #include <SableUI/componentRegistry.h>
+#include <SableUI/worker_pool.h>
 #include <stack>
 #include <cstring>
 #include <string.h>
@@ -348,7 +349,10 @@ void SableUI::StartCustomLayoutScope(
 		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
 
 	if (!queuePtr->window)
+	{
 		SableUI_Runtime_Error("Custom target queue does not have a context");
+		return;
+	}
 
 	if (!queuePtr->target)
 		SableUI_Runtime_Error("Custom target queue does not have a target");
@@ -370,6 +374,7 @@ void SableUI::StartCustomLayoutScope(
 	else
 	{
 		SableUI_Runtime_Error("Custom target queue not initialised");
+		return;
 	}
 
 	s_rendererStack.push(queuePtr->window->m_renderer);
@@ -390,10 +395,16 @@ void SableUI::EndCustomLayoutScope(
 		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
 
 	if (!queuePtr)
+	{
 		SableUI_Runtime_Error("Custom target queue not initialised");
+		return;
+	}
 
 	if (!queuePtr->window)
+	{
 		SableUI_Runtime_Error("Custom target queue does not have a context");
+		return;
+	}
 
 	queuePtr->window->SubmitCustomQueue(queuePtr);
 	s_elementStack.top()->LayoutChildren();
@@ -476,6 +487,8 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 		s_backend = SableUI::Backend::OpenGL;
 	}
 
+	WorkerPool::Initialise();
+
 	s_app = SB_new<App>(name, width, height, x, y);
 
 	return s_app->m_mainWindow;
@@ -490,6 +503,8 @@ void SableUI::Shutdown()
 
 	SB_delete(s_app);
 	s_app = nullptr;
+
+	WorkerPool::Shutdown();
 	
 	SableMemory::DestroyPools();
 	SableUI_Log("Shut down successfully");
