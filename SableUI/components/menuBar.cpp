@@ -7,6 +7,7 @@
 #include <SableUI/utils.h>
 #include <SableUI/window.h>
 using namespace SableUI;
+using namespace SableUI::Style;
 
 MenuBar::MenuBar() : BaseComponent()
 {
@@ -20,11 +21,11 @@ void MenuBar::Layout()
 	if (window == nullptr)
 	{
 		Text("Window is not set, call use, create MenuBar via PanelGainRef() then call SetWindow() on the reference",
-			centerY textColour(255, 0, 0));
+			centerY, textColour(255, 0, 0));
 		return;
 	}
 
-	Div(left_right w_fill h_fill bg(51, 51, 51) ID("menu-bar"))
+	Div(left_right, w_fill, h_fill, bg(51, 51, 51), id("menu-bar"))
 	{
 		for (const auto& pair : m_menuItems)
 		{
@@ -62,9 +63,8 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 {
 	bool isSelected = (activeMenu.get() == text);
 
-	Div(p(2) h_fill w_fit ID(text) rounded(4)
-		bg(isSelected ? rgb(64, 64, 64) : rgb(51, 51, 51))
-
+	Colour colour = (isSelected) ? rgb(64, 64, 64) : rgb(51, 51, 51);
+	Div(p(2), h_fill, w_fit, id(text), rounded(4), bg(colour),
 		onHover([this, text]() {
 			if (activeMenu.get().size() > 0 && activeMenu.get() != text)
 			{
@@ -73,7 +73,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 		})
 	)
 	{
-		Text(text, justify_center w_fit px(4)
+		Text(text, justify_center, w_fit, px(4),
 			onClick([this, text]() {
 				if (activeMenu.get() == text) {
 					activeMenu.set("");
@@ -101,19 +101,19 @@ void MenuBar::DrawDropdownMenu()
 
 	StartCustomLayoutScope(
 		&queue, 
-		style(absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2) ID("menu-dropdown"))
+		PackStyles(absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2), id("menu-dropdown"))
 	);
 
-	Div(bg(45, 45, 45) p(5) minW(150) h_fit rounded(4) up_down)
+	Div(bg(45, 45, 45), p(5), minW(150), h_fit, rounded(4), up_down)
 	{
 		auto it = m_menuItems.find(std::string(activeMenu.get()));
 		if (it != m_menuItems.end())
 		{
 			for (const auto& item : it->second)
 			{
-				Div(w_fill bg(45, 45, 45) h_fit p(2) rounded(4))
+				Div(w_fill, bg(45, 45, 45), h_fit, p(2), rounded(4))
 				{
-					Text(item, px(4)
+					Text(item, px(4),
 						onClick([this, item]() {
 							activeMenu.set("");
 							queue.window->RemoveQueueReference(&queue);

@@ -28,100 +28,48 @@ namespace SableUI
 		RIGHT_LEFT = 0x3,
 	};
 
+	struct LayoutProps {
+		RectType wType = RectType::FitContent;
+		RectType hType = RectType::FitContent;
+		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
+		int width = 0, height = 0;
+		int minW = 0, maxW = 0, minH = 0, maxH = 0;
+		int pT = 0, pB = 0, pL = 0, pR = 0;
+		int mT = 0, mB = 0, mL = 0, mR = 0;
+		bool centerX = false, centerY = false;
+		bool clipChildren;
+	};
+
+	struct AppearanceProps {
+		Colour bg = { 0, 0, 0, 0 };
+		float radius = 0.0f;
+		bool clipChildren = false;
+	};
+
+	struct TextProps {
+		SableString text;
+		Colour colour = { 255, 255, 255, 255 };
+		TextJustification justification = TextJustification::Left;
+		int fontSize = 11;
+		float lineHeight = 1.15f;
+		bool wrap = true;
+	};
+
 	struct ElementInfo
 	{
 		SableString id;
-
-		// attribs
-		Colour bgColour = Colour(0, 0, 0, 0);
-		int width = 0;
-		int height = 0;
-		int minWidth = 0;
-		int maxWidth = 0;
-		int minHeight = 0;
-		int maxHeight = 0;
-		int marginTop = 0;
-		int marginBottom = 0;
-		int marginLeft = 0;
-		int marginRight = 0;
-		int paddingTop = 0;
-		int paddingBottom = 0;
-		int paddingLeft = 0;
-		int paddingRight = 0;
-		int _fontSize = 11;
-		float _lineHeight = 1.15f;
-		bool _centerX = false;
-		bool _centerY = false;
-		float _borderRadius = 0.0f;
-		bool clipChildren = false;
-		RectType wType = RectType::Undef;
-		RectType hType = RectType::Undef;
 		ElementType type = ElementType::Undef;
-		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString text = U"";
-		Colour textColour = { 255, 255, 255, 255 };
-		TextJustification textJustification = TextJustification::Left;
-		bool textWrap = true;
+
+		LayoutProps layout;
+		AppearanceProps appearance;
+		TextProps text;
+		Rect rect;
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
 		std::function<void()> onDoubleClickFunc = nullptr;
-
-		Rect rect;
-		
-		// setter functions for macros
-		ElementInfo& setID(const SableString& v)			{ id = v; return *this; }
-		ElementInfo& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
-		ElementInfo& setWidth(int v)						{ width = v; wType = RectType::Fixed; return *this; }
-		ElementInfo& setMinWidth(int v)						{ minWidth = v; return *this; }
-		ElementInfo& setMaxWidth(int v)						{ maxWidth = v; return *this; }
-		ElementInfo& setHeight(int v)						{ height = v; hType = RectType::Fixed; return *this; }
-		ElementInfo& setMinHeight(int v)					{ minHeight = v; return *this; }
-		ElementInfo& setMaxHeight(int v)					{ maxHeight = v; return *this; }
-
-		ElementInfo& setWType(RectType v)					{ wType = v; return *this; }
-		ElementInfo& setHType(RectType v)					{ hType = v; return *this; }
-		
-		ElementInfo& setMargin(int v)						{ marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
-		ElementInfo& setMarginX(int v)						{ marginLeft = v; marginRight = v; return *this; }
-		ElementInfo& setMarginY(int v)						{ marginTop = v; marginBottom = v; return *this; }
-		ElementInfo& setMarginTop(int v)					{ marginTop = v; return *this; }
-		ElementInfo& setMarginBottom(int v)					{ marginBottom = v; return *this; }
-		ElementInfo& setMarginLeft(int v)					{ marginLeft = v; return *this; }
-		ElementInfo& setMarginRight(int v)					{ marginRight = v; return *this; }
-		
-		ElementInfo& setPadding(int v)						{ paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
-		ElementInfo& setPaddingX(int v)						{ paddingLeft = v; paddingRight = v; return *this; }
-		ElementInfo& setPaddingY(int v)						{ paddingTop = v; paddingBottom = v; return *this; }
-		ElementInfo& setPaddingTop(int v)					{ paddingTop = v; return *this; }
-		ElementInfo& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
-		ElementInfo& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
-		ElementInfo& setPaddingRight(int v)					{ paddingRight = v; return *this; }
-
-		ElementInfo& setFontSize(int v)						{ _fontSize = v; return *this; }
-		ElementInfo& setLineHeight(float v)					{ _lineHeight = v; return *this; }
-
-		ElementInfo& setCenterX(bool v)						{ _centerX = v; return *this; }
-		ElementInfo& setCenterY(bool v)						{ _centerY = v; return *this; }
-		ElementInfo& setBorderRadius(float v)				{ _borderRadius = v; return *this; }
-		ElementInfo& setClipChildren(bool v)				{ clipChildren = v; return *this; }
-
-		ElementInfo& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
-		ElementInfo& setType(ElementType v)					{ type = v; return *this; }
-
-		ElementInfo& setTextColour(const Colour& v)			{ textColour = v; return *this; }
-		ElementInfo& setJustification(TextJustification v)	{ textJustification = v; return *this; }
-		ElementInfo& setAbsolutePosition(int x, int y) 		{ rect.x = x; rect.y = y; return *this; }
-		ElementInfo& setTextWrap(bool v) 					{ textWrap = v; return *this; }
-
-		// Event functions
-		ElementInfo& setOnHover(const std::function<void()>& func)			{ onHoverFunc			= func;	return *this; }
-		ElementInfo& setOnHoverExit(const std::function<void()>& func)		{ onHoverExitFunc		= func;	return *this; }
-		ElementInfo& setOnClick(const std::function<void()>& func)			{ onClickFunc			= func; return *this; }
-		ElementInfo& setOnSecondaryClick(const std::function<void()>& func)	{ onSecondaryClickFunc	= func; return *this; }
-		ElementInfo& setOnDoubleClick(const std::function<void()>& func)	{ onDoubleClickFunc = func; return *this; }
 	};
 
 	class BaseComponent;
@@ -132,7 +80,6 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		ElementType type = ElementType::Undef;
 		std::vector<VirtualNode*> children;
 		ElementInfo info;
 		BaseComponent* childComp = nullptr;
@@ -168,93 +115,7 @@ namespace SableUI
 		int GetMinWidth();
 		int GetMinHeight();
 
-		// user defined
-		SableString ID;
-		int width = 0;
-		int height = 0;
-		int minWidth = 0;
-		int minHeight = 0;
-		int maxWidth = 0;
-		int maxHeight = 0;
-		int marginTop = 0;
-		int marginBottom = 0;
-		int marginLeft = 0;
-		int marginRight = 0;
-		int paddingTop = 0;
-		int paddingBottom = 0;
-		int paddingLeft = 0;
-		int paddingRight = 0;
-		int fontSize = 0;
-		float lineHeight = 0.0f;
-		bool _centerX = false;
-		bool _centerY = false;
-		float borderRadius = 0.0f;
-		bool clipChildren = false;
-		RectType wType = RectType::Undef;
-		RectType hType = RectType::Undef;
-		Colour bgColour = Colour(0, 0, 0, 0);
-		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
-		SableString text = U"";
-		Colour textColour = { 255, 255, 255, 255 };
-		TextJustification textJustification = TextJustification::Left;
-		bool textWrap = false;
-
-		std::function<void()> m_onHoverFunc = nullptr;
-		std::function<void()> m_onHoverExitFunc = nullptr;
-		std::function<void()> m_onClickFunc = nullptr;
-		std::function<void()> m_onSecondaryClickFunc = nullptr;
-		std::function<void()> m_onDoubleClickFunc = nullptr;
-
-		// setter functions for macros
-		Element& setID(const SableString& v)			{ ID = v; return *this; }
-		Element& setBgColour(const Colour& v)			{ bgColour = v; return *this; }
-		Element& setWidth(int v)						{ width = v; wType = RectType::Fixed; return *this; }
-		Element& setMinWidth(int v)						{ minWidth = v; return *this; }
-		Element& setMaxWidth(int v)						{ maxWidth = v; return *this; }
-		Element& setHeight(int v)						{ height = v; hType = RectType::Fixed; return *this; }
-		Element& setMinHeight(int v)					{ minHeight = v; return *this; }
-		Element& setMaxHeight(int v)					{ maxHeight = v; return *this; }
-		
-		Element& setWType(RectType v)					{ wType = v; return *this; }
-		Element& setHType(RectType v)					{ hType = v; return *this; }
-
-		Element& setMargin(int v)						{ marginTop = v; marginBottom = v; marginLeft = v; marginRight = v; return *this; }
-		Element& setMarginX(int v)						{ marginLeft = v; marginRight = v; return *this; }
-		Element& setMarginY(int v)						{ marginTop = v; marginBottom = v; return *this; }
-		Element& setMarginTop(int v)					{ marginTop = v; return *this; }
-		Element& setMarginBottom(int v)					{ marginBottom = v; return *this; }
-		Element& setMarginLeft(int v)					{ marginLeft = v; return *this; }
-		Element& setMarginRight(int v)					{ marginRight = v; return *this; }
-
-		Element& setPadding(int v)						{ paddingTop = v; paddingBottom = v; paddingLeft = v; paddingRight = v; return *this; }
-		Element& setPaddingX(int v)						{ paddingLeft = v; paddingRight = v; return *this; }
-		Element& setPaddingY(int v)						{ paddingTop = v; paddingBottom = v; return *this; }
-		Element& setPaddingTop(int v)					{ paddingTop = v; return *this; }
-		Element& setPaddingBottom(int v)				{ paddingBottom = v; return *this; }
-		Element& setPaddingLeft(int v)					{ paddingLeft = v; return *this; }
-		Element& setPaddingRight(int v)					{ paddingRight = v; return *this; }
-
-		Element& setFontSize(int v)						{ fontSize = v; return *this; }
-		Element& setLineHeight(float v)					{ lineHeight = v; return *this; }
-
-		Element& setCenterX(bool v)						{ _centerX = v; return *this; }
-		Element& setCenterY(bool v)						{ _centerY = v; return *this; }
-		Element& setBorderRadius(float v)				{ borderRadius = v; return *this; }
-		Element& setClipChildren(bool v)				{ clipChildren = v; return *this; }
-
-		Element& setLayoutDirection(LayoutDirection v)	{ layoutDirection = v; return *this; }
-		Element& setType(ElementType v)					{ type = v; return *this; }
-
-		Element& setTextColour(const Colour& v)			{ textColour = v; return *this; }
-		Element& setJustification(TextJustification v)	{ textJustification = v; return *this; }
-		Element& setAbsolutePosition(int x, int y)		{ rect.x = x; rect.y = y; return *this; }
-
-		Element& setOnHover(const std::function<void()>& func)			{ m_onHoverFunc				= func;	return *this; }
-		Element& setOnHoverExit(const std::function<void()>& func)		{ m_onHoverExitFunc			= func;	return *this; }
-		Element& setOnClick(const std::function<void()>& func)			{ m_onClickFunc				= func; return *this; }
-		Element& setOnSecondaryClick(const std::function<void()>& func) { m_onSecondaryClickFunc	= func; return *this; }
-		Element& setOnDoubleClick(const std::function<void()>& func)	{ m_onDoubleClickFunc		= func; return *this; }
-
+		ElementInfo info;
 		ElementInfo GetInfo() const;
 
 		// internal functions
@@ -269,7 +130,6 @@ namespace SableUI
 
 		// rendering
 		void Render(int z = 1);
-		Rect rect = { 0, 0, 0, 0 };
 		bool clipEnabled = false;
 		Rect clipRect = { 0, 0, 0, 0 };
 

@@ -74,9 +74,9 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
 
 	rootElement = SB_new<Element>(m_renderer, ElementType::DIV);
-	rootElement->setBgColour(m_bgColour);
-	rootElement->setWType(RectType::Fill);
-	rootElement->setHType(RectType::Fill);
+	rootElement->info.appearance.bg = m_bgColour;
+	rootElement->info.layout.wType = RectType::Fill;
+	rootElement->info.layout.hType = RectType::Fill;
 
 	SetElementBuilderContext(m_renderer, rootElement, false);
 	LayoutWrapper();
@@ -129,7 +129,7 @@ SableUI::Element* SableUI::BaseComponent::GetRootElement()
 
 bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 {
-	Rect oldRect = { rootElement->rect };
+	Rect oldRect = { rootElement->info.rect };
 
 	// Generate virtual tree
 	SetElementBuilderContext(m_renderer, rootElement, true);
@@ -147,7 +147,7 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	rootElement->LayoutChildren();
 	rootElement->LayoutChildren();
 
-	Rect newRect = rootElement->rect;
+	Rect newRect = rootElement->info.rect;
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 

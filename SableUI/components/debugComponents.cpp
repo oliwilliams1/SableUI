@@ -17,6 +17,7 @@
 #include <string>
 
 using namespace SableUI;
+using namespace SableUI::Style;
 
 static size_t g_selectedHash = 0;
 static size_t g_hoveredHash = 0;
@@ -82,7 +83,7 @@ static SableString TextJustificationToString(TextJustification justify)
 // ============================================================================
 void SableUI::MemoryDebugger::Layout()
 {
-	Div(p(6) w_fill h_fill)
+	Div(p(6), w_fill, h_fill)
 	{
 		SplitterWithText("Panels");
 		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
@@ -155,20 +156,20 @@ void SableUI::LayoutDebugger::Layout()
 {
 	SableUI::RenderTabHeader(tabs);
 
-	Div(w_fill h_fill)
+	Div(w_fill, h_fill)
 	{
 		switch (tabs.activeTab)
 		{
 		case 0:
 		{
-			Div(p(6) w_fill h_fill)
+			Div(p(6), w_fill, h_fill)
 			{
 				Checkbox("Highlight Elements", highlightElements.get(), [this](bool checked) { highlightElements.set(checked); });
 
 				SableString transparencyValueStr = SableString::Format("%d",
 					((transparency * 100 / 255 + 10) / 20) * 20);
 				Text("Set transparency " + transparencyValueStr + "%",
-					mb(4)
+					mb(4),
 					onClick([this]() {
 						transparency.set(transparency.get() + 52);
 						if (transparency.get() >= 255)
@@ -180,10 +181,10 @@ void SableUI::LayoutDebugger::Layout()
 				{
 					for (int i = 0; i < 50; i++)
 					{
-						Div(w(50) h(50) m(4) bg(255, 0, 0)
+						Div(w(50), h(50), m(4), bg(255, 0, 0),
 							onDoubleClick([i]() { SableUI_Log("Clicked %d", i); }))
 						{
-							Rect(w(25) h(25) bg(0, 255, 0));
+							Rect(w(25), h(25), bg(0, 255, 0));
 						}
 					}
 				}
@@ -192,11 +193,11 @@ void SableUI::LayoutDebugger::Layout()
 		}
 		case 1:
 		{
-			Component("MemoryDebugger", w_fill h_fill bg(32, 32, 32));
+			Component("MemoryDebugger", w_fill, h_fill, bg(32, 32, 32));
 			break;
 		}
 		default:
-			Text("Underfined tab content", w_fill h_fill);
+			Text("Underfined tab content", w_fill, h_fill);
 		}
 	}
 }
@@ -217,51 +218,51 @@ void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIEventContext& ctx)
 // ============================================================================
 void SableUI::PropertiesPanel::Layout()
 {
-	Text(SableString("Properties").bold(), w_fill fontSize(14) m(6) mb(0));
+	Text(SableString("Properties").bold(), w_fill, fontSize(14), m(6), mb(0));
 
 	const ElementInfo& info = selectedInfo.get();
 
 	SableString title = info.id.empty() ? "Element" : info.id;
 	SplitterWithText(title);
 
-	Div(bg(32, 32, 32) p(6) w_fill)
+	Div(bg(32, 32, 32), p(6), w_fill)
 	{
-		Text("Bounding Box", textColour(180, 180, 180) mb(2));
+		Text("Bounding Box", textColour(180, 180, 180), mb(2));
 		Text(selectedRect.get().ToString(), mb(8));
 
-		Text("Layout Direction", textColour(180, 180, 180) mb(2));
-		Text(LayoutDirectionToString(info.layoutDirection), mb(8));
+		Text("Layout Direction", textColour(180, 180, 180), mb(2));
+		Text(LayoutDirectionToString(info.layout.layoutDirection), mb(8));
 
-		Text("Constraints", textColour(180, 180, 180) mb(2));
-		Text(SableString::Format("{ min-h: %d, max-h: %d}",
-			info.minHeight, info.maxHeight), mb(2));
-		Text(SableString::Format("{ min-w: %d, max-w: %d}",
-			info.minWidth, info.maxWidth), mb(8));
+		Text("Constraints", textColour(180, 180, 180), mb(2));
+		Text(SableString::Format("{ min-h: %d, max-h: %d }",
+			info.layout.minH, info.layout.maxH), mb(2));
+		Text(SableString::Format("{ min-w: %d, max-w: %d }",
+			info.layout.minW, info.layout.maxW), mb(8));
 
-		Text("Margins", textColour(180, 180, 180) mb(2));
+		Text("Margins", textColour(180, 180, 180), mb(2));
 		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			info.marginTop, info.marginRight,
-			info.marginBottom, info.marginLeft), mb(8));
+			info.layout.mT, info.layout.mR,
+			info.layout.mB, info.layout.mL), mb(8));
 
-		Text("Padding", textColour(180, 180, 180) mb(2));
+		Text("Padding", textColour(180, 180, 180), mb(2));
 		Text(SableString::Format("{ top: %d, right: %d, bottom: %d, left: %d }",
-			info.paddingTop, info.paddingRight,
-			info.paddingBottom, info.paddingLeft), mb(8));
+			info.layout.pT, info.layout.pR,
+			info.layout.pB, info.layout.pL), mb(8));
 
-		Text("Text Properties", textColour(180, 180, 180) mb(2));
-		Text("Font Size: " + std::to_string(info._fontSize), mb(2));
-		Text("Line Height: " + std::to_string(info._lineHeight), mb(2));
-		Text("Text justification: " + TextJustificationToString(info.textJustification), mb(8));
+		Text("Text Properties", textColour(180, 180, 180), mb(2));
+		Text("Font Size: " + std::to_string(info.text.fontSize), mb(2));
+		Text("Line Height: " + std::to_string(info.text.lineHeight), mb(2));
+		Text("Text justification: " + TextJustificationToString(info.text.justification), mb(8));
 
-		Text("Positioning", textColour(180, 180, 180) mb(2));
-		Text(SableString::Format("Center X: %s", info._centerX ? "true" : "false"), mb(2));
-		Text(SableString::Format("Center Y: %s", info._centerY ? "true" : "false"), mb(8));
+		Text("Positioning", textColour(180, 180, 180), mb(2));
+		Text(SableString::Format("Center X: %s", info.layout.centerX ? "true" : "false"), mb(2));
+		Text(SableString::Format("Center Y: %s", info.layout.centerY ? "true" : "false"), mb(8));
 
-		Text("Clip rect", textColour(180, 180, 180) mb(2));
+		Text("Clip rect", textColour(180, 180, 180), mb(2));
 		Text(selectedClipRect.get().ToString(), mb(8));
 
-		Text("Background Colour", textColour(180, 180, 180) mb(2));
-		Rect(w(20) h(20) bg(info.bgColour));
+		Text("Background Colour", textColour(180, 180, 180), mb(2));
+		Rect(w(20), h(20), bg(info.appearance.bg));
 	}
 }
 

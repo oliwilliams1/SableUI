@@ -99,7 +99,7 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesPanel>("PropertiesPanel");
     RegisterComponent<MemLeakTimer>("MemLeakTimer");
-
+    
     RegisterComponent<MenuBar>("MenuBar");
     RegisterComponent<Button>("Button");
     RegisterComponent<Checkbox>("Checkbox");

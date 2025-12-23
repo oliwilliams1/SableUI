@@ -58,4 +58,4 @@ namespace SableUI
 #define ScrollUpdatePostLayoutHandler(scrollCtx)                \
     SableUI::ScrollUpdateHandler_Phase2(this, scrollCtx)
 
-#define ScrollViewCtx(ctx, ...) if (SableUI::ScrollViewScope _sv_scope(ctx, style(__VA_ARGS__)); true)
+#define ScrollViewCtx(ctx, ...) if (SableUI::ScrollViewScope _sv_scope(ctx, SableUI::PackStyles(__VA_ARGS__)); true)

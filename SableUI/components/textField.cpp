@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace SableUI::Style;
+
 static int GetNextWordPos(const SableString& text, int cursorPos, int direction)
 {
     for (int i = cursorPos + direction; i < text.size() && i >= 0; i += direction)
@@ -37,16 +39,16 @@ void SableUI::TextField::Layout()
 {
     if (!m_window)
     {
-        Text("Component does not have m_window defined", textColour(255, 0, 0) mb(4));
+        Text("Component does not have m_window defined", textColour(255, 0, 0), mb(4));
         return;
     }
 
-    Div(ID("TextField") w_fill h_fit p(8) bg(40, 40, 40) rounded(4))
+    Div(id("TextField"), w_fill, h_fit, p(8), bg(40, 40, 40), rounded(4))
     {
         if (textVal.get().empty() && !isFocused)
             Text("Start writing...", textColour(100, 100, 100));
         else
-            Text(textVal.get(), ID("TextFieldText") textColour(220, 220, 220));
+            Text(textVal.get(), id("TextFieldText"), textColour(220, 220, 220));
     }
 }
 
@@ -74,7 +76,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     {
         Element* el = GetElementById("TextField");
         if (!el) return;
-        if (RectBoundingBox(el->rect, ctx.mousePos))
+        if (RectBoundingBox(el->info.rect, ctx.mousePos))
             isFocused.set(true);
         else
         {
@@ -226,15 +228,15 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
     auto cursorInfo = QueryCursorPosition(
         textVal,
         cursorPos,
-        text->rect.w,
-        text->fontSize,
-        text->lineHeight,
-        text->textJustification
+        text->info.rect.w,
+        text->info.text.fontSize,
+        text->info.text.lineHeight,
+        text->info.text.justification
     );
 
     Rect cursorRect = {
-        text->rect.x + cursorInfo.x,
-        text->rect.y + cursorInfo.y,
+        text->info.rect.x + cursorInfo.x,
+        text->info.rect.y + cursorInfo.y,
         1,
         cursorInfo.lineHeight
     };
@@ -246,17 +248,17 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
         auto initialCursorInfo = QueryCursorPosition(
             textVal,
             initialCursorPos,
-            text->rect.w,
-            text->fontSize,
-            text->lineHeight,
-            text->textJustification
+            text->info.rect.w,
+            text->info.text.fontSize,
+            text->info.text.lineHeight,
+            text->info.text.justification
         );
 
         if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
         {
             Rect highlightRect = {
-                text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
-                text->rect.y + cursorInfo.y,
+                text->info.rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
+                text->info.rect.y + cursorInfo.y,
                 std::abs(initialCursorInfo.x - cursorInfo.x),
                 cursorInfo.lineHeight
             };

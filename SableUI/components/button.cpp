@@ -2,24 +2,25 @@
 #include <SableUI/SableUI.h>
 
 using namespace SableUI;
+using namespace SableUI::Style;
 
 void Button::Layout()
 {
 	Colour bgColour = GetBackgroundColour();
-	Colour textColour = GetTextColour();
+	Colour col = GetTextColour();
 
-	Div(bg(bgColour)
-		p(6) px(12)
-		rounded(4)
-		w_fit h_fit
-		centerX
+	Div(bg(bgColour),
+		p(6), px(12),
+		rounded(4),
+		w_fit, h_fit,
+		centerX,
 		onHover([this]() {
 			if (!disabled.get()) isHovered.set(true);
-		})
+		}),
 		onHoverExit([this]() {
 			isHovered.set(false);
 			isPressed.set(false);
-		})
+		}),
 		onClick([this]() {
 			if (!disabled.get() && onClickCallback.get()) {
 				onClickCallback.get()();
@@ -27,8 +28,8 @@ void Button::Layout()
 		}))
 	{
 		Text(label.get(),
-			textColour(textColour)
-			justify_center
+			textColour(col),
+			justify_center,
 			wrapText(false));
 	}
 }

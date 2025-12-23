@@ -5,10 +5,9 @@
 #include <SableUI/element.h>
 #include <SableUI/panel.h>
 #include <SableUI/renderer.h>
-#include <SableUI/text.h>
+#include <SableUI/styles.h>
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
-#include <string>
 #include <cstdint>
 
 /* non-macro user api */
@@ -43,13 +42,13 @@ namespace SableUI
 	void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
 	void EndDivVirtual();
 	void AddRectVirtual(const ElementInfo& info = {});
-	void AddImageVirtual(const std::string& path, const ElementInfo& info = {});
+	void AddImageVirtual(const SableString& path, const ElementInfo& info = {});
 	void AddTextVirtual(const SableString& text, const ElementInfo& info = {});
 
 	void StartDiv(const ElementInfo& info = {}, SableUI::BaseComponent* child = nullptr);
 	void EndDiv();
 	void AddRect(const ElementInfo& info = {});
-	void AddImage(const std::string& path, const ElementInfo& info = {});
+	void AddImage(const SableString& path, const ElementInfo& info = {});
 	void AddText(const SableString& text, const ElementInfo& info = {});
 
 	void SetNextPanelMaxWidth(int width);
@@ -92,20 +91,26 @@ namespace SableUI
 		SplitterScope(SplitterScope&&) = default;
 		SplitterScope& operator=(SplitterScope&&) = default;
 	};
+
+	template<typename... Args>
+	inline ElementInfo PackStyles(Args&&... args) {
+		ElementInfo info;
+		(args.ApplyTo(info), ...);
+		return info;
+	}
 }
 
 /* scoped RAII rect guard api */
-#define Rect(...) AddRect(SableUI::ElementInfo{} __VA_ARGS__)
-#define Div(...) if (SableUI::DivScope CONCAT(_div_guard_, __LINE__)(SableUI::ElementInfo{} __VA_ARGS__); true)
-#define Image(path, ...) AddImage(path, SableUI::ElementInfo{} __VA_ARGS__)
-#define Text(text, ...) AddText(text, SableUI::ElementInfo{} __VA_ARGS__)
+#define Rect(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
+#define Div(...) if (SableUI::DivScope _d##__LINE__(SableUI::PackStyles(__VA_ARGS__)); true)
+#define Image(path, ...) AddImage(path, SableUI::PackStyles(__VA_ARGS__))
+#define Text(text, ...) AddText(text, SableUI::PackStyles(__VA_ARGS__))
 
 #define STRINGIFY(x) #x
-#define style(...) SableUI::ElementInfo{} __VA_ARGS__
-#define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+#define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 #define ComponentGainBaseRef(name, ref, ...)																\
 	SableUI::BaseComponent* ref = AddComponent(name);														\
-	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
 
 #define ComponentGainRef(name, T, ref, ...)																	\
 	T* ref = nullptr;																						\
@@ -114,7 +119,7 @@ namespace SableUI
 		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
 	else																									\
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
-	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
 
 #define ComponentGainRefNoInit(name, T, ref, ...)															\
 	T* ref = nullptr;																						\
@@ -125,7 +130,7 @@ namespace SableUI
 		SableUI_Runtime_Error("Component '%s' does not match required type: %s", name, STRINGIFY(T))
 
 #define ComponentInitialize(ref, name, ...)																	\
-	ref->BackendInitialiseChild(name, this, style(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
 
 #define ComponentGainRefWithInit(name, T, ref, initLines, ...)												\
 	ComponentGainRefNoInit(name, T, ref, __VA_ARGS__);														\
@@ -142,66 +147,6 @@ inline constexpr SableUI::Colour rgb(uint8_t r, uint8_t g, uint8_t b) {
 inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 	return SableUI::Colour{ r, g, b, a };
 }
-
-/* style modifiers */
-#define ID(value)			.setID(value)
-#define bg(...)				.setBgColour(SableUI::Colour(__VA_ARGS__))
-#define w(value)			.setWidth(value).setMinWidth(value)
-#define minW(value)			.setMinWidth(value)
-#define maxW(value)			.setMaxWidth(value)
-#define h(value)			.setHeight(value).setMinHeight(value)
-#define minH(value)			.setMinHeight(value)
-#define maxH(value)			.setMaxHeight(value)
-#define w_fill				.setWType(SableUI::RectType::Fill)
-#define h_fill				.setHType(SableUI::RectType::Fill)
-#define w_fixed				.setWType(SableUI::RectType::Fixed)
-#define h_fixed				.setHType(SableUI::RectType::Fixed)
-#define w_fit				.setWType(SableUI::RectType::FitContent)
-#define h_fit				.setHType(SableUI::RectType::FitContent)
-
-#define m(value)			.setMargin(value)
-#define mx(value)			.setMarginX(value)
-#define my(value)			.setMarginY(value)
-#define mt(value)			.setMarginTop(value)
-#define mb(value)			.setMarginBottom(value)
-#define ml(value)			.setMarginLeft(value)
-#define mr(value)			.setMarginRight(value)
-
-#define p(value)			.setPaddingX(value).setPaddingY(value)
-#define px(value)			.setPaddingX(value)
-#define py(value)			.setPaddingY(value)
-#define pt(value)			.setPaddingTop(value)
-#define pb(value)			.setPaddingBottom(value)
-#define pl(value)			.setPaddingLeft(value)
-#define pr(value)			.setPaddingRight(value)
-
-#define fontSize(value)		.setFontSize(value)
-#define lineHeight(value)	.setLineHeight(value)
-
-#define centerX				.setCenterX(true)
-#define centerY				.setCenterY(true)
-#define centerXY			.setCenterX(true).setCenterY(true)
-#define rounded(value)		.setBorderRadius(value)
-#define overflow_hidden		.setClipChildren(true)
-
-#define left_right			.setLayoutDirection(SableUI::LayoutDirection::LEFT_RIGHT)
-#define right_left			.setLayoutDirection(SableUI::LayoutDirection::RIGHT_LEFT)
-#define up_down				.setLayoutDirection(SableUI::LayoutDirection::UP_DOWN)
-#define down_up				.setLayoutDirection(SableUI::LayoutDirection::DOWN_UP)
-
-#define textColour(...)		.setTextColour(SableUI::Colour(__VA_ARGS__))
-#define justify_left		.setJustification(SableUI::TextJustification::Left)
-#define justify_center		.setJustification(SableUI::TextJustification::Center)
-#define justify_right		.setJustification(SableUI::TextJustification::Right)
-#define absolutePos(x, y)	.setAbsolutePosition(x, y)
-#define dir(value)			.setLayoutDirection(value)
-#define wrapText(v)			.setTextWrap(v)
-
-#define onHover(...)							.setOnHover(__VA_ARGS__)
-#define onHoverExit(...)						.setOnHoverExit(__VA_ARGS__)
-#define onClick(...)							.setOnClick(__VA_ARGS__)
-#define onSecondaryClick(...)					.setOnSecondaryClick(__VA_ARGS__)
-#define onDoubleClick(...)						.setOnDoubleClick(__VA_ARGS__)
 
 #define HSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
 #define VSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
@@ -259,23 +204,15 @@ inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a
 
 // Splitter components
 #define SplitterHorizontal(...) \
-	Div(mx(2) my(4) h(1) w_fill bg(70, 70, 70) __VA_ARGS__)
+	Div(mx(2), my(4), h(1), w_fill, bg(70, 70, 70), SableUI::PackStyles(__VA_ARGS__))
 
 #define SplitterVertical(...) \
-	Div(my(4) mx(2) h_fill w(1) bg(70, 70, 70) __VA_ARGS__)
+	Div(my(4), mx(2), h_fill, w(1), bg(70, 70, 70), SableUI::PackStyles(__VA_ARGS__))
 
-#define SplitterWithText(label, ...)						\
-	Div(left_right h_fit w_fill centerY mt(8))				\
+#define SplitterWithText(label)								\
+	Div(left_right, h_fit, w_fill, centerY, mt(8))			\
 	{														\
-		Div(mx(2) h(1) w(10) bg(70, 70, 70) centerY);		\
-		Text(label, w_fit wrapText(false) mx(4) mb(4));		\
-		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
-	}
-
-#define SplitterWithTextCenter(label, ...)					\
-	Div(left_right h_fit w_fill centerY mt(8))				\
-	{														\
-		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
-		Text(label, w_fit wrapText(false) mx(4) mb(4));		\
-		Div(mx(2) h(1) w_fill bg(70, 70, 70) centerY);		\
+		Div(mx(2), h(1), w(10), bg(70, 70, 70), centerY);	\
+		Text(label, w_fit, wrapText(false), mx(4), mb(4));	\
+		Div(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);	\
 	}

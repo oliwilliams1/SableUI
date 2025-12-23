@@ -52,8 +52,8 @@ void SableUI::StartDivVirtual(const SableUI::ElementInfo& info, SableUI::BaseCom
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 
 	auto* vnode = SB_new<VirtualNode>();
-	vnode->type = ElementType::DIV;
 	vnode->info = info;
+	vnode->info.type = ElementType::DIV;
 	vnode->childComp = child;
 
 	if (parent) parent->children.push_back(vnode);
@@ -72,8 +72,8 @@ void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
 {
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
-	vnode->type = ElementType::RECT;
 	vnode->info = info;
+	vnode->info.type = ElementType::RECT;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -83,21 +83,21 @@ void SableUI::AddTextVirtual(const SableString& text, const SableUI::ElementInfo
 {
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
-	vnode->type = ElementType::TEXT;
 	vnode->info = info;
-	vnode->info.text = text;
+	vnode->info.type = ElementType::TEXT;
+	vnode->info.text.text = text;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
 }
 
-void SableUI::AddImageVirtual(const std::string& path, const SableUI::ElementInfo& info)
+void SableUI::AddImageVirtual(const SableString& path, const SableUI::ElementInfo& info)
 {
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
-	vnode->type = ElementType::IMAGE;
 	vnode->info = info;
-	vnode->info.text = path;
+	vnode->info.type = ElementType::IMAGE;
+	vnode->info.text.text = path;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -188,8 +188,6 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 		s_virtualStack = std::stack<VirtualNode*>();
 		s_virtualRoot = SB_new<VirtualNode>();
 		s_virtualRoot->info = rootElement->GetInfo();
-		s_virtualRoot->info.text = rootElement->text;
-		s_virtualRoot->type = rootElement->type;
 		s_virtualStack.push(s_virtualRoot);
 	}
 	else
@@ -228,8 +226,8 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (s_reconciliationMode) return StartDivVirtual(p_info, child);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
-	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
+	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
+	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -272,8 +270,8 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddRectVirtual(p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
-	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
+	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
+	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -288,13 +286,13 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	parent->AddChild(newRect);
 }
 
-void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
+void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 {
 	if (s_reconciliationMode) return AddImageVirtual(path, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::Undef) info.wType = RectType::FitContent;
-	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
+	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
+	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -305,7 +303,6 @@ void SableUI::AddImage(const std::string& path, const ElementInfo& p_info)
 	Element* parent = s_elementStack.top();
 	Element* newImage = SB_new<Element>(s_rendererStack.top(), ElementType::IMAGE);
 
-	newImage->text = path;
 	newImage->SetInfo(info);
 	newImage->SetImage(path);
 	parent->AddChild(newImage);
@@ -316,8 +313,8 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddTextVirtual(text, p_info);
 	SableUI::ElementInfo info = p_info;
 
-	if (info.wType == RectType::Undef) info.wType = RectType::Fill;
-	if (info.hType == RectType::Undef) info.hType = RectType::FitContent;
+	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::Fill;
+	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -328,7 +325,6 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 	Element* parent = s_elementStack.top();
 	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
-	newTextU32->text = text;
 	newTextU32->SetInfo(info);
 	newTextU32->SetText(text);
 	parent->AddChild(newTextU32);
@@ -380,8 +376,8 @@ void SableUI::StartCustomLayoutScope(
 	s_rendererStack.push(queuePtr->window->m_renderer);
 	Element* queueRoot = SB_new<Element>(queuePtr->window->m_renderer, ElementType::DIV);
 	queueRoot->SetInfo(ElementInfo);
-	queueRoot->setWType(RectType::FitContent);
-	queueRoot->setHType(RectType::FitContent);
+	queueRoot->info.layout.wType = RectType::FitContent;
+	queueRoot->info.layout.hType = RectType::FitContent;
 
 	queuePtr->root = queueRoot;
 	s_elementStack.push(queueRoot);

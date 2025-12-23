@@ -2,6 +2,7 @@
 #include <SableUI/SableUI.h>
 
 using namespace SableUI;
+using namespace SableUI::Style;
 
 void Checkbox::Layout()
 {
@@ -12,22 +13,22 @@ void Checkbox::Layout()
 	Colour boxFill = checked ? (disabled.get() ? Colour(120, 120, 120) : Colour(90, 160, 255)) :
 		Colour(40, 40, 40);
 
-	Div(left_right w_fit h_fit
+	Div(left_right, w_fit, h_fit,
 		onHover([this]() {
 			if (!disabled.get()) isHovered.set(true);
-		})
+		}),
 		onHoverExit([this]() {
 			isHovered.set(false);
-		})
+		}),
 		onClick([this]() {
 			HandleClick();
 		}))
 	{
-		Rect(w(15) h(15) bg(boxFill) rounded(4) mr(4) centerY);
+		Rect(w(15), h(15), bg(boxFill), rounded(4), mr(4), centerY);
 
 		if (label.get().size() > 0)
 		{
-			Text(label, centerY wrapText(false));
+			Text(label, centerY, wrapText(false));
 		}
 	}
 }

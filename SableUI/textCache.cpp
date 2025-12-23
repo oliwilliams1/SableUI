@@ -52,8 +52,6 @@ void SableUI::TextCacheFactory::Release(RendererBackend* renderer, const TextCac
 	auto it = s_textCacheFactories.find(renderer);
 	if (it != s_textCacheFactories.end())
 		return it->second.Release_priv(key);
-
-	SableUI_Warn("Factory not found for renderer");
 }
 
 void SableUI::TextCacheFactory::ShutdownFactory(RendererBackend* renderer)
@@ -100,8 +98,6 @@ void SableUI::TextCacheFactory::CleanCache(RendererBackend* renderer)
 	auto it = s_textCacheFactories.find(renderer);
 	if (it != s_textCacheFactories.end())
 		it->second.CleanCache_priv();
-	else
-		SableUI_Warn("Factory not found for renderer");
 }
 
 void SableUI::TextCacheFactory::CleanCache_priv()
