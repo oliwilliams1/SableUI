@@ -32,7 +32,7 @@
 #include <SableUI/console.h>
 #include <SableUI/textCache.h>
 #undef SABLEUI_SUBSYSTEM
-#define SABLEUI_SUBSYSTEM "Text"
+#define SABLEUI_SUBSYSTEM "Font Manager"
 
 constexpr int ATLAS_WIDTH = 512;
 constexpr int ATLAS_HEIGHT = 512;
@@ -2194,7 +2194,6 @@ SableUI::TextSizeResult SableUI::QueryTextSize(
 // ============================================================================
 // Text Backend
 // ============================================================================
-
 static int s_textCount = 0;
 
 SableUI::_Text::_Text()

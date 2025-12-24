@@ -47,10 +47,10 @@ static SableString ElementTypeToString(ElementType type)
 	switch (type)
 	{
 	case ElementType::Undef: return "undefined element";
-	case ElementType::RECT: return "rect";
-	case ElementType::IMAGE: return "image";
-	case ElementType::TEXT: return "text";
-	case ElementType::DIV: return "div";
+	case ElementType::Rect: return "rect";
+	case ElementType::Image: return "image";
+	case ElementType::Text: return "text";
+	case ElementType::Div: return "div";
 	default: return "unknown element type";
 	}
 }
@@ -59,10 +59,10 @@ static SableString LayoutDirectionToString(LayoutDirection dir)
 {
 	switch (dir)
 	{
-	case LayoutDirection::DOWN_UP: return "down-up";
-	case LayoutDirection::UP_DOWN: return "up-down";
-	case LayoutDirection::LEFT_RIGHT: return "left-right";
-	case LayoutDirection::RIGHT_LEFT: return "right-left";
+	case LayoutDirection::DownUp: return "down-up";
+	case LayoutDirection::UpDown: return "up-down";
+	case LayoutDirection::LeftRight: return "left-right";
+	case LayoutDirection::RightLeft: return "right-left";
 	default: return "";
 	}
 }

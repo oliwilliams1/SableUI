@@ -53,7 +53,7 @@ void SableUI::StartDivVirtual(const SableUI::ElementInfo& info, SableUI::BaseCom
 
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->info = info;
-	vnode->info.type = ElementType::DIV;
+	vnode->info.type = ElementType::Div;
 	vnode->childComp = child;
 
 	if (parent) parent->children.push_back(vnode);
@@ -73,7 +73,7 @@ void SableUI::AddRectVirtual(const SableUI::ElementInfo& info)
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->info = info;
-	vnode->info.type = ElementType::RECT;
+	vnode->info.type = ElementType::Rect;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -84,8 +84,8 @@ void SableUI::AddTextVirtual(const SableString& text, const SableUI::ElementInfo
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->info = info;
-	vnode->info.type = ElementType::TEXT;
-	vnode->info.text.text = text;
+	vnode->info.type = ElementType::Text;
+	vnode->info.text.content = text;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -96,8 +96,8 @@ void SableUI::AddImageVirtual(const SableString& path, const SableUI::ElementInf
 	VirtualNode* parent = s_virtualStack.empty() ? nullptr : s_virtualStack.top();
 	auto* vnode = SB_new<VirtualNode>();
 	vnode->info = info;
-	vnode->info.type = ElementType::IMAGE;
-	vnode->info.text.text = path;
+	vnode->info.type = ElementType::Image;
+	vnode->info.text.content = path;
 
 	if (parent) parent->children.push_back(vnode);
 	else s_virtualRoot = vnode;
@@ -226,6 +226,9 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	if (s_reconciliationMode) return StartDivVirtual(p_info, child);
 	SableUI::ElementInfo info = p_info;
 
+	if (info.appearance.inheritBg && info.appearance.bg == Colour{ 0, 0, 0, 0 })
+		info.appearance.bg = s_elementStack.top()->info.appearance.bg;
+
 	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
 	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
@@ -237,8 +240,8 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 
 	Element* parent = s_elementStack.top();
 
-	Element* newDiv = SB_new<Element>(s_rendererStack.top(), ElementType::DIV);
-	newDiv->SetInfo(info);
+	info.type = ElementType::Div;
+	Element* newDiv = SB_new<Element>(s_rendererStack.top(), info);
 
 	if (child == nullptr)
 	{
@@ -270,6 +273,9 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddRectVirtual(p_info);
 	SableUI::ElementInfo info = p_info;
 
+	if (info.appearance.inheritBg && info.appearance.bg == Colour{ 0, 0, 0, 0 })
+		info.appearance.bg = s_elementStack.top()->info.appearance.bg;
+
 	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
 	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
@@ -280,9 +286,10 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newRect = SB_new<Element>(s_rendererStack.top(), ElementType::RECT);
 
-	newRect->SetInfo(info);
+	info.type = ElementType::Rect;
+	Element* newRect = SB_new<Element>(s_rendererStack.top(), info);
+
 	parent->AddChild(newRect);
 }
 
@@ -291,6 +298,9 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 	if (s_reconciliationMode) return AddImageVirtual(path, p_info);
 	SableUI::ElementInfo info = p_info;
 
+	if (info.appearance.inheritBg && info.appearance.bg == Colour{ 0, 0, 0, 0 })
+		info.appearance.bg = s_elementStack.top()->info.appearance.bg;
+
 	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::FitContent;
 	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
 
@@ -301,9 +311,10 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newImage = SB_new<Element>(s_rendererStack.top(), ElementType::IMAGE);
 
-	newImage->SetInfo(info);
+	info.type = ElementType::Image;
+	Element* newImage = SB_new<Element>(s_rendererStack.top(), info);
+
 	newImage->SetImage(path);
 	parent->AddChild(newImage);
 }
@@ -312,6 +323,9 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 {
 	if (s_reconciliationMode) return AddTextVirtual(text, p_info);
 	SableUI::ElementInfo info = p_info;
+
+	if (info.appearance.inheritBg && info.appearance.bg == Colour{ 0, 0, 0, 0 })
+		info.appearance.bg = s_elementStack.top()->info.appearance.bg;
 
 	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::Fill;
 	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
@@ -323,9 +337,10 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 	}
 
 	Element* parent = s_elementStack.top();
-	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), ElementType::TEXT);
 
-	newTextU32->SetInfo(info);
+	info.type = ElementType::Text;
+	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), info);
+
 	newTextU32->SetText(text);
 	parent->AddChild(newTextU32);
 }
@@ -336,7 +351,7 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 bool s_customLayoutMode = false;
 void SableUI::StartCustomLayoutScope(
 	CustomTargetQueue* queuePtr,
-	const ElementInfo& ElementInfo)
+	const ElementInfo& elementInfo)
 {
 	if (s_customLayoutMode)
 		SableUI_Runtime_Error("Cannot nest custom layouts");
@@ -374,10 +389,11 @@ void SableUI::StartCustomLayoutScope(
 	}
 
 	s_rendererStack.push(queuePtr->window->m_renderer);
-	Element* queueRoot = SB_new<Element>(queuePtr->window->m_renderer, ElementType::DIV);
-	queueRoot->SetInfo(ElementInfo);
-	queueRoot->info.layout.wType = RectType::FitContent;
-	queueRoot->info.layout.hType = RectType::FitContent;
+	ElementInfo info = elementInfo;
+	info.type = ElementType::Div;
+	info.layout.wType = RectType::FitContent;
+	info.layout.hType = RectType::FitContent;
+	Element* queueRoot = SB_new<Element>(queuePtr->window->m_renderer, info);
 
 	queuePtr->root = queueRoot;
 	s_elementStack.push(queueRoot);

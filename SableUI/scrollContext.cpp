@@ -22,7 +22,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
     Element* viewportEl = comp->GetElementById(ctx.GetViewportID());
     if (!viewportEl) return;
 
-    if (RectBoundingBox(viewportEl->info.rect, eventCtx.mousePos))
+    if (RectBoundingBox(viewportEl->rect, eventCtx.mousePos))
     {
         if (eventCtx.scrollDelta.y != 0)
         {
@@ -50,7 +50,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
     Element* barEl = comp->GetElementById(ctx.GetBarID());
     if (barEl)
     {
-        bool hover = RectBoundingBox(barEl->info.rect, eventCtx.mousePos);
+        bool hover = RectBoundingBox(barEl->rect, eventCtx.mousePos);
         if (hover != ctx.barHovered)
         {
             ctx.barHovered = hover;
@@ -113,8 +113,8 @@ void SableUI::ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx
     if (!viewportEl || !contentEl) return;
 
     ScrollData currentData;
-    currentData.viewportSize = vec2(viewportEl->info.rect.w, viewportEl->info.rect.h);
-    currentData.contentSize = vec2(contentEl->info.rect.w, contentEl->info.rect.h);
+    currentData.viewportSize = vec2(viewportEl->rect.w, viewportEl->rect.h);
+    currentData.contentSize = vec2(contentEl->rect.w, contentEl->rect.h);
 
     bool changed = (ctx.scrollData != currentData);
 
@@ -145,18 +145,18 @@ void SableUI::ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx
     ctx.prevScrollData = currentData;
 }
 
-SableUI::ScrollViewScope::ScrollViewScope(ScrollContext& context, ElementInfo info)
+SableUI::ScrollViewScope::ScrollViewScope(ScrollContext& context, const ElementInfo& info)
     : ctx(context)
 {
-    SableUI::StartDiv(PackStyles(id(ctx.GetViewportID()), w_fill, h_fill, left_right, overflow_hidden));
-
     bgColour = info.appearance.bg;
 
-    info.id = ctx.GetViewportID();
-    info.layout.wType = SableUI::RectType::Fill;
-    info.layout.hType = SableUI::RectType::Fill;
-    info.layout.mT = -static_cast<int>(ctx.scrollPos.y);
-    SableUI::StartDiv(info);
+    // viewport
+    SableUI::StartDiv(PackStyles(id(ctx.GetViewportID()), w_fill, h_fill, left_right, overflow_hidden));
+
+    // content
+    ElementInfo contentInfo = info;
+    PackStylesToInfo(contentInfo, id(ctx.GetContentID()), w_fill, h_fit, mt(-static_cast<int>(ctx.scrollPos.y)));
+    SableUI::StartDiv(contentInfo);
 }
 
 SableUI::ScrollViewScope::~ScrollViewScope()

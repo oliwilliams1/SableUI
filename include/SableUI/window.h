@@ -55,7 +55,6 @@ namespace SableUI
 
 		void RerenderAllNodes();
 		void RecalculateNodes();
-		ElementInfo GetElementInfoById(const SableString& id);
 
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };

@@ -562,18 +562,6 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
-SableUI::ElementInfo SableUI::Window::GetElementInfoById(const SableString& id)
-{
-	Element* el = m_root->GetElementById(id);
-	if (el)
-	{
-		const ElementInfo& elInfo = el->GetInfo();
-		return elInfo;
-	}
-	else
-		return ElementInfo{};
-}
-
 void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)
 {
 	if (std::find(m_customTargetQueues.begin(), m_customTargetQueues.end(), queue)
@@ -620,7 +608,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 		if (child->rect.w < child->minBounds.x)
 		{
 			child->rect.w = child->minBounds.x;
-			child->rect.wType = SableUI::RectType::Fixed;
+			child->wType = SableUI::RectType::Fixed;
 			resized = true;
 		}
 
@@ -628,7 +616,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 		{
 			int excess = child->rect.w - child->maxBounds.x;
 			child->rect.w = child->maxBounds.x;
-			child->rect.wType = SableUI::RectType::Fixed;
+			child->wType = SableUI::RectType::Fixed;
 			deficit += excess;
 			resized = true;
 		}
@@ -645,8 +633,8 @@ static void FixWidth(SableUI::BasePanel* panel)
 			if (child->maxBounds.x > 0 && child->rect.w >= child->maxBounds.x)
 				continue;
 
-			if (child->rect.wType == SableUI::RectType::Fixed ||
-				child->rect.wType == SableUI::RectType::Fill)
+			if (child->wType == SableUI::RectType::Fixed ||
+				child->wType == SableUI::RectType::Fill)
 			{
 				panels.push_back(child);
 			}
@@ -667,7 +655,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 				{
 					int overflow = panels[i]->rect.w - panels[i]->maxBounds.x;
 					panels[i]->rect.w = panels[i]->maxBounds.x;
-					panels[i]->rect.wType = SableUI::RectType::Fixed;
+					panels[i]->wType = SableUI::RectType::Fixed;
 
 					if (i + 1 < panels.size())
 					{
@@ -683,7 +671,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 		int fixedWidthSum = 0;
 		for (SableUI::BasePanel* child : panel->children)
 		{
-			if (child->rect.wType == SableUI::RectType::Fixed)
+			if (child->wType == SableUI::RectType::Fixed)
 			{
 				fixedWidthSum += child->rect.w;
 			}
@@ -692,7 +680,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 		bool allChildrenFixed = true;
 		for (SableUI::BasePanel* child : panel->children)
 		{
-			if (child->rect.wType != SableUI::RectType::Fixed)
+			if (child->wType != SableUI::RectType::Fixed)
 			{
 				allChildrenFixed = false;
 				break;
@@ -702,7 +690,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 		if (allChildrenFixed)
 		{
 			panel->rect.w = fixedWidthSum;
-			panel->rect.wType = SableUI::RectType::Fixed;
+			panel->wType = SableUI::RectType::Fixed;
 		}
 
 		panel->CalculateScales();
@@ -726,7 +714,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 		if (child->rect.h < child->minBounds.y)
 		{
 			child->rect.h = child->minBounds.y;
-			child->rect.hType = SableUI::RectType::Fixed;
+			child->hType = SableUI::RectType::Fixed;
 			resized = true;
 		}
 
@@ -734,7 +722,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 		{
 			int excess = child->rect.h - child->maxBounds.y;
 			child->rect.h = child->maxBounds.y;
-			child->rect.hType = SableUI::RectType::Fixed;
+			child->hType = SableUI::RectType::Fixed;
 			deficit += excess;
 			resized = true;
 		}
@@ -751,8 +739,8 @@ static void FixHeight(SableUI::BasePanel* panel)
 			if (child->maxBounds.y > 0 && child->rect.h >= child->maxBounds.y)
 				continue;
 
-			if (child->rect.hType == SableUI::RectType::Fixed ||
-				child->rect.hType == SableUI::RectType::Fill)
+			if (child->hType == SableUI::RectType::Fixed ||
+				child->hType == SableUI::RectType::Fill)
 			{
 				panels.push_back(child);
 			}
@@ -773,7 +761,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 				{
 					int overflow = panels[i]->rect.h - panels[i]->maxBounds.y;
 					panels[i]->rect.h = panels[i]->maxBounds.y;
-					panels[i]->rect.hType = SableUI::RectType::Fixed;
+					panels[i]->hType = SableUI::RectType::Fixed;
 
 					if (i + 1 < panels.size())
 					{
@@ -789,7 +777,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 		int fixedHeightSum = 0;
 		for (SableUI::BasePanel* child : panel->children)
 		{
-			if (child->rect.hType == SableUI::RectType::Fixed)
+			if (child->hType == SableUI::RectType::Fixed)
 			{
 				fixedHeightSum += child->rect.h;
 			}
@@ -798,7 +786,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 		bool allChildrenFixed = true;
 		for (SableUI::BasePanel* child : panel->children)
 		{
-			if (child->rect.hType != SableUI::RectType::Fixed)
+			if (child->hType != SableUI::RectType::Fixed)
 			{
 				allChildrenFixed = false;
 				break;
@@ -808,7 +796,7 @@ static void FixHeight(SableUI::BasePanel* panel)
 		if (allChildrenFixed)
 		{
 			panel->rect.h = fixedHeightSum;
-			panel->rect.hType = SableUI::RectType::Fixed;
+			panel->hType = SableUI::RectType::Fixed;
 		}
 
 		panel->CalculateScales();
@@ -891,10 +879,10 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 		int newOlderSiblingWidth = state.olderSiblingOldRect.w - (width - state.oldPanelRect.w);
 		newOlderSiblingWidth = (std::max)(newOlderSiblingWidth, state.olderSiblingNode->minBounds.x);
 
-		state.selectedPanel->rect.wType = SableUI::RectType::Fixed;
+		state.selectedPanel->wType = SableUI::RectType::Fixed;
 		state.selectedPanel->rect.w = width;
 
-		state.olderSiblingNode->rect.wType = SableUI::RectType::Fill;
+		state.olderSiblingNode->wType = SableUI::RectType::Fill;
 
 		FixWidth(state.selectedPanel);
 		break;
@@ -910,10 +898,10 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 		int newOlderSiblingHeight = state.olderSiblingOldRect.h - (height - state.oldPanelRect.h);
 		newOlderSiblingHeight = (std::max)(newOlderSiblingHeight, state.olderSiblingNode->minBounds.y);
 
-		state.selectedPanel->rect.hType = SableUI::RectType::Fixed;
+		state.selectedPanel->hType = SableUI::RectType::Fixed;
 		state.selectedPanel->rect.h = height;
 
-		state.olderSiblingNode->rect.hType = SableUI::RectType::Fill;
+		state.olderSiblingNode->hType = SableUI::RectType::Fill;
 
 		FixHeight(state.selectedPanel);
 		break;

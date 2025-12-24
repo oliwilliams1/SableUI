@@ -76,7 +76,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     {
         Element* el = GetElementById("TextField");
         if (!el) return;
-        if (RectBoundingBox(el->info.rect, ctx.mousePos))
+        if (RectBoundingBox(el->rect, ctx.mousePos))
             isFocused.set(true);
         else
         {
@@ -228,15 +228,15 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
     auto cursorInfo = QueryCursorPosition(
         textVal,
         cursorPos,
-        text->info.rect.w,
+        text->rect.w,
         text->info.text.fontSize,
         text->info.text.lineHeight,
         text->info.text.justification
     );
 
     Rect cursorRect = {
-        text->info.rect.x + cursorInfo.x,
-        text->info.rect.y + cursorInfo.y,
+        text->rect.x + cursorInfo.x,
+        text->rect.y + cursorInfo.y,
         1,
         cursorInfo.lineHeight
     };
@@ -248,7 +248,7 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
         auto initialCursorInfo = QueryCursorPosition(
             textVal,
             initialCursorPos,
-            text->info.rect.w,
+            text->rect.w,
             text->info.text.fontSize,
             text->info.text.lineHeight,
             text->info.text.justification
@@ -257,8 +257,8 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
         if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
         {
             Rect highlightRect = {
-                text->info.rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
-                text->info.rect.y + cursorInfo.y,
+                text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
+                text->rect.y + cursorInfo.y,
                 std::abs(initialCursorInfo.x - cursorInfo.x),
                 cursorInfo.lineHeight
             };

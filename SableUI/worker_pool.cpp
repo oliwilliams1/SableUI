@@ -1,17 +1,20 @@
-#include <SableUI/worker_pool.h>
-#include <SableUI/console.h>
-#include <SableUI/SableUI.h>
 #include <condition_variable>
 #include <functional>
 #include <exception>
 #include <utility>
 #include <atomic>
-#include <mutex>
-#include <queue>
 #include <thread>
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <mutex>
+#include <queue>
+
+#include <SableUI/worker_pool.h>
+#include <SableUI/SableUI.h>
+#undef SABLEUI_SUBSYSTEM
+#define SABLEUI_SUBSYSTEM "Workers"
+#include <SableUI/console.h>
 
 static std::vector<std::thread> s_threads;
 static std::queue<std::function<void()>> s_tasks;
@@ -71,7 +74,7 @@ void SableUI::WorkerPool::Initialise(int numThreads)
 
 	s_timerThread = std::thread(TimerThreadFunc);
 
-	SableUI_Log("WorkerPool initialised with %d workers + 1 timer thread", numThreads);
+	SableUI_Log("WorkerPool initialised with %d workers and 1 timer thread", numThreads);
 }
 
 void SableUI::WorkerPool::Shutdown()

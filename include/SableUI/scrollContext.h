@@ -44,7 +44,7 @@ namespace SableUI
     public:
         ScrollContext& ctx;
 
-        explicit ScrollViewScope(ScrollContext& context, ElementInfo info);
+        explicit ScrollViewScope(ScrollContext& context, const ElementInfo& info);
         ~ScrollViewScope();
     
     private:

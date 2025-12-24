@@ -40,11 +40,13 @@ void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
 
 	if (activeMenu.get().size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
 	{
-		SableUI::ElementInfo menuBarInfo = window.get()->GetElementInfoById("menu-bar");
-		SableUI::ElementInfo dropdownInfo = window.get()->GetElementInfoById("menu-dropdown");
+		SableUI::Element* menuBar = GetElementById("menu-bar");
+		SableUI::Element* dropdown = GetElementById("menu-dropdown");
 
-		bool mouseOverMenuBar = RectBoundingBox(menuBarInfo.rect, ctx.mousePos);
-		bool mouseOverDropdown = RectBoundingBox(dropdownInfo.rect, ctx.mousePos);
+		if (!menuBar || !dropdown) return;
+
+		bool mouseOverMenuBar = RectBoundingBox(menuBar->rect, ctx.mousePos);
+		bool mouseOverDropdown = RectBoundingBox(dropdown->rect, ctx.mousePos);
 
 		if (!mouseOverMenuBar && !mouseOverDropdown)
 		{
@@ -90,7 +92,9 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 void MenuBar::DrawDropdownMenu()
 {
 	if (window == nullptr) return;
-	SableUI::ElementInfo elInfo = window.get()->GetElementInfoById(activeMenu);
+	SableUI::Element* el = GetElementById(activeMenu);
+
+	if (!el) return;
 
 	if (!queueInitialised)
 	{
@@ -101,7 +105,7 @@ void MenuBar::DrawDropdownMenu()
 
 	StartCustomLayoutScope(
 		&queue, 
-		PackStyles(absolutePos(elInfo.rect.x, elInfo.rect.y + elInfo.rect.height + 2), id("menu-dropdown"))
+		PackStyles(absolutePos(el->rect.x, el->rect.y + el->rect.height + 2), id("menu-dropdown"))
 	);
 
 	Div(bg(45, 45, 45), p(5), minW(150), h_fit, rounded(4), up_down)

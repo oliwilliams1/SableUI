@@ -98,6 +98,11 @@ namespace SableUI
 		(args.ApplyTo(info), ...);
 		return info;
 	}
+
+	template<typename... Args>
+	inline void PackStylesToInfo(ElementInfo& info, Args&&... args) {
+		(args.ApplyTo(info), ...);
+	}
 }
 
 /* scoped RAII rect guard api */

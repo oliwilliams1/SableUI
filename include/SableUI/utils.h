@@ -13,8 +13,8 @@ namespace SableUI
 
 	struct uvec2
 	{
-		unsigned int x;
-		unsigned int y;
+		unsigned int x = 0;
+		unsigned int y = 0;
 
 		uvec2() = default;
 		uvec2(unsigned x, unsigned y) : x(x), y(y) {}
@@ -54,7 +54,7 @@ namespace SableUI
 			struct { int w, h; };
 		};
 
-		ivec2() = default;
+		ivec2() : x(0), y(0) {};
 		ivec2(int x, int y) : x(x), y(y) {}
 		ivec2(int x) : x(x), y(x) {}
 		ivec2(uvec2 v) : x(v.x), y(v.y) {}
@@ -88,8 +88,8 @@ namespace SableUI
 
 	struct u16vec2
 	{
-		uint16_t x;
-		uint16_t y;
+		uint16_t x = 0;
+		uint16_t y = 0;
 
 		u16vec2() = default;
 		u16vec2(uint16_t x, uint16_t y) : x(x), y(y) {}
@@ -125,8 +125,8 @@ namespace SableUI
 
 	struct vec2
 	{
-		float x;
-		float y;
+		float x = 0;
+		float y = 0;
 
 		bool operator==(const vec2& other) const {
 			return x == other.x && y == other.y;
@@ -171,9 +171,9 @@ namespace SableUI
 
 	struct vec3
 	{
-		float x;
-		float y;
-		float z;
+		float x = 0;
+		float y = 0;
+		float z = 0;
 
 		bool operator==(const vec3& other) const {
 			return x == other.x && y == other.y && z == other.z;
@@ -208,10 +208,10 @@ namespace SableUI
 
 	struct vec4
 	{
-		float x;
-		float y;
-		float z;
-		float w;
+		float x = 0;
+		float y = 0;
+		float z = 0;
+		float w = 0;
 
 		bool operator==(const vec4& other) const {
 			return x == other.x && y == other.y && z == other.z && w == other.w;
@@ -253,6 +253,18 @@ namespace SableUI
 			return r == other.r && g == other.g &&
 				b == other.b && a == other.a;
 		}
+
+		Colour& operator=(const Colour& other)
+		{
+			if (this != &other)
+			{
+				r = other.r;
+				g = other.g;
+				b = other.b;
+				a = other.a;
+			}
+			return *this;
+		}
 	};
 
 	typedef Colour Color;
@@ -269,8 +281,6 @@ namespace SableUI
 	{
 		Rect() : x(0), y(0), w(0), h(0) {}
 		Rect(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
-		Rect(int x, int y, int w, int h, RectType wType, RectType hType)
-			: x(x), y(y), w(w), h(h), wType(wType), hType(hType) {}
 
 		union
 		{
@@ -289,9 +299,6 @@ namespace SableUI
 				int height;
 			};
 		};
-
-		RectType wType = Undef;
-		RectType hType = Undef;
 
 		bool operator==(const Rect& other) const {
 			return x == other.x && y == other.y && w == other.w && h == other.h;

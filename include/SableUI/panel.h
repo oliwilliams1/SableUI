@@ -40,6 +40,8 @@ namespace SableUI
 
         BasePanel* parent = nullptr;
         SableUI::Rect rect = { 0, 0, 0, 0 };
+        RectType wType = RectType::Undef;
+        RectType hType = RectType::Undef;
         ivec2 minBounds = { 20, 20 };
         ivec2 maxBounds = { 0, 0 };
         PanelType type = PanelType::Undef;

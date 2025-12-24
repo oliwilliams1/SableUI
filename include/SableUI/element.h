@@ -13,41 +13,42 @@ namespace SableUI
 {
 	enum class ElementType
 	{
-		Undef = 0x0,
-		RECT = 0x1,
-		IMAGE = 0x2,
-		TEXT = 0x3,
-		DIV = 0x4
+		Undef,
+		Rect,
+		Image,
+		Text,
+		Div
 	};
 
 	enum class LayoutDirection
 	{
-		UP_DOWN = 0x0,
-		DOWN_UP = 0x1,
-		LEFT_RIGHT = 0x2,
-		RIGHT_LEFT = 0x3,
+		UpDown,
+		DownUp,
+		LeftRight,
+		RightLeft
 	};
 
 	struct LayoutProps {
-		RectType wType = RectType::FitContent;
-		RectType hType = RectType::FitContent;
-		LayoutDirection layoutDirection = LayoutDirection::UP_DOWN;
+		RectType wType = RectType::Undef;
+		RectType hType = RectType::Undef;
+		LayoutDirection layoutDirection = LayoutDirection::UpDown;
 		int width = 0, height = 0;
 		int minW = 0, maxW = 0, minH = 0, maxH = 0;
 		int pT = 0, pB = 0, pL = 0, pR = 0;
 		int mT = 0, mB = 0, mL = 0, mR = 0;
 		bool centerX = false, centerY = false;
-		bool clipChildren;
+		ivec2 pos = { -1, -1 };
 	};
 
 	struct AppearanceProps {
 		Colour bg = { 0, 0, 0, 0 };
+		bool inheritBg = true;
 		float radius = 0.0f;
 		bool clipChildren = false;
 	};
 
 	struct TextProps {
-		SableString text;
+		SableString content;
 		Colour colour = { 255, 255, 255, 255 };
 		TextJustification justification = TextJustification::Left;
 		int fontSize = 11;
@@ -63,7 +64,6 @@ namespace SableUI
 		LayoutProps layout;
 		AppearanceProps appearance;
 		TextProps text;
-		Rect rect;
 
 		std::function<void()> onHoverFunc = nullptr;
 		std::function<void()> onHoverExitFunc = nullptr;
@@ -96,16 +96,14 @@ namespace SableUI
 	class Element
 	{
 	public:
-		Element();
-		Element(RendererBackend* renderer, ElementType type);
+		Element() = delete;
+		Element(RendererBackend* renderer, const ElementInfo& type);
 		~Element();
 
 		static int GetNumInstances();
 
-		ElementType type = ElementType::Undef;
-		
 		// functions for engine
-		void Init(RendererBackend* renderer, ElementType type);
+		void Init(RendererBackend* renderer);
 		void SetInfo(const ElementInfo& info);
 		void SetRect(const Rect& rect);
 		void AddChild(Element* child);
@@ -130,6 +128,7 @@ namespace SableUI
 
 		// rendering
 		void Render(int z = 1);
+		Rect rect = { 0, 0, 0, 0 };
 		bool clipEnabled = false;
 		Rect clipRect = { 0, 0, 0, 0 };
 

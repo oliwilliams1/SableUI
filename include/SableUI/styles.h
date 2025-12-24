@@ -49,16 +49,16 @@ namespace SableUI::Style {
 	inline constexpr FlagProperty centerX = { [](ElementInfo& i) { i.layout.centerX = true; } };
 	inline constexpr FlagProperty centerY = { [](ElementInfo& i) { i.layout.centerY = true; } };
 	inline constexpr FlagProperty centerXY = { [](ElementInfo& i) { i.layout.centerX = i.layout.centerY = true; } };
-	inline constexpr FlagProperty clipChildren = { [](ElementInfo& i) {i.layout.clipChildren = true; } };
+	inline constexpr FlagProperty clipChildren = { [](ElementInfo& i) {i.appearance.clipChildren = true; }};
 
 	// layout dirs
 	inline constexpr Property<LayoutDirection> dir(LayoutDirection v) {
 		return { v, [](ElementInfo& i, LayoutDirection val) { i.layout.layoutDirection = val; } };
 	}
-	inline constexpr FlagProperty left_right = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::LEFT_RIGHT; } };
-	inline constexpr FlagProperty right_left = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::RIGHT_LEFT; } };
-	inline constexpr FlagProperty up_down = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::UP_DOWN; } };
-	inline constexpr FlagProperty down_up = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::DOWN_UP; } };
+	inline constexpr FlagProperty left_right = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::LeftRight; } };
+	inline constexpr FlagProperty right_left = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::RightLeft; } };
+	inline constexpr FlagProperty up_down = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::UpDown; } };
+	inline constexpr FlagProperty down_up = { [](ElementInfo& i) { i.layout.layoutDirection = LayoutDirection::DownUp; } };
 
 	// margins
 	inline constexpr Property<int> m(int v) { return { v, [](ElementInfo& i, int val) { i.layout.mT = i.layout.mB = i.layout.mL = i.layout.mR = val; } }; }
@@ -84,6 +84,9 @@ namespace SableUI::Style {
 	}
 	inline constexpr Property<Colour> bg(Colour c) {
 		return { c, [](ElementInfo& i, Colour val) { i.appearance.bg = val; } };
+	}
+	inline constexpr Property<bool> inheritBg(bool v) {
+		return { v, [](ElementInfo& i, bool val) { i.appearance.inheritBg = val; } };
 	}
 	inline constexpr Property<float> rounded(float r) {
 		return { r, [](ElementInfo& i, float val) { i.appearance.radius = val; } };
@@ -126,6 +129,6 @@ namespace SableUI::Style {
 	// etc
 	struct Pos { int x, y; };
 	inline constexpr Property<Pos> absolutePos(int x, int y) {
-		return { {x, y}, [](ElementInfo& i, Pos v) { i.rect.x = v.x; i.rect.y = v.y; } };
+		return { {x, y}, [](ElementInfo& i, Pos v) { i.layout.pos.x = v.x; i.layout.pos.y = v.y; } };
 	}
 }
