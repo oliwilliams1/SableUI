@@ -65,8 +65,8 @@ namespace SableUI
 		AppearanceProps appearance;
 		TextProps text;
 
-		std::function<void()> onHoverFunc = nullptr;
-		std::function<void()> onHoverExitFunc = nullptr;
+		std::function<void()> onHoverEnterFunc = nullptr;
+		std::function<void()> onHoverLeaveFunc = nullptr;
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
 		std::function<void()> onDoubleClickFunc = nullptr;
@@ -138,8 +138,11 @@ namespace SableUI
 		int measuredHeight = 0;
 		std::vector<Child*> children;
 
-	private:
 		bool isHovered = false;
+		bool wasHovered = false;
+		Element* FindTopmostHoveredElement(const ivec2& mousePos, int z = 0);
+
+	private:
 		DrawableBase* drawable = nullptr;
 		RendererBackend* renderer = nullptr;
 	};

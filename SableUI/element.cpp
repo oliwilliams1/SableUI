@@ -722,6 +722,31 @@ void SableUI::Element::LayoutChildren()
     }
 }
 
+SableUI::Element* SableUI::Element::FindTopmostHoveredElement(const ivec2& mousePos, int z)
+{
+    if (clipEnabled && !RectBoundingBox(clipRect, mousePos))
+        return nullptr;
+
+    if (!RectBoundingBox(rect, mousePos))
+        return nullptr;
+
+    if (info.type == ElementType::Div)
+    {
+        for (auto it = children.rbegin(); it != children.rend(); it++)
+        {
+            Element* childElement = (Element*)(**it);
+            Element* result = childElement->FindTopmostHoveredElement(mousePos, z + 1);
+            if (result)
+                return result;
+        }
+    }
+
+    if (info.onHoverEnterFunc || info.onHoverLeaveFunc)
+        return this;
+
+    return nullptr;
+}
+
 SableUI::ElementInfo SableUI::Element::GetInfo() const
 {
     return info;
@@ -894,11 +919,6 @@ void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
 {
     if (RectBoundingBox(rect, ctx.mousePos))
     {
-        if (!isHovered && info.onHoverFunc)
-            info.onHoverFunc();
-
-        isHovered = true;
-
         if (ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
             info.onClickFunc();
 
@@ -908,28 +928,13 @@ void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
         if (ctx.mouseDoubleClicked[SABLE_MOUSE_BUTTON_LEFT] && info.onDoubleClickFunc)
             info.onDoubleClickFunc();
     }
-    else
-    {
-        if (isHovered && info.onHoverExitFunc)
-            info.onHoverExitFunc();
-
-        isHovered = false;
-    }
 
     for (Child* child : children)
     {
-        switch (child->type)
-        {
-        case ChildType::COMPONENT:
+        if (child->type == ChildType::COMPONENT)
             child->component->comp_PropagateEvents(ctx);
-			break;
-        case ChildType::ELEMENT:
+        else
             child->element->el_PropagateEvents(ctx);
-			break;
-        default:
-			SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
-            break;
-        }
     }
 }
 

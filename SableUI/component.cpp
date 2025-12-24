@@ -165,6 +165,59 @@ void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 	rootElement->el_PropagateEvents(ctx);
 }
 
+void SableUI::BaseComponent::comp_PropagateHoverEvents(const UIEventContext& ctx)
+{
+	if (!rootElement) return;
+
+	Element* hoveredElement = rootElement->FindTopmostHoveredElement(ctx.mousePos);
+
+	std::function<void(Element*)> clearHoverStates = [&](Element* el) {
+		el->wasHovered = el->isHovered;
+		el->isHovered = false;
+
+		for (Child* child : el->children)
+		{
+			Element* childElement = (Element*)*child;
+			clearHoverStates(childElement);
+		}
+	};
+	clearHoverStates(rootElement);
+
+	if (hoveredElement)
+	{
+		hoveredElement->isHovered = true;
+
+		if (hoveredElement->isHovered && !hoveredElement->wasHovered)
+		{
+			if (hoveredElement->info.onHoverEnterFunc)
+				hoveredElement->info.onHoverEnterFunc();
+		}
+		else if (!hoveredElement->isHovered && hoveredElement->wasHovered)
+		{
+			if (hoveredElement->info.onHoverLeaveFunc)
+				hoveredElement->info.onHoverLeaveFunc();
+		}
+	}
+
+	std::function<void(Element*)> checkHoverLeave = [&](Element* el) {
+		if (!el->isHovered && el->wasHovered)
+		{
+			if (el->info.onHoverLeaveFunc)
+				el->info.onHoverLeaveFunc();
+		}
+
+		for (Child* child : el->children)
+		{
+			Element* childElement = (Element*)*child;
+			checkHoverLeave(childElement);
+		}
+	};
+	checkHoverLeave(rootElement);
+
+	for (auto* child : m_componentChildren)
+		child->comp_PropagateHoverEvents(ctx);
+}
+
 void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext& ctx)
 {
 	OnUpdatePostLayout(ctx);

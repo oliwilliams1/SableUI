@@ -14,10 +14,10 @@ void Button::Layout()
 		rounded(4),
 		w_fit, h_fit,
 		centerX,
-		onHover([this]() {
+		onHoverEnter([this]() {
 			if (!disabled.get()) isHovered.set(true);
 		}),
-		onHoverExit([this]() {
+		onHoverLeave([this]() {
 			isHovered.set(false);
 			isPressed.set(false);
 		}),

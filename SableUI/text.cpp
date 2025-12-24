@@ -1608,14 +1608,11 @@ void FontManager::GetTextVertexData(
 					charData = it->second;
 				else
 				{
-					SableUI_Warn("Could not find character U+%04X with font size %d even after attempting to load its range. Using empty glyph.",
-						c, text->m_fontSize);
 					charData = Character{};
 				}
 			}
 			else
 			{
-				SableUI_Warn("Could not find font range for character U+%04X. Using empty glyph.",c);
 				charData = Character{};
 			}
 		}

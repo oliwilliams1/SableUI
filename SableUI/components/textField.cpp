@@ -13,12 +13,12 @@ static int GetNextWordPos(const SableString& text, int cursorPos, int direction)
 {
     for (int i = cursorPos + direction; i < text.size() && i >= 0; i += direction)
         if (text[i] == ' ' || text[i] == '\t' || text[i] == '\n')
-			return i;
+            return i;
 
     if (direction == -1)
-		return 0;
+        return 0;
     else
-		return text.size();
+        return text.size();
 }
 
 static void DeleteSelection(SableString& text, int& cursorPos, const int& initialCursorPos)
@@ -30,9 +30,21 @@ static void DeleteSelection(SableString& text, int& cursorPos, const int& initia
     selEnd = std::max(0, selEnd);
 
     text = text.substr(0, static_cast<size_t>(selStart)) +
-           text.substr(static_cast<size_t>(selEnd));
+        text.substr(static_cast<size_t>(selEnd));
 
     cursorPos = selStart;
+}
+
+SableUI::TextField::TextField()
+{
+    cursorBlinkInterval.Start();
+}
+
+void SableUI::TextField::ResetCursorBlink()
+{
+    cursorVisible.set(true);
+    cursorBlinkInterval.Stop();
+    cursorBlinkInterval.Start();
 }
 
 void SableUI::TextField::Layout()
@@ -57,9 +69,12 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     bool ctrlDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_CONTROL) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_CONTROL));
     bool shiftDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
     bool sectionHighlighted = initialCursorPos >= 0 && initialCursorPos != cursorPos;
+    bool change = false;
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT_SHIFT) || ctx.keyPressedEvent.test(SABLE_KEY_RIGHT_SHIFT))
+    {
         initialCursorPos.set(cursorPos);
+    }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_ESCAPE))
     {
@@ -67,22 +82,29 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         {
             isFocused.set(false);
             queue.window->RemoveQueueReference(&queue);
+            cursorBlinkInterval.Stop();
         }
 
         initialCursorPos.set(-1);
     }
-    
+
     if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
     {
         Element* el = GetElementById("TextField");
         if (!el) return;
         if (RectBoundingBox(el->rect, ctx.mousePos))
-            isFocused.set(true);
+        {
+            if (!isFocused.get())
+            {
+                isFocused.set(true);
+                ResetCursorBlink();
+            }
+        }
         else
         {
             isFocused.set(false);
             queue.window->RemoveQueueReference(&queue);
-
+            cursorBlinkInterval.Stop();
         }
     }
 
@@ -105,6 +127,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         textVal.set(newText);
         cursorPos.set(newCursor + ctx.typedCharBuffer.size());
         initialCursorPos.set(-1);
+        change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_BACKSPACE))
@@ -124,9 +147,9 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         else if (ctrlDown)
         {
             int delTo = GetNextWordPos(textVal.get(), cursorPos, -1);
-			SableString newText = textVal.get().substr(0, delTo) + textVal.get().substr(cursorPos);
-			textVal.set(newText);
-			cursorPos.set(delTo);
+            SableString newText = textVal.get().substr(0, delTo) + textVal.get().substr(cursorPos);
+            textVal.set(newText);
+            cursorPos.set(delTo);
         }
         else if (cursorPos > 0)
         {
@@ -134,6 +157,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
             textVal.set(newText);
             cursorPos.set(cursorPos - 1);
         }
+        change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_DELETE))
@@ -161,6 +185,7 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
             SableString newText = textVal.get().substr(0, cursorPos) + textVal.get().substr(cursorPos + 1);
             textVal.set(newText);
         }
+        change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_ENTER))
@@ -178,34 +203,44 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
         textVal.set(newText);
         cursorPos.set(newCursor + 1);
         initialCursorPos.set(-1);
+        change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT))
     {
         if (sectionHighlighted)
             cursorPos.set(std::min(cursorPos, initialCursorPos));
-        
+
         if (ctrlDown)
             cursorPos.set(GetNextWordPos(textVal, cursorPos, -1));
         else if (cursorPos > 0)
-                cursorPos.set(cursorPos - 1);
+            cursorPos.set(cursorPos - 1);
 
         if (!shiftDown)
             initialCursorPos.set(-1);
+
+        change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_RIGHT))
     {
         if (sectionHighlighted)
-			cursorPos.set(std::max(cursorPos, initialCursorPos));
+            cursorPos.set(std::max(cursorPos, initialCursorPos));
 
         if (ctrlDown)
             cursorPos.set(GetNextWordPos(textVal, cursorPos, +1));
         else if (cursorPos < textVal.get().size())
-                cursorPos.set(cursorPos + 1);
+            cursorPos.set(cursorPos + 1);
 
         if (!shiftDown)
-			initialCursorPos.set(-1);
+            initialCursorPos.set(-1);
+
+        change = true;
+    }
+
+    if (change)
+    {
+        ResetCursorBlink();
     }
 }
 
@@ -234,14 +269,17 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
         text->info.text.justification
     );
 
-    Rect cursorRect = {
-        text->rect.x + cursorInfo.x,
-        text->rect.y + cursorInfo.y,
-        1,
-        cursorInfo.lineHeight
-    };
+    if (cursorVisible.get())
+    {
+        Rect cursorRect = {
+            text->rect.x + cursorInfo.x,
+            text->rect.y + cursorInfo.y,
+            1,
+            cursorInfo.lineHeight
+        };
 
-    queue.AddRect(cursorRect, Colour(220, 220, 220));
+        queue.AddRect(cursorRect, Colour(220, 220, 220));
+    }
 
     if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
     {
@@ -263,7 +301,7 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
                 cursorInfo.lineHeight
             };
 
-            queue.AddRect(highlightRect, Colour(100, 180, 255, 120));
+            queue.AddRect(highlightRect, Colour(80, 150, 255, 120));
         }
     }
 

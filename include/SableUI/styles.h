@@ -120,8 +120,8 @@ namespace SableUI::Style {
 		void ApplyTo(ElementInfo& i) const { apply(i, func); }
 	};
 
-	inline CallbackProperty onHover(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverFunc = v; } }; }
-	inline CallbackProperty onHoverExit(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverExitFunc = v; } }; }
+	inline CallbackProperty onHoverEnter(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverEnterFunc = v; } }; }
+	inline CallbackProperty onHoverLeave(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverLeaveFunc = v; } }; }
 	inline CallbackProperty onClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onClickFunc = v; } }; }
 	inline CallbackProperty onSecondaryClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onSecondaryClickFunc = v; } }; }
 	inline CallbackProperty onDoubleClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onDoubleClickFunc = v; } }; }

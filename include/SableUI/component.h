@@ -43,6 +43,7 @@ namespace SableUI
 
         bool needsRerender = false;
         void comp_PropagateEvents(const UIEventContext& ctx);
+        void comp_PropagateHoverEvents(const UIEventContext& ctx);
         bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
         void comp_PropagatePostLayoutEvents(const UIEventContext& ctx);
 

@@ -38,6 +38,12 @@ void SableUI::BasePanel::PropagateEvents(const UIEventContext& ctx)
 		child->PropagateEvents(ctx);
 }
 
+void SableUI::BasePanel::PropagateHoverEvents(const UIEventContext& ctx)
+{
+	for (BasePanel* child : children)
+		child->PropagateHoverEvents(ctx);
+}
+
 void SableUI::BasePanel::PropagatePostLayoutEvents(const UIEventContext& ctx)
 {
 	for (BasePanel* child : children)
@@ -546,7 +552,8 @@ void SableUI::ContentPanel::Update()
 
 	SableUI::Rect realRect = rect;
 	
-	if (auto* splitter = dynamic_cast<SplitterPanel*>(parent); splitter != nullptr)
+	auto* splitter = dynamic_cast<SplitterPanel*>(parent);
+	if (splitter != nullptr)
 	{
 		realRect.x += splitter->bSize;
 		realRect.y += splitter->bSize;
@@ -567,6 +574,12 @@ void SableUI::ContentPanel::Render()
 void SableUI::ContentPanel::PropagateEvents(const UIEventContext& ctx)
 {
 	m_component->comp_PropagateEvents(ctx);
+}
+
+void SableUI::ContentPanel::PropagateHoverEvents(const UIEventContext& ctx)
+{
+	if (m_component)
+		m_component->comp_PropagateHoverEvents(ctx);
 }
 
 void SableUI::ContentPanel::PropagatePostLayoutEvents(const UIEventContext& ctx)

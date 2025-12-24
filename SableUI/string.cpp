@@ -132,6 +132,22 @@ String::String(const std::string& str)
 	}
 }
 
+String::String(const std::u32string& str)
+	: m_size(str.size())
+{
+	s_numComponents++;
+
+	if (m_size == 0)
+	{
+		m_data = nullptr;
+		return;
+	}
+
+	m_data = new StringData(nullptr, m_size);
+	std::memcpy(m_data->data, str.data(), m_size * sizeof(char32_t));
+	m_data->data[m_size] = U'\0';
+}
+
 String& String::operator=(const String& other)
 {
 	if (this == &other) return *this;

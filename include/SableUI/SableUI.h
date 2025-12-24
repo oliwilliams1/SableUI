@@ -8,6 +8,7 @@
 #include <SableUI/styles.h>
 #include <SableUI/utils.h>
 #include <SableUI/console.h>
+#include <SableUI/componentRegistry.h>
 #include <cstdint>
 
 /* non-macro user api */
@@ -115,7 +116,7 @@ namespace SableUI
 #define Component(name, ...) AddComponent(name)->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 #define ComponentGainBaseRef(name, ref, ...)																\
 	SableUI::BaseComponent* ref = AddComponent(name);														\
-	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 
 #define ComponentGainRef(name, T, ref, ...)																	\
 	T* ref = nullptr;																						\
@@ -124,7 +125,7 @@ namespace SableUI
 		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
 	else																									\
 		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
-	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 
 #define ComponentGainRefNoInit(name, T, ref, ...)															\
 	T* ref = nullptr;																						\
@@ -135,7 +136,7 @@ namespace SableUI
 		SableUI_Runtime_Error("Component '%s' does not match required type: %s", name, STRINGIFY(T))
 
 #define ComponentInitialize(ref, name, ...)																	\
-	ref->BackendInitialiseChild(name, this, PackStyles(__VA_ARGS__))
+	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 
 #define ComponentGainRefWithInit(name, T, ref, initLines, ...)												\
 	ComponentGainRefNoInit(name, T, ref, __VA_ARGS__);														\

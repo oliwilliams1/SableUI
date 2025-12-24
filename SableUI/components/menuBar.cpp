@@ -67,7 +67,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text)
 
 	Colour colour = (isSelected) ? rgb(64, 64, 64) : rgb(51, 51, 51);
 	Div(p(2), h_fill, w_fit, id(text), rounded(4), bg(colour),
-		onHover([this, text]() {
+		onHoverEnter([this, text]() {
 			if (activeMenu.get().size() > 0 && activeMenu.get() != text)
 			{
 				activeMenu.set(text);
