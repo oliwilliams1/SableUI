@@ -427,7 +427,6 @@ bool SableUI::Window::Update()
 	WorkerPool::PauseAll();
 
 	m_root->PropagateEvents(ctx);
-	m_root->PropagateHoverEvents(ctx);
 	m_root->PropagateComponentStateChanges();
 	m_root->PropagatePostLayoutEvents(ctx);
 

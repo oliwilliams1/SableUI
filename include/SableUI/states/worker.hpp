@@ -2,6 +2,7 @@
 #include <SableUI/SableUI.h>
 #include <SableUI/component.h>
 #include <SableUI/worker_pool.h>
+#include <thread>
 
 #include <SableUI/console.h>
 #undef SABLEUI_SUBSYSTEM

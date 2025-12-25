@@ -1,4 +1,3 @@
-#pragma once
 #include <SableUI/scrollContext.h>
 #include <SableUI/component.h>
 #include <SableUI/SableUI.h>

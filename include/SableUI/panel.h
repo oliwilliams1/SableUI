@@ -34,7 +34,6 @@ namespace SableUI
         virtual void Update() {};
 
         virtual void PropagateEvents(const UIEventContext& ctx);
-        virtual void PropagateHoverEvents(const UIEventContext& ctx);
         virtual void PropagatePostLayoutEvents(const UIEventContext& ctx);
         virtual bool PropagateComponentStateChanges();
         virtual Element* GetElementById(const SableString& id);
@@ -111,7 +110,6 @@ namespace SableUI
         void Update() override;
 
         void PropagateEvents(const UIEventContext& ctx) override;
-        void PropagateHoverEvents(const UIEventContext& ctx) override;
         void PropagatePostLayoutEvents(const UIEventContext& ctx) override;
         bool PropagateComponentStateChanges() override;
 

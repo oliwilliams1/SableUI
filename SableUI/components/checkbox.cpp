@@ -14,12 +14,6 @@ void Checkbox::Layout()
 		Colour(40, 40, 40);
 
 	Div(left_right, w_fit, h_fit,
-		onHoverEnter([this]() {
-			if (!disabled.get()) isHovered.set(true);
-		}),
-		onHoverLeave([this]() {
-			isHovered.set(false);
-		}),
 		onClick([this]() {
 			HandleClick();
 		}))

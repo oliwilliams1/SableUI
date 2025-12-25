@@ -41,6 +41,10 @@ SableUI::Element::Element(RendererBackend* renderer, const ElementInfo& p_info)
 {
     n_elements++;
     SetInfo(p_info);
+
+    if (info.appearance.hasHoverBg)
+        originalBg = info.appearance.bg;
+
     Init(renderer);
 }
 
@@ -722,29 +726,10 @@ void SableUI::Element::LayoutChildren()
     }
 }
 
-SableUI::Element* SableUI::Element::FindTopmostHoveredElement(const ivec2& mousePos, int z)
+void SableUI::Element::RegisterForHover()
 {
-    if (clipEnabled && !RectBoundingBox(clipRect, mousePos))
-        return nullptr;
-
-    if (!RectBoundingBox(rect, mousePos))
-        return nullptr;
-
-    if (info.type == ElementType::Div)
-    {
-        for (auto it = children.rbegin(); it != children.rend(); it++)
-        {
-            Element* childElement = (Element*)(**it);
-            Element* result = childElement->FindTopmostHoveredElement(mousePos, z + 1);
-            if (result)
-                return result;
-        }
-    }
-
-    if (info.onHoverEnterFunc || info.onHoverLeaveFunc)
-        return this;
-
-    return nullptr;
+    if (info.appearance.hasHoverBg && m_owner)
+        m_owner->RegisterHoverElement(this);
 }
 
 SableUI::ElementInfo SableUI::Element::GetInfo() const

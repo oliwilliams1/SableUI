@@ -42,6 +42,9 @@ namespace SableUI
 
 	struct AppearanceProps {
 		Colour bg = { 0, 0, 0, 0 };
+		Colour hoverBg = { 0, 0, 0, 0 };
+		bool hasHoverBg = false;
+
 		bool inheritBg = true;
 		float radius = 0.0f;
 		bool clipChildren = false;
@@ -65,8 +68,6 @@ namespace SableUI
 		AppearanceProps appearance;
 		TextProps text;
 
-		std::function<void()> onHoverEnterFunc = nullptr;
-		std::function<void()> onHoverLeaveFunc = nullptr;
 		std::function<void()> onClickFunc = nullptr;
 		std::function<void()> onSecondaryClickFunc = nullptr;
 		std::function<void()> onDoubleClickFunc = nullptr;
@@ -138,9 +139,12 @@ namespace SableUI
 		int measuredHeight = 0;
 		std::vector<Child*> children;
 
+		// logic for hover styling
+		void RegisterForHover();
+		BaseComponent* m_owner = nullptr;
 		bool isHovered = false;
 		bool wasHovered = false;
-		Element* FindTopmostHoveredElement(const ivec2& mousePos, int z = 0);
+		Colour originalBg = { 0, 0, 0, 0 };
 
 	private:
 		DrawableBase* drawable = nullptr;

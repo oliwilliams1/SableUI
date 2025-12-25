@@ -1,3 +1,4 @@
+#pragma once
 #include <SableUI/element.h>
 #include <cstdint>
 #include <functional>
@@ -120,8 +121,6 @@ namespace SableUI::Style {
 		void ApplyTo(ElementInfo& i) const { apply(i, func); }
 	};
 
-	inline CallbackProperty onHoverEnter(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverEnterFunc = v; } }; }
-	inline CallbackProperty onHoverLeave(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onHoverLeaveFunc = v; } }; }
 	inline CallbackProperty onClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onClickFunc = v; } }; }
 	inline CallbackProperty onSecondaryClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onSecondaryClickFunc = v; } }; }
 	inline CallbackProperty onDoubleClick(std::function<void()> f) { return { std::move(f), [](ElementInfo& i, const std::function<void()>& v) { i.onDoubleClickFunc = v; } }; }
@@ -130,5 +129,14 @@ namespace SableUI::Style {
 	struct Pos { int x, y; };
 	inline constexpr Property<Pos> absolutePos(int x, int y) {
 		return { {x, y}, [](ElementInfo& i, Pos v) { i.layout.pos.x = v.x; i.layout.pos.y = v.y; } };
+	}
+
+	// hoverable
+	inline constexpr Property<std::pair<Colour, Colour>> hoverBg(Colour normal, Colour hover) {
+		return { {normal, hover}, [](ElementInfo& i, std::pair<Colour, Colour> val) {
+			i.appearance.bg = val.first;
+			i.appearance.hoverBg = val.second;
+			i.appearance.hasHoverBg = true;
+		} };
 	}
 }

@@ -5,7 +5,6 @@
 #include <SableUI/console.h>
 #include <SableUI/SableUI.h>
 #include <filesystem>
-#include <corecrt.h>
 #include <iostream>
 #include <cstdlib>
 #include <sstream>

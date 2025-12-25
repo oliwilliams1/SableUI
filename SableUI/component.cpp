@@ -33,17 +33,6 @@ SableUI::BaseComponent::~BaseComponent()
 		SB_delete(garbage);
 
 	m_garbageChildren.clear();
-
-	//for (Ref<CustomTargetQueue*>* queuePtr : m_customTargetQueuePtrs)
-	//{
-	//	if (queuePtr && *queuePtr)
-	//	{
-	//		SB_delete(queuePtr->get());
-	//		*queuePtr = nullptr;
-	//	}
-	//}
-
-	//m_customTargetQueuePtrs.clear();
 }
 
 int SableUI::BaseComponent::GetNumInstances()
@@ -79,7 +68,9 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 	info.layout.wType = RectType::Fill;
 	info.layout.hType = RectType::Fill;
 	rootElement = SB_new<Element>(m_renderer, info);
+	rootElement->m_owner = this;
 
+	SetCurrentComponent(this);
 	SetElementBuilderContext(m_renderer, rootElement, false);
 	LayoutWrapper();
 
@@ -115,6 +106,7 @@ void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseCompon
 
 	m_renderer = parent->m_renderer;
 
+	SetCurrentComponent(parent);
 	StartDiv(info, this);
 	LayoutWrapper();
 	EndDiv();
@@ -133,7 +125,10 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 {
 	Rect oldRect = { rootElement->rect };
 
+	m_hoverElements.clear();
+
 	// Generate virtual tree
+	SetCurrentComponent(this);
 	SetElementBuilderContext(m_renderer, rootElement, true);
 	LayoutWrapper();
 	VirtualNode* virtualRoot = SableUI::GetVirtualRootNode();
@@ -162,60 +157,8 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 {
 	OnUpdate(ctx);
+	UpdateHoverStyling(ctx);
 	rootElement->el_PropagateEvents(ctx);
-}
-
-void SableUI::BaseComponent::comp_PropagateHoverEvents(const UIEventContext& ctx)
-{
-	if (!rootElement) return;
-
-	Element* hoveredElement = rootElement->FindTopmostHoveredElement(ctx.mousePos);
-
-	std::function<void(Element*)> clearHoverStates = [&](Element* el) {
-		el->wasHovered = el->isHovered;
-		el->isHovered = false;
-
-		for (Child* child : el->children)
-		{
-			Element* childElement = (Element*)*child;
-			clearHoverStates(childElement);
-		}
-	};
-	clearHoverStates(rootElement);
-
-	if (hoveredElement)
-	{
-		hoveredElement->isHovered = true;
-
-		if (hoveredElement->isHovered && !hoveredElement->wasHovered)
-		{
-			if (hoveredElement->info.onHoverEnterFunc)
-				hoveredElement->info.onHoverEnterFunc();
-		}
-		else if (!hoveredElement->isHovered && hoveredElement->wasHovered)
-		{
-			if (hoveredElement->info.onHoverLeaveFunc)
-				hoveredElement->info.onHoverLeaveFunc();
-		}
-	}
-
-	std::function<void(Element*)> checkHoverLeave = [&](Element* el) {
-		if (!el->isHovered && el->wasHovered)
-		{
-			if (el->info.onHoverLeaveFunc)
-				el->info.onHoverLeaveFunc();
-		}
-
-		for (Child* child : el->children)
-		{
-			Element* childElement = (Element*)*child;
-			checkHoverLeave(childElement);
-		}
-	};
-	checkHoverLeave(rootElement);
-
-	for (auto* child : m_componentChildren)
-		child->comp_PropagateHoverEvents(ctx);
 }
 
 void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext& ctx)
@@ -277,6 +220,32 @@ SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
 	}
 
 	return rootElement->GetElementById(id);
+}
+
+void SableUI::BaseComponent::RegisterHoverElement(Element* el)
+{
+	if (el->info.appearance.hasHoverBg)
+		m_hoverElements.push_back(el);
+}
+
+void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
+{
+	for (Element* el : m_hoverElements)
+	{
+		el->wasHovered = el->isHovered;
+		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos);
+
+		if (el->isHovered != el->wasHovered)
+		{
+			if (el->isHovered)
+				el->info.appearance.bg = el->info.appearance.hoverBg;
+			else
+				el->info.appearance.bg = el->originalBg;
+
+			el->SetRect(el->rect);
+			el->Render();
+		}
+	}
 }
 
 void SableUI::_priv_comp_PostEmptyEvent()

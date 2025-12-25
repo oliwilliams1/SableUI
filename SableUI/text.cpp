@@ -14,7 +14,6 @@
 #include <utility>
 #include <string>
 #include <cstring>
-#include <corecrt.h>
 #include <string.h>
 #include <chrono>
 #include <climits>

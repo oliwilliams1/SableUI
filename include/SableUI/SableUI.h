@@ -33,6 +33,7 @@ namespace SableUI
 	void PostEmptyEvent();
 
 	void SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual);
+	void SetCurrentComponent(BaseComponent* component);
 	Element* GetCurrentElement();
 	VirtualNode* GetVirtualRootNode();
 

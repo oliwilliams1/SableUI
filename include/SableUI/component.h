@@ -43,7 +43,6 @@ namespace SableUI
 
         bool needsRerender = false;
         void comp_PropagateEvents(const UIEventContext& ctx);
-        void comp_PropagateHoverEvents(const UIEventContext& ctx);
         bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
         void comp_PropagatePostLayoutEvents(const UIEventContext& ctx);
 
@@ -53,10 +52,14 @@ namespace SableUI
         Element* GetElementById(const SableString& id);
 
         std::vector<BaseComponent*> m_componentChildren;
+        void RegisterHoverElement(Element* el);
 
     protected:
         std::vector<BaseComponent*> m_garbageChildren;
         std::vector<StateBase*> m_states;
+        std::vector<Element*> m_hoverElements;
+
+        void UpdateHoverStyling(const UIEventContext& ctx);
 
     private:
         Element* rootElement = nullptr;

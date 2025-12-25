@@ -28,6 +28,7 @@ static bool s_reconciliationMode = false;
 
 static std::stack<SableUI::Element*> s_elementStack;
 static std::stack<SableUI::RendererBackend*> s_rendererStack;
+static SableUI::BaseComponent* s_currentComponent = nullptr;
 
 using namespace SableMemory;
 
@@ -178,6 +179,11 @@ SableUI::ContentPanel* SableUI::AddPanel()
 // ============================================================================
 // Real Element Builder
 // ============================================================================
+void SableUI::SetCurrentComponent(BaseComponent* component)
+{
+	s_currentComponent = component;
+}
+
 void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual)
 {
 	s_reconciliationMode = isVirtual;
@@ -202,6 +208,11 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 		s_rendererStack.push(renderer);
 		s_elementStack = std::stack<Element*>();
 		s_elementStack.push(rootElement);
+
+		if (s_currentComponent)
+		{
+			rootElement->m_owner = s_currentComponent;
+		}
 	}
 }
 
@@ -242,6 +253,9 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 
 	info.type = ElementType::Div;
 	Element* newDiv = SB_new<Element>(s_rendererStack.top(), info);
+
+	newDiv->m_owner = parent->m_owner;
+	newDiv->RegisterForHover();
 
 	if (child == nullptr)
 	{
@@ -290,6 +304,9 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	info.type = ElementType::Rect;
 	Element* newRect = SB_new<Element>(s_rendererStack.top(), info);
 
+	newRect->m_owner = parent->m_owner;
+	newRect->RegisterForHover();
+
 	parent->AddChild(newRect);
 }
 
@@ -314,6 +331,9 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 
 	info.type = ElementType::Image;
 	Element* newImage = SB_new<Element>(s_rendererStack.top(), info);
+
+	newImage->m_owner = parent->m_owner;
+	newImage->RegisterForHover();
 
 	newImage->SetImage(path);
 	parent->AddChild(newImage);
@@ -340,6 +360,9 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 
 	info.type = ElementType::Text;
 	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), info);
+
+	newTextU32->m_owner = parent->m_owner;
+	newTextU32->RegisterForHover();
 
 	newTextU32->SetText(text);
 	parent->AddChild(newTextU32);

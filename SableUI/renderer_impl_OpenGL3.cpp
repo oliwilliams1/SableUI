@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <set>
 #include <GL/glew.h>
-#include <gl/GLU.h>
 #include <cstdint>
 #include <memory>
 #include <unordered_map>

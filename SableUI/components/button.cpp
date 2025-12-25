@@ -1,5 +1,9 @@
 #include <SableUI/components/button.h>
 #include <SableUI/SableUI.h>
+#include <SableUI/events.h>
+#include <SableUI/styles.h>
+#include <SableUI/utils.h>
+#include <functional>
 
 using namespace SableUI;
 using namespace SableUI::Style;
@@ -14,13 +18,6 @@ void Button::Layout()
 		rounded(4),
 		w_fit, h_fit,
 		centerX,
-		onHoverEnter([this]() {
-			if (!disabled.get()) isHovered.set(true);
-		}),
-		onHoverLeave([this]() {
-			isHovered.set(false);
-			isPressed.set(false);
-		}),
 		onClick([this]() {
 			if (!disabled.get() && onClickCallback.get()) {
 				onClickCallback.get()();
@@ -46,11 +43,6 @@ void Button::OnUpdate(const UIEventContext& ctx)
 		{
 			isPressed.set(false);
 		}
-	}
-	else
-	{
-		if (isPressed.get())
-			isPressed.set(false);
 	}
 }
 
