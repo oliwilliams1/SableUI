@@ -19,7 +19,6 @@ namespace SableUI
 		void SetWindow(Window* p_window) { window.set(p_window); };
 
 	private:
-		///CustomLayoutContext(queue);
 		State<SableString> activeMenu{ this, U"" };
 		std::map<std::string, std::vector<std::string>> m_menuItems;
 

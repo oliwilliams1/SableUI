@@ -10,10 +10,9 @@ using namespace SableUI::Style;
 
 void Button::Layout()
 {
-	Colour bgColour = GetBackgroundColour();
 	Colour col = GetTextColour();
 
-	Div(bg(bgColour),
+	Div(hoverBg(GetBackgroundColour(), GetHoverColour()),
 		p(6), px(12),
 		rounded(4),
 		w_fit, h_fit,
@@ -78,17 +77,6 @@ Colour Button::GetBackgroundColour() const
 		}
 	}
 
-	if (isHovered.get())
-	{
-		switch (variant.get())
-		{
-		case ButtonVariant::Primary:    return Colour(80, 150, 240);
-		case ButtonVariant::Secondary:  return Colour(70, 70, 70);
-		case ButtonVariant::Danger:     return Colour(230, 100, 100);
-		case ButtonVariant::Ghost:      return Colour(255, 255, 255, 15);
-		}
-	}
-
 	switch (variant.get())
 	{
 	case ButtonVariant::Primary:    return Colour(90, 160, 255);
@@ -96,6 +84,17 @@ Colour Button::GetBackgroundColour() const
 	case ButtonVariant::Danger:     return Colour(255, 120, 120);
 	case ButtonVariant::Ghost:      return Colour(0, 0, 0, 0);
 	default:                        return Colour(90, 160, 255);
+	}
+}
+
+Colour Button::GetHoverColour() const
+{
+	switch (variant.get())
+	{
+	case ButtonVariant::Primary:    return Colour(80, 150, 240);
+	case ButtonVariant::Secondary:  return Colour(70, 70, 70);
+	case ButtonVariant::Danger:     return Colour(230, 100, 100);
+	case ButtonVariant::Ghost:      return Colour(255, 255, 255, 15);
 	}
 }
 

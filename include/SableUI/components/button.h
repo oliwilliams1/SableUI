@@ -36,6 +36,7 @@ namespace SableUI
 		Ref<std::function<void()>> onClickCallback{ this, nullptr };
 
 		Colour GetBackgroundColour() const;
+		Colour GetHoverColour() const;
 		Colour GetTextColour() const;
 	};
 }

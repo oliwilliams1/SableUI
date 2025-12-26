@@ -15,7 +15,9 @@ in vec2 uv;
 
 void main()
 {
-    float alpha = uColour.a;
+    // remove gamma correction for alpha
+	float alpha = pow(uColour.a, 1.0 / 2.2);
+
     if (uRadius > 1.0)
     {
         vec2 fragPosPx = vec2(

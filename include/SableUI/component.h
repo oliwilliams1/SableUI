@@ -62,6 +62,7 @@ namespace SableUI
         void UpdateHoverStyling(const UIEventContext& ctx);
 
     private:
+        UIEventContext m_lastEventCtx;
         Element* rootElement = nullptr;
         size_t m_hash = 0;
         RendererBackend* m_renderer = nullptr;

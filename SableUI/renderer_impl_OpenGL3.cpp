@@ -215,6 +215,7 @@ void OpenGL3Backend::ClearDrawableStack()
 
 void OpenGL3Backend::ClearDrawable(const DrawableBase* drawable)
 {
+	if (!drawable) return;
 	for (DrawableBase* d : m_drawStack)
 		if (d == drawable)
 			m_drawStack.erase(std::remove(m_drawStack.begin(), m_drawStack.end(), d), m_drawStack.end());

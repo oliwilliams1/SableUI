@@ -35,6 +35,20 @@ SableUI::BaseComponent::~BaseComponent()
 	m_garbageChildren.clear();
 }
 
+static void RebuildHoverListRecursive(SableUI::Element* el, std::vector<SableUI::Element*>& list)
+{
+	if (el->info.appearance.hasHoverBg)
+		list.push_back(el);
+
+	for (SableUI::Child* child : el->children)
+	{
+		if (child->type == SableUI::ChildType::ELEMENT)
+		{
+			RebuildHoverListRecursive(child->element, list);
+		}
+	}
+}
+
 int SableUI::BaseComponent::GetNumInstances()
 {
 	return s_numComponents;
@@ -141,8 +155,33 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 	m_garbageChildren.clear();
 
+	m_hoverElements.clear();
+	RebuildHoverListRecursive(rootElement, m_hoverElements);
+
 	rootElement->LayoutChildren();
 	rootElement->LayoutChildren();
+
+	for (Element* el : m_hoverElements)
+	{
+		if (el->info.appearance.hasHoverBg)
+		{
+			bool res = RectBoundingBox(el->rect, m_lastEventCtx.mousePos);
+
+			el->isHovered = res;
+			el->wasHovered = false;
+
+			if (res)
+			{
+				el->info.appearance.bg = el->info.appearance.hoverBg;
+			}
+			else
+			{
+				el->info.appearance.bg = el->originalBg;
+			}
+
+			el->SetRect(el->rect);
+		}
+	}
 
 	Rect newRect = rootElement->rect;
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
@@ -156,6 +195,7 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
 {
+	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
 	UpdateHoverStyling(ctx);
 	rootElement->el_PropagateEvents(ctx);
@@ -170,6 +210,7 @@ void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext
 
 bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasContentsChanged)
 {
+	UpdateHoverStyling(m_lastEventCtx);
 	bool res = rootElement->el_PropagateComponentStateChanges(hasContentsChanged);
 
 	if (needsRerender)
@@ -243,7 +284,7 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 				el->info.appearance.bg = el->originalBg;
 
 			el->SetRect(el->rect);
-			el->Render();
+			needsRerender = true;
 		}
 	}
 }

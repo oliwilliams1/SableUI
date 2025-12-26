@@ -177,14 +177,14 @@ SableUI::ScrollViewScope::~ScrollViewScope()
 
             if (ctx.barHovered)
             {
-                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour), rounded(4))
+                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
                 {
                     Rect(w(6), h(static_cast<int>(thumbHeight)), mt(static_cast<int>(topMargin)), rounded(3), bg(149, 149, 149));
                 }
             }
             else
             {
-                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour), rounded(4))
+                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
                 {
                     Rect(w(2), m(2), h(static_cast<int>(thumbHeight)), mt(static_cast<int>(topMargin)), rounded(1), bg(128, 128, 128));
                 }

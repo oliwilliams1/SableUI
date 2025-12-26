@@ -34,58 +34,26 @@ void MenuBar::Layout()
 	}
 }
 
-void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
-{
-	if (window == nullptr) return;
-
-	if (activeMenu.get().size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
-	{
-		SableUI::Element* menuBar = GetElementById("menu-bar");
-		SableUI::Element* dropdown = GetElementById("menu-dropdown");
-
-		if (!menuBar || !dropdown) return;
-
-		bool mouseOverMenuBar = RectBoundingBox(menuBar->rect, ctx.mousePos);
-		bool mouseOverDropdown = RectBoundingBox(dropdown->rect, ctx.mousePos);
-
-		if (!mouseOverMenuBar && !mouseOverDropdown)
-		{
-			activeMenu.set("");
-			queue.window->RemoveQueueReference(&queue);
-		}
-	}
-
-	if (activeMenu.get().size() > 0)
-	{
-		DrawDropdownMenu();
-	}
-}
-
 void MenuBar::DrawMenuBarItem(const std::string& text)
 {
-	bool isSelected = (activeMenu.get() == text);
-
-	Colour colour = (isSelected) ? rgb(64, 64, 64) : rgb(51, 51, 51);
-	//Div(p(2), h_fill, w_fit, id(text), rounded(4), bg(colour),
-	//	onHoverEnter([this, text]() {
-	//		if (activeMenu.get().size() > 0 && activeMenu.get() != text)
-	//		{
-	//			activeMenu.set(text);
-	//		}
-	//	})
-	//)
+	if (activeMenu.get() == text)
 	{
-		Text(text, justify_center, w_fit, px(4),
-			onClick([this, text]() {
-				if (activeMenu.get() == text) {
-					activeMenu.set("");
-					queue.window->RemoveQueueReference(&queue);
-				}
-				else {
-					activeMenu.set(text);
-				}
-			})
-		);
+		Div(p(2), h_fill, w_fit, id(text), rounded(4), bg(40, 40, 40))
+		{
+			Text(text, justify_center, w_fit, px(4));
+		}
+	}
+	else
+	{
+		Div(p(2), h_fill, w_fit, id(text), rounded(4), hoverBg(rgb(51, 51, 51), rgb(64, 64, 64)))
+		{
+			Text(text, justify_center, w_fit, px(4), 
+				onClick([this, text]()
+				{
+					activeMenu.set(text); 
+				})
+			);
+		}
 	}
 }
 
@@ -117,12 +85,7 @@ void MenuBar::DrawDropdownMenu()
 			{
 				Div(w_fill, bg(45, 45, 45), h_fit, p(2), rounded(4))
 				{
-					Text(item, px(4),
-						onClick([this, item]() {
-							activeMenu.set("");
-							queue.window->RemoveQueueReference(&queue);
-						})
-					);
+					Text(item, px(4));
 				}
 			}
 		}
@@ -133,4 +96,29 @@ void MenuBar::DrawDropdownMenu()
 	}
 
 	EndCustomLayoutScope(&queue);
+}
+
+void MenuBar::OnUpdate(const SableUI::UIEventContext& ctx)
+{
+	if (window == nullptr) return;
+
+	if (activeMenu.get().size() > 0 && ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT])
+	{
+		SableUI::Element* menuBar = GetElementById("menu-bar");
+
+		if (!menuBar) return;
+
+		bool mouseOverMenuBar = RectBoundingBox(menuBar->rect, ctx.mousePos);
+
+		if (!mouseOverMenuBar)
+		{
+			activeMenu.set("");
+			queue.window->RemoveQueueReference(&queue);
+		}
+	}
+
+	if (activeMenu.get().size() > 0)
+	{
+		DrawDropdownMenu();
+	}
 }

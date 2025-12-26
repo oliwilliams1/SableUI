@@ -904,10 +904,10 @@ void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
 {
     if (RectBoundingBox(rect, ctx.mousePos))
     {
-        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
+        if (ctx.mouseReleased[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
             info.onClickFunc();
 
-        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_RIGHT] && info.onSecondaryClickFunc)
+        if (ctx.mouseReleased[SABLE_MOUSE_BUTTON_RIGHT] && info.onSecondaryClickFunc)
             info.onSecondaryClickFunc();
 
         if (ctx.mouseDoubleClicked[SABLE_MOUSE_BUTTON_LEFT] && info.onDoubleClickFunc)
