@@ -6,7 +6,19 @@
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
 
-namespace SableUI::Style {
+namespace SableUI
+{
+	inline constexpr SableUI::Colour rgb(uint8_t r, uint8_t g, uint8_t b) {
+		return SableUI::Colour{ r, g, b, 255 };
+	}
+
+	inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+		return SableUI::Colour{ r, g, b, a };
+	}
+}
+
+namespace SableUI::Style
+{
 	template <typename T>
 	struct Property {
 		T value;
@@ -93,6 +105,11 @@ namespace SableUI::Style {
 		return { r, [](ElementInfo& i, float val) { i.appearance.radius = val; } };
 	}
 	inline constexpr FlagProperty overflow_hidden = { [](ElementInfo& i) { i.appearance.clipChildren = true; } };
+
+	// sizes
+	inline constexpr FlagProperty size_sm = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Small; } };
+	inline constexpr FlagProperty size_md = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Medium; } };
+	inline constexpr FlagProperty size_lg = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Large; } };
 
 	// text
 	inline constexpr Property<int> fontSize(int v) { return { v, [](ElementInfo& i, int val) { i.text.fontSize = val; } }; }

@@ -1,5 +1,6 @@
 #include <SableUI/components/debugComponents.h>
 #include <SableUI/scrollContext.h>
+#include <SableUI/tabContext.h>
 #include <SableUI/component.h>
 #include <SableUI/textCache.h>
 #include <SableUI/renderer.h>
@@ -164,7 +165,7 @@ void SableUI::LayoutDebugger::Layout()
 		{
 			Div(p(6), w_fill, h_fill)
 			{
-				Checkbox("Highlight Elements", highlightElements.get(), [this](bool checked) { highlightElements.set(checked); });
+				//Checkbox("Highlight Elements", highlightElements.get(), [this](bool checked) { highlightElements.set(checked); });
 
 				SableString transparencyValueStr = SableString::Format("%d",
 					((transparency * 100 / 255 + 10) / 20) * 20);

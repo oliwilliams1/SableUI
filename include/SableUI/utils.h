@@ -265,6 +265,11 @@ namespace SableUI
 			}
 			return *this;
 		}
+
+		const Colour operator*(const float v) const
+		{
+			return Colour(r * v, g * v, b * v, a);
+		}
 	};
 
 	typedef Colour Color;

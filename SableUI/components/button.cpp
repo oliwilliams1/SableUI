@@ -8,109 +8,133 @@
 using namespace SableUI;
 using namespace SableUI::Style;
 
+void Button::Init(
+	const SableString& p_label,
+	std::function<void()> p_callback,
+	const ElementInfo& p_info,
+	bool p_disabled)
+{
+	info = p_info;
+	label.set(p_label);
+	onClickCallback.set(p_callback);
+	disabled.set(p_disabled);
+}
+
+static Rect GetDefaultPadding(const ElementInfo& info)
+{
+	switch (info.appearance.size)
+	{
+	case ComponentSize::Small:  return { 8, 4, 8, 4 };
+	case ComponentSize::Large:  return { 16, 10, 16, 10 };
+	default:                    return { 12, 6, 12, 6 }; // medium
+	}
+}
+
+static Rect ResolvePadding(const ElementInfo& info)
+{
+	if (info.layout.pB || info.layout.pT || info.layout.pL || info.layout.pR)
+	{
+		return {
+			info.layout.pR,
+			info.layout.pT,
+			info.layout.pL,
+			info.layout.pB
+		};
+	}
+
+	return GetDefaultPadding(info);
+}
+
+static void ApplyButtonBackground(
+	ElementInfo& i,
+	const ElementInfo& src,
+	bool pressed)
+{
+	const float dFac = 0.8f;
+
+	if (src.appearance.hasHoverBg)
+	{
+		PackStylesToInfo(i, 
+			pressed ? hoverBg(src.appearance.bg * dFac, src.appearance.hoverBg * dFac)
+			: hoverBg(src.appearance.bg, src.appearance.hoverBg)
+		);
+		return;
+	}
+
+	if (src.appearance.bg != Colour(0, 0, 0, 0))
+	{
+		PackStylesToInfo(i,
+			pressed ? hoverBg(src.appearance.bg * dFac, src.appearance.bg * dFac * dFac)
+			: hoverBg(src.appearance.bg, src.appearance.bg * dFac)
+		);
+		return;
+	}
+
+	PackStylesToInfo(i,
+		pressed ? hoverBg(rgb(90, 160, 255) * 0.8f, rgb(80, 150, 240) * dFac)
+		: hoverBg(rgb(90, 160, 255), rgb(80, 150, 240))
+	);
+}
+
+static void ApplyDisabledStyle(ElementInfo& i, Colour& textColour)
+{
+	PackStylesToInfo(i, hoverBg(rgb(100, 100, 100), rgb(100, 100, 100)));
+
+	textColour = Colour(150, 150, 150);
+}
+
 void Button::Layout()
 {
-	Colour col = GetTextColour();
+	Rect padding = ResolvePadding(info);
 
-	Div(hoverBg(GetBackgroundColour(), GetHoverColour()),
-		p(6), px(12),
-		rounded(4),
-		w_fit, h_fit,
-		centerX,
-		onClick([this]() {
-			if (!disabled.get() && onClickCallback.get()) {
-				onClickCallback.get()();
-			}
-		}))
+	ElementInfo i;
+	i.layout.pR = padding.x;
+	i.layout.pT = padding.y;
+	i.layout.pL = padding.w;
+	i.layout.pB = padding.h;
+
+	Colour textColor = info.text.colour;
+
+	if (disabled.get())
+		ApplyDisabledStyle(i, textColor);
+	else
+		ApplyButtonBackground(i, info, isPressed.get());
+
+	i.appearance.radius = 4;
+	i.layout.centerX = true;
+
+	i.onClickFunc = [this]() {
+		if (!disabled.get() && onClickCallback.get())
+			onClickCallback.get()();
+	};
+
+	if (SableUI::DivScope _d_(i); true)
 	{
-		Text(label.get(),
-			textColour(col),
+		Text(
+			label.get(),
+			textColour(textColor),
 			justify_center,
-			wrapText(false));
+			wrapText(false)
+		);
 	}
 }
 
 void Button::OnUpdate(const UIEventContext& ctx)
 {
-	if (!disabled.get() && isHovered.get())
+	Element* root = GetRootElement();
+	if (!root)
+	{
+		SableUI_Warn("GetRootElement() failed in Button::OnUpdate()");
+		return;
+	}
+
+	bool isHovered = RectBoundingBox(root->rect, ctx.mousePos);
+
+	if (!disabled.get() && isHovered)
 	{
 		if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
-		{
 			isPressed.set(true);
-		}
 		else if (ctx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
-		{
 			isPressed.set(false);
-		}
-	}
-}
-
-void SableUI::Button::Init(const SableString& p_label, std::function<void()> p_callback, ButtonVariant p_variant, bool p_disabled)
-{
-	label.set(p_label);
-	onClickCallback.set(p_callback);
-	variant.set(p_variant);
-	disabled.set(p_disabled);
-}
-
-Colour Button::GetBackgroundColour() const
-{
-	if (disabled.get())
-	{
-		switch (variant.get())
-		{
-		case ButtonVariant::Primary:    return Colour(120, 120, 120);
-		case ButtonVariant::Secondary:  return Colour(100, 100, 100);
-		case ButtonVariant::Danger:     return Colour(150, 100, 100);
-		case ButtonVariant::Ghost:      return Colour(80, 80, 80, 0);
-		}
-	}
-
-	if (isPressed.get())
-	{
-		switch (variant.get())
-		{
-		case ButtonVariant::Primary:    return Colour(70, 130, 220);
-		case ButtonVariant::Secondary:  return Colour(60, 60, 60);
-		case ButtonVariant::Danger:     return Colour(200, 80, 80);
-		case ButtonVariant::Ghost:      return Colour(255, 255, 255, 20);
-		}
-	}
-
-	switch (variant.get())
-	{
-	case ButtonVariant::Primary:    return Colour(90, 160, 255);
-	case ButtonVariant::Secondary:  return Colour(80, 80, 80);
-	case ButtonVariant::Danger:     return Colour(255, 120, 120);
-	case ButtonVariant::Ghost:      return Colour(0, 0, 0, 0);
-	default:                        return Colour(90, 160, 255);
-	}
-}
-
-Colour Button::GetHoverColour() const
-{
-	switch (variant.get())
-	{
-	case ButtonVariant::Primary:    return Colour(80, 150, 240);
-	case ButtonVariant::Secondary:  return Colour(70, 70, 70);
-	case ButtonVariant::Danger:     return Colour(230, 100, 100);
-	case ButtonVariant::Ghost:      return Colour(255, 255, 255, 15);
-	}
-}
-
-Colour Button::GetTextColour() const
-{
-	if (disabled.get())
-	{
-		return Colour(150, 150, 150);
-	}
-
-	switch (variant.get())
-	{
-	case ButtonVariant::Primary:    return Colour(255, 255, 255);
-	case ButtonVariant::Secondary:  return Colour(200, 200, 200);
-	case ButtonVariant::Danger:     return Colour(255, 255, 255);
-	case ButtonVariant::Ghost:      return Colour(200, 200, 200);
-	default:                        return Colour(255, 255, 255);
 	}
 }

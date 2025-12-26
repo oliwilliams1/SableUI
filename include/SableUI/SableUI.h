@@ -147,15 +147,9 @@ namespace SableUI
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
-inline constexpr SableUI::Colour rgb(uint8_t r, uint8_t g, uint8_t b) {
-	return SableUI::Colour{ r, g, b, 255 };
-}
-
-inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-	return SableUI::Colour{ r, g, b, a };
-}
-
+// Horizontal splitter
 #define HSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+// Vertical splitter
 #define VSplitter()								if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
 #define EmptyPanel()							SableUI::AddPanel()
@@ -179,28 +173,22 @@ inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a
 	CONCAT(_comp_, __LINE__)->BackendInitialisePanel();
 
 #include <SableUI/components/button.h>
-
-#define Button(label, callback, ...)																		\
-	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),							\
-		CONCAT(_button_, __LINE__)->Init(label, callback), __VA_ARGS__)
-
-#define ButtonWithVariant(label, callback, variant, ...)													\
-	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),							\
-		CONCAT(_button_, __LINE__)->Init(label, callback, variant), __VA_ARGS__)
-
-#define ButtonComponentRef(ref, label, callback, ...)														\
-	ComponentGainRefWithInit("Button", SableUI::Button, ref,												\
-		ref->Init(label, callback), __VA_ARGS__)
-
 #include <SableUI/components/checkbox.h>
 
+// Button component
+#define Button(label, callback, ...)																		\
+	ComponentGainRefWithInit("Button", SableUI::Button, CONCAT(_button_, __LINE__),							\
+		CONCAT(_button_, __LINE__)->Init(label, callback, SableUI::PackStyles(__VA_ARGS__)))
+
+// Checkbox with State<bool> - auto-syncing to parent
+#define CheckboxState(label, checked, ...)																	\
+	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
+		CONCAT(_checkbox_, __LINE__)->Init(checked, label, nullptr, SableUI::PackStyles(__VA_ARGS__)))
+
+// Checkbox with callback
 #define Checkbox(label, checked, onChange, ...)																\
 	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
-		CONCAT(_checkbox_, __LINE__)->Init(label, checked, onChange), __VA_ARGS__)
-
-#define CheckboxComponentRef(ref, label, checked, onChange, ...)											\
-	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, ref,											\
-		ref->Init(label, checked, onChange), __VA_ARGS__)
+		CONCAT(_checkbox_, __LINE__)->Init(checked, label, onChange, SableUI::PackStyles(__VA_ARGS__)))
 
 #define TabUpdateHandler(tabContext)	\
 	if (tabContext.changed)				\
@@ -209,17 +197,19 @@ inline constexpr SableUI::Colour rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a
 		tabContext.changed = false;		\
 	}
 
-// Splitter components
+// Visual horizontal splitter element
 #define SplitterHorizontal(...) \
-	Div(mx(2), my(4), h(1), w_fill, bg(70, 70, 70), SableUI::PackStyles(__VA_ARGS__))
+	Rect(mx(2), my(4), h(1), w_fill, bg(70, 70, 70) __VA_ARGS__)
 
+// Visual vertical splitter element
 #define SplitterVertical(...) \
-	Div(my(4), mx(2), h_fill, w(1), bg(70, 70, 70), SableUI::PackStyles(__VA_ARGS__))
+	Rect(my(4), mx(2), h_fill, w(1), bg(70, 70, 70) __VA_ARGS__)
 
+// Text with splitters either side
 #define SplitterWithText(label)								\
 	Div(left_right, h_fit, w_fill, centerY, mt(8))			\
 	{														\
-		Div(mx(2), h(1), w(10), bg(70, 70, 70), centerY);	\
+		Rect(mx(2), h(1), w(10), bg(70, 70, 70), centerY);	\
 		Text(label, w_fit, wrapText(false), mx(4), mb(4));	\
-		Div(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);	\
+		Rect(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);	\
 	}

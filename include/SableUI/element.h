@@ -28,6 +28,13 @@ namespace SableUI
 		RightLeft
 	};
 
+	enum class ComponentSize
+	{
+		Small,
+		Medium,
+		Large
+	};
+
 	struct LayoutProps {
 		RectType wType = RectType::Undef;
 		RectType hType = RectType::Undef;
@@ -44,9 +51,10 @@ namespace SableUI
 		Colour bg = { 0, 0, 0, 0 };
 		Colour hoverBg = { 0, 0, 0, 0 };
 		bool hasHoverBg = false;
-
 		bool inheritBg = true;
 		float radius = 0.0f;
+
+		ComponentSize size = ComponentSize::Medium; // scaling for sableui components
 		bool clipChildren = false;
 	};
 

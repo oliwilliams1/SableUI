@@ -81,34 +81,34 @@ namespace SableUI {
 						}
 
 						Div(left_right) {
-							ButtonWithVariant("Reset Uptime", [this]() {
-								uptime.set(0);
-								}, ButtonVariant::Secondary, w_fit);
+							//ButtonWithVariant("Reset Uptime", [this]() {
+							//	uptime.set(0);
+							//	}, ButtonVariant::Secondary, w_fit);
 
 							Div(w(10), h(1));
 
-							ButtonWithVariant(clockInterval.IsRunning() ? "Pause Clock" : "Resume Clock",
-								[this]() {
-									if (clockInterval.IsRunning()) {
-										clockInterval.Stop();
-										blinkInterval.Stop();
-									}
-									else {
-										clockInterval.Start();
-										blinkInterval.Start();
-									}
-								},
-								clockInterval.IsRunning() ? ButtonVariant::Danger : ButtonVariant::Primary,
-								w_fit);
+							//ButtonWithVariant(clockInterval.IsRunning() ? "Pause Clock" : "Resume Clock",
+							//	[this]() {
+							//		if (clockInterval.IsRunning()) {
+							//			clockInterval.Stop();
+							//			blinkInterval.Stop();
+							//		}
+							//		else {
+							//			clockInterval.Start();
+							//			blinkInterval.Start();
+							//		}
+							//	},
+							//	clockInterval.IsRunning() ? ButtonVariant::Danger : ButtonVariant::Primary,
+							//	w_fit);
 
 							Div(w(10), h(1));
 
-							ButtonWithVariant("Trigger 3s Timeout", [this]() {
-								timeoutMessage.set("Timeout scheduled...");
-								testTimeout.Schedule(3.0f, [this]() {
-									timeoutMessage.set("Timeout fired after 3 seconds!");
-									});
-								}, ButtonVariant::Primary, w_fit);
+							//ButtonWithVariant("Trigger 3s Timeout", [this]() {
+							//	timeoutMessage.set("Timeout scheduled...");
+							//	testTimeout.Schedule(3.0f, [this]() {
+							//		timeoutMessage.set("Timeout fired after 3 seconds!");
+							//		});
+							//	}, ButtonVariant::Primary, w_fit);
 						}
 					}
 
@@ -149,20 +149,20 @@ namespace SableUI {
 										textColour(120, 120, 120));
 								}
 
-								Div(mt(10), left_right) {
-									ButtonWithVariant("Start Heavy Task (2s)", [this]() {
-										heavyWorker.Reset();
-										heavyWorker.Start();
-										}, ButtonVariant::Primary, w_fit);
+								//Div(mt(10), left_right) {
+								//	ButtonWithVariant("Start Heavy Task (2s)", [this]() {
+								//		heavyWorker.Reset();
+								//		heavyWorker.Start();
+								//		}, ButtonVariant::Primary, w_fit);
 
-									if (heavyWorker.IsRunning()) {
-										Div(w(10), h(1));
-										ButtonWithVariant("Cancel", [this]() {
-											heavyWorker.Cancel();
-											heavyWorker.Reset();
-										}, ButtonVariant::Danger, w_fit);
-									}
-								}
+								//	if (heavyWorker.IsRunning()) {
+								//		Div(w(10), h(1));
+								//		ButtonWithVariant("Cancel", [this]() {
+								//			heavyWorker.Cancel();
+								//			heavyWorker.Reset();
+								//		}, ButtonVariant::Danger, w_fit);
+								//	}
+								//}
 							}
 
 							// Light computation worker
@@ -198,20 +198,20 @@ namespace SableUI {
 										textColour(120, 120, 120));
 								}
 
-								Div(mt(10), left_right) {
-									ButtonWithVariant("Start Light Task (0.5s)", [this]() {
-										lightWorker.Reset();
-										lightWorker.Start();
-										}, ButtonVariant::Primary, w_fit);
+								//Div(mt(10), left_right) {
+								//	ButtonWithVariant("Start Light Task (0.5s)", [this]() {
+								//		lightWorker.Reset();
+								//		lightWorker.Start();
+								//		}, ButtonVariant::Primary, w_fit);
 
-									if (lightWorker.IsRunning()) {
-										Div(w(10), h(1));
-										ButtonWithVariant("Cancel", [this]() {
-											lightWorker.Cancel();
-											lightWorker.Reset();
-											}, ButtonVariant::Danger, w_fit);
-									}
-								}
+								//	if (lightWorker.IsRunning()) {
+								//		Div(w(10), h(1));
+								//		ButtonWithVariant("Cancel", [this]() {
+								//			lightWorker.Cancel();
+								//			lightWorker.Reset();
+								//			}, ButtonVariant::Danger, w_fit);
+								//	}
+								//}
 							}
 
 							// Stress test
@@ -220,9 +220,9 @@ namespace SableUI {
 								Text(SableString::Format("Tasks completed: %d", stressTaskCount.get()),
 									mb(10), textColour(200, 200, 200));
 
-								ButtonWithVariant("Launch 10 Worker Tasks", [this]() {
-									LaunchStressTasks();
-									}, ButtonVariant::Danger, w_fit);
+								//ButtonWithVariant("Launch 10 Worker Tasks", [this]() {
+								//	LaunchStressTasks();
+								//	}, ButtonVariant::Danger, w_fit);
 							}
 						}
 					}
