@@ -55,6 +55,7 @@ namespace SableUI
 		float radius = 0.0f;
 
 		ComponentSize size = ComponentSize::Medium; // scaling for sableui components
+		bool disabled = false; // special property for sableui components
 		bool clipChildren = false;
 	};
 

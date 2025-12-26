@@ -11,13 +11,11 @@ using namespace SableUI::Style;
 void Button::Init(
 	const SableString& p_label,
 	std::function<void()> p_callback,
-	const ElementInfo& p_info,
-	bool p_disabled)
+	const ElementInfo& p_info)
 {
 	info = p_info;
 	label.set(p_label);
 	onClickCallback.set(p_callback);
-	disabled.set(p_disabled);
 }
 
 static Rect GetDefaultPadding(const ElementInfo& info)
@@ -95,7 +93,7 @@ void Button::Layout()
 
 	Colour textColor = info.text.colour;
 
-	if (disabled.get())
+	if (info.appearance.disabled)
 		ApplyDisabledStyle(i, textColor);
 	else
 		ApplyButtonBackground(i, info, isPressed.get());
@@ -104,7 +102,7 @@ void Button::Layout()
 	i.layout.centerX = true;
 
 	i.onClickFunc = [this]() {
-		if (!disabled.get() && onClickCallback.get())
+		if (!info.appearance.disabled && onClickCallback.get())
 			onClickCallback.get()();
 	};
 
@@ -130,7 +128,7 @@ void Button::OnUpdate(const UIEventContext& ctx)
 
 	bool isHovered = RectBoundingBox(root->rect, ctx.mousePos);
 
-	if (!disabled.get() && isHovered)
+	if (!info.appearance.disabled && isHovered)
 	{
 		if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
 			isPressed.set(true);

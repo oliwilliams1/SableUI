@@ -22,8 +22,8 @@
 - [ ] Toast
 - [ ] Tooltip
 - [ ] List
-- [ ] Splitter element (horizontal & vertical)
-- [ ] Text splitter element
+- [x] Splitter element (horizontal & vertical)
+- [x] Text splitter element
 - [ ] Better tree
 
 ### Bug fixes
@@ -31,7 +31,6 @@
 - [x] Fix OpenGL context problems
 - [x] Triple check refresh things?
 - [x] Better/dynamic frame limiting - check "Event processing" in [glfw website](https://www.glfw.org/docs/3.3/input_guide.html)
-- [ ] Treenode leak
 - [x] Cannot access root element directly in TabWithInitialiser (root=nullptr in Layout())
 - [x] Overdraw with scrollview
 - [x] Child component state losses
@@ -48,10 +47,19 @@
 - [x] Test keyboard events
 - [x] Test scroll events
 
+### Async stuff
+- [x] Workers
+- [x] Timeouts
+- [x] Timers
+- [ ] Animations
+
 ### Styling
 - [ ] Themes
 - [x] Text wrap property
 - [ ] Inline text colour
+- [x] Remove macro styling
+- [x] Inline hover styling
+- [x] Size and disabled style
 
 ### Panels
 - [ ] Panel builder mode for user building layouts
@@ -64,11 +72,10 @@
 - [ ] Allow custom fonts
 - [ ] Image lazy-loading
 - [ ] Image load-by-buffer
-- [ ] Props?
+- [x] Props
 - [ ] Simplify Panel min bounds thing
 - [ ] Make bold, italic, etc macros
 - [x] Click and drag scroll bar thumb
-- [ ] Add selection between PollEvents/WaitEvents/WaitEventsTimeout + add default, maybe allow components to be able to change mode?
 
 # Beyond 1.0
 - [ ] Docking panels
@@ -76,6 +83,7 @@
 - [ ] Mobile support?
 - [ ] Touch support
 - [ ] Expose graphics & shader api further for cross-platform custom shaders and objects
+- [ ] Video player
 - [ ] Simple 3d renderer
 - [ ] Plugin support
 - [ ] External layout script + basic language

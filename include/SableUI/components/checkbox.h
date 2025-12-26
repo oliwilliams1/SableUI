@@ -12,21 +12,18 @@ namespace SableUI
 
 		void Init(State<bool>& checkedState, 
 			const SableString& label,
-			const ElementInfo& info, 
-			bool disabled = false);
+			const ElementInfo& info);
 
 		void Init(bool checked, 
 			const SableString& label,
 			std::function<void(bool)> onChange,
-			const ElementInfo& info,
-			bool disabled = false);
+			const ElementInfo& info);
 
 		bool IsChecked() const;
 
 	private:
 		ElementInfo info;
 		State<SableString> label{ this, "" };
-		State<bool> disabled{ this, false };
 		State<bool> isHovered{ this, false };
 		State<bool> internalChecked{ this, false };
 

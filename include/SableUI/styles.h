@@ -110,7 +110,8 @@ namespace SableUI::Style
 	inline constexpr FlagProperty size_sm = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Small; } };
 	inline constexpr FlagProperty size_md = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Medium; } };
 	inline constexpr FlagProperty size_lg = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Large; } };
-
+	inline constexpr FlagProperty disabled = { [](ElementInfo& i) {i.appearance.disabled = true; } };
+	
 	// text
 	inline constexpr Property<int> fontSize(int v) { return { v, [](ElementInfo& i, int val) { i.text.fontSize = val; } }; }
 	inline constexpr Property<float> lineHeight(float v) { return { v, [](ElementInfo& i, float val) { i.text.lineHeight = val; } }; }

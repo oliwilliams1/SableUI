@@ -7,13 +7,11 @@ using namespace SableUI::Style;
 void Checkbox::Init(
 	State<bool>& checkedState, 
 	const SableString& p_label,
-	const ElementInfo& p_info,
-	bool p_disabled)
+	const ElementInfo& p_info)
 {
 	info = p_info;
 	externalCheckedState = &checkedState;
 	label.set(p_label);
-	disabled.set(p_disabled);
 	onChangeCallback.set(nullptr);
 }
 
@@ -21,15 +19,13 @@ void Checkbox::Init(
 	bool checked, 
 	const SableString& p_label,
 	std::function<void(bool)> onChange,
-	const ElementInfo& p_info, 
-	bool p_disabled)
+	const ElementInfo& p_info)
 {
 	info = p_info;
 	externalCheckedState = nullptr;
 	internalChecked.set(checked);
 	label.set(p_label);
 	onChangeCallback.set(onChange);
-	disabled.set(p_disabled);
 }
 
 bool Checkbox::IsChecked() const
@@ -59,16 +55,16 @@ static int GetFontSize(const SableUI::ElementInfo& info)
 	}
 }
 
-static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked, bool disabled)
+static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked)
 {
-	if (disabled)
+	if (info.appearance.disabled)
 	{
 		if (checked)
 			return (info.appearance.bg != Colour(0, 0, 0, 0))
 			? info.appearance.bg * 0.6f
 			: Colour(90, 160, 255, 255) * 0.6f;
 
-		return Colour(120, 120, 120, 255);
+		return Colour(80, 80, 80, 255);
 	}
 
 	Colour base;
@@ -92,7 +88,7 @@ void Checkbox::Layout()
 {
 	bool checked = IsChecked();
 
-	Colour col = GetCheckColour(info, checked, disabled.get());
+	Colour col = GetCheckColour(info, checked);
 	int size = GetBoxSize(info);
 	int fSize = GetFontSize(info);
 
@@ -112,7 +108,7 @@ void Checkbox::Layout()
 
 void Checkbox::HandleClick()
 {
-	if (disabled.get())
+	if (info.appearance.disabled)
 		return;
 
 	bool newValue = !IsChecked();
