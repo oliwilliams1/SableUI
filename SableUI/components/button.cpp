@@ -4,6 +4,9 @@
 #include <SableUI/styles.h>
 #include <SableUI/utils.h>
 #include <functional>
+#include <SableUI/console.h>
+#include <SableUI/element.h>
+#include <SableUI/theme.h>
 
 using namespace SableUI;
 using namespace SableUI::Style;
@@ -48,6 +51,8 @@ static void ApplyButtonBackground(
 	const ElementInfo& src,
 	bool pressed)
 {
+	const Theme& t = GetTheme();
+
 	const float dFac = 0.8f;
 
 	if (src.appearance.hasHoverBg)
@@ -69,8 +74,8 @@ static void ApplyButtonBackground(
 	}
 
 	PackStylesToInfo(i,
-		pressed ? hoverBg(rgb(90, 160, 255) * 0.8f, rgb(80, 150, 240) * dFac)
-		: hoverBg(rgb(90, 160, 255), rgb(80, 150, 240))
+		pressed ? hoverBg(t.primary * dFac, t.primary * dFac * dFac)
+		: hoverBg(t.primary, t.primary * dFac)
 	);
 }
 
@@ -91,6 +96,9 @@ void Button::Layout()
 	i.layout.pL = padding.w;
 	i.layout.pB = padding.h;
 
+	i.layout.wType = info.layout.wType;
+	i.layout.hType = info.layout.hType;
+
 	Colour textColor = info.text.colour;
 
 	if (info.appearance.disabled)
@@ -99,14 +107,13 @@ void Button::Layout()
 		ApplyButtonBackground(i, info, isPressed.get());
 
 	i.appearance.radius = 4;
-	i.layout.centerX = true;
 
 	i.onClickFunc = [this]() {
 		if (!info.appearance.disabled && onClickCallback.get())
 			onClickCallback.get()();
 	};
 
-	if (SableUI::DivScope _d_(i); true)
+	if (SableUI::DivScope d(i); true)
 	{
 		Text(
 			label.get(),

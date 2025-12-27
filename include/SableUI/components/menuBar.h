@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <SableUI/renderer.h>
+#include <SableUI/theme.h>
 
 namespace SableUI
 {
@@ -26,7 +28,7 @@ namespace SableUI
 		CustomTargetQueue queue;
 		State<Window*> window{ this, nullptr };
 	
-		void DrawMenuBarItem(const std::string& text);
+		void DrawMenuBarItem(const std::string& text, const Theme& t);
 		void DrawDropdownMenu();
 	};
 }

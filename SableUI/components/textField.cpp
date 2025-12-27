@@ -49,18 +49,20 @@ void SableUI::TextField::ResetCursorBlink()
 
 void SableUI::TextField::Layout()
 {
+    const Theme& t = GetTheme();
+
     if (!m_window)
     {
-        Text("Component does not have m_window defined", textColour(255, 0, 0), mb(4));
+        Text("Component does not have m_window defined", textColour(t.red), mb(4));
         return;
     }
 
-    Div(id("TextField"), w_fill, h_fit, p(8), bg(40, 40, 40), rounded(4))
+    Div(id("TextField"), w_fill, h_fit, p(4), bg(t.surface0), rounded(4))
     {
         if (textVal.get().empty() && !isFocused)
-            Text("Start writing...", textColour(100, 100, 100));
+            Text("Start writing...", textColour(t.subtext0));
         else
-            Text(textVal.get(), id("TextFieldText"), textColour(220, 220, 220));
+            Text(textVal.get(), id("TextFieldText"), textColour(t.text));
     }
 }
 

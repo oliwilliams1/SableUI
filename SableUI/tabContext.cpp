@@ -14,14 +14,16 @@ SableUI::TabContext& SableUI::TabContext::Add(const std::string& name)
 
 void SableUI::RenderTabHeader(TabContext& ctx, const ElementInfo& style)
 {
-	Div(w_fill, h_fit, left_right, bg(45, 45, 45))
+	const Theme& t = GetTheme();
+
+	Div(w_fill, h_fit, left_right, bg(t.surface1))
 	{
 		for (size_t i = 0; i < ctx.tabs.size(); i++)
 		{
 			bool isActive = (i == (size_t)ctx.activeTab);
 
 			Div(
-				bg(isActive ? Colour(70, 70, 70) : Colour(50, 50, 50)),
+				bg(isActive ? t.overlay0 : t.surface1),
 				p(4),
 				mr(2),
 				onClick([&ctx, i]() {

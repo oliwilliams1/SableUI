@@ -55,16 +55,16 @@ static int GetFontSize(const SableUI::ElementInfo& info)
 	}
 }
 
-static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked)
+static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked, const SableUI::Theme& t)
 {
 	if (info.appearance.disabled)
 	{
 		if (checked)
 			return (info.appearance.bg != Colour(0, 0, 0, 0))
 			? info.appearance.bg * 0.6f
-			: Colour(90, 160, 255, 255) * 0.6f;
+			: t.overlay2 * 0.6f;
 
-		return Colour(80, 80, 80, 255);
+		return t.overlay2;
 	}
 
 	Colour base;
@@ -74,11 +74,11 @@ static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked)
 		if (info.appearance.bg != Colour(0, 0, 0, 0))
 			base = info.appearance.bg;
 		else
-			base = Colour(90, 160, 255, 255);
+			base = t.primary;
 	}
 	else
 	{
-		base = Colour(40, 40, 40, 255);
+		base = t.surface2;
 	}
 
 	return base;
@@ -86,9 +86,11 @@ static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked)
 
 void Checkbox::Layout()
 {
+	const Theme& t = GetTheme();
+
 	bool checked = IsChecked();
 
-	Colour col = GetCheckColour(info, checked);
+	Colour col = GetCheckColour(info, checked, t);
 	int size = GetBoxSize(info);
 	int fSize = GetFontSize(info);
 
@@ -97,7 +99,11 @@ void Checkbox::Layout()
 			HandleClick();
 		}))
 	{
-		Rect(w(size), h(size), hoverBg(col, col * 0.8f), rounded(4), mr(6), centerY);
+		if (info.appearance.disabled)
+			Rect(w(size), h(size), bg(col), rounded(4), mr(6), centerY);
+		else
+			Rect(w(size), h(size), hoverBg(col, col * 0.8f), rounded(4), mr(6), centerY);
+
 
 		if (!label.get().empty())
 		{
