@@ -384,6 +384,32 @@ void SableUI::Element::LayoutChildren()
         rect.y = info.layout.pos.y;
     }
 
+    int effectiveGapX = (info.layout.gapX != 0) ? info.layout.gapX : info.layout.gap;
+    int effectiveGapY = (info.layout.gapY != 0) ? info.layout.gapY : info.layout.gap;
+
+    bool isVerticalFlow = (info.layout.layoutDirection == LayoutDirection::UpDown
+        || info.layout.layoutDirection == LayoutDirection::DownUp);
+    bool isReverseFlow = (info.layout.layoutDirection == LayoutDirection::DownUp
+        || info.layout.layoutDirection == LayoutDirection::RightLeft);
+
+    size_t numChildren = children.size();
+    if (numChildren > 1 && (effectiveGapX != 0 || effectiveGapY != 0))
+    {
+        for (size_t i = 0; i < numChildren - 1; i++) // Skip last child
+        {
+            Element* childElement = (Element*)*children[i];
+
+            if (isVerticalFlow)
+            {
+                childElement->info.layout.mB += effectiveGapY;
+            }
+            else // horizontal flow
+            {
+                childElement->info.layout.mR += effectiveGapX;
+            }
+        }
+    }
+
     rect.w = std::max(rect.w, GetMinWidth());
     rect.h = std::max(rect.h, GetMinHeight());
 
@@ -392,7 +418,18 @@ void SableUI::Element::LayoutChildren()
 
     if (containerSize.x <= 0 || containerSize.y <= 0)
     {
-        // Set all children to zero size
+        if (numChildren > 1 && (effectiveGapX != 0 || effectiveGapY != 0))
+        {
+            for (size_t i = 0; i < numChildren - 1; i++)
+            {
+                Element* childElement = (Element*)*children[i];
+                if (isVerticalFlow)
+                    childElement->info.layout.mB -= effectiveGapY;
+                else
+                    childElement->info.layout.mR -= effectiveGapX;
+            }
+        }
+
         for (Child* child : children)
         {
             Element* childElement = (Element*)*child;
@@ -409,6 +446,18 @@ void SableUI::Element::LayoutChildren()
 
     if (contentAreaSize.x <= 0 || contentAreaSize.y <= 0)
     {
+        if (numChildren > 1 && (effectiveGapX != 0 || effectiveGapY != 0))
+        {
+            for (size_t i = 0; i < numChildren - 1; i++)
+            {
+                Element* childElement = (Element*)*children[i];
+                if (isVerticalFlow)
+                    childElement->info.layout.mB -= effectiveGapY;
+                else
+                    childElement->info.layout.mR -= effectiveGapX;
+            }
+        }
+
         for (Child* child : children)
         {
             Element* childElement = (Element*)*child;
@@ -417,11 +466,6 @@ void SableUI::Element::LayoutChildren()
         }
         return;
     }
-
-    bool isVerticalFlow = (info.layout.layoutDirection == LayoutDirection::UpDown
-        || info.layout.layoutDirection == LayoutDirection::DownUp);
-    bool isReverseFlow = (info.layout.layoutDirection == LayoutDirection::DownUp
-        || info.layout.layoutDirection == LayoutDirection::RightLeft);
 
     int totalFixedMainAxis = 0;
     int totalMarginMainAxis = 0;
@@ -467,7 +511,7 @@ void SableUI::Element::LayoutChildren()
             if (childElement->info.layout.hType == RectType::Fixed)
             {
                 totalFixedMainAxis += std::min(std::max(childElement->info.layout.height, childElement->info.layout.minH),
-                    childElement->info.layout.maxH> 0 ? childElement->info.layout.maxH : childElement->info.layout.height);
+                    childElement->info.layout.maxH > 0 ? childElement->info.layout.maxH : childElement->info.layout.height);
             }
             else if (childElement->info.layout.hType == RectType::FitContent)
             {
@@ -642,7 +686,6 @@ void SableUI::Element::LayoutChildren()
                     childElement->info.layout.height = newHeight;
                 }
                 childContentHeight = newHeight;
-
             }
         }
 
@@ -723,6 +766,23 @@ void SableUI::Element::LayoutChildren()
 
         childElement->SetRect(childFinalRect);
         childElement->LayoutChildren();
+    }
+
+    if (numChildren > 1 && (effectiveGapX != 0 || effectiveGapY != 0))
+    {
+        for (size_t i = 0; i < numChildren - 1; i++)
+        {
+            Element* childElement = (Element*)*children[i];
+
+            if (isVerticalFlow)
+            {
+                childElement->info.layout.mB -= effectiveGapY;
+            }
+            else
+            {
+                childElement->info.layout.mR -= effectiveGapX;
+            }
+        }
     }
 }
 

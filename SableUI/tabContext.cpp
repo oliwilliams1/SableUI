@@ -16,16 +16,15 @@ void SableUI::RenderTabHeader(TabContext& ctx, const ElementInfo& style)
 {
 	const Theme& t = GetTheme();
 
-	Div(w_fill, h_fit, left_right, bg(t.surface1))
+	Div(w_fill, h_fit, left_right, bg(t.surface1), gapX(2))
 	{
 		for (size_t i = 0; i < ctx.tabs.size(); i++)
 		{
 			bool isActive = (i == (size_t)ctx.activeTab);
 
 			Div(
-				bg(isActive ? t.overlay0 : t.surface1),
+				bg(isActive ? t.overlay0 : t.surface2),
 				p(4),
-				mr(2),
 				onClick([&ctx, i]() {
 					if (ctx.activeTab != i) {
 						ctx.activeTab = (int)i;

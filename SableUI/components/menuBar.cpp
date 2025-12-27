@@ -30,7 +30,7 @@ void MenuBar::Layout()
 		return;
 	}
 
-	Div(left_right, w_fill, h_fill, bg(t.surface1), id("menu-bar"))
+	Div(left_right, w_fill, h_fill, bg(t.surface1), id("menu-bar"), gap(4), ml(2))
 	{
 		for (const auto& pair : m_menuItems)
 		{
@@ -43,7 +43,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text, const Theme& t)
 {
 	if (activeMenu.get() == text)
 	{
-		Div(p(1), h_fill, w_fit, id(text), rounded(4), bg(t.surface1))
+		Div(p(1), h_fill, w_fit, id(text), rounded(4), bg(t.overlay1))
 		{
 			Text(text, justify_center, w_fit, px(2));
 		}
@@ -55,7 +55,7 @@ void MenuBar::DrawMenuBarItem(const std::string& text, const Theme& t)
 			Text(text, justify_center, w_fit, px(2), 
 				onClick([this, text]()
 				{
-					activeMenu.set(text); 
+					activeMenu.set(text);
 				})
 			);
 		}

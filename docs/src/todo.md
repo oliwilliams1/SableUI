@@ -60,7 +60,7 @@
 - [x] Remove macro styling
 - [x] Inline hover styling
 - [x] Size and disabled style
-- [ ] Gap property
+- [x] Gap property
 
 ### Panels
 - [ ] Panel builder mode for user building layouts

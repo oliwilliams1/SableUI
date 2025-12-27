@@ -9,7 +9,6 @@
 #include <thread>
 #include <chrono>
 #include <string>
-#include <SableUI/components/button.h>
 #include <SableUI/utils.h>
 #include <SableUI/worker_pool.h>
 #include <SableUI/events.h>
@@ -25,7 +24,6 @@ namespace SableUI {
 		int durationMs;
 	};
 
-	// test component from gemini
 	class WorkerTestComponent : public BaseComponent {
 	public:
 		WorkerTestComponent() {
@@ -34,217 +32,211 @@ namespace SableUI {
 
 			heavyWorker.SetTask([this]() {
 				return PerformHeavyComputation();
-			});
+				});
 
 			lightWorker.SetTask([this]() {
 				return PerformLightComputation();
-			});
+				});
 		}
 
 		void Layout() override {
-			ScrollViewCtx(scrollCtx, w_fill, h_fill, bg(25, 25, 25))
+			const Theme& t = GetTheme();
+
+			ScrollViewCtx(scrollCtx, w_fill, h_fill, bg(t.base))
 			{
 				Div(w_fill, h_fill, p(20)) {
 					Text("Worker Pool & Timer System Test",
-						fontSize(28), mb(20), textColour(255, 255, 255));
+						fontSize(28), mb(20), textColour(t.text));
 
 					// === TIMER SECTION ===
-					Div(mb(30), p(15), bg(35, 35, 40), rounded(8), w_fill) {
-						Text("Timer System", fontSize(20), mb(15), textColour(100, 200, 255));
+					Div(mb(30), p(15), bg(t.surface0), rounded(8), w_fill) {
+						Text("Timer System", fontSize(20), mb(15), textColour(t.sky));
 
 						Div(mb(15), left_right) {
 							Div(w_fit) {
-								Text("Current Time:", mb(5), textColour(150, 150, 150));
-								Text(currentTime.get(), fontSize(24), textColour(100, 200, 255));
+								Text("Current Time:", mb(5), textColour(t.subtext0));
+								Text(currentTime.get(), fontSize(24), textColour(t.sky));
 							}
 							Div(w(20), h(1));
 							Div(w_fit) {
-								Text("Uptime:", mb(5), textColour(150, 150, 150));
+								Text("Uptime:", mb(5), textColour(t.subtext0));
 								Text(SableString::Format("%d seconds", uptime.get()),
-									fontSize(24), textColour(255, 200, 100));
+									fontSize(24), textColour(t.peach));
 							}
 						}
 
 						Div(left_right, mb(15)) {
-							Colour blinkColour = (blink.get()) ? Colour(0, 255, 100) : Colour(40, 80, 50);
+							Colour blinkColour = (blink.get()) ? t.green : t.surface2;
 							Rect(w(16), h(16),
 								bg(blinkColour),
 								rounded(8), mr(10), centerY);
 							Text("Interval (500ms) - Blink Status",
-								textColour(180, 180, 180), centerY, wrapText(false));
+								textColour(t.subtext1), centerY, wrapText(false));
 						}
 
 						if (!timeoutMessage.get().empty()) {
-							Div(p(10), bg(80, 50, 120), rounded(5), mb(10)) {
-								Text(timeoutMessage.get(), textColour(255, 200, 255));
+							Div(p(10), bg(t.mauve), rounded(5), mb(10)) {
+								Text(timeoutMessage.get(), textColour(t.text));
 							}
 						}
 
-						Div(left_right) {
-							//ButtonWithVariant("Reset Uptime", [this]() {
-							//	uptime.set(0);
-							//	}, ButtonVariant::Secondary, w_fit);
+						Div(left_right, h_fit) {
+							Button("Reset Uptime", [this]() {
+								uptime.set(0);
+								}, bg(t.secondary), mr(4));
 
-							Div(w(10), h(1));
+							Button(clockInterval.IsRunning() ? "Pause Clock" : "Resume Clock",
+								[this]() {
+									if (clockInterval.IsRunning()) {
+										clockInterval.Stop();
+										blinkInterval.Stop();
+									}
+									else {
+										clockInterval.Start();
+										blinkInterval.Start();
+									}
+								},
+								bg(clockInterval.IsRunning() ? t.red : t.primary), mr(4));
 
-							//ButtonWithVariant(clockInterval.IsRunning() ? "Pause Clock" : "Resume Clock",
-							//	[this]() {
-							//		if (clockInterval.IsRunning()) {
-							//			clockInterval.Stop();
-							//			blinkInterval.Stop();
-							//		}
-							//		else {
-							//			clockInterval.Start();
-							//			blinkInterval.Start();
-							//		}
-							//	},
-							//	clockInterval.IsRunning() ? ButtonVariant::Danger : ButtonVariant::Primary,
-							//	w_fit);
-
-							Div(w(10), h(1));
-
-							//ButtonWithVariant("Trigger 3s Timeout", [this]() {
-							//	timeoutMessage.set("Timeout scheduled...");
-							//	testTimeout.Schedule(3.0f, [this]() {
-							//		timeoutMessage.set("Timeout fired after 3 seconds!");
-							//		});
-							//	}, ButtonVariant::Primary, w_fit);
+							Button("Trigger 3s Timeout", [this]() {
+								timeoutMessage.set("Timeout scheduled...");
+								testTimeout.Schedule(3.0f, [this]() {
+									timeoutMessage.set("Timeout fired after 3 seconds!");
+									});
+								}, bg(t.primary));
 						}
 					}
 
 					// === WORKER SECTION ===
-					Div(mb(30), p(15), bg(35, 35, 40), rounded(8), w_fill) {
-						Div(w_fill, left_right)
-						{
-							// Heavy computation worker
-							Div(mb(20), p(12), bg(45, 35, 35), rounded(6), w_fill) {
-								Text("Heavy Computation Worker",
-									fontSize(16), mb(10), textColour(255, 150, 150));
+					Div(mb(30), p(15), bg(t.surface0), rounded(8), w_fill) {
+						Text("Worker System", fontSize(20), mb(15), textColour(t.sky));
+
+						// Heavy computation worker
+						Div(mb(20), p(12), bg(t.surface1), rounded(6), w_fill, mr(8)) {
+							Text("Heavy Computation Worker",
+								fontSize(16), mb(10), textColour(t.red));
+
+							if (heavyWorker.IsRunning()) {
+								Div(left_right, mb(10)) {
+									Rect(w(12), h(12), bg(t.yellow), rounded(6), mr(8), centerY);
+									Text("Computing...", textColour(t.yellow), centerY, wrapText(false));
+								}
+							}
+							else if (heavyWorker.IsCompleted()) {
+								auto result = heavyWorker.GetResult();
+								Div(mb(5), w_fill) {
+									Text(SableString::Format("Result: %d", result.value),
+										textColour(t.green));
+								}
+								Div(mb(5), w_fill) {
+									Text(SableString::Format("Operation: %s", result.operation.c_str()),
+										textColour(t.subtext1));
+								}
+								Text(SableString::Format("Duration: %d ms", result.durationMs),
+									textColour(t.subtext1));
+							}
+							else if (heavyWorker.IsFailed()) {
+								Text("Worker failed: " + heavyWorker.GetError(),
+									textColour(t.red));
+							}
+							else {
+								Text("Idle - Click 'Start Heavy Task' to begin",
+									textColour(t.subtext0));
+							}
+
+							Div(mt(10), left_right, h_fit) {
+								Button("Start Heavy Task (2s)", [this]() {
+									heavyWorker.Reset();
+									heavyWorker.Start();
+									}, bg(t.primary), mr(4));
 
 								if (heavyWorker.IsRunning()) {
-									Div(left_right, mb(10)) {
-										Rect(w(12), h(12), bg(255, 200, 0), rounded(6), mr(8), centerY);
-										Text("Computing...", textColour(255, 200, 0), centerY, wrapText(false));
-									}
+									Button("Cancel", [this]() {
+										heavyWorker.Cancel();
+										heavyWorker.Reset();
+										}, bg(t.red));
 								}
-								else if (heavyWorker.IsCompleted()) {
-									auto result = heavyWorker.GetResult();
-									Div(mb(5), w_fill) {
-										Text(SableString::Format("Result: %d", result.value),
-											textColour(100, 255, 100));
-									}
-									Div(mb(5), w_fill) {
-										Text(SableString::Format("Operation: %s", result.operation.c_str()),
-											textColour(150, 150, 150));
-									}
-									Text(SableString::Format("Duration: %d ms", result.durationMs),
-										textColour(150, 150, 150));
-								}
-								else if (heavyWorker.IsFailed()) {
-									Text("Worker failed: " + heavyWorker.GetError(),
-										textColour(255, 100, 100));
-								}
-								else {
-									Text("Idle - Click 'Start Heavy Task' to begin",
-										textColour(120, 120, 120));
-								}
+							}
+						}
 
-								//Div(mt(10), left_right) {
-								//	ButtonWithVariant("Start Heavy Task (2s)", [this]() {
-								//		heavyWorker.Reset();
-								//		heavyWorker.Start();
-								//		}, ButtonVariant::Primary, w_fit);
+						// Light computation worker
+						Div(mb(20), p(12), bg(t.surface1), rounded(6), w_fill) {
+							Text("Light Computation Worker",
+								fontSize(16), mb(10), textColour(t.blue));
 
-								//	if (heavyWorker.IsRunning()) {
-								//		Div(w(10), h(1));
-								//		ButtonWithVariant("Cancel", [this]() {
-								//			heavyWorker.Cancel();
-								//			heavyWorker.Reset();
-								//		}, ButtonVariant::Danger, w_fit);
-								//	}
-								//}
+							if (lightWorker.IsRunning()) {
+								Div(left_right, mb(10)) {
+									Rect(w(12), h(12), bg(t.sky), rounded(6), mr(8), centerY);
+									Text("Computing...", textColour(t.sky), centerY, wrapText(false));
+								}
+							}
+							else if (lightWorker.IsCompleted()) {
+								auto result = lightWorker.GetResult();
+								Div(mb(5), w_fill) {
+									Text(SableString::Format("Result: %d", result.value),
+										textColour(t.green));
+								}
+								Div(mb(5), w_fill) {
+									Text(SableString::Format("Operation: %s", result.operation.c_str()),
+										textColour(t.subtext1));
+								}
+								Text(SableString::Format("Duration: %d ms", result.durationMs),
+									textColour(t.subtext1));
+							}
+							else if (lightWorker.IsFailed()) {
+								Text("Worker failed: " + lightWorker.GetError(),
+									textColour(t.red));
+							}
+							else {
+								Text("Idle - Click 'Start Light Task' to begin",
+									textColour(t.subtext0));
 							}
 
-							// Light computation worker
-							Div(mb(20), p(12), bg(35, 35, 45), rounded(6), w_fill) {
-								Text("Light Computation Worker",
-									fontSize(16), mb(10), textColour(150, 150, 255));
+							Div(mt(10), left_right, h_fit) {
+								Button("Start Light Task (0.5s)", [this]() {
+									lightWorker.Reset();
+									lightWorker.Start();
+									}, bg(t.primary), mr(4));
 
 								if (lightWorker.IsRunning()) {
-									Div(left_right, mb(10)) {
-										Rect(w(12), h(12), bg(100, 200, 255), rounded(6), mr(8), centerY);
-										Text("Computing...", textColour(100, 200, 255), centerY, wrapText(false));
-									}
+									Button("Cancel", [this]() {
+										lightWorker.Cancel();
+										lightWorker.Reset();
+										}, bg(t.red));
 								}
-								else if (lightWorker.IsCompleted()) {
-									auto result = lightWorker.GetResult();
-									Div(mb(5), w_fill) {
-										Text(SableString::Format("Result: %d", result.value),
-											textColour(100, 255, 100));
-									}
-									Div(mb(5), w_fill) {
-										Text(SableString::Format("Operation: %s", result.operation.c_str()),
-											textColour(150, 150, 150));
-									}
-									Text(SableString::Format("Duration: %d ms", result.durationMs),
-										textColour(150, 150, 150));
-								}
-								else if (lightWorker.IsFailed()) {
-									Text("Worker failed: " + lightWorker.GetError(),
-										textColour(255, 100, 100));
-								}
-								else {
-									Text("Idle - Click 'Start Light Task' to begin",
-										textColour(120, 120, 120));
-								}
-
-								//Div(mt(10), left_right) {
-								//	ButtonWithVariant("Start Light Task (0.5s)", [this]() {
-								//		lightWorker.Reset();
-								//		lightWorker.Start();
-								//		}, ButtonVariant::Primary, w_fit);
-
-								//	if (lightWorker.IsRunning()) {
-								//		Div(w(10), h(1));
-								//		ButtonWithVariant("Cancel", [this]() {
-								//			lightWorker.Cancel();
-								//			lightWorker.Reset();
-								//			}, ButtonVariant::Danger, w_fit);
-								//	}
-								//}
 							}
+						}
 
-							// Stress test
-							Div(p(12), bg(45, 45, 35), rounded(6)) {
-								Text("Stress Test", fontSize(16), mb(10), textColour(255, 255, 150));
-								Text(SableString::Format("Tasks completed: %d", stressTaskCount.get()),
-									mb(10), textColour(200, 200, 200));
+						// Stress test
+						Div(p(12), bg(t.surface1), rounded(6), w_fill) {
+							Text("Stress Test", fontSize(16), mb(10), textColour(t.yellow));
+							Text(SableString::Format("Tasks completed: %d", stressTaskCount.get()),
+								mb(10), textColour(t.text));
 
-								//ButtonWithVariant("Launch 10 Worker Tasks", [this]() {
-								//	LaunchStressTasks();
-								//	}, ButtonVariant::Danger, w_fit);
-							}
+							Button("Launch 10 Worker Tasks", [this]() {
+								LaunchStressTasks();
+								}, bg(t.red), w_fit);
 						}
 					}
 
 					// === STATUS SECTION ===
-					Div(p(15), bg(35, 35, 40), rounded(8), w_fill) {
-						Text("System Status", fontSize(20), mb(15), textColour(255, 200, 100));
+					Div(p(15), bg(t.surface0), rounded(8), w_fill) {
+						Text("System Status", fontSize(20), mb(15), textColour(t.peach));
 
 						Div(mb(8)) {
 							Text(SableString::Format("Active Intervals: %d",
 								(clockInterval.IsRunning() ? 1 : 0) + (blinkInterval.IsRunning() ? 1 : 0)),
-								textColour(180, 180, 180), wrapText(false));
+								textColour(t.subtext1), wrapText(false));
 						}
 						Div(mb(8)) {
 							Text(SableString::Format("Active Workers: %d",
 								(heavyWorker.IsRunning() ? 1 : 0) + (lightWorker.IsRunning() ? 1 : 0)),
-								textColour(180, 180, 180), wrapText(false));
+								textColour(t.subtext1), wrapText(false));
 						}
 						Div(mb(8)) {
 							Text(SableString::Format("Pending Timeouts: %d",
 								testTimeout.IsPending() ? 1 : 0),
-								textColour(180, 180, 180), wrapText(false));
+								textColour(t.subtext1), wrapText(false));
 						}
 					}
 				}
@@ -263,6 +255,7 @@ namespace SableUI {
 
 	private:
 		ScrollContext scrollCtx;
+
 		// Timer states
 		State<SableString> currentTime{ this, "00:00:00" };
 		State<int> uptime{ this, 0 };
