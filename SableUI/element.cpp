@@ -9,6 +9,8 @@
 #include <string>
 #include <algorithm>
 #include <functional>
+#include <SableUI/theme.h>
+#include <type_traits>
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "SableUI::Element"
@@ -258,7 +260,15 @@ void SableUI::Element::SetText(const SableString& text)
     if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
     {
         info.text.content = text;
-        drText->m_text.m_colour = info.text.colour;
+        if (info.text.colour.has_value())
+        {
+            drText->m_text.m_colour = info.text.colour.value();
+        }
+        else
+        {
+            SableUI_Warn("Text colour not set, using default");
+            drText->m_text.m_colour = GetTheme().text;
+        }
         drText->m_text.SetContent(renderer, text, drawable->m_rect.w,
             info.text.fontSize, info.layout.maxH, info.text.lineHeight, info.text.justification);
     }
@@ -827,8 +837,14 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
 
     hash_combine(h, (info.text.fontSize << 16) |
         (static_cast<int>(info.text.lineHeight * 1000) & 0xFFFF));
-    hash_combine(h, (info.text.colour.r << 24) | (info.text.colour.g << 16) |
-        (info.text.colour.b << 8) | info.text.colour.a);
+
+    if (info.text.colour.has_value())
+    {
+        const SableUI::Colour& c = info.text.colour.value();
+		hash_combine(h, (c.r << 24) | (c.g << 16) |
+			(c.b << 8) | c.a);
+    }
+
     hash_combine(h, ((int)info.text.justification << 16) |
         (info.text.wrap ? 1 : 0));
 

@@ -9,6 +9,7 @@
 #include <SableUI/events.h>
 #include <SableUI/renderer.h>
 #include <SableUI/utils.h>
+#include <SableUI/theme.h>
 
 using namespace SableMemory;
 
@@ -487,7 +488,8 @@ void SableUI::SplitterPanel::Update()
 			segments.push_back(child->rect.y - rect.y);
 	}
 	
-	m_drawable->Update(rect, m_bColour, type, bSize, segments);
+	const Theme& t = GetTheme();
+	m_drawable->Update(rect, t.surface2, type, bSize, segments);
 	m_drawableUpToDate = true;
 	Render();
 }

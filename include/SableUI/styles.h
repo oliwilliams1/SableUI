@@ -5,6 +5,8 @@
 #include <utility>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
+#include <algorithm>
+#include <cmath>
 
 namespace SableUI
 {

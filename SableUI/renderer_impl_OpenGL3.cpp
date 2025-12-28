@@ -190,7 +190,7 @@ void OpenGL3Backend::BlitToScreen(
 }
 
 void OpenGL3Backend::BlitToFramebuffer(
-	GpuFramebuffer* source, GpuFramebuffer* target, 
+	GpuFramebuffer* source, GpuFramebuffer* target,
 	Rect sourceRect, Rect destRect,
 	TextureInterpolation interpolation)
 {
@@ -715,7 +715,7 @@ void GpuTexture2DArray::Init(int width, int height, int depth)
 		glGenTextures(1, &m_textureID);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureID);
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, width, height, depth);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, width, height, depth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -736,7 +736,8 @@ void GpuTexture2DArray::Resize(int newDepth)
 	glGenTextures(1, &newTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
 
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, m_width, m_height, newDepth);
+	// Changed from GL_RGB8 to GL_R8
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, m_width, m_height, newDepth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -758,8 +759,9 @@ void GpuTexture2DArray::Resize(int newDepth)
 void GpuTexture2DArray::SubImage(int xOffset, int yOffset, int zOffset,
 	int width, int height, int depth, const uint8_t* pixels)
 {
+	// Changed from GL_RGB to GL_RED
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, xOffset, yOffset, zOffset,
-		width, height, depth, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		width, height, depth, GL_RED, GL_UNSIGNED_BYTE, pixels);
 }
 
 void GpuTexture2DArray::CopyImageSubData(const GpuTexture2DArray& src,

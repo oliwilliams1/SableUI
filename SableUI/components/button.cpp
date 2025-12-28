@@ -81,9 +81,9 @@ static void ApplyButtonBackground(
 
 static void ApplyDisabledStyle(ElementInfo& i, Colour& textColour)
 {
-	PackStylesToInfo(i, hoverBg(rgb(100, 100, 100), rgb(100, 100, 100)));
+	const Theme& t = GetTheme();
 
-	textColour = Colour(150, 150, 150);
+	PackStylesToInfo(i, bg(t.subtext0));
 }
 
 void Button::Layout()
@@ -99,10 +99,14 @@ void Button::Layout()
 	i.layout.wType = info.layout.wType;
 	i.layout.hType = info.layout.hType;
 
-	Colour textColor = info.text.colour;
+	Colour col;
+	if (info.text.colour.has_value())
+		col = info.text.colour.value();
+	else
+		col = GetTheme().text;
 
 	if (info.appearance.disabled)
-		ApplyDisabledStyle(i, textColor);
+		ApplyDisabledStyle(i, col);
 	else
 		ApplyButtonBackground(i, info, isPressed.get());
 
@@ -117,7 +121,7 @@ void Button::Layout()
 	{
 		Text(
 			label.get(),
-			textColour(textColor),
+			textColour(col),
 			justify_center,
 			wrapText(false)
 		);

@@ -89,11 +89,10 @@ namespace SableUI
         void Update() override;
 
         int bSize = 1;
+
     private:
         DrawableSplitter* m_drawable;
         bool m_drawableUpToDate = false;
-
-        Colour m_bColour = { 51, 51, 51 };
     };
 
     struct ContentPanel : public BasePanel

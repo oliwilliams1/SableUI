@@ -20,8 +20,8 @@ namespace SableUI
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
-	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
-	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, int x = -1, int y = -1);
+	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
+	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	void Shutdown();
 
 	bool PollEvents();

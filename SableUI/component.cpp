@@ -76,9 +76,11 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 	if (!m_renderer)
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
 
+	const Theme& t = GetTheme();
+
 	ElementInfo info{};
 	info.type = ElementType::Div;
-	info.appearance.bg = m_bgColour;
+	info.appearance.bg = t.base;
 	info.layout.wType = RectType::Fill;
 	info.layout.hType = RectType::Fill;
 	rootElement = SB_new<Element>(m_renderer, info);

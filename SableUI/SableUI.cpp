@@ -14,8 +14,9 @@
 #include <stack>
 #include <cstring>
 #include <string.h>
-#include <string>
 #include <vector>
+#include <SableUI/theme.h>
+#include <SableUI/styles.h>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;
@@ -341,14 +342,18 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 
 void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 {
-	if (s_reconciliationMode) return AddTextVirtual(text, p_info);
-	SableUI::ElementInfo info = p_info;
+	if (s_reconciliationMode)
+		return AddTextVirtual(text, p_info);
+
+	ElementInfo info = p_info;
 
 	if (info.appearance.inheritBg && info.appearance.bg == Colour{ 0, 0, 0, 0 })
 		info.appearance.bg = s_elementStack.top()->info.appearance.bg;
 
-	if (info.layout.wType == RectType::Undef) info.layout.wType = RectType::Fill;
-	if (info.layout.hType == RectType::Undef) info.layout.hType = RectType::FitContent;
+	if (info.layout.wType == RectType::Undef)
+		info.layout.wType = RectType::Fill;
+	if (info.layout.hType == RectType::Undef)
+		info.layout.hType = RectType::FitContent;
 
 	if (s_elementStack.empty() || s_rendererStack.top() == nullptr)
 	{
@@ -358,14 +363,17 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 
 	Element* parent = s_elementStack.top();
 
+	if (info.text.colour.has_value() == false)
+		info.text.colour = GetTheme().text;
+
 	info.type = ElementType::Text;
-	Element* newTextU32 = SB_new<Element>(s_rendererStack.top(), info);
 
-	newTextU32->m_owner = parent->m_owner;
-	newTextU32->RegisterForHover();
+	Element* e = SB_new<Element>(s_rendererStack.top(), info);
+	e->m_owner = parent->m_owner;
+	e->RegisterForHover();
+	e->SetText(text);
 
-	newTextU32->SetText(text);
-	parent->AddChild(newTextU32);
+	parent->AddChild(e);
 }
 
 // ============================================================================
@@ -455,10 +463,10 @@ void SableUI::EndCustomLayoutScope(
 class App
 {
 public:
-	App(const char* name = "SableUI", int width = 800, int height = 600, int x = -1, int y = -1);
+	App(const char* name, int width, int height, const SableUI::WindowInitInfo& info);
 	~App();
 
-	SableUI::Window* CreateSecondaryWindow(const char* name, int width, int height, int x, int y);
+	SableUI::Window* CreateSecondaryWindow(const char* name, int width, int height, const SableUI::WindowInitInfo& info);
 
 	bool PollEvents();
 	bool WaitEvents();
@@ -508,7 +516,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
 }
  
-SableUI::Window* SableUI::Initialise(const char* name, int width, int height, int x, int y)
+SableUI::Window* SableUI::Initialise(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app != nullptr)
 	{
@@ -524,7 +532,7 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, in
 
 	WorkerPool::Initialise();
 
-	s_app = SB_new<App>(name, width, height, x, y);
+	s_app = SB_new<App>(name, width, height, info);
 
 	return s_app->m_mainWindow;
 }
@@ -545,12 +553,12 @@ void SableUI::Shutdown()
 	SableUI_Log("Shut down successfully");
 }
 
-SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
+SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app == nullptr)
 		SableUI_Runtime_Error("SableUI has not been initialised");
 
-	return s_app->CreateSecondaryWindow(name, width, height, x, y);
+	return s_app->CreateSecondaryWindow(name, width, height, info);
 }
 
 bool SableUI::PollEvents()
@@ -596,23 +604,23 @@ void SableUI::PostEmptyEvent()
 	}
 }
 
-App::App(const char* name, int width, int height, int x, int y)
+App::App(const char* name, int width, int height, const SableUI::WindowInitInfo& info)
 {
 	SableMemory::InitPools();
 	SableUI::SableUI_Window_Initalise_GLFW();
 
-	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, x, y);
+	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
 	SableUI::InitFontManager();
 	SableUI::InitDrawables();
 	SetContext(m_mainWindow);
 }
 
-SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int height, int x, int y)
+SableUI::Window* App::CreateSecondaryWindow(const char* name, int width, int height, const SableUI::WindowInitInfo& info)
 {
 	if (m_mainWindow == nullptr) SableUI_Runtime_Error("Cannot create secondary window without main window");
 
-	SableUI::Window* window = SB_new<SableUI::Window>(s_backend, s_app->m_mainWindow, name, width, height, x, y);
+	SableUI::Window* window = SB_new<SableUI::Window>(s_backend, s_app->m_mainWindow, name, width, height, info);
 	m_secondaryWindows.push_back(window);
 	SetContext(window);
 	return window;

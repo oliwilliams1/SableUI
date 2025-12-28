@@ -54,13 +54,14 @@
 - [ ] Animations
 
 ### Styling
-- [ ] Themes
+- [x] Themes
 - [x] Text wrap property
 - [ ] Inline text colour
 - [x] Remove macro styling
 - [x] Inline hover styling
 - [x] Size and disabled style
 - [x] Gap property
+- [x] Change texts from subpixel to greyscale for no fringing
 
 ### Panels
 - [ ] Panel builder mode for user building layouts

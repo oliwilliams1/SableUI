@@ -39,7 +39,7 @@ constexpr int ATLAS_PADDING = 2;
 constexpr int MIN_ATLAS_DEPTH = 1;
 constexpr int MAX_ATLAS_GAP = 0;
 constexpr const char* FONT_CACHE_PREFIX = "f-";
-constexpr uint32_t ATLAS_CACHE_FILE_VERSION = 1;
+constexpr uint32_t ATLAS_CACHE_FILE_VERSION = 2;
 constexpr const char* FONT_PACK_CACHE_PREFIX = "fp-";
 constexpr uint32_t FONT_PACK_CACHE_FILE_VERSION = 1;
 constexpr char32_t MAX_CONTIGUOUS_CHARS = 128;
@@ -176,7 +176,8 @@ struct Character {
 	Character() = default;
 	Character(SableUI::u16vec2 pos, SableUI::u16vec2 size, SableUI::vec2 bearing,
 		uint16_t advance, uint16_t layer)
-		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {}
+		: pos(pos), size(size), bearing(bearing), advance(advance), layer(layer) {
+	}
 
 	SableUI::u16vec2 pos = SableUI::u16vec2(0);
 	SableUI::u16vec2 size = SableUI::u16vec2(0);
@@ -363,7 +364,7 @@ public:
 		int& outHeight,
 		int& outActualLineWidth);
 	int GetMinWidth(SableUI::_Text* text, bool wrapped);
-	
+
 	void InitFreeType();
 	void ShutdownFreeType();
 	FT_Library ft_library = nullptr;
@@ -470,8 +471,6 @@ void FontManager::InitFreeType()
 	SableUI_Log("Initializing FreeType");
 	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library");
 	FreeTypeRunning = true;
-
-	FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 }
 
 void FontManager::ShutdownFreeType()
@@ -812,7 +811,7 @@ void FontManager::ResizeTextureArray(int newDepth)
 
 	atlasTextureArray = std::move(newAtlasTextureArray);
 	atlasDepth = newDepth;
-	
+
 	atlasTextureArray.Unbind();
 } // newAtlasTextureArray will be destroyed
 
@@ -896,7 +895,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	for (char32_t c = atlas.range.start; c <= atlas.range.end; c++)
 	{
-		FT_Face face = GetFontForChar(c, static_cast<int>(atlas.fontSize),atlas.range.fontPath, facesForCurrentRender);
+		FT_Face face = GetFontForChar(c, static_cast<int>(atlas.fontSize), atlas.range.fontPath, facesForCurrentRender);
 		if (!face) continue;
 
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
@@ -905,7 +904,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
 
 		FT_GlyphSlot glyph = face->glyph;
-		FT_Render_Glyph(glyph, FT_RENDER_MODE_LCD);
+		FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
 
 		SableUI::u16vec2 size = { (uint16_t)glyph->bitmap.width, (uint16_t)glyph->bitmap.rows };
 
@@ -964,8 +963,8 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		ResizeTextureArray(newDepth);
 	}
 
-	auto atlasPixels = new uint8_t[static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3];
-	std::memset(atlasPixels, 0, static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3);
+	auto atlasPixels = new uint8_t[static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 1];
+	std::memset(atlasPixels, 0, static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 1);
 
 	currentRowHeight = 0;
 	atlasCursor.x = ATLAS_PADDING;
@@ -983,11 +982,11 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
 		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
-		FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LCD);
+
+		FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 
 		FT_GlyphSlot glyph = face->glyph;
-		int bitmapWidthBytes = glyph->bitmap.width;
-		int displayWidth = (bitmapWidthBytes + 2) / 3;
+		int displayWidth = glyph->bitmap.width;
 		SableUI::u16vec2 size = { static_cast<uint16_t>(displayWidth), (uint16_t)glyph->bitmap.rows };
 
 		if (size.x == 0 || size.y == 0)
@@ -1053,17 +1052,14 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 			uint8_t* srcRow = glyph->bitmap.buffer + static_cast<size_t>(y) * glyph->bitmap.pitch;
 			for (int dx = 0; dx < displayWidth; dx++)
 			{
-				size_t srcIndex = static_cast<size_t>(dx) * 3;
 				size_t destX = atlasCursor.x + static_cast<size_t>(dx);
-				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + destX) * 3;
+				size_t pixelIndexInAtlasPixels = (static_cast<size_t>(yOffsetInAtlasPixels + y) * ATLAS_WIDTH + destX) * 1;
 
-				if (pixelIndexInAtlasPixels + 2 < static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 3)
+				if (pixelIndexInAtlasPixels < static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 1)
 				{
 					if (glyph->bitmap.buffer)
 					{
-						atlasPixels[pixelIndexInAtlasPixels + 0] = srcRow[srcIndex + 0];
-						atlasPixels[pixelIndexInAtlasPixels + 1] = srcRow[srcIndex + 1];
-						atlasPixels[pixelIndexInAtlasPixels + 2] = srcRow[srcIndex + 2];
+						atlasPixels[pixelIndexInAtlasPixels] = srcRow[dx];
 					}
 				}
 			}
@@ -1276,7 +1272,7 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels)
 		if (heightToUpload <= 0) break;
 
 		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) *
-											   ATLAS_WIDTH * 3);
+			ATLAS_WIDTH * 1);
 
 		atlasTextureArray.SubImage(0, yOffsetInTargetLayer, targetLayer, ATLAS_WIDTH, heightToUpload, 1, chunkPixels);
 
@@ -1324,7 +1320,7 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 	file.write(reinterpret_cast<const char*>(&initialYOffset), sizeof(int));
 
 	/* main content */
-	size_t bytesPerPixel = 3;
+	size_t bytesPerPixel = 1;
 	size_t pxArraySize = static_cast<size_t>(width) * height * bytesPerPixel;
 	file.write(reinterpret_cast<const char*>(pixels), pxArraySize * sizeof(uint8_t));
 
@@ -1402,7 +1398,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 		}
 
 		/* main content */
-		size_t bytesPerPixel = 3;
+		size_t bytesPerPixel = 1;
 		size_t pxArraySize = static_cast<size_t>(cachedWidth) * cachedHeight * bytesPerPixel;
 		std::unique_ptr<uint8_t[]> pixels_buffer = std::make_unique<uint8_t[]>(pxArraySize);
 		file.read(reinterpret_cast<char*>(pixels_buffer.get()), pxArraySize * sizeof(uint8_t));
@@ -2199,7 +2195,7 @@ SableUI::_Text::~_Text()
 {
 	for (const auto& key : m_cacheKeys)
 		TextCacheFactory::Release(m_renderer, key);
-	
+
 	s_textCount--;
 }
 
@@ -2278,7 +2274,7 @@ int SableUI::_Text::GetMinWidth(bool wrapped)
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
 		FontManager::GetInstance().Initialize();
-	
+
 	fontManager = &FontManager::GetInstance();
 
 	return fontManager->GetMinWidth(this, wrapped);
@@ -2294,7 +2290,7 @@ int SableUI::_Text::GetUnwrappedHeight()
 		if (c == U'\n')
 			lines++;
 	}
-	
+
 	return lines * m_lineSpacingPx;
 }
 

@@ -229,21 +229,27 @@ void SableUI::Window::CharCallback(GLFWwindow* window, unsigned int codepoint)
 // ============================================================================
 // Window
 // ============================================================================
-SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x, int y)
+SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, const WindowInitInfo& info)
 {
 	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
 	m_windowSize = ivec2(width, height);
 
+	if (info.posX > 0)
+		glfwWindowHint(GLFW_POSITION_X, info.posX);
+	if (info.posY > 0)
+		glfwWindowHint(GLFW_POSITION_Y, info.posY);
+
+	glfwWindowHint(GLFW_DECORATED, info.decorated);
+	glfwWindowHint(GLFW_RESIZABLE, info.resisable);
+	glfwWindowHint(GLFW_FLOATING, info.floating);
+	glfwWindowHint(GLFW_MAXIMIZED, info.maximised);
+
 	if (primary == nullptr)
-	{
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-	}
 	else
-	{
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
-	}
 
 	MakeContextCurrent();
 	

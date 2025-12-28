@@ -8,6 +8,7 @@
 #include <SableUI/drawable.h>
 #include <SableUI/text.h>
 #include <SableUI/utils.h>
+#include <optional>
 
 namespace SableUI
 {
@@ -62,7 +63,7 @@ namespace SableUI
 
 	struct TextProps {
 		SableString content;
-		Colour colour = { 255, 255, 255, 255 };
+		std::optional<Colour> colour = std::nullopt;
 		TextJustification justification = TextJustification::Left;
 		int fontSize = 11;
 		float lineHeight = 1.15f;

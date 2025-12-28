@@ -9,7 +9,6 @@
 #include <SableUI/panel.h>
 #include <SableUI/events.h>
 #include <SableUI/utils.h>
-#include <SableUI/element.h>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -39,10 +38,20 @@ namespace SableUI
 		ivec2 pendingDelta = { 0, 0 };
 	};
 
+	struct WindowInitInfo
+	{
+		int posX = -1;
+		int posY = -1;
+		bool decorated = true;
+		bool resisable = true;
+		bool floating = false;
+		bool maximised = false;
+	};
+
 	class Window
 	{
 	public:
-		Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, int x = -1, int y = -1);
+		Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, const WindowInitInfo& info);
 		~Window();
 
 		bool Update();
