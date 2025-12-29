@@ -329,6 +329,7 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
 {
 	if (m_drawStack.empty()) return false;
+	if (!framebuffer) return false;
 
 	ContextResources& res = GetContextResources(this);
 

@@ -2,6 +2,7 @@
 #include <SableUI/core/component.h>
 #include <SableUI/core/component_registry.h>
 #include <SableUI/core/drawable.h>
+#include <SableUI/core/event_scheduler.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/renderer.h>
@@ -528,8 +529,6 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, co
 		s_backend = SableUI::Backend::OpenGL;
 	}
 
-//	WorkerPool::Initialise();
-
 	s_app = SB_new<App>(name, width, height, info);
 
 	return s_app->m_mainWindow;
@@ -545,7 +544,7 @@ void SableUI::Shutdown()
 	SB_delete(s_app);
 	s_app = nullptr;
 
-//	WorkerPool::Shutdown();
+	EventScheduler::Get().Shutdown();
 	
 	SableMemory::DestroyPools();
 	SableUI_Log("Shut down successfully");

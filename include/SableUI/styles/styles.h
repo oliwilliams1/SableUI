@@ -93,11 +93,6 @@ namespace SableUI::Style
 	inline constexpr Property<int> pl(int v) { return { v, [](ElementInfo& i, int val) { i.layout.pL = val; } }; }
 	inline constexpr Property<int> pr(int v) { return { v, [](ElementInfo& i, int val) { i.layout.pR = val; } }; }
 
-	// gaps
-	inline constexpr Property<int> gap(int v) { return { v, [](ElementInfo& i, int val) { i.layout.gap = val; } }; }
-	inline constexpr Property<int> gapX(int v) { return { v, [](ElementInfo& i, int val) { i.layout.gapX = val; } }; }
-	inline constexpr Property<int> gapY(int v) { return { v, [](ElementInfo& i, int val) { i.layout.gapY = val; } }; }
-
 	// appearance
 	inline constexpr Property<Colour> bg(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
 		return { Colour(r, g, b, a), [](ElementInfo& i, Colour val) { i.appearance.bg = val; } };
@@ -117,8 +112,10 @@ namespace SableUI::Style
 	inline constexpr FlagProperty size_sm = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Small; } };
 	inline constexpr FlagProperty size_md = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Medium; } };
 	inline constexpr FlagProperty size_lg = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Large; } };
-	inline constexpr FlagProperty disabled = { [](ElementInfo& i) {i.appearance.disabled = true; } };
-	
+	inline constexpr Property<bool> disabled(bool v) {
+		return { v, [](ElementInfo& i, bool val) { i.appearance.disabled = val; } };
+	}
+
 	// text
 	inline constexpr Property<int> fontSize(int v) { return { v, [](ElementInfo& i, int val) { i.text.fontSize = val; } }; }
 	inline constexpr Property<float> lineHeight(float v) { return { v, [](ElementInfo& i, float val) { i.text.lineHeight = val; } }; }

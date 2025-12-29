@@ -10,6 +10,7 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <SableUI/generated/resources.h>
+#include <SableUI/core/event_scheduler.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -429,6 +430,12 @@ bool SableUI::Window::Update()
 		m_needsRefresh = false;
 	}
 
+	auto firedTimers = EventScheduler::Get().PollFiredTimers();
+	for (auto handle : firedTimers)
+	{
+		ctx.firedTimers.insert(handle);
+	}
+
 	m_root->PropagateEvents(ctx);
 	m_root->PropagateComponentStateChanges();
 	m_root->PropagatePostLayoutEvents(ctx);
@@ -445,6 +452,7 @@ bool SableUI::Window::Update()
 	ctx.keyReleasedEvent.reset();
 	ctx.scrollDelta = { 0, 0 };
 	ctx.typedCharBuffer.clear();
+	ctx.firedTimers.clear();
 
 	return !glfwWindowShouldClose(m_window);
 }

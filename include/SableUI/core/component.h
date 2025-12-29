@@ -145,3 +145,6 @@ namespace SableUI
         T m_value;
     };
 }
+
+#include <SableUI/states/interval.h>
+#include <SableUI/states/timer.h>

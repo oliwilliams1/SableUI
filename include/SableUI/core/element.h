@@ -46,7 +46,6 @@ namespace SableUI
 		int mT = 0, mB = 0, mL = 0, mR = 0;
 		bool centerX = false, centerY = false;
 		ivec2 pos = { -1, -1 };
-		int gap = 0, gapX = 0, gapY = 0;
 	};
 
 	struct AppearanceProps {

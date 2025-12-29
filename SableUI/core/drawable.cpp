@@ -261,7 +261,7 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 	int boundWidth = std::clamp(m_rect.w, 0, framebuffer->width - startX);
 	int boundHeight = std::clamp(m_rect.h, 0, framebuffer->height - startY);
 
-	static auto drawRect = [&](float x, float y, float w, float h) {
+	static auto drawRect = [framebuffer, res](float x, float y, float w, float h) {
 		/* normalise from texture bounds to [0, 1] */
 		float normalizedX = (x / static_cast<float>(framebuffer->width));
 		float normalizedY = (y / static_cast<float>(framebuffer->height));

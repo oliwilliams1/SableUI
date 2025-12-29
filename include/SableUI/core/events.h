@@ -1,5 +1,6 @@
 #pragma once
 #include <SableUI/utils/utils.h>
+#include <unordered_set>
 #include <bitset>
 #include <cstdint>
 #include <vector>
@@ -153,6 +154,8 @@ constexpr bool SABLE_MOUSE_UP = false;
 
 namespace SableUI
 {
+	using TimerHandle = size_t;
+
 	struct UIEventContext
 	{
 		float deltaTime = 0.0f;
@@ -171,6 +174,12 @@ namespace SableUI
 		std::bitset<SABLE_MAX_KEYS> keyReleasedEvent;
 
 		std::vector<unsigned int> typedCharBuffer{};
+
+		std::unordered_set<TimerHandle> firedTimers;
+		bool IsFired(TimerHandle handle) const
+		{
+			return firedTimers.find(handle) != firedTimers.end();
+		}
 	};
 
 	inline bool IsMouseDown(const UIEventContext& ctx, uint8_t button) { return ctx.mouseDown.test(button); }

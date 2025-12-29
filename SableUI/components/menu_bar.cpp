@@ -29,7 +29,7 @@ void MenuBar::Layout()
 		return;
 	}
 
-	Div(left_right, w_fill, h_fill, bg(t.surface1), id("menu-bar"), gap(4), ml(2))
+	Div(left_right, w_fill, h_fill, bg(t.surface1), id("menu-bar"), ml(2))
 	{
 		for (const auto& pair : m_menuItems)
 		{

@@ -17,7 +17,7 @@ void SableUI::RenderTabHeader(TabContext& ctx, const ElementInfo& style)
 {
 	const Theme& t = GetTheme();
 
-	Div(w_fill, h_fit, left_right, bg(t.surface1), gapX(2))
+	Div(w_fill, h_fit, left_right, bg(t.surface1))
 	{
 		for (size_t i = 0; i < ctx.tabs.size(); i++)
 		{
