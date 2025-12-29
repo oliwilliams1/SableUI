@@ -1,12 +1,12 @@
-#include <SableUI/components/button.h>
 #include <SableUI/SableUI.h>
-#include <SableUI/events.h>
-#include <SableUI/styles.h>
-#include <SableUI/utils.h>
+#include <SableUI/components/button.h>
+#include <SableUI/core/events.h>
+#include <SableUI/styles/styles.h>
+#include <SableUI/utils/utils.h>
+#include <SableUI/utils/console.h>
+#include <SableUI/core/element.h>
+#include <SableUI/styles/theme.h>
 #include <functional>
-#include <SableUI/console.h>
-#include <SableUI/element.h>
-#include <SableUI/theme.h>
 
 using namespace SableUI;
 using namespace SableUI::Style;

@@ -1,5 +1,5 @@
 #pragma once
-#include <SableUI/component.h>
+#include <SableUI/core/component.h>
 #include <SableUI/SableUI.h>
 #include <functional>
 

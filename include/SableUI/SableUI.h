@@ -1,15 +1,19 @@
 #pragma once
-#include <SableUI/window.h>
-#include <SableUI/component.h>
-#include <SableUI/drawable.h>
-#include <SableUI/element.h>
-#include <SableUI/panel.h>
-#include <SableUI/renderer.h>
-#include <SableUI/styles.h>
-#include <SableUI/utils.h>
-#include <SableUI/console.h>
-#include <SableUI/componentRegistry.h>
-#include <SableUI/theme.h>
+#include <SableUI/core/window.h>
+#include <SableUI/core/component.h>
+#include <SableUI/core/drawable.h>
+#include <SableUI/core/element.h>
+#include <SableUI/core/panel.h>
+#include <SableUI/core/renderer.h>
+#include <SableUI/styles/styles.h>
+#include <SableUI/utils/utils.h>
+#include <SableUI/utils/console.h>
+#include <SableUI/core/component_registry.h>
+#include <SableUI/styles/theme.h>
+#include <SableUI/core/scroll_context.h>
+#include <SableUI/core/tab_context.h>
+#include <SableUI/components/text_field.h>
+#include <SableUI/components/menu_bar.h>
 
 /* non-macro user api */
 namespace SableUI
