@@ -33,25 +33,24 @@ int SableUI::BasePanel::GetNumInstances()
 	return s_basePanelCount;
 }
 
-void SableUI::BasePanel::PropagateEvents(const UIEventContext& ctx)
+void SableUI::BasePanel::DistributeEvents(const UIEventContext& ctx)
 {
 	for (BasePanel* child : children)
-		child->PropagateEvents(ctx);
+		child->DistributeEvents(ctx);
 }
 
-void SableUI::BasePanel::PropagatePostLayoutEvents(const UIEventContext& ctx)
+bool SableUI::BasePanel::UpdateComponents()
 {
+	bool anyChanged = false;
 	for (BasePanel* child : children)
-		child->PropagatePostLayoutEvents(ctx);
+		anyChanged |= child->UpdateComponents();
+	return anyChanged;
 }
 
-bool SableUI::BasePanel::PropagateComponentStateChanges()
+void SableUI::BasePanel::PostLayoutUpdate(const UIEventContext& ctx)
 {
-	bool res = false;
 	for (BasePanel* child : children)
-		res = res || child->PropagateComponentStateChanges();
-
-	return res;
+		child->PostLayoutUpdate(ctx);
 }
 
 SableUI::Element* SableUI::BasePanel::GetElementById(const SableString& id)
@@ -564,31 +563,38 @@ void SableUI::ContentPanel::Update()
 
 void SableUI::ContentPanel::Render()
 {
-	m_component->Render();
+	if (m_component)
+		m_component->Render();
 }
 
-void SableUI::ContentPanel::PropagateEvents(const UIEventContext& ctx)
+void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx)
 {
-	m_component->comp_PropagateEvents(ctx);
+	if (m_component)
+		m_component->HandleInput(ctx);
 }
 
-void SableUI::ContentPanel::PropagatePostLayoutEvents(const UIEventContext& ctx)
+bool SableUI::ContentPanel::UpdateComponents()
 {
-	m_component->comp_PropagatePostLayoutEvents(ctx);
-}
+	if (!m_component)
+		return false;
 
-bool SableUI::ContentPanel::PropagateComponentStateChanges()
-{
-	bool res = false;
-	if (m_component->comp_PropagateComponentStateChanges(&res))
+	bool changed = m_component->CheckAndUpdate();
+
+	if (changed)
 	{
-		m_component->Rerender(&res);
 		m_component->GetRootElement()->LayoutChildren();
 		Update();
 	}
 
-	return res;
+	return changed;
 }
+
+void SableUI::ContentPanel::PostLayoutUpdate(const UIEventContext& ctx)
+{
+	if (m_component)
+		m_component->PostLayoutUpdate(ctx);
+}
+
 
 SableUI::Element* SableUI::ContentPanel::GetElementById(const SableString& id)
 {

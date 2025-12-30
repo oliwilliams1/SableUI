@@ -197,44 +197,38 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	return false;
 }
 
-void SableUI::BaseComponent::comp_PropagateEvents(const UIEventContext& ctx)
+void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
 	m_lastEventCtx = ctx;
+
 	OnUpdate(ctx);
+
 	UpdateHoverStyling(ctx);
-	rootElement->el_PropagateEvents(ctx);
+
+	// Propagate to element tree
+	rootElement->DistributeInputToElements(ctx);
 }
 
-void SableUI::BaseComponent::comp_PropagatePostLayoutEvents(const UIEventContext& ctx)
+bool SableUI::BaseComponent::CheckAndUpdate()
+{
+	if (!needsRerender)
+	{
+		bool childChanged = rootElement->CheckElementTreeForChanges();
+		return childChanged;
+	}
+
+	Rerender(nullptr);
+	needsRerender = false;
+
+	return true;
+}
+
+void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 {
 	OnUpdatePostLayout(ctx);
+
 	for (auto* child : m_componentChildren)
-		child->comp_PropagatePostLayoutEvents(ctx);
-}
-
-bool SableUI::BaseComponent::comp_PropagateComponentStateChanges(bool* hasContentsChanged)
-{
-	UpdateHoverStyling(m_lastEventCtx);
-	bool res = rootElement->el_PropagateComponentStateChanges(hasContentsChanged);
-
-	if (needsRerender)
-	{
-		if (hasContentsChanged) *hasContentsChanged = true;
-		// Does the re-rendering cause the size of root to be changed?
-		// If so, rerender from next significant component
-		if (Rerender(hasContentsChanged))
-			needsRerender = true;
-		else
-			needsRerender = false;
-	}
-
-	if (needsRerender)
-	{
-		needsRerender = false;
-		return true;
-	}
-
-	return false;
+		child->PostLayoutUpdate(ctx);
 }
 
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)

@@ -918,7 +918,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
     }
 }
 
-void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
+void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx)
 {
     if (RectBoundingBox(rect, ctx.mousePos))
     {
@@ -935,33 +935,25 @@ void SableUI::Element::el_PropagateEvents(const UIEventContext& ctx)
     for (Child* child : children)
     {
         if (child->type == ChildType::COMPONENT)
-            child->component->comp_PropagateEvents(ctx);
+            child->component->HandleInput(ctx);
         else
-            child->element->el_PropagateEvents(ctx);
+            child->element->DistributeInputToElements(ctx);
     }
 }
 
-bool SableUI::Element::el_PropagateComponentStateChanges(bool* hasContentsChanged)
+bool SableUI::Element::CheckElementTreeForChanges()
 {
-    bool res = false;
+    bool anyChanged = false;
+
     for (Child* child : children)
     {
-        switch (child->type)
-        {
-        case ChildType::COMPONENT:
-			res = res || child->component->comp_PropagateComponentStateChanges(hasContentsChanged);
-            break;
-        case ChildType::ELEMENT:
-			res = res || child->element->el_PropagateComponentStateChanges(hasContentsChanged);
-            break;
-        default:
-			SableUI_Error("Unexpected union behaviour, you've been struck by the sun");
-        }
+        if (child->type == ChildType::COMPONENT)
+            anyChanged |= child->component->CheckAndUpdate();
+        else
+            anyChanged |= child->element->CheckElementTreeForChanges();
+    }
 
-        if (res) return true;
-	}
-
-    return res;
+    return anyChanged;
 }
 
 SableUI::Element* SableUI::Element::GetElementById(const SableString& id)

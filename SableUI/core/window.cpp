@@ -436,13 +436,18 @@ bool SableUI::Window::Update()
 		ctx.firedTimers.insert(handle);
 	}
 
-	m_root->PropagateEvents(ctx);
-	m_root->PropagateComponentStateChanges();
-	m_root->PropagatePostLayoutEvents(ctx);
+	m_root->DistributeEvents(ctx);
+	bool dirty = m_root->UpdateComponents();
+	if (dirty)
+	{
+		m_renderer->ClearDrawableStack();
+		m_root->Render();
+		m_needsStaticRedraw = true;
+	}
+	m_root->PostLayoutUpdate(ctx);
 
 	StepCachedTexturesCleaner();
 	TextCacheFactory::CleanCache(m_renderer);
-
 	HandleResize();
 
 	ctx.mousePressed.reset();

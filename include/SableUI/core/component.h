@@ -41,10 +41,10 @@ namespace SableUI
         int GetNumChildren() const { return m_childCount; }
         bool Rerender(bool* hasContentsChanged = nullptr);
 
+        void HandleInput(const UIEventContext& ctx);
+        bool CheckAndUpdate();
+        void PostLayoutUpdate(const UIEventContext& ctx);
         bool needsRerender = false;
-        void comp_PropagateEvents(const UIEventContext& ctx);
-        bool comp_PropagateComponentStateChanges(bool* hasContentsChanged = nullptr);
-        void comp_PropagatePostLayoutEvents(const UIEventContext& ctx);
 
         void RegisterState(StateBase* state) { m_states.push_back(state); }
 

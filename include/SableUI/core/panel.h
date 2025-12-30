@@ -22,7 +22,7 @@ namespace SableUI
         virtual ~BasePanel();
         static int GetNumInstances();
 
-        virtual void Render() = 0;
+        virtual void Render() {};
         virtual void Recalculate() {};
 
         virtual SplitterPanel* AddSplitter(PanelType type) = 0;
@@ -33,9 +33,10 @@ namespace SableUI
         virtual void CalculateMinBounds() {};
         virtual void Update() {};
 
-        virtual void PropagateEvents(const UIEventContext& ctx);
-        virtual void PropagatePostLayoutEvents(const UIEventContext& ctx);
-        virtual bool PropagateComponentStateChanges();
+        virtual void DistributeEvents(const UIEventContext& ctx);
+        virtual bool UpdateComponents();
+        virtual void PostLayoutUpdate(const UIEventContext& ctx);
+
         virtual Element* GetElementById(const SableString& id);
 
         BasePanel* parent = nullptr;
@@ -108,9 +109,9 @@ namespace SableUI
 
         void Update() override;
 
-        void PropagateEvents(const UIEventContext& ctx) override;
-        void PropagatePostLayoutEvents(const UIEventContext& ctx) override;
-        bool PropagateComponentStateChanges() override;
+        void DistributeEvents(const UIEventContext& ctx) override;
+        bool UpdateComponents() override;
+        void PostLayoutUpdate(const UIEventContext& ctx) override;
 
         BaseComponent* GetComponent() const { return m_component; }
         Element* GetElementById(const SableString& id) override;
