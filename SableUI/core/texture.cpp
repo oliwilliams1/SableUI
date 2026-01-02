@@ -1,6 +1,7 @@
 #include <SableUI/core/texture.h>
 
 #include <SableUI/utils/console.h>
+#undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Texture"
 #include <SableUI/core/renderer.h>
 

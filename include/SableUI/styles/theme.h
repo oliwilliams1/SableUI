@@ -51,18 +51,21 @@ namespace SableUI
 		Colour success;
 		Colour info;
 
+		Colour checkColour;
+
 		std::string name;
 		std::string description;
 		bool isDark;
 
 		void InitialiseSemantics()
 		{
-			if (primary == Colour{})	primary = blue;
-			if (secondary == Colour{})	secondary = rosewater;
-			if (error == Colour{})		error = red;
-			if (warning == Colour{})	warning = yellow;
-			if (success == Colour{})	success = green;
-			if (info == Colour{})		info = sky;
+			if (primary == Colour{})		primary = blue;
+			if (secondary == Colour{})		secondary = rosewater;
+			if (error == Colour{})			error = red;
+			if (warning == Colour{})		warning = yellow;
+			if (success == Colour{})		success = green;
+			if (info == Colour{})			info = sky;
+			if (checkColour == Colour{})	checkColour = lavender;
 		}
 	};
 

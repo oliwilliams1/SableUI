@@ -79,7 +79,7 @@ namespace SableUI
 
     template<typename T>
     class State : public StateBase {
-        static_assert(HasEqualityOperator<T>, "State<T> requires operator== overloaded");
+        static_assert(HasEqualityOperator<T>, "State<T> requires T to have an operator== overloaded");
 
     public:
         State(BaseComponent* owner, T initialValue)

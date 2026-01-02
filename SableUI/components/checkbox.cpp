@@ -23,7 +23,7 @@ void Checkbox::Init(
 {
 	info = p_info;
 	externalCheckedState = nullptr;
-	internalChecked.set(checked);
+	internalChecked = checked;
 	label.set(p_label);
 	onChangeCallback.set(onChange);
 }
@@ -32,7 +32,7 @@ bool Checkbox::IsChecked() const
 {
 	if (externalCheckedState)
 		return externalCheckedState->get();
-	return internalChecked.get();
+	return internalChecked;
 }
 
 static int GetBoxSize(const SableUI::ElementInfo& info)
@@ -74,7 +74,7 @@ static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked, con
 		if (info.appearance.bg != Colour(0, 0, 0, 0))
 			base = info.appearance.bg;
 		else
-			base = t.primary;
+			base = t.checkColour;
 	}
 	else
 	{
@@ -125,7 +125,6 @@ void Checkbox::HandleClick()
 	}
 	else
 	{
-		internalChecked.set(newValue);
 		if (onChangeCallback.get())
 		{
 			onChangeCallback.get()(newValue);

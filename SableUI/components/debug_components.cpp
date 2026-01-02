@@ -87,13 +87,13 @@ void SableUI::MemoryDebugger::Layout()
 {
 	Div(p(6), w_fill, h_fill)
 	{
-		SplitterWithText("Panels");
+		TextSeperator("Panels");
 		Text(SableString::Format("Base Panels: %d", BasePanel::GetNumInstances()));
 		Text(SableString::Format("Root Panels: %d", RootPanel::GetNumInstances()));
 		Text(SableString::Format("Splitter Panels: %d", SplitterPanel::GetNumInstances()));
 		Text(SableString::Format("Content Panels: %d", ContentPanel::GetNumInstances()));
 
-		SplitterWithText("Layout Elements");
+		TextSeperator("Layout Elements");
 		Text(SableString::Format("Components: %d", BaseComponent::GetNumInstances()));
 		Text(SableString::Format("Elements: %d    (%zukb)",
 			Element::GetNumInstances(),
@@ -102,7 +102,7 @@ void SableUI::MemoryDebugger::Layout()
 			VirtualNode::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::VirtualNode).sizeInKB));
 
-		SplitterWithText("Drawables");
+		TextSeperator("Drawables");
 		Text(SableString::Format("Drawable Base: %d", DrawableBase::GetNumInstances()));
 		Text(SableString::Format("Drawable Text: %d    (%zukb)",
 			DrawableText::GetNumInstances(),
@@ -122,12 +122,12 @@ void SableUI::MemoryDebugger::Layout()
 		Text(SableString::Format("CustomDrawTargets: %d",
 			CustomTargetQueue::GetNumInstances()));
 
-		SplitterWithText("Utilities");
+		TextSeperator("Utilities");
 		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
 		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
 		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
 
-		SplitterWithText("Font Manager");
+		TextSeperator("Font Manager");
 		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
 		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
 
@@ -225,7 +225,7 @@ void SableUI::PropertiesPanel::Layout()
 	const ElementInfo& info = selectedInfo.get();
 
 	SableString title = info.id.empty() ? "Element" : info.id;
-	SplitterWithText(title);
+	TextSeperator(title);
 
 	Div(bg(32, 32, 32), p(6), w_fill)
 	{

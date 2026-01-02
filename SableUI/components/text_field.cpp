@@ -37,39 +37,87 @@ static void DeleteSelection(SableString& text, int& cursorPos, const int& initia
     cursorPos = selStart;
 }
 
-SableUI::TextField::TextField()
+SableUI::TextFieldComponent::TextFieldComponent()
 {
-    //cursorBlinkInterval.Start();
+    m_window = GetContext();
 }
 
-void SableUI::TextField::ResetCursorBlink()
+void SableUI::TextFieldComponent::Init(State<InputFieldData>& data,
+    const ElementInfo& p_info,
+    bool multiline)
+{
+    info = p_info;
+    externalState = &data;
+    m_multiline = multiline;
+}
+
+void SableUI::TextFieldComponent::ResetCursorBlink()
 {
     cursorVisible.set(true);
-    //cursorBlinkInterval.Stop();
-    //cursorBlinkInterval.Start();
 }
 
-void SableUI::TextField::Layout()
+void SableUI::TextFieldComponent::TriggerOnChange()
 {
-    const Theme& t = GetTheme();
+    if (externalState && externalState->get().onChange)
+    {
+        externalState->get().onChange();
+    }
+}
 
+void SableUI::TextFieldComponent::Layout()
+{
+    if (!externalState) return;
+    const InputFieldData& data = externalState->get();
+
+    const Theme& t = GetTheme();
     if (!m_window)
     {
         Text("Component does not have m_window defined", textColour(t.red), mb(4));
         return;
     }
 
-    Div(id("TextField"), w_fill, h_fit, p(4), bg(t.surface0), rounded(4))
+    Colour bgColour = info.appearance.bg != Colour{ 0, 0, 0, 0 } ? info.appearance.bg : t.surface0;
+
+    Colour textCol = info.text.colour.has_value() ? info.text.colour.value() : t.text;
+
+    Colour placeholderCol = t.subtext0;
+
+    float borderRadius = info.appearance.radius > 0 ? info.appearance.radius : 4.0f;
+
+    ElementInfo containerInfo = info;
+    containerInfo.appearance.bg = bgColour;
+    containerInfo.appearance.radius = borderRadius;
+
+    if (containerInfo.layout.wType == RectType::Undef) containerInfo.layout.wType = RectType::Fill;
+    if (containerInfo.layout.hType == RectType::Undef) containerInfo.layout.hType = RectType::FitContent;
+
+    if (containerInfo.layout.pT == 0 && containerInfo.layout.pB == 0
+        && containerInfo.layout.pL == 0 && containerInfo.layout.pR == 0)
     {
-        if (textVal.get().empty() && !isFocused)
-            Text("Start writing...", textColour(t.subtext0));
+        containerInfo.layout.pT = containerInfo.layout.pB = 4;
+        containerInfo.layout.pL = containerInfo.layout.pR = 4;
+    }
+
+    PackStylesToInfo(containerInfo, id("TextField"));
+
+    if (DivScope d(containerInfo); true)
+    {
+        if (data.content.empty() && !data.isFocused)
+        {
+            Text(data.placeholder, textColour(placeholderCol), wrapText(m_multiline));
+        }
         else
-            Text(textVal.get(), id("TextFieldText"), textColour(t.text));
+        {
+            Text(data.content, id("TextFieldText"), textColour(textCol), wrapText(m_multiline));
+        }
     }
 }
 
-void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
+void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 {
+    if (!externalState) return;
+    InputFieldData dataCopy = externalState->get();
+
     bool ctrlDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_CONTROL) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_CONTROL));
     bool shiftDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
     bool sectionHighlighted = initialCursorPos >= 0 && initialCursorPos != cursorPos;
@@ -84,39 +132,54 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     {
         if (initialCursorPos == -1)
         {
-            isFocused.set(false);
-            queue.window->RemoveQueueReference(&queue);
-            //cursorBlinkInterval.Stop();
+            dataCopy.isFocused = false;
+            if (queueInitialised)
+                queue.window->RemoveQueueReference(&queue);
         }
 
         initialCursorPos.set(-1);
     }
 
+    // Handle mouse clicks for focus
     if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
     {
         Element* el = GetElementById("TextField");
-        if (!el) return;
-        if (RectBoundingBox(el->rect, ctx.mousePos))
+        if (el)
         {
-            if (!isFocused.get())
+            bool clickedInside = RectBoundingBox(el->rect, ctx.mousePos);
+
+            if (clickedInside)
             {
-                isFocused.set(true);
-                ResetCursorBlink();
+                if (!dataCopy.isFocused)
+                {
+                    dataCopy.isFocused = true;
+                    ResetCursorBlink();
+                    change = true;
+                }
             }
-        }
-        else
-        {
-            isFocused.set(false);
-            queue.window->RemoveQueueReference(&queue);
-            //cursorBlinkInterval.Stop();
+            else
+            {
+                if (dataCopy.isFocused)
+                {
+                    dataCopy.isFocused = false;
+                    if (queueInitialised)
+                        queue.window->RemoveQueueReference(&queue);
+                    change = true;
+                }
+            }
         }
     }
 
-    if (!isFocused) return;
+    if (!dataCopy.isFocused)
+    {
+        if (change)
+            externalState->set(dataCopy);
+        return;
+    }
 
     if (ctx.typedCharBuffer.size() != 0)
     {
-        SableString baseText = textVal;
+        SableString baseText = dataCopy.content;
         int newCursor = cursorPos;
 
         if (sectionHighlighted)
@@ -124,11 +187,16 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
 
         SableString newText = baseText.substr(0, newCursor);
         for (unsigned int c : ctx.typedCharBuffer)
+        {
+            if (!m_multiline && (c == '\n' || c == '\r'))
+                continue;
+
             newText.push_back((char32_t)c);
+        }
 
         newText = newText + baseText.substr(newCursor);
 
-        textVal.set(newText);
+        dataCopy.content = newText;
         cursorPos.set(newCursor + ctx.typedCharBuffer.size());
         initialCursorPos.set(-1);
         change = true;
@@ -138,27 +206,27 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     {
         if (sectionHighlighted)
         {
-            SableString newText = textVal;
+            SableString newText = dataCopy.content;
             int newCursor = cursorPos;
             int init = initialCursorPos;
 
             DeleteSelection(newText, newCursor, init);
 
-            textVal.set(newText);
+            dataCopy.content = newText;
             cursorPos.set(newCursor);
             initialCursorPos.set(-1);
         }
         else if (ctrlDown)
         {
-            int delTo = GetNextWordPos(textVal.get(), cursorPos, -1);
-            SableString newText = textVal.get().substr(0, delTo) + textVal.get().substr(cursorPos);
-            textVal.set(newText);
+            int delTo = GetNextWordPos(dataCopy.content, cursorPos, -1);
+            SableString newText = dataCopy.content.substr(0, delTo) + dataCopy.content.substr(cursorPos);
+            dataCopy.content = newText;
             cursorPos.set(delTo);
         }
         else if (cursorPos > 0)
         {
-            SableString newText = textVal.get().substr(0, cursorPos - 1) + textVal.get().substr(cursorPos);
-            textVal.set(newText);
+            SableString newText = dataCopy.content.substr(0, cursorPos - 1) + dataCopy.content.substr(cursorPos);
+            dataCopy.content = newText;
             cursorPos.set(cursorPos - 1);
         }
         change = true;
@@ -168,55 +236,65 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     {
         if (sectionHighlighted)
         {
-            SableString newText = textVal;
+            SableString newText = dataCopy.content;
             int newCursor = cursorPos;
             int init = initialCursorPos;
 
             DeleteSelection(newText, newCursor, init);
 
-            textVal.set(newText);
+            dataCopy.content = newText;
             cursorPos.set(newCursor);
             initialCursorPos.set(-1);
         }
         else if (ctrlDown)
         {
-            int delTo = GetNextWordPos(textVal, cursorPos, 1);
-            SableString newText = textVal.get().substr(0, cursorPos) + textVal.get().substr(delTo);
-            textVal.set(newText);
+            int delTo = GetNextWordPos(dataCopy.content, cursorPos, 1);
+            SableString newText = dataCopy.content.substr(0, cursorPos) + dataCopy.content.substr(delTo);
+            dataCopy.content = newText;
         }
-        else if (cursorPos < textVal.get().size())
+        else if (cursorPos < dataCopy.content.size())
         {
-            SableString newText = textVal.get().substr(0, cursorPos) + textVal.get().substr(cursorPos + 1);
-            textVal.set(newText);
+            SableString newText = dataCopy.content.substr(0, cursorPos) + dataCopy.content.substr(cursorPos + 1);
+            dataCopy.content = newText;
         }
         change = true;
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_ENTER))
     {
-        SableString baseText = textVal;
-        int newCursor = cursorPos;
+        if (m_multiline)
+        {
+            SableString baseText = dataCopy.content;
+            int newCursor = cursorPos;
 
-        if (sectionHighlighted)
-            DeleteSelection(baseText, newCursor, initialCursorPos);
+            if (sectionHighlighted)
+                DeleteSelection(baseText, newCursor, initialCursorPos);
 
-        SableString newText = baseText.substr(0, newCursor);
-        newText.push_back(U'\n');
-        newText = newText + baseText.substr(newCursor);
+            SableString newText = baseText.substr(0, newCursor);
+            newText.push_back(U'\n');
+            newText = newText + baseText.substr(newCursor);
 
-        textVal.set(newText);
-        cursorPos.set(newCursor + 1);
-        initialCursorPos.set(-1);
-        change = true;
+            dataCopy.content = newText;
+            cursorPos.set(newCursor + 1);
+            initialCursorPos.set(-1);
+            change = true;
+        }
+        else
+        {
+            if (dataCopy.onSubmit)
+            {
+                dataCopy.onSubmit();
+            }
+        }
     }
 
     if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT))
     {
         if (sectionHighlighted)
-            cursorPos.set(std::min(cursorPos, initialCursorPos));
+            cursorPos.set(std::min(cursorPos.get(), initialCursorPos.get()));
 
         if (ctrlDown)
-            cursorPos.set(GetNextWordPos(textVal, cursorPos, -1));
+            cursorPos.set(GetNextWordPos(dataCopy.content, cursorPos, -1));
         else if (cursorPos > 0)
             cursorPos.set(cursorPos - 1);
 
@@ -229,11 +307,11 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     if (ctx.keyPressedEvent.test(SABLE_KEY_RIGHT))
     {
         if (sectionHighlighted)
-            cursorPos.set(std::max(cursorPos, initialCursorPos));
+            cursorPos.set(std::max(cursorPos.get(), initialCursorPos.get()));
 
         if (ctrlDown)
-            cursorPos.set(GetNextWordPos(textVal, cursorPos, +1));
-        else if (cursorPos < textVal.get().size())
+            cursorPos.set(GetNextWordPos(dataCopy.content, cursorPos, +1));
+        else if (cursorPos < dataCopy.content.size())
             cursorPos.set(cursorPos + 1);
 
         if (!shiftDown)
@@ -245,12 +323,15 @@ void SableUI::TextField::OnUpdate(const UIEventContext& ctx)
     if (change)
     {
         ResetCursorBlink();
+        TriggerOnChange();
     }
+
+    externalState->set(dataCopy);
 }
 
-void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 {
-    if (!isFocused || !m_window) return;
+    if (!externalState || !externalState->get().isFocused || !m_window) return;
 
     if (!queueInitialised)
     {
@@ -262,10 +343,14 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
     StartCustomLayoutScope(&queue);
 
     Element* text = GetElementById("TextFieldText");
-    if (!text) return;
+    if (!text)
+    {
+        EndCustomLayoutScope(&queue);
+        return;
+    }
 
     auto cursorInfo = QueryCursorPosition(
-        textVal,
+        externalState->get().content,
         cursorPos,
         text->rect.w,
         text->info.text.fontSize,
@@ -288,7 +373,7 @@ void SableUI::TextField::OnUpdatePostLayout(const UIEventContext& ctx)
     if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
     {
         auto initialCursorInfo = QueryCursorPosition(
-            textVal,
+            externalState->get().content,
             initialCursorPos,
             text->rect.w,
             text->info.text.fontSize,

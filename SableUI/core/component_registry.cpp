@@ -98,7 +98,7 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<PropertiesPanel>("PropertiesPanel");
     
     RegisterComponent<MenuBar>("MenuBar");
-    RegisterComponent<Button>("Button");
-    RegisterComponent<Checkbox>("Checkbox");
-    RegisterComponent<TextField>("TextField");
+    RegisterComponent<Button>("sableui_button");
+    RegisterComponent<Checkbox>("sableui_checkbox");
+    RegisterComponent<TextFieldComponent>("sableui_text_field");
 }

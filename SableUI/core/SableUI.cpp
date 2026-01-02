@@ -32,10 +32,15 @@ static SableUI::BaseComponent* s_currentComponent = nullptr;
 
 using namespace SableMemory;
 
-static void SetContext(SableUI::Window* window)
+void SableUI::SetContext(Window* window)
 {
 	s_currentContext = window;
 	s_currentPanel = s_currentContext->GetRoot();
+}
+
+SableUI::Window* SableUI::GetContext()
+{
+	return s_currentContext;
 }
 
 static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };

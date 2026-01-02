@@ -1646,7 +1646,6 @@ void FontManager::GetTextVertexData(
 	SableUI::vec2 cursor{};
 	currentFontType = FontType::Regular;
 
-	/* ---------- PASS 1: line breaking ---------- */
 	std::vector<std::vector<TextToken>> lines;
 	std::vector<TextToken> currentLine;
 	float currentLineWidth = 0.0f;
@@ -1760,7 +1759,6 @@ void FontManager::GetTextVertexData(
 		maxActualLineWidth = std::max(maxActualLineWidth, lineWidth);
 	}
 
-	/* ---------- PASS 2: vertex build ---------- */
 	unsigned int currentGlyphOffset = 0;
 
 	for (const auto& line : lines)

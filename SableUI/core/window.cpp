@@ -1,4 +1,5 @@
 #include <SableUI/core/window.h>
+#include <SableUI/SableUI.h>
 #include <SableUI/core/renderer.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/text_cache.h>
@@ -420,6 +421,7 @@ bool SableUI::Window::Update()
 	if (IsMinimized())
 		return !glfwWindowShouldClose(m_window);
 
+	SetContext(this);
 	MakeContextCurrent();
 
 	if (m_needsRefresh)
@@ -467,6 +469,7 @@ void SableUI::Window::Draw()
 	if (IsMinimized())
 		return;
 
+	SetContext(this);
 	MakeContextCurrent();
 
 #ifdef _WIN32

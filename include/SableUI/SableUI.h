@@ -12,7 +12,6 @@
 #include <SableUI/styles/theme.h>
 #include <SableUI/core/scroll_context.h>
 #include <SableUI/core/tab_context.h>
-#include <SableUI/components/text_field.h>
 #include <SableUI/components/menu_bar.h>
 
 /* non-macro user api */
@@ -27,6 +26,9 @@ namespace SableUI
 	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	void Shutdown();
+
+	void SetContext(Window* window);
+	Window* GetContext();
 
 	bool PollEvents();
 	bool WaitEvents();
@@ -119,7 +121,7 @@ namespace SableUI
 
 /* scoped RAII rect guard api */
 #define Rect(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
-#define Div(...) if (SableUI::DivScope _d##__LINE__(SableUI::PackStyles(__VA_ARGS__)); true)
+#define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)(SableUI::PackStyles(__VA_ARGS__)); true)
 #define Image(path, ...) AddImage(path, SableUI::PackStyles(__VA_ARGS__))
 #define Text(text, ...) AddText(text, SableUI::PackStyles(__VA_ARGS__))
 
@@ -208,19 +210,21 @@ namespace SableUI
 
 // Button component
 #define Button(label, callback, ...)																		\
-	ComponentGainRefWithInitWithStyle("Button", SableUI::Button, CONCAT(_button_, __LINE__),				\
+	ComponentGainRefWithInitWithStyle("sableui_button", SableUI::Button, CONCAT(_button_, __LINE__),		\
 		CONCAT(_button_, __LINE__)->Init(label, callback, SableUI::PackStyles(__VA_ARGS__)),				\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
 
 // Checkbox with State<bool> - auto-syncing to parent
 #define CheckboxState(label, checked, ...)																	\
-	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
-		CONCAT(_checkbox_, __LINE__)->Init(checked, label, nullptr, SableUI::PackStyles(__VA_ARGS__)))
+	ComponentGainRefWithInitWithStyle("sableui_checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),	\
+		CONCAT(_checkbox_, __LINE__)->Init(checked, label, nullptr, SableUI::PackStyles(__VA_ARGS__)),		\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
 
 // Checkbox with callback
 #define Checkbox(label, checked, onChange, ...)																\
-	ComponentGainRefWithInit("Checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),					\
-		CONCAT(_checkbox_, __LINE__)->Init(checked, label, onChange, SableUI::PackStyles(__VA_ARGS__)))
+	ComponentGainRefWithInitWithStyle("sableui_checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),	\
+		CONCAT(_checkbox_, __LINE__)->Init(checked, label, onChange, SableUI::PackStyles(__VA_ARGS__)),		\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
 
 #define TabUpdateHandler(tabContext)																		\
 	if (tabContext.changed)																					\
@@ -228,6 +232,21 @@ namespace SableUI
 		needsRerender = true;																				\
 		tabContext.changed = false;																			\
 	}
+
+#include <SableUI/components/text_field.h>
+// Single-line input field
+#define InputField(state, ...)																				\
+    ComponentGainRefWithInitWithStyle("sableui_text_field", SableUI::TextFieldComponent,					\
+        CONCAT(_input_field_, __LINE__),																	\
+        CONCAT(_input_field_, __LINE__)->Init(state, SableUI::PackStyles(__VA_ARGS__), false),				\
+        SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
+
+// Multi-line text field
+#define TextField(state, ...)																				\
+    ComponentGainRefWithInitWithStyle("sableui_text_field", SableUI::TextFieldComponent,					\
+        CONCAT(_text_field_, __LINE__),																		\
+        CONCAT(_text_field_, __LINE__)->Init(state, SableUI::PackStyles(__VA_ARGS__), true),				\
+        SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
 
 // Visual horizontal splitter element
 #define SplitterHorizontal(...)																				\
@@ -238,7 +257,7 @@ namespace SableUI
 	Rect(my(4), mx(2), h_fill, w(1), bg(70, 70, 70) __VA_ARGS__)
 
 // Text with splitters either side
-#define SplitterWithText(label)																				\
+#define TextSeperator(label)																				\
 	Div(left_right, h_fit, w_fill, centerY, mt(8))															\
 	{																										\
 		Rect(mx(2), h(1), w(10), bg(70, 70, 70), centerY);													\

@@ -199,14 +199,12 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
-	m_lastEventCtx = ctx;
-
-	OnUpdate(ctx);
-
-	UpdateHoverStyling(ctx);
-
 	// Propagate to element tree
 	rootElement->DistributeInputToElements(ctx);
+
+	m_lastEventCtx = ctx;
+	OnUpdate(ctx);
+	UpdateHoverStyling(ctx);
 }
 
 bool SableUI::BaseComponent::CheckAndUpdate()
@@ -225,10 +223,10 @@ bool SableUI::BaseComponent::CheckAndUpdate()
 
 void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 {
-	OnUpdatePostLayout(ctx);
-
 	for (auto* child : m_componentChildren)
 		child->PostLayoutUpdate(ctx);
+
+	OnUpdatePostLayout(ctx);
 }
 
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
