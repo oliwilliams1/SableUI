@@ -25,7 +25,7 @@ namespace SableUI
 		ElementInfo info;
 		State<SableString> label{ this, "" };
 		State<bool> isHovered{ this, false };
-		bool internalChecked = false;
+		State<bool> internalChecked{ this, false };
 
 		State<bool>* externalCheckedState = nullptr;
 		Ref<std::function<void(bool)>> onChangeCallback{ this, nullptr };

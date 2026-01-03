@@ -30,9 +30,8 @@ namespace SableUI
 			bool repeating = true);
 
 		void RemoveTimer(TimerHandle handle);
-
+		void UpdateTimer(TimerHandle handle, std::chrono::milliseconds fireIn);
 		std::vector<TimerHandle> PollFiredTimers();
-
 		void Shutdown();
 
 	private:

@@ -260,7 +260,7 @@ namespace SableUI
 #define TextSeperator(label)																				\
 	Div(left_right, h_fit, w_fill, centerY, mt(8))															\
 	{																										\
-		Rect(mx(2), h(1), w(10), bg(70, 70, 70), centerY);													\
-		Text(label, w_fit, wrapText(false), mx(4), mb(4));													\
+		Rect(mx(2), h(1), w(6), bg(70, 70, 70), centerY);													\
+		Text(label, w_fit, wrapText(false), mx(2), mb(4));													\
 		Rect(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
 	}

@@ -30,9 +30,7 @@ namespace SableUI
 	public:
 		TextFieldComponent();
 
-		void Init(State<InputFieldData>& data,
-			const ElementInfo& info,
-			bool multiline = false);
+		void Init(State<InputFieldData>& data, const ElementInfo& info,bool multiline = false);
 
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
@@ -45,6 +43,7 @@ namespace SableUI
 		State<int> cursorPos{ this, 0 };
 		State<int> initialCursorPos{ this, -1 };
 		State<bool> cursorVisible{ this, true };
+		Interval m_cursorBlinkInterval{ this };
 
 		bool queueInitialised = false;
 		CustomTargetQueue queue;
