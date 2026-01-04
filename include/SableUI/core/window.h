@@ -54,7 +54,7 @@ namespace SableUI
 		Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, const WindowInitInfo& info);
 		~Window();
 
-		bool Update();
+		bool Update(const std::unordered_set<TimerHandle>& firedTimers);
 		void Draw();
 		bool m_needsStaticRedraw = false;
 		bool m_needsRefresh = false;
@@ -116,5 +116,15 @@ namespace SableUI
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 
 		std::vector<CustomTargetQueue*> m_customTargetQueues;
+
+	private:
+		DrawableRect* m_borderTop = nullptr;
+		DrawableRect* m_borderBottom = nullptr;
+		DrawableRect* m_borderLeft = nullptr;
+		DrawableRect* m_borderRight = nullptr;
+		bool m_borderNeedsUpdate = true;
+
+		void UpdateWindowBorder();
+		void RenderWindowBorder();
 	};
 }

@@ -12,10 +12,13 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
-#include <stack>
-#include <cstring>
+#include <SableUI/core/event_scheduler.h>
+#include <SableUI/core/events.h>
+#include <unordered_set>
 #include <string.h>
+#include <cstring>
 #include <vector>
+#include <stack>
 
 /* Panel builder */
 static SableUI::Window* s_currentContext = nullptr;
@@ -634,12 +637,15 @@ bool App::PollEvents()
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_PollEvents_GLFW();
 
-	if (!m_mainWindow->Update()) return false;
+	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
+
+	if (!m_mainWindow->Update(firedTimers)) return false;
 
 	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
 	{
 		SableUI::Window* window = *it;
-		if (!window->Update())
+		if (!window->Update(firedTimers))
 		{
 			SB_delete(window);
 			it = m_secondaryWindows.erase(it);
@@ -659,12 +665,15 @@ bool App::WaitEvents()
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_WaitEvents_GLFW();
 
-	if (!m_mainWindow->Update()) return false;
+	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
+
+	if (!m_mainWindow->Update(firedTimers)) return false;
 
 	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
 	{
 		SableUI::Window* window = *it;
-		if (!window->Update())
+		if (!window->Update(firedTimers))
 		{
 			SB_delete(window);
 			it = m_secondaryWindows.erase(it);
@@ -684,12 +693,15 @@ bool App::WaitEventsTimeout(double timeout)
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_WaitEventsTimeout_GLFW(timeout);
 
-	if (!m_mainWindow->Update()) return false;
+	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
+
+	if (!m_mainWindow->Update(firedTimers)) return false;
 
 	for (auto it = m_secondaryWindows.begin(); it != m_secondaryWindows.end();)
 	{
 		SableUI::Window* window = *it;
-		if (!window->Update())
+		if (!window->Update(firedTimers))
 		{
 			SB_delete(window);
 			it = m_secondaryWindows.erase(it);

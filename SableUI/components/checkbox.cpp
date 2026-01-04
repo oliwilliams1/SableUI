@@ -100,10 +100,25 @@ void Checkbox::Layout()
 		}))
 	{
 		if (info.appearance.disabled)
-			Rect(w(size), h(size), bg(col), rounded(4), mr(6), centerY);
+		{
+			Div(w(size), h(size), bg(col), rounded(4), mr(6), centerY)
+			{
+				if (checked)
+				{
+					Text(U"\u274c", centerXY, fontSize(size - 6), justify_center, textColour(t.text));
+				}
+			}
+		}
 		else
-			Rect(w(size), h(size), hoverBg(col, col * 0.8f), rounded(4), mr(6), centerY);
-
+		{
+			Div(w(size), h(size), hoverBg(col, col * 0.8f), rounded(4), mr(6), centerY)
+			{
+				if (checked)
+				{
+					Text(U"\u274c", centerXY, fontSize(size - 6), justify_center, textColour(t.text));
+				}
+			}
+		}
 
 		if (!label.get().empty())
 		{

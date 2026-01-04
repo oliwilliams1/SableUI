@@ -11,11 +11,11 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <SableUI/generated/resources.h>
-#include <SableUI/core/event_scheduler.h>
-
+#include <SableUI/styles/theme.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
+#include <unordered_set>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -137,6 +137,7 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 		return;
 	}
 
+	instance->m_borderNeedsUpdate = true;
 	instance->m_windowSize = ivec2(width, height);
 
 	if (width <= 0 || height <= 0)
@@ -314,6 +315,13 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetCharCallback(m_window, CharCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
+
+	m_borderTop = SB_new<DrawableRect>();
+	m_borderBottom = SB_new<DrawableRect>();
+	m_borderLeft = SB_new<DrawableRect>();
+	m_borderRight = SB_new<DrawableRect>();
+
+	UpdateWindowBorder();
 }
 
 void SableUI::Window::MakeContextCurrent()
@@ -416,7 +424,7 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 	return cursorToSet;
 }
 
-bool SableUI::Window::Update()
+bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 {
 	if (IsMinimized())
 		return !glfwWindowShouldClose(m_window);
@@ -432,11 +440,7 @@ bool SableUI::Window::Update()
 		m_needsRefresh = false;
 	}
 
-	auto firedTimers = EventScheduler::Get().PollFiredTimers();
-	for (auto handle : firedTimers)
-	{
-		ctx.firedTimers.insert(handle);
-	}
+	ctx.firedTimers = firedTimers;
 
 	m_root->DistributeEvents(ctx);
 	bool dirty = m_root->UpdateComponents();
@@ -503,6 +507,7 @@ void SableUI::Window::Draw()
 
 		m_renderer->BeginRenderPass(&m_framebuffer);
 		m_renderer->Draw(&m_framebuffer);
+		RenderWindowBorder();
 		m_renderer->EndRenderPass();
 	}
 
@@ -526,7 +531,7 @@ void SableUI::Window::Draw()
 					queue->root->Render();
 				}
 
-				// rf rendering to window surface, render directly to back buffer (framebuffer 0)
+				// if rendering to window surface, render directly to back buffer (framebuffer 0)
 				if (queue->target == &m_windowSurface)
 				{
 					needsRedraw = true;
@@ -973,6 +978,51 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	oldPos = pos;
 }
 
+void SableUI::Window::UpdateWindowBorder()
+{
+	if (!m_borderTop || !m_borderBottom || !m_borderLeft || !m_borderRight)
+		return;
+
+	const Theme& t = GetTheme();
+	Colour borderColor = t.surface2;
+
+	int w = m_windowSize.x;
+	int h = m_windowSize.y;
+
+	// Top border (full width, 1px tall)
+	m_borderTop->Update({ 0, 0, w, 1 }, borderColor, 0.0f, false, {});
+	m_borderTop->m_zIndex = 1000;
+
+	// Bottom border (full width, 1px tall)
+	m_borderBottom->Update({ 0, h - 1, w, 1 }, borderColor, 0.0f, false, {});
+	m_borderBottom->m_zIndex = 1000;
+
+	// Left border (1px wide, full height minus corners)
+	m_borderLeft->Update({ 0, 1, 1, h - 2 }, borderColor, 0.0f, false, {});
+	m_borderLeft->m_zIndex = 1000;
+
+	// Right border (1px wide, full height minus corners)
+	m_borderRight->Update({ w - 1, 1, 1, h - 2 }, borderColor, 0.0f, false, {});
+	m_borderRight->m_zIndex = 1000;
+
+	m_borderNeedsUpdate = false;
+}
+
+void SableUI::Window::RenderWindowBorder()
+{
+	if (m_borderNeedsUpdate)
+		UpdateWindowBorder();
+
+	if (m_borderTop)
+		m_renderer->AddToDrawStack(m_borderTop);
+	if (m_borderBottom)
+		m_renderer->AddToDrawStack(m_borderBottom);
+	if (m_borderLeft)
+		m_renderer->AddToDrawStack(m_borderLeft);
+	if (m_borderRight)
+		m_renderer->AddToDrawStack(m_borderRight);
+}
+
 SableUI::Window::~Window()
 {
 	if (m_window)
@@ -980,6 +1030,26 @@ SableUI::Window::~Window()
 
 	SB_delete(m_root);
 	DestroyDrawables();
+	if (m_borderTop)
+	{
+		m_renderer->ClearDrawable(m_borderTop);
+		SB_delete(m_borderTop);
+	}
+	if (m_borderBottom)
+	{
+		m_renderer->ClearDrawable(m_borderBottom);
+		SB_delete(m_borderBottom);
+	}
+	if (m_borderLeft)
+	{
+		m_renderer->ClearDrawable(m_borderLeft);
+		SB_delete(m_borderLeft);
+	}
+	if (m_borderRight)
+	{
+		m_renderer->ClearDrawable(m_borderRight);
+		SB_delete(m_borderRight);
+	}
 
 	TextCacheFactory::ShutdownFactory(m_renderer);
 
