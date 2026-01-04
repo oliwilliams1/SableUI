@@ -126,6 +126,43 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	bool shiftDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
 	bool sectionHighlighted = initialCursorPos >= 0 && initialCursorPos != cursorPos;
 	bool change = false;
+	
+	if (dataCopy.isFocused && ctrlDown && ctx.keyPressedEvent.test(SABLE_KEY_V))
+	{
+		SableString clipboardText = GetClipboardContent();
+
+		if (!clipboardText.empty())
+		{
+			SableString baseText = dataCopy.content;
+			int newCursor = cursorPos;
+
+			if (sectionHighlighted)
+			{
+				DeleteSelection(baseText, newCursor, initialCursorPos.get());
+			}
+
+			SableString L = baseText.substr(0, static_cast<size_t>(newCursor));
+			SableString R = baseText.substr(static_cast<size_t>(newCursor));
+
+			if (!m_multiline)
+			{
+				for (size_t i = 0; i < clipboardText.size(); i++)
+				{
+					if (clipboardText[i] == U'\n')
+					{
+						clipboardText = clipboardText.substr(0, i);
+						break;
+					}
+				}
+			}
+
+			dataCopy.content = L + clipboardText + R;
+			cursorPos.set(newCursor + static_cast<int>(clipboardText.size()));
+
+			initialCursorPos.set(-1);
+			change = true;
+		}
+	}
 
 	if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT_SHIFT) || ctx.keyPressedEvent.test(SABLE_KEY_RIGHT_SHIFT))
 	{
@@ -136,9 +173,14 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	{
 		if (initialCursorPos == -1)
 		{
-			dataCopy.isFocused = false;
-			if (queueInitialised)
-				queue.window->RemoveQueueReference(&queue);
+			if (dataCopy.isFocused)
+			{
+				dataCopy.isFocused = false;
+				m_cursorBlinkInterval.Stop();
+				if (queueInitialised)
+					queue.window->RemoveQueueReference(&queue);
+				change = true;
+			}
 		}
 
 		initialCursorPos.set(-1);

@@ -584,6 +584,12 @@ void SableUI::Window::RecalculateNodes()
 	m_root->Recalculate();
 }
 
+SableString SableUI::Window::GetClipboardContent()
+{
+	std::string utf8str = glfwGetClipboardString(m_window);
+	return SableString(utf8str);
+}
+
 void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)
 {
 	if (std::find(m_customTargetQueues.begin(), m_customTargetQueues.end(), queue)

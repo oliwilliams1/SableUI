@@ -31,7 +31,6 @@ SableUI::TimerHandle SableUI::EventScheduler::AddTimer(
 	std::chrono::milliseconds period,
 	bool repeating)
 {
-	SableUI_Log("Timer added");
 	if (period.count() == 0)
 		SableUI_Runtime_Error("Timer period must be > 0ms");
 
@@ -51,7 +50,6 @@ SableUI::TimerHandle SableUI::EventScheduler::AddTimer(
 
 void SableUI::EventScheduler::RemoveTimer(TimerHandle handle)
 {
-	SableUI_Log("Timer removed");
 	std::lock_guard lock(m_mutex);
 	m_timers.erase(handle);
 	m_cv.notify_one();

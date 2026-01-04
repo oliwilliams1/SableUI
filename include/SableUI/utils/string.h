@@ -29,6 +29,7 @@ namespace SableUI
 		String(const char32_t* str);
 		String(const char* str);
 		String(const std::string& str);
+		String(const std::u16string& str);
 		String(const std::u32string& str);
 
 		String wrap(StyleTag startTag, StyleTag endTag) const;

@@ -5,6 +5,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <string>
+#include <vector>
 
 using namespace SableUI;
 
@@ -121,14 +122,85 @@ String::String(const std::string& str)
 	: m_data(nullptr), m_size(0)
 {
 	s_numComponents++;
-	m_size = str.size();
+	if (str.empty()) return;
 
-	if (m_size > 0)
+	std::vector<char32_t> tempBuffer;
+	tempBuffer.reserve(str.size());
+
+	for (size_t i = 0; i < str.size(); )
 	{
-		m_data = new StringData(nullptr, m_size);
-		for (size_t i = 0; i < m_size; ++i)
-			m_data->data[i] = static_cast<char32_t>(str[i]);
-		m_data->data[m_size] = U'\0';
+		uint32_t cp = 0;
+		unsigned char c = static_cast<unsigned char>(str[i]);
+
+		if (c <= 0x7F)
+		{
+			cp = c; i += 1;
+		}
+		else if ((c & 0xE0) == 0xC0)
+		{
+			cp = c & 0x1F; i += 2;
+			if (i <= str.size()) cp = (cp << 6) | (static_cast<unsigned char>(str[i - 1]) & 0x3F);
+		}
+		else if ((c & 0xF0) == 0xE0)
+		{
+			cp = c & 0x0F; i += 3;
+			if (i <= str.size())
+			{
+				cp = (cp << 6) | (static_cast<unsigned char>(str[i - 2]) & 0x3F);
+				cp = (cp << 6) | (static_cast<unsigned char>(str[i - 1]) & 0x3F);
+			}
+		}
+		else if ((c & 0xF8) == 0xF0)
+		{
+			cp = c & 0x07; i += 4;
+			if (i <= str.size())
+			{
+				cp = (cp << 6) | (static_cast<unsigned char>(str[i - 3]) & 0x3F);
+				cp = (cp << 6) | (static_cast<unsigned char>(str[i - 2]) & 0x3F);
+				cp = (cp << 6) | (static_cast<unsigned char>(str[i - 1]) & 0x3F);
+			}
+		}
+		else
+		{
+			i++;
+			continue;
+		}
+		tempBuffer.push_back(static_cast<char32_t>(cp));
+	}
+
+	m_size = tempBuffer.size();
+	if (m_size > 0) {
+		m_data = new StringData(tempBuffer.data(), m_size);
+	}
+}
+
+String::String(const std::u16string& str)
+	: m_data(nullptr), m_size(0)
+{
+	s_numComponents++;
+	if (str.empty()) return;
+
+	std::vector<char32_t> tempBuffer;
+	tempBuffer.reserve(str.size());
+
+	for (size_t i = 0; i < str.size(); ++i)
+	{
+		char32_t cp = str[i];
+		if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < str.size())
+		{
+			char32_t trail = str[i + 1];
+			if (trail >= 0xDC00 && trail <= 0xDFFF)
+			{
+				cp = 0x10000 + ((cp - 0xD800) << 10) + (trail - 0xDC00);
+				i++;
+			}
+		}
+		tempBuffer.push_back(cp);
+	}
+
+	m_size = tempBuffer.size();
+	if (m_size > 0) {
+		m_data = new StringData(tempBuffer.data(), m_size);
 	}
 }
 

@@ -30,6 +30,8 @@ namespace SableUI
 	void SetContext(Window* window);
 	Window* GetContext();
 
+	SableString GetClipboardContent();
+
 	bool PollEvents();
 	bool WaitEvents();
 	bool WaitEventsTimeout(double timeout);
@@ -186,7 +188,7 @@ namespace SableUI
 #define VSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
 
 #define EmptyPanel()	SableUI::AddPanel()
-#define Panel(name)		SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel();
+#define Panel(name)		SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel()
 
 #define PanelGainRefNoInit(name, T, ref)																	\
 	T* ref = nullptr;																						\

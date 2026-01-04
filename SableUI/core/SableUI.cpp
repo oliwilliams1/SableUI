@@ -12,7 +12,6 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/event_scheduler.h>
 #include <SableUI/core/events.h>
 #include <unordered_set>
 #include <string.h>
@@ -44,6 +43,11 @@ void SableUI::SetContext(Window* window)
 SableUI::Window* SableUI::GetContext()
 {
 	return s_currentContext;
+}
+
+SableString SableUI::GetClipboardContent()
+{
+	return s_currentContext->GetClipboardContent();
 }
 
 static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };
