@@ -56,6 +56,10 @@ namespace SableUI
 		char32_t operator[](size_t index) const noexcept;
 
 		operator std::string() const;
+		operator std::u16string() const;
+
+		std::string to_utf8() const;
+		std::u16string to_utf16() const;
 
 		using iterator = char32_t*;
 		using const_iterator = const char32_t*;

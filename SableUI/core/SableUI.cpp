@@ -50,6 +50,11 @@ SableString SableUI::GetClipboardContent()
 	return s_currentContext->GetClipboardContent();
 }
 
+void SableUI::SetClipboardContent(const SableString& content)
+{
+	s_currentContext->SetClipboardContent(content);
+}
+
 static SableUI::ivec2 g_nextPanelMaxBounds = { 0, 0 };
 static SableUI::ivec2 g_nextPanelMinBounds = { 0, 0 };
 

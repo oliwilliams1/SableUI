@@ -66,6 +66,7 @@ namespace SableUI
 		void RecalculateNodes();
 
 		SableString GetClipboardContent();
+		void SetClipboardContent(const SableString& content);
 
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };

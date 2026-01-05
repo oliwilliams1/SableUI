@@ -590,6 +590,12 @@ SableString SableUI::Window::GetClipboardContent()
 	return SableString(utf8str);
 }
 
+void SableUI::Window::SetClipboardContent(const SableString& content)
+{
+	std::string utf8str = content.to_utf8();
+	glfwSetClipboardString(m_window, utf8str.c_str());
+}
+
 void SableUI::Window::SubmitCustomQueue(CustomTargetQueue* queue)
 {
 	if (std::find(m_customTargetQueues.begin(), m_customTargetQueues.end(), queue)

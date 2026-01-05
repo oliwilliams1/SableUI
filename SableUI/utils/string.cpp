@@ -338,15 +338,83 @@ bool String::operator==(const String& other) const
 
 String::operator std::string() const
 {
-	if (!m_data || !m_data->data)
-		return {};
+	return to_utf8();
+}
+
+std::string String::to_utf8() const
+{
+	if (!m_data || !m_data->data) return {};
 
 	std::string result;
 	result.reserve(m_size);
 
 	for (size_t i = 0; i < m_size; ++i)
 	{
-		result.push_back(static_cast<char>(m_data->data[i]));
+		uint32_t cp = static_cast<uint32_t>(m_data->data[i]);
+
+		if (cp <= 0x7F)
+		{
+			result.push_back(static_cast<char>(cp));
+		}
+		else if (cp <= 0x7FF)
+		{
+			result.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+			result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+		else if (cp <= 0xFFFF)
+		{
+			result.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+			result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+			result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+		else if (cp <= 0x10FFFF)
+		{
+			result.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+			result.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+			result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+			result.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+		}
+	}
+	return result;
+}
+
+String::operator std::u16string() const
+{
+	return to_utf16();
+}
+
+std::u16string String::to_utf16() const
+{
+	if (!m_data || !m_data->data) return {};
+
+	std::u16string result;
+	result.reserve(m_size);
+
+	for (size_t i = 0; i < m_size; ++i)
+	{
+		uint32_t cp = static_cast<uint32_t>(m_data->data[i]);
+
+		if (cp <= 0xFFFF)
+		{
+			if (cp >= 0xD800 && cp <= 0xDFFF)
+			{
+				result.push_back(0xFFFD);
+			}
+			else
+			{
+				result.push_back(static_cast<char16_t>(cp));
+			}
+		}
+		else if (cp <= 0x10FFFF)
+		{
+			cp -= 0x10000;
+			result.push_back(static_cast<char16_t>(0xD800 | (cp >> 10)));
+			result.push_back(static_cast<char16_t>(0xDC00 | (cp & 0x3FF)));
+		}
+		else
+		{
+			result.push_back(0xFFFD);
+		}
 	}
 	return result;
 }

@@ -31,6 +31,7 @@ namespace SableUI
 	Window* GetContext();
 
 	SableString GetClipboardContent();
+	void SetClipboardContent(const SableString& str);
 
 	bool PollEvents();
 	bool WaitEvents();

@@ -7,8 +7,8 @@
 - [x] Input field
 - [x] Large text field
 - [ ] Input field click for cursor
-- [ ] Input field multi-line hover
-- [ ] Input field copy/paste support
+- [ ] Input field multi-line highlighting
+- [x] Input field copy/paste support
 - [ ] Modal
 - [x] Checkbox
 - [ ] Progress

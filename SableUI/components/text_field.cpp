@@ -125,9 +125,38 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	bool ctrlDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_CONTROL) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_CONTROL));
 	bool shiftDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
 	bool sectionHighlighted = initialCursorPos >= 0 && initialCursorPos != cursorPos;
+	bool vPressed = ctx.keyPressedEvent.test(SABLE_KEY_V);
+	bool cPressed = ctx.keyPressedEvent.test(SABLE_KEY_C);
+	bool xPressed = ctx.keyPressedEvent.test(SABLE_KEY_X);
 	bool change = false;
 	
-	if (dataCopy.isFocused && ctrlDown && ctx.keyPressedEvent.test(SABLE_KEY_V))
+	if (dataCopy.isFocused && ctrlDown && (cPressed || xPressed))
+	{
+		if (sectionHighlighted)
+		{
+			int selStart = std::min(cursorPos.get(), initialCursorPos.get());
+			int selEnd = std::max(cursorPos.get(), initialCursorPos.get());
+			size_t count = static_cast<size_t>(selEnd - selStart);
+
+			SableString selectedText = dataCopy.content.substr(selStart, count);
+			SetClipboardContent(selectedText);
+
+			if (xPressed)
+			{
+				SableString baseText = dataCopy.content;
+				int newCursor = cursorPos;
+
+				DeleteSelection(baseText, newCursor, initialCursorPos.get());
+
+				dataCopy.content = baseText;
+				cursorPos.set(newCursor);
+				initialCursorPos.set(-1);
+				change = true;
+			}
+		}
+	}
+
+	if (dataCopy.isFocused && ctrlDown && vPressed)
 	{
 		SableString clipboardText = GetClipboardContent();
 
