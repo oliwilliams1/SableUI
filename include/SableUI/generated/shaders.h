@@ -70,7 +70,7 @@ void main()
     float alpha = texture(uAtlas, UV).r;
     vec3 ink = colour.rgb * alpha;
     
-    ink = pow(ink, vec3(1.0/2.2));
+    ink = pow(ink, vec3(1.0/1.8));
 
     FragColour = vec4(ink, alpha * colour.a);
 })";

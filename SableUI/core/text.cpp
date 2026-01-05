@@ -20,11 +20,12 @@
 #include <cmath>
 #include <cstdint>
 #include <exception>
+#include <mutex>
 
 #include <freetype/config/ftheader.h>
 #include <freetype/fttypes.h>
+#include FT_MODULE_H
 #include FT_FREETYPE_H
-#include FT_LCD_FILTER_H
 
 #include <SableUI/core/renderer.h>
 #include <SableUI/utils/utils.h>
@@ -407,6 +408,9 @@ public:
 private:
 	FontManager() : isInitialized(false) {}
 
+	std::unordered_map<std::string, FT_Face> m_cachedFaces;
+	std::mutex m_faceCacheMutex;
+
 	std::chrono::steady_clock::time_point lastDecayCheck;
 	FontType currentFontType = FontType::Regular;
 	std::string GetCurrentFontDirectory() const;
@@ -455,6 +459,16 @@ void FontManager::Shutdown()
 {
 	if (!isInitialized) return;
 
+	{
+		std::lock_guard<std::mutex> lock(m_faceCacheMutex);
+		for (auto& [path, face] : m_cachedFaces)
+		{
+			if (face)
+				FT_Done_Face(face);
+		}
+		m_cachedFaces.clear();
+	}
+
 	atlases.clear();
 	characters.clear();
 	cachedFontPacks.clear();
@@ -470,6 +484,9 @@ void FontManager::InitFreeType()
 {
 	SableUI_Log("Initializing FreeType");
 	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library");
+	FT_Bool no_stem_darkening = false;
+	FT_Property_Set(ft_library, "cff", "no-stem-darkening", &no_stem_darkening);
+	FT_Property_Set(ft_library, "autofitter", "no-stem-darkening", &no_stem_darkening);
 	FreeTypeRunning = true;
 }
 
@@ -861,6 +878,17 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 		return it->second;
 	}
 
+	{
+		std::lock_guard<std::mutex> lock(const_cast<FontManager*>(this)->m_faceCacheMutex);
+		auto globalIt = const_cast<FontManager*>(this)->m_cachedFaces.find(fontPathForAtlas);
+		if (globalIt != const_cast<FontManager*>(this)->m_cachedFaces.end())
+		{
+			FT_Set_Pixel_Sizes(globalIt->second, 0, fontSize);
+			currentLoadedFaces[fontPathForAtlas] = globalIt->second;
+			return globalIt->second;
+		}
+	}
+
 	FT_Face face;
 	if (FT_New_Face(ft_library, fontPathForAtlas.c_str(), 0, &face))
 	{
@@ -870,9 +898,14 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 	}
 
 	FT_Set_Pixel_Sizes(face, 0, fontSize);
+
+	{
+		std::lock_guard<std::mutex> lock(const_cast<FontManager*>(this)->m_faceCacheMutex);
+		const_cast<FontManager*>(this)->m_cachedFaces[fontPathForAtlas] = face;
+	}
+
 	currentLoadedFaces[fontPathForAtlas] = face;
-	SableUI_Log("Loaded font: %s (size %i) for rendering atlas",
-		fontPathForAtlas.c_str(), fontSize);
+	SableUI_Log("Loaded and cached font: %s (size %i)", fontPathForAtlas.c_str(), fontSize);
 	return face;
 }
 
@@ -901,7 +934,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
-		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
+		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT)) continue;
 
 		FT_GlyphSlot glyph = face->glyph;
 		FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
@@ -981,7 +1014,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		FT_Set_Pixel_Sizes(face, 0, static_cast<int>(atlas.fontSize));
 
 		FT_UInt glyphIndex = FT_Get_Char_Index(face, c);
-		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_TARGET_LIGHT)) continue;
+		if (glyphIndex == 0 || FT_Load_Glyph(face, glyphIndex, FT_LOAD_RENDER | FT_LOAD_TARGET_LIGHT | FT_LOAD_FORCE_AUTOHINT)) continue;
 
 		FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 
@@ -1084,11 +1117,6 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		charsForSerialization, initialAtlasYForRenderPass);
 
 	delete[] atlasPixels;
-
-	for (auto& pair : facesForCurrentRender)
-	{
-		FT_Done_Face(pair.second);
-	}
 
 	atlasCursor.y = initialAtlasYForRenderPass + requiredHeightForPass + ATLAS_PADDING;
 }
@@ -2193,6 +2221,10 @@ SableUI::_Text::~_Text()
 {
 	for (const auto& key : m_cacheKeys)
 		TextCacheFactory::Release(m_renderer, key);
+	m_cacheKeys.clear();
+
+	m_gpuObject = nullptr;
+	m_renderer = nullptr;
 
 	s_textCount--;
 }

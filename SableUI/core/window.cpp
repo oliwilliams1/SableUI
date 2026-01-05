@@ -537,6 +537,7 @@ void SableUI::Window::Draw()
 					needsRedraw = true;
 					m_renderer->BeginRenderPass(&m_windowSurface);
 					m_renderer->Draw(&m_windowSurface);
+					RenderWindowBorder();
 					m_renderer->EndRenderPass();
 				}
 				else

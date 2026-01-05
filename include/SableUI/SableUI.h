@@ -117,7 +117,6 @@ namespace SableUI
 
 	inline ElementInfo StripAppearanceStyles(ElementInfo info) {
 		info.appearance = AppearanceProps{};
-		info.text = TextProps{};
 		return info;
 	}
 }

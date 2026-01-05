@@ -103,11 +103,11 @@ void SableUI::TextFieldComponent::Layout()
 	{
 		if (data.content.empty() && !data.isFocused)
 		{
-			Text(data.placeholder, textColour(placeholderCol), wrapText(m_multiline));
+			Text(data.placeholder, textColour(placeholderCol), wrapText(m_multiline), fontSize(info.text.fontSize));
 		}
 		else
 		{
-			Text(data.content, id("TextFieldText"), textColour(textCol), wrapText(m_multiline));
+			Text(data.content, id("TextFieldText"), textColour(textCol), wrapText(m_multiline), fontSize(info.text.fontSize));
 		}
 	}
 }
