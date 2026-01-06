@@ -396,15 +396,11 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 // CustomLayoutTarget Element Builder
 // ============================================================================
 bool s_customLayoutMode = false;
-void SableUI::StartCustomLayoutScope(
-	CustomTargetQueue* queuePtr,
-	const ElementInfo& elementInfo)
+void SableUI::StartCustomLayout(
+	CustomTargetQueue* queuePtr)
 {
 	if (s_customLayoutMode)
-		SableUI_Runtime_Error("Cannot nest custom layouts");
-
-	if (s_reconciliationMode)
-		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
+		SableUI_Runtime_Error("StartCustomLayout called without EndCustomLayout");
 
 	if (!queuePtr->window)
 	{
@@ -418,16 +414,11 @@ void SableUI::StartCustomLayoutScope(
 	if (queuePtr != nullptr)
 	{
 		queuePtr->window->RemoveQueueReference(queuePtr);
-		if (queuePtr->root)
-		{
-			SB_delete(queuePtr->root);
-			queuePtr->root = nullptr;
 
-			for (DrawableBase* dr : queuePtr->drawables)
-				SB_delete(dr);
+		for (DrawableBase* dr : queuePtr->drawables)
+			SB_delete(dr);
 			
-			queuePtr->drawables.clear();
-		}
+		queuePtr->drawables.clear();
 	}
 	else
 	{
@@ -436,22 +427,14 @@ void SableUI::StartCustomLayoutScope(
 	}
 
 	s_rendererStack.push(queuePtr->window->m_renderer);
-	ElementInfo info = elementInfo;
-	info.type = ElementType::Div;
-	info.layout.wType = RectType::FitContent;
-	info.layout.hType = RectType::FitContent;
-	Element* queueRoot = SB_new<Element>(queuePtr->window->m_renderer, info);
-
-	queuePtr->root = queueRoot;
-	s_elementStack.push(queueRoot);
 	s_customLayoutMode = true;
 }
 
-void SableUI::EndCustomLayoutScope(
+void SableUI::EndCustomLayout(
 	CustomTargetQueue* queuePtr)
 {
 	if (!s_customLayoutMode)
-		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
+		SableUI_Runtime_Error("EndCustomLayout called without StartCustomLayout");
 
 	if (!queuePtr)
 	{
@@ -466,10 +449,7 @@ void SableUI::EndCustomLayoutScope(
 	}
 
 	queuePtr->window->SubmitCustomQueue(queuePtr);
-	s_elementStack.top()->LayoutChildren();
 	s_rendererStack.pop();
-	s_elementStack.pop();
-
 	s_customLayoutMode = false;
 }
 
@@ -532,7 +512,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
 }
  
-SableUI::Window* SableUI::Initialise(const char* name, int width, int height, const WindowInitInfo& info)
+SableUI::Window* SableUI::CreatePrimaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app != nullptr)
 	{

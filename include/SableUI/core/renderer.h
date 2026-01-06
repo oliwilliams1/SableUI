@@ -150,7 +150,6 @@ namespace SableUI
 		static int GetNumInstances();
 		Window* window = nullptr;
 		const GpuFramebuffer* target = nullptr;
-		Element* root = nullptr;
 		std::vector<DrawableBase*> drawables;
 
 		void AddRect(const Rect& rect, const Colour& colour, float borderRadius = 0.0f);

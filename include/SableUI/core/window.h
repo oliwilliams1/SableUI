@@ -7,6 +7,7 @@
 
 #include <SableUI/core/renderer.h>
 #include <SableUI/core/panel.h>
+#include <SableUI/core/floating_panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 #pragma warning(pop)
@@ -65,6 +66,8 @@ namespace SableUI
 		void RerenderAllNodes();
 		void RecalculateNodes();
 
+		FloatingPanelManager& GetFloatingPanelManager() { return *m_floatingPanelManager; }
+
 		SableString GetClipboardContent();
 		void SetClipboardContent(const SableString& content);
 
@@ -80,6 +83,8 @@ namespace SableUI
 		bool IsMinimized() const;
 	
 	private:
+		FloatingPanelManager* m_floatingPanelManager;
+
 		GpuFramebuffer m_framebuffer;
 		GpuFramebuffer m_windowSurface;
 		GpuTexture2D m_colourAttachment;

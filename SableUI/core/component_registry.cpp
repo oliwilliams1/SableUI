@@ -85,7 +85,6 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
     return component;
 }
 
-#include <SableUI/components/menu_bar.h>
 #include <SableUI/components/debug_components.h>
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
@@ -97,7 +96,6 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesPanel>("PropertiesPanel");
     
-    RegisterComponent<MenuBar>("MenuBar");
     RegisterComponent<Button>("sableui_button");
     RegisterComponent<Checkbox>("sableui_checkbox");
     RegisterComponent<TextFieldComponent>("sableui_text_field");

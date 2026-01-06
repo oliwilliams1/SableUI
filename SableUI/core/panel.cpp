@@ -125,7 +125,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 {
 	if (children.size() > 0)
 	{
-		SableUI_Error("Root node cannot have more than one child, dismissing call");
+		SableUI_Runtime_Error("Root node cannot have more than one child");
 		return nullptr;
 	}
 	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
@@ -139,7 +139,7 @@ SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
 {
 	if (children.size() > 0)
 	{
-		SableUI_Error("Root node cannot have more than one child, dismissing call");
+		SableUI_Runtime_Error("Root node cannot have more than one child");
 		return nullptr;
 	}
 	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);

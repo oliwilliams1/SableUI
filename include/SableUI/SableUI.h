@@ -12,7 +12,6 @@
 #include <SableUI/styles/theme.h>
 #include <SableUI/core/scroll_context.h>
 #include <SableUI/core/tab_context.h>
-#include <SableUI/components/menu_bar.h>
 
 /* non-macro user api */
 namespace SableUI
@@ -23,7 +22,7 @@ namespace SableUI
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
-	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
+	Window* CreatePrimaryWindow(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	void Shutdown();
 
@@ -66,8 +65,8 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
-	void StartCustomLayoutScope(CustomTargetQueue* queuePtr, const ElementInfo& ElementInfo = {});
-	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
+	void StartCustomLayout(CustomTargetQueue* queuePtr);
+	void EndCustomLayout(CustomTargetQueue* queuePtr);
 
 	struct DivScope
 	{
@@ -266,3 +265,53 @@ namespace SableUI
 		Text(label, w_fit, wrapText(false), mx(2), mb(4));													\
 		Rect(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
 	}
+
+#include <SableUI/core/floating_panel.h>
+namespace SableUI
+{
+	template<typename T>
+	T* OpenFloatingPanelGainRef(const std::string& componentName, const FloatingPanelInfo& info)
+	{
+		static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+		FloatingPanel* panel = FloatingPanels::Open(componentName, info);
+		if (!panel) return nullptr;
+
+		return dynamic_cast<T*>(panel->GetComponent());
+	}
+
+	template<typename T>
+	T* GetFloatingPanelComponent(const std::string& id)
+	{
+		static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
+
+		FloatingPanel* panel = FloatingPanels::Get(id);
+		if (!panel) return nullptr;
+
+		return dynamic_cast<T*>(panel->GetComponent());
+	}
+}
+
+#define OpenFloatingPanel(componentName, id) \
+	SableUI::FloatingPanels::Open(componentName, { id })
+
+#define OpenFloatingPanelWithBounds(componentName, id, bounds) \
+	SableUI::FloatingPanels::Open(componentName, { id, bounds })
+
+#define OpenFloatingPanelGainTypedRef(componentName, id, Type, refName) \
+	Type* refName = SableUI::OpenFloatingPanelGainRef<Type>(componentName, { id })
+
+#define OpenFloatingPanelGainTypedRefWithBounds(componentName, id, bounds, Type, refName) \
+	Type* refName = SableUI::OpenFloatingPanelGainRef<Type>(componentName, { id, bounds })
+
+#define IsFloatingPanelActive(id) \
+	SableUI::FloatingPanels::IsActive(id)
+
+#define CloseFloatingPanel(id) \
+	SableUI::FloatingPanels::Close(id)
+
+#define GetFloatingPanelComponent(id, Type) \
+	SableUI::GetFloatingPanelComponent<Type>(id)
+
+#define BringFloatingPanelToFront(id) \
+	SableUI::FloatingPanels::BringToFront(id)

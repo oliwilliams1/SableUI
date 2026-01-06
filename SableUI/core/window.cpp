@@ -285,6 +285,8 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_renderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
+	m_floatingPanelManager = SB_new<FloatingPanelManager>(m_renderer);
+
 	if (width > 0 && height > 0)
 	{
 		m_colourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
@@ -442,8 +444,12 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 
 	ctx.firedTimers = firedTimers;
 
+	bool blockMainContent = false;
+	m_floatingPanelManager->HandleInput(ctx, blockMainContent);
+
 	m_root->DistributeEvents(ctx);
 	bool dirty = m_root->UpdateComponents();
+	m_floatingPanelManager->UpdateAll();
 	if (dirty)
 	{
 		m_renderer->ClearDrawableStack();
@@ -515,21 +521,25 @@ void SableUI::Window::Draw()
 	if (needsRedraw || hasWindowSurfaceQueue)
 		m_renderer->BlitToScreen(&m_framebuffer);
 
+	m_floatingPanelManager->RenderAll();
+	if (m_renderer->isDirty())
+	{
+		m_renderer->BeginRenderPass(&m_windowSurface);
+		m_renderer->Draw(&m_windowSurface);
+		RenderWindowBorder();
+		m_renderer->EndRenderPass();
+		needsRedraw = true;
+	}
+
 	// execute custom queues
 	if (!m_customTargetQueues.empty())
 	{
 		for (CustomTargetQueue* queue : m_customTargetQueues)
 		{
-			if (!queue->drawables.empty() || queue->root)
+			if (!queue->drawables.empty())
 			{
 				for (DrawableBase* dr : queue->drawables)
 					m_renderer->AddToDrawStack(dr);
-
-				if (queue->root)
-				{
-					queue->root->LayoutChildren();
-					queue->root->Render();
-				}
 
 				// if rendering to window surface, render directly to back buffer (framebuffer 0)
 				if (queue->target == &m_windowSurface)
@@ -1041,6 +1051,7 @@ SableUI::Window::~Window()
 	if (m_window)
 		MakeContextCurrent();
 
+	SB_delete(m_floatingPanelManager);
 	SB_delete(m_root);
 	DestroyDrawables();
 	if (m_borderTop)
