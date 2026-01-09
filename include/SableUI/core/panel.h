@@ -1,10 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <type_traits>
 
 #include <SableUI/core/component.h>
-#include <SableUI/utils/memory.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/renderer.h>
 #include <SableUI/utils/utils.h>

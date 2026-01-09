@@ -417,12 +417,12 @@ void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 		queueInitialised = true;
 	}
 
-	StartCustomLayout(&queue);
+	StartCustomLayoutScope(&queue);
 
 	Element* text = GetElementById("TextFieldText");
 	if (!text)
 	{
-		EndCustomLayout(&queue);
+		EndCustomLayoutScope(&queue);
 		return;
 	}
 
@@ -471,5 +471,5 @@ void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 		}
 	}
 
-	EndCustomLayout(&queue);
+	EndCustomLayoutScope(&queue);
 }

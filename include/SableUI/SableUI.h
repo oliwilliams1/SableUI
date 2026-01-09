@@ -22,7 +22,7 @@ namespace SableUI
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
-	Window* CreatePrimaryWindow(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
+	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	void Shutdown();
 
@@ -65,8 +65,11 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
-	void StartCustomLayout(CustomTargetQueue* queuePtr);
-	void EndCustomLayout(CustomTargetQueue* queuePtr);
+	void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
+	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
+
+	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info = {});
+	void DestroyFloatingPanel(const std::string& id);
 
 	struct DivScope
 	{
@@ -182,9 +185,9 @@ namespace SableUI
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
 // Horizontal splitter
-#define HSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HORIZONTAL); true)
+#define HSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HorizontalSplitter); true)
 // Vertical splitter
-#define VSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VERTICAL); true)
+#define VSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VerticalSplitter); true)
 
 #define EmptyPanel()	SableUI::AddPanel()
 #define Panel(name)		SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel()
@@ -265,53 +268,3 @@ namespace SableUI
 		Text(label, w_fit, wrapText(false), mx(2), mb(4));													\
 		Rect(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
 	}
-
-#include <SableUI/core/floating_panel.h>
-namespace SableUI
-{
-	template<typename T>
-	T* OpenFloatingPanelGainRef(const std::string& componentName, const FloatingPanelInfo& info)
-	{
-		static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-		FloatingPanel* panel = FloatingPanels::Open(componentName, info);
-		if (!panel) return nullptr;
-
-		return dynamic_cast<T*>(panel->GetComponent());
-	}
-
-	template<typename T>
-	T* GetFloatingPanelComponent(const std::string& id)
-	{
-		static_assert(std::is_base_of<BaseComponent, T>::value, "T must derive from BaseComponent");
-
-		FloatingPanel* panel = FloatingPanels::Get(id);
-		if (!panel) return nullptr;
-
-		return dynamic_cast<T*>(panel->GetComponent());
-	}
-}
-
-#define OpenFloatingPanel(componentName, id) \
-	SableUI::FloatingPanels::Open(componentName, { id })
-
-#define OpenFloatingPanelWithBounds(componentName, id, bounds) \
-	SableUI::FloatingPanels::Open(componentName, { id, bounds })
-
-#define OpenFloatingPanelGainTypedRef(componentName, id, Type, refName) \
-	Type* refName = SableUI::OpenFloatingPanelGainRef<Type>(componentName, { id })
-
-#define OpenFloatingPanelGainTypedRefWithBounds(componentName, id, bounds, Type, refName) \
-	Type* refName = SableUI::OpenFloatingPanelGainRef<Type>(componentName, { id, bounds })
-
-#define IsFloatingPanelActive(id) \
-	SableUI::FloatingPanels::IsActive(id)
-
-#define CloseFloatingPanel(id) \
-	SableUI::FloatingPanels::Close(id)
-
-#define GetFloatingPanelComponent(id, Type) \
-	SableUI::GetFloatingPanelComponent<Type>(id)
-
-#define BringFloatingPanelToFront(id) \
-	SableUI::FloatingPanels::BringToFront(id)

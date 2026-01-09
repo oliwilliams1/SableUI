@@ -1,6 +1,7 @@
 #include <SableUI/core/component_registry.h>
 #include <SableUI/core/component.h>
 #include <SableUI/core/panel.h>
+#include <SableUI/core/floating_panel.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/console.h>
 #include <string>
@@ -54,6 +55,25 @@ BaseComponent* ContentPanel::AttachComponent(const std::string& componentName)
     m_component = comp;
     m_component->SetRenderer(m_renderer);
     
+    return comp;
+}
+
+BaseComponent* FloatingPanel::AttachComponent(const std::string& componentName)
+{
+    if (m_component != nullptr)
+        SableMemory::SB_delete(m_component);
+
+    BaseComponent* comp = ComponentRegistry::GetInstance().Create(componentName);
+
+    if (!comp)
+    {
+        SableUI_Runtime_Error("Cannot attach component %s", componentName.c_str());
+        return nullptr;
+    }
+
+    m_component = comp;
+    m_component->SetRenderer(m_renderer);
+
     return comp;
 }
 

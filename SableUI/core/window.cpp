@@ -11,6 +11,7 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <SableUI/generated/resources.h>
+#include <SableUI/core/floating_panel.h>
 #include <SableUI/styles/theme.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -35,11 +36,11 @@ static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 {
 	SableUI::Rect r = node->rect;
 
-	SableUI::PanelType parentType = (node->parent == nullptr) ? SableUI::PanelType::ROOTNODE : node->parent->type;
+	SableUI::PanelType parentType = (node->parent == nullptr) ? SableUI::PanelType::Root : node->parent->type;
 
 	switch (parentType)
 	{
-	case SableUI::PanelType::ROOTNODE:
+	case SableUI::PanelType::Root:
 	{
 		float distLeft = p.x - r.x;
 		float distRight = (r.x + r.w) - p.x;
@@ -49,13 +50,13 @@ static float DistToEdge(SableUI::BasePanel* node, SableUI::ivec2 p)
 		return (std::max)(0.0f, (std::min)({ distLeft, distRight, distTop, distBottom }));
 	}
 
-	case SableUI::PanelType::HORIZONTAL:
+	case SableUI::PanelType::HorizontalSplitter:
 	{
 		float distRight = (r.x + r.w) - p.x;
 		return (distRight < 0) ? 0 : distRight;
 	}
 
-	case SableUI::PanelType::VERTICAL:
+	case SableUI::PanelType::VerticalSplitter:
 	{
 		float distBottom = (r.y + r.h) - p.y;
 		return (distBottom < 0) ? 0 : distBottom;
@@ -149,12 +150,17 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->m_isMinimized = false;
 	instance->MakeContextCurrent();
 
-	instance->m_renderer->Viewport(0, 0, width, height);
+	instance->m_baseRenderer->Viewport(0, 0, width, height);
+	instance->m_floatingRenderer->Viewport(0, 0, width, height);
 
 	if (width > 0 && height > 0)
 	{
-		instance->m_colourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		instance->m_framebuffer.SetSize(width, height);
+		instance->m_baseColourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		instance->m_baseFramebuffer.SetSize(width, height);
+
+		instance->m_floatingColourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		instance->m_floatingFramebuffer.SetSize(width, height);
+
 		instance->m_windowSurface.SetSize(width, height);
 	}
 
@@ -279,20 +285,27 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
-	m_renderer = RendererBackend::Create(backend);
+	m_baseRenderer = RendererBackend::Create(backend);
+	m_baseRenderer->SetBlending(true);
+	m_baseRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_baseRenderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	m_renderer->SetBlending(true);
-	m_renderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-	m_renderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
-
-	m_floatingPanelManager = SB_new<FloatingPanelManager>(m_renderer);
+	m_floatingRenderer = RendererBackend::Create(backend);
+	m_floatingRenderer->SetBlending(true);
+	m_floatingRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_floatingRenderer->Clear(0.0f, 0.0f, 0.0f, 0.0f);
 
 	if (width > 0 && height > 0)
 	{
-		m_colourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		m_framebuffer.SetSize(m_windowSize.x, m_windowSize.y);
-		m_framebuffer.AttachColour(&m_colourAttachment, 0);
-		m_framebuffer.Bake();
+		m_baseColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		m_baseFramebuffer.SetSize(m_windowSize.x, m_windowSize.y);
+		m_baseFramebuffer.AttachColour(&m_baseColourAttachment, 0);
+		m_baseFramebuffer.Bake();
+
+		m_floatingColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		m_floatingFramebuffer.SetSize(m_windowSize.x, m_windowSize.y);
+		m_floatingFramebuffer.AttachColour(&m_floatingColourAttachment, 0);
+		m_floatingFramebuffer.Bake();
 	}
 
 	m_windowSurface.SetIsWindowSurface(true);
@@ -316,7 +329,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetKeyCallback(m_window, KeyCallback);
 	glfwSetCharCallback(m_window, CharCallback);
 
-	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
+	m_root = SB_new<SableUI::RootPanel>(m_baseRenderer, width, height);
 
 	m_borderTop = SB_new<DrawableRect>();
 	m_borderBottom = SB_new<DrawableRect>();
@@ -390,11 +403,11 @@ GLFWcursor* SableUI::Window::CheckResize(BasePanel* node, bool* resCalled, bool 
 		{
 			switch (node->parent->type)
 			{
-			case PanelType::VERTICAL:
+			case PanelType::VerticalSplitter:
 				cursorToSet = m_vResizeCursor;
 				break;
 
-			case PanelType::HORIZONTAL:
+			case PanelType::HorizontalSplitter:
 				cursorToSet = m_hResizeCursor;
 				break;
 			default:
@@ -436,7 +449,7 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 
 	if (m_needsRefresh)
 	{
-		m_renderer->ClearDrawableStack();
+		m_baseRenderer->ClearDrawableStack();
 		RecalculateNodes();
 		RerenderAllNodes();
 		m_needsRefresh = false;
@@ -444,22 +457,37 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 
 	ctx.firedTimers = firedTimers;
 
-	bool blockMainContent = false;
-	m_floatingPanelManager->HandleInput(ctx, blockMainContent);
-
+	// regular panels
 	m_root->DistributeEvents(ctx);
 	bool dirty = m_root->UpdateComponents();
-	m_floatingPanelManager->UpdateAll();
 	if (dirty)
 	{
-		m_renderer->ClearDrawableStack();
+		m_baseRenderer->ClearDrawableStack();
 		m_root->Render();
 		m_needsStaticRedraw = true;
 	}
 	m_root->PostLayoutUpdate(ctx);
 
+	// floating panels
+	for (const auto& pair : m_floatingPanels)
+		pair.second->DistributeEvents(ctx);
+
+	for (const auto& pair : m_floatingPanels)
+	{
+		bool res = pair.second->UpdateComponents();
+		if (res)
+		{
+			pair.second->Render();
+			m_needsStaticRedraw = true;
+		}
+	}
+
+	for (const auto& pair : m_floatingPanels)
+		pair.second->PostLayoutUpdate(ctx);
+
 	StepCachedTexturesCleaner();
-	TextCacheFactory::CleanCache(m_renderer);
+	TextCacheFactory::CleanCache(m_baseRenderer);
+	TextCacheFactory::CleanCache(m_floatingRenderer);
 	HandleResize();
 
 	ctx.mousePressed.reset();
@@ -493,7 +521,8 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool needsRedraw = false;
+	bool baseRendererDrawn = false;
+	bool floatingRendererDrawn = false;
 	bool hasWindowSurfaceQueue = false;
 
 	// check if any custom queue renders to window surface
@@ -507,29 +536,30 @@ void SableUI::Window::Draw()
 	}
 
 	// render main content to offscreen framebuffer
-	if (m_renderer->isDirty() || m_needsStaticRedraw)
+	if (m_baseRenderer->isDirty() || m_needsStaticRedraw)
 	{
-		needsRedraw = true;
+		baseRendererDrawn = true;
 
-		m_renderer->BeginRenderPass(&m_framebuffer);
-		m_renderer->Draw(&m_framebuffer);
+		m_baseRenderer->BeginRenderPass(&m_baseFramebuffer);
 		RenderWindowBorder();
-		m_renderer->EndRenderPass();
+		m_baseRenderer->Draw(&m_baseFramebuffer);
+		m_baseRenderer->EndRenderPass();
+	}
+
+	if (m_floatingRenderer->isDirty() || m_needsStaticRedraw)
+	{
+		floatingRendererDrawn = true;
+		m_floatingRenderer->BeginRenderPass(&m_floatingFramebuffer);
+		m_floatingRenderer->Draw(&m_floatingFramebuffer);
+		m_floatingRenderer->EndRenderPass();
 	}
 
 	// blit the base framebuffer to screen if we need it
-	if (needsRedraw || hasWindowSurfaceQueue)
-		m_renderer->BlitToScreen(&m_framebuffer);
+	if (baseRendererDrawn || hasWindowSurfaceQueue)
+		m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
 
-	m_floatingPanelManager->RenderAll();
-	if (m_renderer->isDirty())
-	{
-		m_renderer->BeginRenderPass(&m_windowSurface);
-		m_renderer->Draw(&m_windowSurface);
-		RenderWindowBorder();
-		m_renderer->EndRenderPass();
-		needsRedraw = true;
-	}
+	if (floatingRendererDrawn)
+		m_floatingRenderer->BlitToScreen(&m_floatingFramebuffer);
 
 	// execute custom queues
 	if (!m_customTargetQueues.empty())
@@ -539,32 +569,32 @@ void SableUI::Window::Draw()
 			if (!queue->drawables.empty())
 			{
 				for (DrawableBase* dr : queue->drawables)
-					m_renderer->AddToDrawStack(dr);
+					m_baseRenderer->AddToDrawStack(dr);
 
 				// if rendering to window surface, render directly to back buffer (framebuffer 0)
 				if (queue->target == &m_windowSurface)
 				{
-					needsRedraw = true;
-					m_renderer->BeginRenderPass(&m_windowSurface);
-					m_renderer->Draw(&m_windowSurface);
-					RenderWindowBorder();
-					m_renderer->EndRenderPass();
+					baseRendererDrawn = true;
+					m_baseRenderer->BeginRenderPass(&m_windowSurface);
+					m_baseRenderer->Draw(&m_windowSurface);
+					m_baseRenderer->EndRenderPass();
 				}
 				else
 				{
 					// render to custom framebuffer
-					m_renderer->BeginRenderPass(queue->target);
-					m_renderer->Draw(queue->target);
-					m_renderer->EndRenderPass();
+					m_baseRenderer->BeginRenderPass(queue->target);
+					m_baseRenderer->Draw(queue->target);
+					m_baseRenderer->EndRenderPass();
 				}
 			}
 		}
 	}
 
 	// swap buffers if anything was drawn
-	if (needsRedraw)
+	if (baseRendererDrawn || floatingRendererDrawn)
 	{
-		m_renderer->CheckErrors();
+		m_baseRenderer->CheckErrors();
+		m_floatingRenderer->CheckErrors();
 		glfwSwapBuffers(m_window);
 		m_needsStaticRedraw = false;
 	}
@@ -582,7 +612,7 @@ SableUI::RootPanel* SableUI::Window::GetRoot()
 
 void SableUI::Window::RerenderAllNodes()
 {
-	m_renderer->ClearDrawableStack();
+	m_baseRenderer->ClearDrawableStack();
 
 	m_root->Render();
 
@@ -635,11 +665,42 @@ void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
 }
 
 // ============================================================================
+// Floating Panels
+// ============================================================================
+void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info)
+{
+	auto it = m_floatingPanels.find(id);
+	if (it != m_floatingPanels.end())
+	{
+		SableUI_Error("CreateFloatingPanel() called with an already existing ID");
+		return;
+	}
+
+	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, Rect{ 50, 50, 150, 150 });
+	BaseComponent* comp = newPanel->AttachComponent(componentName);
+	comp->BackendInitialisePanel();
+	m_floatingPanels[id] = newPanel;
+}
+
+void SableUI::Window::DestroyFloatingPanel(const std::string& id)
+{
+	auto it = m_floatingPanels.find(id);
+	if (it == m_floatingPanels.end())
+	{
+		SableUI_Error("DestroyFloatingPanel() called without an existing ID");
+		return;
+	}
+
+	SB_delete(m_floatingPanels[id]);
+	m_floatingPanels.erase(id);
+}
+
+// ============================================================================
 // Node calculations
 // ============================================================================
 static void FixWidth(SableUI::BasePanel* panel)
 {
-	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE)
+	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::Base)
 		return;
 
 	for (SableUI::BasePanel* child : panel->children)
@@ -745,7 +806,7 @@ static void FixWidth(SableUI::BasePanel* panel)
 
 static void FixHeight(SableUI::BasePanel* panel)
 {
-	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::BASE)
+	if (panel->children.size() == 0 || panel->type == SableUI::PanelType::Base)
 		return;
 
 	for (SableUI::BasePanel* child : panel->children)
@@ -883,10 +944,10 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 		
 		switch (panel->parent->type)
 		{
-		case PanelType::HORIZONTAL:
+		case PanelType::HorizontalSplitter:
 			state.currentEdgeType = EdgeType::EW_EDGE;
 			break;
-		case PanelType::VERTICAL:
+		case PanelType::VerticalSplitter:
 			state.currentEdgeType = EdgeType::NS_EDGE;
 			break;
 		default:
@@ -995,7 +1056,7 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	}
 
 	// Clear accumulated draw calls from resize steps
-	m_renderer->ClearDrawableStack();
+	m_baseRenderer->ClearDrawableStack();
 	m_needsRefresh = true;
 
 	oldPos = pos;
@@ -1012,19 +1073,15 @@ void SableUI::Window::UpdateWindowBorder()
 	int w = m_windowSize.x;
 	int h = m_windowSize.y;
 
-	// Top border (full width, 1px tall)
 	m_borderTop->Update({ 0, 0, w, 1 }, borderColor, 0.0f, false, {});
 	m_borderTop->m_zIndex = 1000;
 
-	// Bottom border (full width, 1px tall)
 	m_borderBottom->Update({ 0, h - 1, w, 1 }, borderColor, 0.0f, false, {});
 	m_borderBottom->m_zIndex = 1000;
 
-	// Left border (1px wide, full height minus corners)
 	m_borderLeft->Update({ 0, 1, 1, h - 2 }, borderColor, 0.0f, false, {});
 	m_borderLeft->m_zIndex = 1000;
 
-	// Right border (1px wide, full height minus corners)
 	m_borderRight->Update({ w - 1, 1, 1, h - 2 }, borderColor, 0.0f, false, {});
 	m_borderRight->m_zIndex = 1000;
 
@@ -1037,13 +1094,13 @@ void SableUI::Window::RenderWindowBorder()
 		UpdateWindowBorder();
 
 	if (m_borderTop)
-		m_renderer->AddToDrawStack(m_borderTop);
+		m_baseRenderer->AddToDrawStack(m_borderTop);
 	if (m_borderBottom)
-		m_renderer->AddToDrawStack(m_borderBottom);
+		m_baseRenderer->AddToDrawStack(m_borderBottom);
 	if (m_borderLeft)
-		m_renderer->AddToDrawStack(m_borderLeft);
+		m_baseRenderer->AddToDrawStack(m_borderLeft);
 	if (m_borderRight)
-		m_renderer->AddToDrawStack(m_borderRight);
+		m_baseRenderer->AddToDrawStack(m_borderRight);
 }
 
 SableUI::Window::~Window()
@@ -1051,33 +1108,39 @@ SableUI::Window::~Window()
 	if (m_window)
 		MakeContextCurrent();
 
-	SB_delete(m_floatingPanelManager);
+	for (const auto& pair : m_floatingPanels)
+	{
+		SB_delete(pair.second);
+	}
+
 	SB_delete(m_root);
 	DestroyDrawables();
 	if (m_borderTop)
 	{
-		m_renderer->ClearDrawable(m_borderTop);
+		m_baseRenderer->ClearDrawable(m_borderTop);
 		SB_delete(m_borderTop);
 	}
 	if (m_borderBottom)
 	{
-		m_renderer->ClearDrawable(m_borderBottom);
+		m_baseRenderer->ClearDrawable(m_borderBottom);
 		SB_delete(m_borderBottom);
 	}
 	if (m_borderLeft)
 	{
-		m_renderer->ClearDrawable(m_borderLeft);
+		m_baseRenderer->ClearDrawable(m_borderLeft);
 		SB_delete(m_borderLeft);
 	}
 	if (m_borderRight)
 	{
-		m_renderer->ClearDrawable(m_borderRight);
+		m_baseRenderer->ClearDrawable(m_borderRight);
 		SB_delete(m_borderRight);
 	}
 
-	TextCacheFactory::ShutdownFactory(m_renderer);
+	TextCacheFactory::ShutdownFactory(m_baseRenderer);
+	TextCacheFactory::ShutdownFactory(m_floatingRenderer);
 
-	SB_delete(m_renderer);
+	SB_delete(m_baseRenderer);
+	SB_delete(m_floatingRenderer);
 
 	if (m_window)
 		glfwDestroyWindow(m_window);

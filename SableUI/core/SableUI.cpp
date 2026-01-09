@@ -138,9 +138,9 @@ SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 		return nullptr;
 	}
 
-	if (orientation != SableUI::PanelType::VERTICAL && orientation != SableUI::PanelType::HORIZONTAL)
+	if (orientation != SableUI::PanelType::VerticalSplitter && orientation != SableUI::PanelType::HorizontalSplitter)
 	{
-		SableUI_Error("Invalid panel type: %d, must be PanelType::VERTICAL or PanelType::HORIZONTAL", static_cast<int>(orientation));
+		SableUI_Error("Invalid panel type: %d, must be PanelType::VerticalSplitter or PanelType::HorizontalSplitter", static_cast<int>(orientation));
 		return nullptr;
 	}
 
@@ -396,11 +396,14 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 // CustomLayoutTarget Element Builder
 // ============================================================================
 bool s_customLayoutMode = false;
-void SableUI::StartCustomLayout(
+void SableUI::StartCustomLayoutScope(
 	CustomTargetQueue* queuePtr)
 {
 	if (s_customLayoutMode)
-		SableUI_Runtime_Error("StartCustomLayout called without EndCustomLayout");
+		SableUI_Runtime_Error("Cannot nest custom layouts");
+
+	if (s_reconciliationMode)
+		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
 
 	if (!queuePtr->window)
 	{
@@ -414,7 +417,6 @@ void SableUI::StartCustomLayout(
 	if (queuePtr != nullptr)
 	{
 		queuePtr->window->RemoveQueueReference(queuePtr);
-
 		for (DrawableBase* dr : queuePtr->drawables)
 			SB_delete(dr);
 			
@@ -426,15 +428,15 @@ void SableUI::StartCustomLayout(
 		return;
 	}
 
-	s_rendererStack.push(queuePtr->window->m_renderer);
+	s_rendererStack.push(queuePtr->window->GetBaseRenderer());
 	s_customLayoutMode = true;
 }
 
-void SableUI::EndCustomLayout(
+void SableUI::EndCustomLayoutScope(
 	CustomTargetQueue* queuePtr)
 {
 	if (!s_customLayoutMode)
-		SableUI_Runtime_Error("EndCustomLayout called without StartCustomLayout");
+		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
 
 	if (!queuePtr)
 	{
@@ -450,7 +452,24 @@ void SableUI::EndCustomLayout(
 
 	queuePtr->window->SubmitCustomQueue(queuePtr);
 	s_rendererStack.pop();
+
 	s_customLayoutMode = false;
+}
+
+void SableUI::CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info)
+{
+	if (!s_currentContext)
+		SableUI_Runtime_Error("CreateFloatingPanel() called without a context");
+
+	s_currentContext->CreateFloatingPanel(id, componentName, info);
+}
+
+void SableUI::DestroyFloatingPanel(const std::string& id)
+{
+	if (!s_currentContext)
+		SableUI_Runtime_Error("DestroyFloatingPanel() called without a context");
+
+	s_currentContext->DestroyFloatingPanel(id);
 }
 
 // ============================================================================
@@ -512,7 +531,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
 }
  
-SableUI::Window* SableUI::CreatePrimaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
+SableUI::Window* SableUI::Initialise(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app != nullptr)
 	{

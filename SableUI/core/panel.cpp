@@ -16,7 +16,7 @@ using namespace SableMemory;
 static int s_basePanelCount = 0;
 SableUI::BasePanel::BasePanel(BasePanel* parent, RendererBackend* renderer) : parent(parent), m_renderer(renderer)
 {
-	type = PanelType::BASE;
+	type = PanelType::Base;
 	wType = RectType::Fill;
 	hType = RectType::Fill;
 	
@@ -71,7 +71,7 @@ static int s_rootPanelCount = 0;
 SableUI::RootPanel::RootPanel(RendererBackend* renderer, int w, int h) : BasePanel(nullptr, renderer)
 {
 	s_rootPanelCount++;
-	type = PanelType::ROOTNODE;
+	type = PanelType::Root;
 	rect.w = w;
 	rect.h = h;
 }
@@ -107,7 +107,7 @@ void SableUI::RootPanel::Recalculate()
 		child->CalculatePositions();
 		child->CalculateMinBounds();
 
-		if (child->type == PanelType::BASE)
+		if (child->type == PanelType::Base)
 		{
 			if (SableUI::ContentPanel* panelChild = dynamic_cast<SableUI::ContentPanel*>(child))
 			{
@@ -115,7 +115,7 @@ void SableUI::RootPanel::Recalculate()
 			}
 			else
 			{
-				SableUI_Error("Root child marked as BASE but not a Panel instance.");
+				SableUI_Error("Root child marked as Base but not a Panel instance.");
 			}
 		}
 	}
@@ -125,7 +125,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 {
 	if (children.size() > 0)
 	{
-		SableUI_Runtime_Error("Root node cannot have more than one child");
+		SableUI_Error("Root node cannot have more than one child, dismissing call");
 		return nullptr;
 	}
 	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
@@ -139,7 +139,7 @@ SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
 {
 	if (children.size() > 0)
 	{
-		SableUI_Runtime_Error("Root node cannot have more than one child");
+		SableUI_Error("Root node cannot have more than one child, dismissing call");
 		return nullptr;
 	}
 	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
@@ -225,7 +225,7 @@ void SableUI::SplitterPanel::CalculateScales()
 
 	m_drawableUpToDate = false;
 
-	if (type == PanelType::HORIZONTAL)
+	if (type == PanelType::HorizontalSplitter)
 	{
 		int totalFixedWidth = 0;
 		int numFillChildren = 0;
@@ -300,7 +300,7 @@ void SableUI::SplitterPanel::CalculateScales()
 			}
 		}
 	}
-	else if (type == PanelType::VERTICAL)
+	else if (type == PanelType::VerticalSplitter)
 	{
 		int totalFixedHeight = 0;
 		int numFillChildren = 0;
@@ -389,7 +389,7 @@ void SableUI::SplitterPanel::CalculatePositions()
 
 	vec2 cursor = { rect.x, rect.y };
 
-	if (type == PanelType::HORIZONTAL)
+	if (type == PanelType::HorizontalSplitter)
 	{
 		for (BasePanel* child : children)
 		{
@@ -406,7 +406,7 @@ void SableUI::SplitterPanel::CalculatePositions()
 			cursor.x += child->rect.w;
 		}
 	}
-	else if (type == PanelType::VERTICAL)
+	else if (type == PanelType::VerticalSplitter)
 	{
 		for (BasePanel* child : children)
 		{
@@ -443,7 +443,7 @@ void SableUI::SplitterPanel::CalculateMinBounds()
 		return;
 	}
 
-	if (type == PanelType::HORIZONTAL)
+	if (type == PanelType::HorizontalSplitter)
 	{
 		int totalWidth = 0;
 		int maxHeight = 0;
@@ -457,7 +457,7 @@ void SableUI::SplitterPanel::CalculateMinBounds()
 
 		minBounds = { totalWidth, maxHeight };
 	}
-	else if (type == PanelType::VERTICAL)
+	else if (type == PanelType::VerticalSplitter)
 	{
 		int totalHeight = 0;
 		int maxWidth = 0;
@@ -481,9 +481,9 @@ void SableUI::SplitterPanel::Update()
 	{
 		child->Update();
 
-		if (type == PanelType::HORIZONTAL)
+		if (type == PanelType::HorizontalSplitter)
 			segments.push_back(child->rect.x - rect.x);
-		if (type == PanelType::VERTICAL)
+		if (type == PanelType::VerticalSplitter)
 			segments.push_back(child->rect.y - rect.y);
 	}
 	
@@ -504,13 +504,13 @@ SableUI::SplitterPanel::~SplitterPanel()
 }
 
 // ============================================================================
-// Root Panel
+// Content Panel
 // ============================================================================
 static int s_panelCount = 0; 
 SableUI::ContentPanel::ContentPanel(BasePanel* parent, RendererBackend* renderer) : BasePanel(parent, renderer)
 {
 	s_panelCount++;
-	type = PanelType::BASE;
+	type = PanelType::Base;
 }
 
 SableUI::ContentPanel::~ContentPanel()

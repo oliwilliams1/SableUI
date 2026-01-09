@@ -8,11 +8,12 @@ namespace SableUI
 {
 	enum class PanelType
 	{
-		ROOTNODE = 0x00,
-		BASE = 0x01,
-		VERTICAL = 0x02,
-		HORIZONTAL = 0x03,
-		Undef = 0xFF
+		Root,
+		Base,
+		VerticalSplitter,
+		HorizontalSplitter,
+		Floating,
+		Undef
 	};
 
 	struct GpuObject;

@@ -248,7 +248,7 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 
 void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
-	if (m_type == PanelType::Undef || m_type == PanelType::BASE || m_type == PanelType::ROOTNODE)
+	if (m_type == PanelType::Undef || m_type == PanelType::Base || m_type == PanelType::Root)
 		return;
 
 	g_rShader.Use();
@@ -287,7 +287,7 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 		res.rectObject->AddToDrawStack();
 	};
 
-	if (m_type == PanelType::HORIZONTAL)
+	if (m_type == PanelType::HorizontalSplitter)
 	{
 		for (int offset : m_offsets)
 		{
@@ -300,7 +300,7 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 			}
 		}
 	}
-	else if (m_type == PanelType::VERTICAL)
+	else if (m_type == PanelType::VerticalSplitter)
 	{
 		for (int offset : m_offsets)
 		{

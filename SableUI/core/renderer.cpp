@@ -32,6 +32,7 @@ SableUI::CustomTargetQueue::CustomTargetQueue()
 SableUI::CustomTargetQueue::~CustomTargetQueue()
 {
 	s_targetQueueinstances--;
+
 	for (DrawableBase* dr : drawables)
 		SableMemory::SB_delete(dr);
 

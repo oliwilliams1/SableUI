@@ -35,11 +35,11 @@ static SableString GetPanelName(BasePanel* panel)
 {
 	switch (panel->type)
 	{
-	case PanelType::BASE: return "content panel";
-	case PanelType::HORIZONTAL: return "h-splitter";
-	case PanelType::VERTICAL: return "v-splitter";
+	case PanelType::Base: return "content panel";
+	case PanelType::HorizontalSplitter: return "h-splitter";
+	case PanelType::VerticalSplitter: return "v-splitter";
 	case PanelType::Undef: return "undefined panel type";
-	case PanelType::ROOTNODE: return "root";
+	case PanelType::Root: return "root";
 	default: return "unknown panel type";
 	}
 }

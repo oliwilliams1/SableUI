@@ -66,8 +66,6 @@ namespace SableUI
 		void RerenderAllNodes();
 		void RecalculateNodes();
 
-		FloatingPanelManager& GetFloatingPanelManager() { return *m_floatingPanelManager; }
-
 		SableString GetClipboardContent();
 		void SetClipboardContent(const SableString& content);
 
@@ -77,17 +75,24 @@ namespace SableUI
 		void SubmitCustomQueue(CustomTargetQueue* queue);
 		void RemoveQueueReference(CustomTargetQueue* queue);
 		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
-		RendererBackend* m_renderer = nullptr;
+		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
+
+		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info = {});
+		void DestroyFloatingPanel(const std::string& id);
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
 	
 	private:
-		FloatingPanelManager* m_floatingPanelManager;
+		GpuFramebuffer m_baseFramebuffer;
+		RendererBackend* m_baseRenderer = nullptr;
+		GpuTexture2D m_baseColourAttachment;
 
-		GpuFramebuffer m_framebuffer;
+		RendererBackend* m_floatingRenderer = nullptr;
+		GpuFramebuffer m_floatingFramebuffer;
+		GpuTexture2D m_floatingColourAttachment;
+
 		GpuFramebuffer m_windowSurface;
-		GpuTexture2D m_colourAttachment;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled, bool isLastChild);
@@ -124,6 +129,7 @@ namespace SableUI
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 
 		std::vector<CustomTargetQueue*> m_customTargetQueues;
+		std::unordered_map<std::string, FloatingPanel*> m_floatingPanels;
 
 	private:
 		DrawableRect* m_borderTop = nullptr;
