@@ -477,6 +477,7 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 		bool res = pair.second->UpdateComponents();
 		if (res)
 		{
+			pair.second->ClearDrawStack();
 			pair.second->Render();
 			m_needsStaticRedraw = true;
 		}
@@ -521,24 +522,12 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool baseRendererDrawn = false;
-	bool floatingRendererDrawn = false;
-	bool hasWindowSurfaceQueue = false;
+	bool baseLayerDirty = false;
+	bool anyFloatingPanelDirty = false;
 
-	// check if any custom queue renders to window surface
-	for (CustomTargetQueue* queue : m_customTargetQueues)
-	{
-		if (queue->target == &m_windowSurface)
-		{
-			hasWindowSurfaceQueue = true;
-			break;
-		}
-	}
-
-	// render main content to offscreen framebuffer
 	if (m_baseRenderer->isDirty() || m_needsStaticRedraw)
 	{
-		baseRendererDrawn = true;
+		baseLayerDirty = true;
 
 		m_baseRenderer->BeginRenderPass(&m_baseFramebuffer);
 		RenderWindowBorder();
@@ -546,55 +535,76 @@ void SableUI::Window::Draw()
 		m_baseRenderer->EndRenderPass();
 	}
 
-	if (m_floatingRenderer->isDirty() || m_needsStaticRedraw)
+	for (const auto& pair : m_floatingPanels)
 	{
-		floatingRendererDrawn = true;
-		m_floatingRenderer->BeginRenderPass(&m_floatingFramebuffer);
-		m_floatingRenderer->Draw(&m_floatingFramebuffer);
-		m_floatingRenderer->EndRenderPass();
-	}
-
-	// blit the base framebuffer to screen if we need it
-	if (baseRendererDrawn || hasWindowSurfaceQueue)
-		m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
-
-	if (floatingRendererDrawn)
-		m_floatingRenderer->BlitToScreen(&m_floatingFramebuffer);
-
-	// execute custom queues
-	if (!m_customTargetQueues.empty())
-	{
-		for (CustomTargetQueue* queue : m_customTargetQueues)
+		FloatingPanel* panel = pair.second;
+		if (panel->IsDirty())
 		{
-			if (!queue->drawables.empty())
-			{
-				for (DrawableBase* dr : queue->drawables)
-					m_baseRenderer->AddToDrawStack(dr);
-
-				// if rendering to window surface, render directly to back buffer (framebuffer 0)
-				if (queue->target == &m_windowSurface)
-				{
-					baseRendererDrawn = true;
-					m_baseRenderer->BeginRenderPass(&m_windowSurface);
-					m_baseRenderer->Draw(&m_windowSurface);
-					m_baseRenderer->EndRenderPass();
-				}
-				else
-				{
-					// render to custom framebuffer
-					m_baseRenderer->BeginRenderPass(queue->target);
-					m_baseRenderer->Draw(queue->target);
-					m_baseRenderer->EndRenderPass();
-				}
-			}
+			panel->Render();
+			anyFloatingPanelDirty = true;
 		}
 	}
 
-	// swap buffers if anything was drawn
-	if (baseRendererDrawn || floatingRendererDrawn)
+	// do work if anything is dirty or custom target queues exist
+	if (baseLayerDirty || anyFloatingPanelDirty || !m_customTargetQueues.empty())
 	{
+		// blit base layer
+		if (baseLayerDirty)
+		{
+			m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
+		}
+
+		// blit floating panels
+		if (baseLayerDirty || anyFloatingPanelDirty)
+		{
+			for (const auto& pair : m_floatingPanels)
+			{
+				FloatingPanel* panel = pair.second;
+				GpuFramebuffer* panelFBO = const_cast<GpuFramebuffer*>(panel->GetFramebuffer());
+
+				Rect sourceRect = { 0, 0, panel->rect.w, panel->rect.h };
+				Rect destRect = panel->rect;
+				destRect.y = m_windowSize.h - destRect.y - destRect.h;
+
+				m_baseRenderer->BlitToScreenWithRects(
+					panelFBO,
+					sourceRect,
+					destRect,
+					TextureInterpolation::Nearest
+				);
+			}
+		}
+
+		// execute custom queues
+		if (!m_customTargetQueues.empty())
+		{
+			for (CustomTargetQueue* queue : m_customTargetQueues)
+			{
+				if (!queue->drawables.empty())
+				{
+					for (DrawableBase* dr : queue->drawables)
+						m_baseRenderer->AddToDrawStack(dr);
+
+
+					// if rendering to window surface, render directly to back buffer (framebuffer 0)
+					if (queue->target == &m_windowSurface)
+					{
+						m_baseRenderer->BeginRenderPass(&m_windowSurface);
+						m_baseRenderer->Draw(&m_windowSurface);
+						m_baseRenderer->EndRenderPass();
+					}
+					else
+					{
+						// render to custom framebuffer
+						m_baseRenderer->BeginRenderPass(queue->target);
+						m_baseRenderer->Draw(queue->target);
+						m_baseRenderer->EndRenderPass();
+					}
+				}
+			}
+		}
+
 		m_baseRenderer->CheckErrors();
-		m_floatingRenderer->CheckErrors();
 		glfwSwapBuffers(m_window);
 		m_needsStaticRedraw = false;
 	}
@@ -667,7 +677,7 @@ void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
 // ============================================================================
 // Floating Panels
 // ============================================================================
-void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info)
+void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r)
 {
 	auto it = m_floatingPanels.find(id);
 	if (it != m_floatingPanels.end())
@@ -676,7 +686,7 @@ void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::stri
 		return;
 	}
 
-	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, Rect{ 50, 50, 150, 150 });
+	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, r);
 	BaseComponent* comp = newPanel->AttachComponent(componentName);
 	comp->BackendInitialisePanel();
 	m_floatingPanels[id] = newPanel;

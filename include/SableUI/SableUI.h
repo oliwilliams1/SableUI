@@ -48,7 +48,7 @@ namespace SableUI
 	SplitterPanel* StartSplitter(PanelType orientation);
 	void EndSplitter();
 	ContentPanel* AddPanel();
-	
+
 	void StartDivVirtual(const ElementInfo& info = {}, BaseComponent* child = nullptr);
 	void EndDivVirtual();
 	void AddRectVirtual(const ElementInfo& info = {});
@@ -68,7 +68,7 @@ namespace SableUI
 	void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
 	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
 
-	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info = {});
+	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r = { 0, 0, 100, 100 });
 	void DestroyFloatingPanel(const std::string& id);
 
 	struct DivScope
@@ -124,7 +124,7 @@ namespace SableUI
 }
 
 /* scoped RAII rect guard api */
-#define Rect(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
+#define RectElement(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
 #define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)(SableUI::PackStyles(__VA_ARGS__)); true)
 #define Image(path, ...) AddImage(path, SableUI::PackStyles(__VA_ARGS__))
 #define Text(text, ...) AddText(text, SableUI::PackStyles(__VA_ARGS__))
@@ -254,17 +254,17 @@ namespace SableUI
 
 // Visual horizontal splitter element
 #define SplitterHorizontal(...)																				\
-	Rect(mx(2), my(4), h(1), w_fill, bg(70, 70, 70) __VA_ARGS__)
+	RectElement(mx(2), my(4), h(1), w_fill, bg(70, 70, 70) __VA_ARGS__)
 
 // Visual vertical splitter element
 #define SplitterVertical(...)																				\
-	Rect(my(4), mx(2), h_fill, w(1), bg(70, 70, 70) __VA_ARGS__)
+	RectElement(my(4), mx(2), h_fill, w(1), bg(70, 70, 70) __VA_ARGS__)
 
 // Text with splitters either side
 #define TextSeperator(label)																				\
 	Div(left_right, h_fit, w_fill, centerY, mt(8))															\
 	{																										\
-		Rect(mx(2), h(1), w(6), bg(70, 70, 70), centerY);													\
+		RectElement(mx(2), h(1), w(6), bg(70, 70, 70), centerY);													\
 		Text(label, w_fit, wrapText(false), mx(2), mb(4));													\
-		Rect(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
+		RectElement(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
 	}

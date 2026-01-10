@@ -48,7 +48,12 @@ public:
 	void DestroyGpuObject(GpuObject* obj) override;
 	void BeginRenderPass(const GpuFramebuffer* fbo) override;
 	void EndRenderPass() override;
-	void BlitToScreen(GpuFramebuffer* source, TextureInterpolation interpolation) override;
+	void BlitToScreen(GpuFramebuffer* source,
+		TextureInterpolation interpolation) override;
+	void BlitToScreenWithRects(GpuFramebuffer* source,
+		const Rect& sourceRect,
+		const Rect& destRect,
+		TextureInterpolation interpolation) override;
 	void BlitToFramebuffer(
 		GpuFramebuffer* source, GpuFramebuffer* target,
 		Rect sourceRect, Rect destRect,
@@ -185,6 +190,27 @@ void OpenGL3Backend::BlitToScreen(
 		0, 0, source->width, source->height,
 		GL_COLOR_BUFFER_BIT,
 		TextureInterpolationToOpenGLEnum(interpolation));
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OpenGL3Backend::BlitToScreenWithRects(
+	GpuFramebuffer* source,
+	const Rect& sourceRect,
+	const Rect& destRect,
+	TextureInterpolation interpolation)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+	glBlitFramebuffer(
+		sourceRect.x, sourceRect.y,
+		sourceRect.x + sourceRect.w, sourceRect.y + sourceRect.h,
+		destRect.x, destRect.y,
+		destRect.x + destRect.w, destRect.y + destRect.h,
+		GL_COLOR_BUFFER_BIT,
+		TextureInterpolationToOpenGLEnum(interpolation)
+	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

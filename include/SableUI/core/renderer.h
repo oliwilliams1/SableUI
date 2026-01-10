@@ -189,6 +189,11 @@ namespace SableUI
 
 		virtual void BlitToScreen(GpuFramebuffer* source,
 			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
+		virtual void BlitToScreenWithRects(
+			GpuFramebuffer* source,
+			const Rect& sourceRect,
+			const Rect& destRect,
+			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
 		virtual void BlitToFramebuffer(
 			GpuFramebuffer* source, GpuFramebuffer* target,
 			Rect sourceRect, Rect destRect,

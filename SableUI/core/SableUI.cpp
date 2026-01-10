@@ -456,12 +456,12 @@ void SableUI::EndCustomLayoutScope(
 	s_customLayoutMode = false;
 }
 
-void SableUI::CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info)
+void SableUI::CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r)
 {
 	if (!s_currentContext)
 		SableUI_Runtime_Error("CreateFloatingPanel() called without a context");
 
-	s_currentContext->CreateFloatingPanel(id, componentName, info);
+	s_currentContext->CreateFloatingPanel(id, componentName, r);
 }
 
 void SableUI::DestroyFloatingPanel(const std::string& id)

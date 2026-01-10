@@ -77,7 +77,7 @@ namespace SableUI
 		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
 		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
 
-		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const ElementInfo& info = {});
+		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
 		void DestroyFloatingPanel(const std::string& id);
 
 		void MakeContextCurrent();

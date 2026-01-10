@@ -186,7 +186,7 @@ void SableUI::LayoutDebugger::Layout()
 						Div(w(50), h(50), m(4), bg(255, 0, 0),
 							onDoubleClick([i]() { SableUI_Log("Clicked %d", i); }))
 						{
-							Rect(w(25), h(25), bg(0, 255, 0));
+							RectElement(w(25), h(25), bg(0, 255, 0));
 						}
 					}
 				}
@@ -264,7 +264,7 @@ void SableUI::PropertiesPanel::Layout()
 		Text(selectedClipRect.get().ToString(), mb(8));
 
 		Text("Background Colour", textColour(180, 180, 180), mb(2));
-		Rect(w(20), h(20), bg(info.appearance.bg));
+		RectElement(w(20), h(20), bg(info.appearance.bg));
 	}
 }
 
