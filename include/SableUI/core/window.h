@@ -78,10 +78,12 @@ namespace SableUI
 		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
 
 		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
-		void DestroyFloatingPanel(const std::string& id);
+		void QueueDestroyFloatingPanel(const std::string& id);
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
+
+		void ExecuteDestroyFloatingPanelQueue();
 	
 	private:
 		GpuFramebuffer m_baseFramebuffer;
@@ -129,7 +131,9 @@ namespace SableUI
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 
 		std::vector<CustomTargetQueue*> m_customTargetQueues;
+		void DestroyFloatingPanel(const std::string& id);
 		std::unordered_map<std::string, FloatingPanel*> m_floatingPanels;
+		std::vector<std::string> m_destroyPanelQueue;
 
 	private:
 		DrawableRect* m_borderTop = nullptr;

@@ -33,3 +33,33 @@ namespace SableUI
 		void HandleClick();
 	};
 }
+
+// Checkbox with State<bool> - auto-syncing to parent
+#define CheckboxState(label, checked, ...)										\
+	ComponentScopedWithStyle(													\
+		SableUI::Checkbox,														\
+		checkbox,																\
+		this,																	\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
+	)																			\
+	checkbox->Init(																\
+		checked,																\
+		label,																	\
+		nullptr,																\
+		SableUI::PackStyles(__VA_ARGS__)										\
+	)
+
+// Checkbox with callback
+#define Checkbox(label, checked, onChange, ...)									\
+	ComponentScopedWithStyle(													\
+		SableUI::Checkbox,														\
+		checkbox,																\
+		this,																	\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
+	)																			\
+	checkbox->Init(																\
+		checked,																\
+		label,																	\
+		onChange,																\
+		SableUI::PackStyles(__VA_ARGS__)										\
+	)

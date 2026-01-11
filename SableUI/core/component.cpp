@@ -112,11 +112,11 @@ void SableUI::BaseComponent::Render(int z)
 	rootElement->Render(z);
 }
 
-void SableUI::BaseComponent::BackendInitialiseChild(const char* name, BaseComponent* parent, const ElementInfo& info)
+void SableUI::BaseComponent::BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info)
 {
 	int n = parent->GetNumChildren();
 
-	m_hash = GetHash(n, name);
+	m_hash = GetHash(n, name.c_str());
 
 	for (BaseComponent* c : parent->m_garbageChildren)
 		if (c->m_hash == m_hash)
@@ -283,6 +283,28 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 			needsRerender = true;
 		}
 	}
+}
+
+SableUI::BaseComponent* SableUI::BaseComponent::AttachComponent(BaseComponent* component)
+{
+	if (!component)
+		return nullptr;
+
+	if (static_cast<size_t>(m_childCount) < m_componentChildren.size())
+	{
+		BaseComponent* existing = m_componentChildren[m_childCount];
+		if (existing)
+			m_garbageChildren.push_back(existing);
+
+		m_componentChildren[m_childCount] = component;
+	}
+	else
+	{
+		m_componentChildren.push_back(component);
+	}
+
+	m_childCount++;
+	return component;
 }
 
 void SableUI::_priv_comp_PostEmptyEvent()

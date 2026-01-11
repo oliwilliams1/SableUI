@@ -54,3 +54,23 @@ namespace SableUI
 		void TriggerOnChange();
 	};
 }
+
+// Single-line input field
+#define InputField(state, ...)													\
+	ComponentScopedWithStyle(													\
+		SableUI::TextFieldComponent,											\
+		field,																	\
+		this,																	\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
+	)																			\
+	field->Init(state, SableUI::PackStyles(__VA_ARGS__), false)
+
+// Multi-line text field
+#define TextField(state, ...)													\
+	ComponentScopedWithStyle(													\
+		SableUI::TextFieldComponent,											\
+		field,																	\
+		this,																	\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
+	)																			\
+	field->Init(state, SableUI::PackStyles(__VA_ARGS__), true)

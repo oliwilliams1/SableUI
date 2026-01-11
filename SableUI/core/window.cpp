@@ -444,6 +444,8 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	if (IsMinimized())
 		return !glfwWindowShouldClose(m_window);
 
+	ExecuteDestroyFloatingPanelQueue();
+
 	SetContext(this);
 	MakeContextCurrent();
 
@@ -692,17 +694,30 @@ void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::stri
 	m_floatingPanels[id] = newPanel;
 }
 
+void SableUI::Window::QueueDestroyFloatingPanel(const std::string& id)
+{
+	m_destroyPanelQueue.emplace_back(id);
+}
+
 void SableUI::Window::DestroyFloatingPanel(const std::string& id)
 {
 	auto it = m_floatingPanels.find(id);
 	if (it == m_floatingPanels.end())
 	{
-		SableUI_Error("DestroyFloatingPanel() called without an existing ID");
+		SableUI_Error("QueueDestroyFloatingPanel() called without an existing ID");
 		return;
 	}
 
 	SB_delete(m_floatingPanels[id]);
 	m_floatingPanels.erase(id);
+}
+
+void SableUI::Window::ExecuteDestroyFloatingPanelQueue()
+{
+	for (const auto& id : m_destroyPanelQueue)
+		DestroyFloatingPanel(id);
+
+	m_destroyPanelQueue.clear();
 }
 
 // ============================================================================

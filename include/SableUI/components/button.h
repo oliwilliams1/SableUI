@@ -22,3 +22,13 @@ namespace SableUI
 		Ref<std::function<void()>> onClickCallback{ this, nullptr };
 	};
 }
+
+// Button component
+#define Button(label, callback, ...)											\
+	ComponentScopedWithStyle(													\
+		SableUI::Button,														\
+		btn,																	\
+		this,																	\
+		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
+	)																			\
+	btn->Init(label, callback, SableUI::PackStyles(__VA_ARGS__))

@@ -464,12 +464,12 @@ void SableUI::CreateFloatingPanel(const std::string& id, const std::string& comp
 	s_currentContext->CreateFloatingPanel(id, componentName, r);
 }
 
-void SableUI::DestroyFloatingPanel(const std::string& id)
+void SableUI::QueueDestroyFloatingPanel(const std::string& id)
 {
 	if (!s_currentContext)
-		SableUI_Runtime_Error("DestroyFloatingPanel() called without a context");
+		SableUI_Runtime_Error("QueueDestroyFloatingPanel() called without a context");
 
-	s_currentContext->DestroyFloatingPanel(id);
+	s_currentContext->QueueDestroyFloatingPanel(id);
 }
 
 // ============================================================================

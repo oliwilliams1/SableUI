@@ -16,3 +16,10 @@ namespace SableUI
 
 	void RenderTabHeader(TabContext& ctx, const ElementInfo& style = ElementInfo{});
 }
+
+#define TabUpdateHandler(tabContext)											\
+	if (tabContext.changed)														\
+	{																			\
+		needsRerender = true;													\
+		tabContext.changed = false;												\
+	}

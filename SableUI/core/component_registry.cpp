@@ -79,7 +79,8 @@ BaseComponent* FloatingPanel::AttachComponent(const std::string& componentName)
 
 BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 {
-    BaseComponent* component = ComponentRegistry::GetInstance().Create(componentName);
+    BaseComponent* component =
+        ComponentRegistry::GetInstance().Create(componentName);
 
     if (!component)
     {
@@ -87,22 +88,7 @@ BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
         return nullptr;
     }
 
-    if (static_cast<size_t>(m_childCount) < m_componentChildren.size())
-    {
-        BaseComponent* existing = m_componentChildren[m_childCount];
-
-        if (existing)
-            m_garbageChildren.push_back(existing);
-
-        m_componentChildren[m_childCount] = component;
-    }
-    else
-    {
-        m_componentChildren.push_back(component);
-    }
-
-    m_childCount++;
-    return component;
+    return AttachComponent(component);
 }
 
 #include <SableUI/components/debug_components.h>

@@ -11,7 +11,8 @@
 #include <SableUI/core/component_registry.h>
 #include <SableUI/styles/theme.h>
 #include <SableUI/core/scroll_context.h>
-#include <SableUI/core/tab_context.h>
+#include <type_traits>
+#include <utility>
 
 /* non-macro user api */
 namespace SableUI
@@ -69,7 +70,7 @@ namespace SableUI
 	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
 
 	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r = { 0, 0, 100, 100 });
-	void DestroyFloatingPanel(const std::string& id);
+	void QueueDestroyFloatingPanel(const std::string& id);
 
 	struct DivScope
 	{
@@ -124,147 +125,88 @@ namespace SableUI
 }
 
 /* scoped RAII rect guard api */
+#define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)						\
+					(SableUI::PackStyles(__VA_ARGS__)); true)
+
 #define RectElement(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
-#define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)(SableUI::PackStyles(__VA_ARGS__)); true)
 #define Image(path, ...) AddImage(path, SableUI::PackStyles(__VA_ARGS__))
 #define Text(text, ...) AddText(text, SableUI::PackStyles(__VA_ARGS__))
-
-#define STRINGIFY(x) #x
-
-#define Component(name, ...) AddComponent(name)																\
-	->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
-
-#define ComponentGainBaseRef(name, ref, ...)																\
-	SableUI::BaseComponent* ref = AddComponent(name);														\
-	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
-
-#define ComponentGainRef(name, T, ref, ...)																	\
-	T* ref = nullptr;																						\
-	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = AddComponent(name);									\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
-	else																									\
-		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
-	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
-
-#define ComponentGainRefNoInit(name, T, ref)																\
-	T* ref = nullptr;																						\
-	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = AddComponent(name);									\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
-	else																									\
-		SableUI_Runtime_Error("Component '%s' does not match required type: %s", name, STRINGIFY(T))
-
-#define ComponentInitialize(ref, name, ...)																	\
-	ref->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
-
-#define ComponentGainRefWithInit(name, T, ref, initLines, ...)												\
-	ComponentGainRefNoInit(name, T, ref);																	\
-	initLines;																								\
-	ComponentInitialize(ref, name, __VA_ARGS__)
-
-// Without SableUI::PackStyles()
-#define ComponentInitializeWithStyle(ref, name, style)														\
-	ref->BackendInitialiseChild(name, this, style)
-
-#define ComponentGainRefWithStyle(name, T, ref, style)														\
-	T* ref = nullptr;																						\
-	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = AddComponent(name);									\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
-	else																									\
-		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T));		\
-	ref->BackendInitialiseChild(name, this, style)
-
-#define ComponentGainRefWithInitWithStyle(name, T, ref, initLines, style)									\
-	ComponentGainRefNoInit(name, T, ref);																	\
-	initLines;																								\
-	ComponentInitializeWithStyle(ref, name, style)
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 
+#define STRINGIFY(x) #x
+
+#define Component(name, ...) AddComponent(name)									\
+	->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
+
+#define ComponentScoped(T, name, owner, ...)									\
+	if (auto CONCAT(_cs_, __LINE__) =											\
+			ComponentScope<T>(													\
+				owner,															\
+				STRINGIFY(T),													\
+				SableUI::PackStyles(__VA_ARGS__)								\
+			);																	\
+		T* name = CONCAT(_cs_, __LINE__).get())
+
+#define ComponentScopedWithStyle(T, name, owner, style)							\
+	if (auto CONCAT(_cs_, __LINE__) =											\
+			ComponentScope<T>(													\
+				owner,															\
+				STRINGIFY(T),													\
+				style															\
+			);																	\
+		T* name = CONCAT(_cs_, __LINE__).get())
+
 // Horizontal splitter
-#define HSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::HorizontalSplitter); true)
+#define HSplitter()	if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)	\
+						(SableUI::PanelType::HorizontalSplitter); true)
 // Vertical splitter
-#define VSplitter()		if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)(SableUI::PanelType::VerticalSplitter); true)
+#define VSplitter()	if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)	\
+						(SableUI::PanelType::VerticalSplitter); true)
 
 #define EmptyPanel()	SableUI::AddPanel()
 #define Panel(name)		SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel()
 
-#define PanelGainRefNoInit(name, T, ref)																	\
-	T* ref = nullptr;																						\
-	SableUI::BaseComponent* CONCAT(_comp_, __LINE__) = SableUI::AddPanel()->AttachComponent(name);			\
-	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)												\
-		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));													\
-	else																									\
-		SableUI_Runtime_Error("Component '%s' does not match requried type: %s", name, STRINGIFY(T))
+#define PanelGainRefNoInit(name, T, ref)										\
+	T* ref = nullptr;															\
+	SableUI::BaseComponent* CONCAT(_comp_, __LINE__)							\
+		= SableUI::AddPanel()->AttachComponent(name);							\
+	if (dynamic_cast<T*>(CONCAT(_comp_, __LINE__)) != nullptr)					\
+		ref = dynamic_cast<T*>(CONCAT(_comp_, __LINE__));						\
+	else																		\
+		SableUI_Runtime_Error(													\
+			"Component '%s' does not match requried type: %s",					\
+			name, STRINGIFY(T))
 
-#define PanelGainRef(name, T, ref)																			\
-	PanelGainRefNoInit(name, T, ref);																		\
+#define PanelGainRef(name, T, ref)												\
+	PanelGainRefNoInit(name, T, ref);											\
 	CONCAT(_comp_, __LINE__)->BackendInitialisePanel()
 
-#define PanelGainRefWithInit(name, T, ref, initLines)														\
-	PanelGainRefNoInit(name, T, ref);																		\
-	initLines;																								\
+#define PanelGainRefWithInit(name, T, ref, initLines)							\
+	PanelGainRefNoInit(name, T, ref);											\
+	initLines;																	\
 	CONCAT(_comp_, __LINE__)->BackendInitialisePanel();
 
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
-
-// Button component
-#define Button(label, callback, ...)																		\
-	ComponentGainRefWithInitWithStyle("sableui_button", SableUI::Button, CONCAT(_button_, __LINE__),		\
-		CONCAT(_button_, __LINE__)->Init(label, callback, SableUI::PackStyles(__VA_ARGS__)),				\
-		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
-
-// Checkbox with State<bool> - auto-syncing to parent
-#define CheckboxState(label, checked, ...)																	\
-	ComponentGainRefWithInitWithStyle("sableui_checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),	\
-		CONCAT(_checkbox_, __LINE__)->Init(checked, label, nullptr, SableUI::PackStyles(__VA_ARGS__)),		\
-		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
-
-// Checkbox with callback
-#define Checkbox(label, checked, onChange, ...)																\
-	ComponentGainRefWithInitWithStyle("sableui_checkbox", SableUI::Checkbox, CONCAT(_checkbox_, __LINE__),	\
-		CONCAT(_checkbox_, __LINE__)->Init(checked, label, onChange, SableUI::PackStyles(__VA_ARGS__)),		\
-		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
-
-#define TabUpdateHandler(tabContext)																		\
-	if (tabContext.changed)																					\
-	{																										\
-		needsRerender = true;																				\
-		tabContext.changed = false;																			\
-	}
-
 #include <SableUI/components/text_field.h>
-// Single-line input field
-#define InputField(state, ...)																				\
-    ComponentGainRefWithInitWithStyle("sableui_text_field", SableUI::TextFieldComponent,					\
-        CONCAT(_input_field_, __LINE__),																	\
-        CONCAT(_input_field_, __LINE__)->Init(state, SableUI::PackStyles(__VA_ARGS__), false),				\
-        SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
-
-// Multi-line text field
-#define TextField(state, ...)																				\
-    ComponentGainRefWithInitWithStyle("sableui_text_field", SableUI::TextFieldComponent,					\
-        CONCAT(_text_field_, __LINE__),																		\
-        CONCAT(_text_field_, __LINE__)->Init(state, SableUI::PackStyles(__VA_ARGS__), true),				\
-        SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__)))
+#include <SableUI/core/tab_context.h>
 
 // Visual horizontal splitter element
-#define SplitterHorizontal(...)																				\
+#define SplitterHorizontal(...)													\
 	RectElement(mx(2), my(4), h(1), w_fill, bg(70, 70, 70) __VA_ARGS__)
 
 // Visual vertical splitter element
-#define SplitterVertical(...)																				\
+#define SplitterVertical(...)													\
 	RectElement(my(4), mx(2), h_fill, w(1), bg(70, 70, 70) __VA_ARGS__)
 
 // Text with splitters either side
-#define TextSeperator(label)																				\
-	Div(left_right, h_fit, w_fill, centerY, mt(8))															\
-	{																										\
-		RectElement(mx(2), h(1), w(6), bg(70, 70, 70), centerY);													\
-		Text(label, w_fit, wrapText(false), mx(2), mb(4));													\
-		RectElement(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);													\
+#define TextSeperator(label)													\
+	Div(left_right, h_fit, w_fill, centerY, mt(8))								\
+	{																			\
+		RectElement(mx(2), h(1), w(6), bg(70, 70, 70), centerY);				\
+		Text(label, w_fit, wrapText(false), mx(2), mb(4));						\
+		RectElement(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);				\
 	}
+	
