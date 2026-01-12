@@ -13,7 +13,6 @@
 #include <SableUI/generated/resources.h>
 #include <SableUI/core/floating_panel.h>
 #include <SableUI/styles/theme.h>
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 #include <unordered_set>
@@ -239,9 +238,11 @@ void SableUI::Window::CharCallback(GLFWwindow* window, unsigned int codepoint)
 // ============================================================================
 SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, const WindowInitInfo& info)
 {
-	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
+	glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 	m_windowSize = ivec2(width, height);
 
 	if (info.posX > 0)

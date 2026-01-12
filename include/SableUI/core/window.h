@@ -58,7 +58,7 @@ namespace SableUI
 		bool Update(const std::unordered_set<TimerHandle>& firedTimers);
 		void Draw();
 		bool m_needsStaticRedraw = false;
-		bool m_needsRefresh = false;
+		bool m_needsRefresh = true;
 		void SetTitleBar(const SableString& title);
 
 		RootPanel* GetRoot();

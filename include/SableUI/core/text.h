@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <GL/glew.h>
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -111,7 +110,7 @@ namespace SableUI
 		int m_cachedHeight = 0;
 		int m_actualWrappedWidth = 0;
 		TextJustification m_justify = TextJustification::Left;
-		GLuint m_fontTextureID = 0;
+		unsigned int m_fontTextureID = 0;
 		GpuObject* m_gpuObject = nullptr;
 		uint32_t indiciesSize = 0;
 		RendererBackend* m_renderer = nullptr;

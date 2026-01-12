@@ -1,6 +1,7 @@
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <set>
-#include <GL/glew.h>
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
@@ -114,20 +115,21 @@ static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolatio
 	}
 }
 
-bool glewInitalised = false;
+bool gladInitalised = false;
 void OpenGL3Backend::Initalise()
 {
-	if (glewInitalised)
+	if (gladInitalised)
 		return;
 
 	SableUI_Log("Using OpenGL backend");
 
 	// init after window is cleared
-	GLenum res = glewInit();
-	if (GLEW_OK != res)
-	{
-		SableUI_Runtime_Error("Could not initialize GLEW: %s", glewGetErrorString(res));
-	}
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) 
+    {
+        SableUI_Runtime_Error("Failed to initialize GLAD");
+    }
+	
+	gladInitalised = true;
 }
 
 void OpenGL3Backend::SetBlending(bool enabled)
@@ -157,7 +159,7 @@ void OpenGL3Backend::CheckErrors()
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR)
 	{
-		SableUI_Error("OpenGL error: %s", gluErrorString(err));
+		SableUI_Error("OpenGL error: %d", err);
 	}
 }
 

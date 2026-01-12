@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <SableUI/core/shader.h>
 #include <SableUI/utils/console.h>
 #include <fstream>

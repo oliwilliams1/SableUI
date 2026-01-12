@@ -84,7 +84,7 @@ This project has a [documentation](sableui.oliwilliams.dev/getting-started) with
 ## Acknowledgments
 This project uses the following open-source libraries:
 - [GLFW](https://github.com/glfw/glfw) - Window & input handling
-- [GLEW](https://github.com/nigels-com/glew) - OpenGL extensions
+- [GLAD](https://github.com/Dav1dde/glad) - OpenGL extensions
 - [FreeType](https://www.freetype.org) - Font rendering
 - [libwebp](https://github.com/webmproject/libwebp) - WebP image support
 - [stb_image + stb_image_resize2](https://github.com/nothings/stb) - Image loading

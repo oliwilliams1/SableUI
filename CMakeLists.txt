@@ -11,19 +11,15 @@ find_package(OpenGL REQUIRED)
 # glfw
 add_subdirectory("vendor/glfw")
 
-# Specify the path to GLEW
-set(GLEW_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/glew") # Path to GLEW
-include_directories("${GLEW_DIR}/include")
-
-add_definitions(-DGLEW_STATIC)
-
-file(GLOB_RECURSE GLEW_SOURCE "${GLEW_DIR}/src/*.c" "${GLEW_DIR}/include/*.h")
-add_library(glew STATIC ${GLEW_SOURCE})
+# glad
+set(GLAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/glad")
+add_library(glad STATIC "${GLAD_DIR}/src/glad.c")
+target_include_directories(glad PUBLIC "${GLAD_DIR}/include")
 
 # FreeType
-set(FT_DISABLE_ZLIB			TRUE CACHE BOOL "Disable Zlib support in FreeType")
+set(FT_DISABLE_ZLIB		TRUE CACHE BOOL "Disable Zlib support in FreeType")
 set(FT_DISABLE_BZIP2		TRUE CACHE BOOL "Disable BZip2 support in FreeType")
-set(FT_DISABLE_PNG			TRUE CACHE BOOL "Disable PNG support in FreeType")
+set(FT_DISABLE_PNG		TRUE CACHE BOOL "Disable PNG support in FreeType")
 set(FT_DISABLE_HARFBUZZ		TRUE CACHE BOOL "Disable HarfBuzz support in FreeType")
 set(FT_DISABLE_BROTLI		TRUE CACHE BOOL "Disable Brotli support in FreeType")
 
@@ -108,17 +104,17 @@ add_dependencies(SableUI EmbedShaders EmbedResources)
 target_include_directories(SableUI PUBLIC
 	"${CMAKE_CURRENT_SOURCE_DIR}/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/SableUI"
-	"${GLEW_DIR}/include"
+	"${GLAD_DIR}/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb"
 	"${CMAKE_CURRENT_SOURCE_DIR}/vendor/libwebp/src"
 	${FREETYPE_INCLUDE_DIRS}
 	"${CMAKE_CURRENT_SOURCE_DIR}/include/SableUI/generated"
 )
 
-# Export required libraries
+# Export libraries
 target_link_libraries(SableUI PUBLIC
 	${OPENGL_LIBRARIES}
-	glew
+	glad
 	glfw
 	freetype
 	webp

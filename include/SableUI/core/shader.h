@@ -1,6 +1,5 @@
 #pragma once
 
-#include <GL/glew.h>
 #include <string>
 
 namespace SableUI
@@ -14,7 +13,7 @@ namespace SableUI
         void LoadBasicShaders(const char* vsSource, const char* fsSource);
         void Use() const;
 
-        GLuint m_shaderProgram = 0;
+        unsigned int m_shaderProgram = 0;
 
     private:
         std::string vsSource, fsSource;
