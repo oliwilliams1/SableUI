@@ -376,6 +376,16 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 	res.rectObject->AddToDrawStack();
 }
 
+void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)
+{
+	m_texture.RegisterDependancy(component);
+}
+
+void SableUI::DrawableImage::DeregisterTextureDependancy(BaseComponent* component)
+{
+	m_texture.DeregisterDependancy(component);
+}
+
 // ============================================================================
 // DrawableText
 // ============================================================================

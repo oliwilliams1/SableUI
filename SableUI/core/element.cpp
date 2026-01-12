@@ -248,6 +248,9 @@ void SableUI::Element::SetImage(const std::string& path)
     {
         drImage->m_texture.LoadTextureOptimised(path, info.layout.width, info.layout.height);
         info.text.content = path;
+
+        if (m_owner)
+            drImage->RegisterTextureDependancy(m_owner);
     }
     else
     {
@@ -977,6 +980,11 @@ SableUI::Element* SableUI::Element::GetElementById(const SableString& id)
 SableUI::Element::~Element()
 {
     n_elements--;
+
+    if (info.type == ElementType::Image && m_owner)
+        if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
+            drImage->DeregisterTextureDependancy(m_owner);
+    
     renderer->ClearDrawable(drawable);
     SB_delete(drawable);
 

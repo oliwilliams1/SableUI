@@ -15,11 +15,7 @@ namespace SableUI
 	class EventScheduler
 	{
 	public:
-		static EventScheduler& Get()
-		{
-			static EventScheduler instance;
-			return instance;
-		}
+		static EventScheduler& GetInstance();
 
 		EventScheduler(const EventScheduler&) = delete;
 		EventScheduler& operator=(const EventScheduler&) = delete;

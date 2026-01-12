@@ -32,7 +32,7 @@ void SableUI::Timer::Reset()
 {
     if (m_handle != 0)
     {
-        EventScheduler::Get().UpdateTimer(m_handle, m_delay);
+        EventScheduler::GetInstance().UpdateTimer(m_handle, m_delay);
     }
     else if (m_active)
     {
@@ -59,14 +59,14 @@ void SableUI::Timer::Sync(StateBase* other)
 void SableUI::Timer::Register()
 {
     if (m_delay.count() <= 0) return;
-    m_handle = EventScheduler::Get().AddTimer(m_delay, m_delay, false);
+    m_handle = EventScheduler::GetInstance().AddTimer(m_delay, m_delay, false);
 }
 
 void SableUI::Timer::Unregister()
 {
     if (m_handle != 0)
     {
-        EventScheduler::Get().RemoveTimer(m_handle);
+        EventScheduler::GetInstance().RemoveTimer(m_handle);
         m_handle = 0;
     }
 }

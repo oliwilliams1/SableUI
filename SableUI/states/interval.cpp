@@ -34,7 +34,7 @@ void SableUI::Interval::Reset()
     m_phase = std::chrono::milliseconds(0);
     if (m_handle != 0)
     {
-        EventScheduler::Get().UpdateTimer(m_handle, m_period);
+        EventScheduler::GetInstance().UpdateTimer(m_handle, m_period);
     }
     else if (m_active)
     {
@@ -63,21 +63,21 @@ void SableUI::Interval::Sync(StateBase* other)
     }
     else if (m_active && m_handle != 0 && (m_period != oldPeriod))
     {
-        EventScheduler::Get().UpdateTimer(m_handle, m_period);
+        EventScheduler::GetInstance().UpdateTimer(m_handle, m_period);
     }
 }
 
 void SableUI::Interval::Register()
 {
     if (m_period.count() <= 0) return;
-    m_handle = EventScheduler::Get().AddTimer(m_period, m_period, true);
+    m_handle = EventScheduler::GetInstance().AddTimer(m_period, m_period, true);
 }
 
 void SableUI::Interval::Unregister()
 {
     if (m_handle != 0)
     {
-        EventScheduler::Get().RemoveTimer(m_handle);
+        EventScheduler::GetInstance().RemoveTimer(m_handle);
         m_handle = 0;
     }
 }

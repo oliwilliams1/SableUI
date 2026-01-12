@@ -8,6 +8,13 @@
 #include <utility>
 #include <vector>
 
+
+SableUI::EventScheduler& SableUI::EventScheduler::GetInstance()
+{
+	static EventScheduler instance;
+	return instance;
+}
+
 SableUI::EventScheduler::EventScheduler()
 {
 	m_thread = std::thread(&EventScheduler::ThreadMain, this);

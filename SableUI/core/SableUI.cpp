@@ -538,6 +538,7 @@ SableUI::Window* SableUI::Initialise(const char* name, int width, int height, co
 		SableUI_Runtime_Error("SableUI has already been initialised");
 	}
 
+	AsyncTextureLoader::GetInstance().Initialise();
 	RegisterSableUIComponents();
 
 	if (s_backend == SableUI::Backend::Undef)
@@ -557,10 +558,12 @@ void SableUI::Shutdown()
 		SableUI_Runtime_Error("SableUI has not been initialised");
 	}
 
+	AsyncTextureLoader::GetInstance().Shutdown();
+	
 	SB_delete(s_app);
 	s_app = nullptr;
 
-	EventScheduler::Get().Shutdown();
+	EventScheduler::GetInstance().Shutdown();
 	
 	SableMemory::DestroyPools();
 	SableUI_Log("Shut down successfully");
@@ -588,7 +591,7 @@ bool SableUI::WaitEvents()
 	if (s_app == nullptr) return false;
 
 	SableMemory::CompactPools();
-
+	
 	return s_app->WaitEvents();
 }
 
@@ -645,7 +648,7 @@ bool App::PollEvents()
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_PollEvents_GLFW();
 
-	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	auto firedTimersVec = SableUI::EventScheduler::GetInstance().PollFiredTimers();
 	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
 
 	if (!m_mainWindow->Update(firedTimers)) return false;
@@ -673,7 +676,7 @@ bool App::WaitEvents()
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_WaitEvents_GLFW();
 
-	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	auto firedTimersVec = SableUI::EventScheduler::GetInstance().PollFiredTimers();
 	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
 
 	if (!m_mainWindow->Update(firedTimers)) return false;
@@ -701,7 +704,7 @@ bool App::WaitEventsTimeout(double timeout)
 	if (m_mainWindow == nullptr) return false;
 	SableUI::SableUI_Window_WaitEventsTimeout_GLFW(timeout);
 
-	auto firedTimersVec = SableUI::EventScheduler::Get().PollFiredTimers();
+	auto firedTimersVec = SableUI::EventScheduler::GetInstance().PollFiredTimers();
 	std::unordered_set<SableUI::TimerHandle> firedTimers(firedTimersVec.begin(), firedTimersVec.end());
 
 	if (!m_mainWindow->Update(firedTimers)) return false;

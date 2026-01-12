@@ -84,6 +84,8 @@ namespace SableUI
 		void Update(Rect& rect, float borderRadius,
 			bool clipEnabled, const Rect& clipRect);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void RegisterTextureDependancy(BaseComponent* component);
+		void DeregisterTextureDependancy(BaseComponent* component);
 		Texture m_texture;
 	};
 

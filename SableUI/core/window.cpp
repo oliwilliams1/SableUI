@@ -449,6 +449,8 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	SetContext(this);
 	MakeContextCurrent();
 
+	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
+
 	if (m_needsRefresh)
 	{
 		m_baseRenderer->ClearDrawableStack();
