@@ -238,7 +238,7 @@ void SableUI::Window::CharCallback(GLFWwindow* window, unsigned int codepoint)
 // ============================================================================
 SableUI::Window::Window(const Backend& backend, Window* primary, const std::string& title, int width, int height, const WindowInitInfo& info)
 {
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
@@ -1174,10 +1174,10 @@ SableUI::Window::~Window()
 		glfwDestroyWindow(m_window);
 }
 
-void SableUI::SableUI_Window_Initalise_GLFW()
+void SableUI::SableUI_Window_Initialise_GLFW()
 {
 	if (!glfwInit())
-		SableUI_Runtime_Error("Could not initialize GLFW");
+		SableUI_Runtime_Error("Could not initialise GLFW");
 }
 
 void SableUI::SableUI_Window_Terminate_GLFW()

@@ -7,9 +7,13 @@
 
 #include <SableUI/core/renderer.h>
 #include <SableUI/core/panel.h>
-#include <SableUI/core/floating_panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/utils/memory.h>
+#include <SableUI/utils/console.h>
+#include <SableUI/core/floating_panel.h>
+#include <SableUI/core/drawable.h>
+#include <unordered_map>
 #pragma warning(pop)
 
 struct GLFWcursor;
@@ -17,7 +21,7 @@ struct GLFWwindow;
 
 namespace SableUI
 {
-	void SableUI_Window_Initalise_GLFW();
+	void SableUI_Window_Initialise_GLFW();
 	void SableUI_Window_Terminate_GLFW();
 	void SableUI_Window_PollEvents_GLFW();
 	void SableUI_Window_WaitEvents_GLFW();
@@ -79,6 +83,9 @@ namespace SableUI
 
 		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
 		void QueueDestroyFloatingPanel(const std::string& id);
+
+		template <typename T>
+		T* CreateFloatingPanelNoInit(const std::string& id, const Rect& r);
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
@@ -145,4 +152,23 @@ namespace SableUI
 		void UpdateWindowBorder();
 		void RenderWindowBorder();
 	};
+
+	class BaseComponent;
+	template <typename T>
+	inline T* Window::CreateFloatingPanelNoInit(const std::string& id, const Rect& r)
+	{
+		auto it = m_floatingPanels.find(id);
+		if (it != m_floatingPanels.end())
+		{
+			SableUI_Runtime_Error("CreateFloatingPanel() called with an already existing ID");
+			return nullptr;
+		}
+
+		FloatingPanel* newPanel = SableMemory::SB_new<FloatingPanel>(m_floatingRenderer, r);
+		T* comp = newPanel->AttachComponentByType<T>();
+		comp->SetRenderer(newPanel->GetRenderer());
+		m_floatingPanels[id] = newPanel;
+
+		return comp;
+	}
 }

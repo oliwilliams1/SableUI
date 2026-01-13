@@ -472,6 +472,14 @@ void SableUI::QueueDestroyFloatingPanel(const std::string& id)
 	s_currentContext->QueueDestroyFloatingPanel(id);
 }
 
+SableUI::Window* SableUI::_getCurrentContext()
+{
+	if (!s_currentContext)
+		SableUI_Runtime_Error("_getCurrentContext() called without a context");
+
+	return s_currentContext;
+}
+
 // ============================================================================
 // App
 // ============================================================================
@@ -499,7 +507,7 @@ void SableUI::PreInit(int argc, char** argv)
 {
 	if (s_app != nullptr)
 	{
-		SableUI_Runtime_Error("SableUI::PreInit() must be called before SableUI::Initalise()");
+		SableUI_Runtime_Error("SableUI::PreInit() must be called before SableUI::Initialise()");
 	}
 
 	for (int i = 0; i < argc; i++)
@@ -521,7 +529,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 {
 	if (s_app != nullptr)
 	{
-		SableUI_Error("SableUI::SetBackend() must be called before SableUI::Initalise()");
+		SableUI_Error("SableUI::SetBackend() must be called before SableUI::Initialise()");
 		return;
 	}
 
@@ -623,7 +631,7 @@ void SableUI::PostEmptyEvent()
 App::App(const char* name, int width, int height, const SableUI::WindowInitInfo& info)
 {
 	SableMemory::InitPools();
-	SableUI::SableUI_Window_Initalise_GLFW();
+	SableUI::SableUI_Window_Initialise_GLFW();
 
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 

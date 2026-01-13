@@ -121,7 +121,7 @@ void AsyncTextureLoader::Initialise()
 	m_running.store(true);
 	m_worker = std::thread(&AsyncTextureLoader::WorkerThread, this);
 
-	SableUI_Log("Async texture loader initialized");
+	SableUI_Log("Async texture loader initialised");
 }
 
 void AsyncTextureLoader::Shutdown()
@@ -155,7 +155,7 @@ void AsyncTextureLoader::QueueLoad(const std::string& path, int width, int heigh
 {
 	if (!m_running.load())
 	{
-		SableUI_Warn("Async texture loader not initialized");
+		SableUI_Warn("Async texture loader not initialised");
 		return;
 	}
 

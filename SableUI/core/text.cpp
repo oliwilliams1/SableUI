@@ -355,7 +355,7 @@ public:
 	FontManager(FontManager&&) = delete;
 	FontManager& operator=(FontManager&&) = delete;
 
-	bool Initialize();
+	bool Initialise();
 	void Shutdown();
 	bool isInitialized = false;
 	void GetTextVertexData(
@@ -427,15 +427,15 @@ FontManager& FontManager::GetInstance()
 	return instance;
 }
 
-bool FontManager::Initialize()
+bool FontManager::Initialise()
 {
 	if (isInitialized)
 	{
-		SableUI_Log("FontManager already initialized");
+		SableUI_Log("FontManager already initialised");
 		return true;
 	}
 
-	SableUI_Log("FontManager initialized");
+	SableUI_Log("FontManager initialised");
 	isInitialized = true;
 
 	// init (w, h, d)
@@ -482,7 +482,7 @@ void FontManager::Shutdown()
 
 void FontManager::InitFreeType()
 {
-	SableUI_Log("Initializing FreeType");
+	SableUI_Log("Initialising FreeType");
 	if (FT_Init_FreeType(&ft_library)) SableUI_Runtime_Error("Could not init FreeType library");
 	FT_Bool no_stem_darkening = false;
 	FT_Property_Set(ft_library, "cff", "no-stem-darkening", &no_stem_darkening);
@@ -1951,7 +1951,7 @@ int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
 SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& maxWidth)
 {
 	if (fontManager == nullptr)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	std::vector<TextVertex> vertices;
 	std::vector<uint32_t> indices;
@@ -1975,7 +1975,7 @@ SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, in
 void SableUI::BindTextAtlasTexture()
 {
 	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	return FontManager::GetInstance().BindTextAtlasTexture();
 }
@@ -1993,7 +1993,7 @@ SableUI::CursorPosition SableUI::QueryCursorPosition(
 )
 {
 	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	FontManager& fontManager = FontManager::GetInstance();
 
@@ -2102,7 +2102,7 @@ SableUI::TextSizeResult SableUI::QueryTextSize(
 )
 {
 	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	FontManager& fontManager = FontManager::GetInstance();
 
@@ -2288,7 +2288,7 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 	m_maxWidth = maxWidth;
 
 	if (fontManager == nullptr || !fontManager->isInitialized)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	fontManager = &FontManager::GetInstance();
 
@@ -2303,7 +2303,7 @@ int SableUI::_Text::UpdateMaxWidth(int maxWidth)
 int SableUI::_Text::GetMinWidth(bool wrapped)
 {
 	if (fontManager == nullptr || !fontManager->isInitialized)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 
 	fontManager = &FontManager::GetInstance();
 
@@ -2337,5 +2337,5 @@ void SableUI::DestroyFontManager()
 void SableUI::InitFontManager()
 {
 	if (fontManager == nullptr)
-		FontManager::GetInstance().Initialize();
+		FontManager::GetInstance().Initialise();
 }

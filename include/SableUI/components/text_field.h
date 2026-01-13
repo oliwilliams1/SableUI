@@ -58,8 +58,8 @@ namespace SableUI
 // Single-line input field
 #define InputField(state, ...)													\
 	ComponentScopedWithStyle(													\
-		SableUI::TextFieldComponent,											\
 		field,																	\
+		SableUI::TextFieldComponent,											\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\
@@ -68,8 +68,8 @@ namespace SableUI
 // Multi-line text field
 #define TextField(state, ...)													\
 	ComponentScopedWithStyle(													\
-		SableUI::TextFieldComponent,											\
 		field,																	\
+		SableUI::TextFieldComponent,											\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\

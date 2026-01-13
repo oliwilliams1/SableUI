@@ -1,10 +1,8 @@
 #pragma once
 #include <SableUI/core/component.h>
-#include <SableUI/SableUI.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
-#include <algorithm>
 #include <string>
 
 namespace SableUI

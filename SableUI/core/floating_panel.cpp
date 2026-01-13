@@ -71,7 +71,6 @@ void SableUI::FloatingPanel::Render()
         return;
 
     m_renderer->BeginRenderPass(&m_framebuffer);
-    m_renderer->Clear(0.0f, 0.0f, 0.0f, 0.0f);
     m_component->Render();
     m_renderer->Draw(&m_framebuffer);
     m_renderer->EndRenderPass();

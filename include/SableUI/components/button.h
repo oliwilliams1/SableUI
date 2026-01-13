@@ -26,8 +26,8 @@ namespace SableUI
 // Button component
 #define Button(label, callback, ...)											\
 	ComponentScopedWithStyle(													\
-		SableUI::Button,														\
 		btn,																	\
+		SableUI::Button,														\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\

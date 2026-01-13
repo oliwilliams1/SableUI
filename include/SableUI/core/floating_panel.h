@@ -6,6 +6,8 @@
 #include <SableUI/core/events.h>
 #include <SableUI/core/renderer.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/utils/memory.h>
+#include <type_traits>
 #include <string>
 
 namespace SableUI
@@ -23,6 +25,9 @@ namespace SableUI
         SplitterPanel* AddSplitter(PanelType type) override;
         ContentPanel* AddPanel() override;
         BaseComponent* AttachComponent(const std::string& componentName);
+
+        template <typename T>
+        T* AttachComponentByType();
 
         void Update() override;
         void Resize(int w, int h);
@@ -46,4 +51,19 @@ namespace SableUI
         GpuTexture2D m_colourAttachment;
         bool m_needsRender = true;
     };
+
+    template <typename T>
+    inline T* FloatingPanel::AttachComponentByType()
+    {
+        static_assert(std::is_base_of_v<BaseComponent, T>,
+            "FloatingPanel::AttachComponentByType<T>: T must derive from BaseComponent");
+
+        if (m_component != nullptr)
+            SableMemory::SB_delete(m_component);
+
+        T* comp = SableMemory::SB_new<T>();
+        comp->SetRenderer(m_renderer);
+
+        return comp;
+    }
 }

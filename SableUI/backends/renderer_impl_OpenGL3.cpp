@@ -26,8 +26,8 @@ struct OpenGLMesh
 class OpenGL3Backend : public RendererBackend
 {
 public:
-	OpenGL3Backend() { Initalise(); }
-	void Initalise() override;
+	OpenGL3Backend() { Initialise(); }
+	void Initialise() override;
 	void Clear(float r, float g, float b, float a) override;
 	void Viewport(int x, int y, int width, int height) override;
 	void SetBlending(bool enabled) override;
@@ -115,10 +115,10 @@ static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolatio
 	}
 }
 
-bool gladInitalised = false;
-void OpenGL3Backend::Initalise()
+bool gladInitialised = false;
+void OpenGL3Backend::Initialise()
 {
-	if (gladInitalised)
+	if (gladInitialised)
 		return;
 
 	SableUI_Log("Using OpenGL backend");
@@ -129,7 +129,7 @@ void OpenGL3Backend::Initalise()
         SableUI_Runtime_Error("Failed to initialize GLAD");
     }
 	
-	gladInitalised = true;
+	gladInitialised = true;
 }
 
 void OpenGL3Backend::SetBlending(bool enabled)

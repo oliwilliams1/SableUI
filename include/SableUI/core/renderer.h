@@ -165,7 +165,7 @@ namespace SableUI
 	public:
 		static RendererBackend* Create(Backend backend);
 		virtual ~RendererBackend() = default;
-		virtual void Initalise() = 0;
+		virtual void Initialise() = 0;
 		virtual void Clear(float r, float g, float b, float a) = 0;
 		virtual void Viewport(int x, int y, int width, int height) = 0;
 		virtual void SetBlending(bool enabled) = 0;

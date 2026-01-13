@@ -76,7 +76,7 @@ namespace SableUI
 	};
 
 	template <typename T>
-	class ComponentScope
+	struct ComponentScope
 	{
 		static_assert(std::is_base_of_v<BaseComponent, T>,
 			"ComponentScoped<T>: T must derive from BaseComponent");

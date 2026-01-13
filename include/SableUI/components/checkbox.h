@@ -37,8 +37,8 @@ namespace SableUI
 // Checkbox with State<bool> - auto-syncing to parent
 #define CheckboxState(label, checked, ...)										\
 	ComponentScopedWithStyle(													\
-		SableUI::Checkbox,														\
 		checkbox,																\
+		SableUI::Checkbox,														\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\
@@ -52,8 +52,8 @@ namespace SableUI
 // Checkbox with callback
 #define Checkbox(label, checked, onChange, ...)									\
 	ComponentScopedWithStyle(													\
-		SableUI::Checkbox,														\
 		checkbox,																\
+		SableUI::Checkbox,														\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\

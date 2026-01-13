@@ -10,9 +10,6 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component_registry.h>
 #include <SableUI/styles/theme.h>
-#include <SableUI/core/scroll_context.h>
-#include <type_traits>
-#include <utility>
 
 /* non-macro user api */
 namespace SableUI
@@ -72,6 +69,8 @@ namespace SableUI
 	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r = { 0, 0, 100, 100 });
 	void QueueDestroyFloatingPanel(const std::string& id);
 
+	Window* _getCurrentContext();
+
 	struct DivScope
 	{
 	public:
@@ -122,15 +121,45 @@ namespace SableUI
 		info.appearance = AppearanceProps{};
 		return info;
 	}
+
+	template <typename T>
+	struct FloatingPanelScope
+	{
+		static_assert(std::is_base_of_v<BaseComponent, T>,
+			"FloatingPanelScope<T>: T must derive from BaseComponent");
+
+	public:
+		FloatingPanelScope(std::string id, Rect rect)
+		{
+			m_child = _getCurrentContext()->CreateFloatingPanelNoInit<T>(id, rect);
+		}
+
+		~FloatingPanelScope()
+		{
+			m_child->BackendInitialisePanel();
+		}
+
+		T* operator->() noexcept { return m_child; }
+		T& operator*()  noexcept { return *m_child; }
+		T* get()        noexcept { return m_child; }
+
+		FloatingPanelScope(const FloatingPanelScope&) = delete;
+		FloatingPanelScope& operator=(const FloatingPanelScope&) = delete;
+		FloatingPanelScope(FloatingPanelScope&& other) = delete;
+		FloatingPanelScope& operator=(FloatingPanelScope&& other) = delete;
+
+	private:
+		T* m_child = nullptr;
+	};
 }
 
 /* scoped RAII rect guard api */
 #define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)						\
 					(SableUI::PackStyles(__VA_ARGS__)); true)
 
-#define RectElement(...) AddRect(SableUI::PackStyles(__VA_ARGS__))
-#define Image(path, ...) AddImage(path, SableUI::PackStyles(__VA_ARGS__))
-#define Text(text, ...) AddText(text, SableUI::PackStyles(__VA_ARGS__))
+#define RectElement(...)	SableUI::AddRect(SableUI::PackStyles(__VA_ARGS__))
+#define Image(path, ...)	SableUI::AddImage(path, SableUI::PackStyles(__VA_ARGS__))
+#define Text(text, ...)		SableUI::AddText(text, SableUI::PackStyles(__VA_ARGS__))
 
 #define CONCAT_IMPL(a, b) a##b
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
@@ -140,7 +169,7 @@ namespace SableUI
 #define Component(name, ...) AddComponent(name)									\
 	->BackendInitialiseChild(name, this, SableUI::PackStyles(__VA_ARGS__))
 
-#define ComponentScoped(T, name, owner, ...)									\
+#define ComponentScoped(name, T, owner, ...)									\
 	if (auto CONCAT(_cs_, __LINE__) =											\
 			ComponentScope<T>(													\
 				owner,															\
@@ -149,7 +178,7 @@ namespace SableUI
 			);																	\
 		T* name = CONCAT(_cs_, __LINE__).get())
 
-#define ComponentScopedWithStyle(T, name, owner, style)							\
+#define ComponentScopedWithStyle(name, T, owner, style)							\
 	if (auto CONCAT(_cs_, __LINE__) =											\
 			ComponentScope<T>(													\
 				owner,															\
@@ -157,6 +186,15 @@ namespace SableUI
 				style															\
 			);																	\
 		T* name = CONCAT(_cs_, __LINE__).get())
+
+#define FloatingPanelScoped(name, T, id, rect)									\
+	if (auto CONCAT(_fps_, __LINE__) =											\
+			FloatingPanelScope<T>(												\
+				id,																\
+				rect															\
+			);																	\
+		T* name = CONCAT(_fps_, __LINE__).get())
+	
 
 // Horizontal splitter
 #define HSplitter()	if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)	\
@@ -166,7 +204,8 @@ namespace SableUI
 						(SableUI::PanelType::VerticalSplitter); true)
 
 #define EmptyPanel()	SableUI::AddPanel()
-#define Panel(name)		SableUI::AddPanel()->AttachComponent(name)->BackendInitialisePanel()
+#define Panel(name)		SableUI::AddPanel()										\
+							->AttachComponent(name)->BackendInitialisePanel()
 
 #define PanelGainRefNoInit(name, T, ref)										\
 	T* ref = nullptr;															\
@@ -192,6 +231,8 @@ namespace SableUI
 #include <SableUI/components/checkbox.h>
 #include <SableUI/components/text_field.h>
 #include <SableUI/core/tab_context.h>
+#include <SableUI/core/scroll_context.h>
+#include <SableUI/core/context_menu.h>
 
 // Visual horizontal splitter element
 #define SplitterHorizontal(...)													\
