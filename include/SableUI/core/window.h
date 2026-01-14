@@ -78,7 +78,7 @@ namespace SableUI
 
 		void SubmitCustomQueue(CustomTargetQueue* queue);
 		void RemoveQueueReference(CustomTargetQueue* queue);
-		const GpuFramebuffer* GetSurface() const { return &m_windowSurface; }
+		GpuFramebuffer* GetSurface() { return &m_windowSurface; }
 		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
 
 		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
@@ -148,6 +148,7 @@ namespace SableUI
 		DrawableRect* m_borderLeft = nullptr;
 		DrawableRect* m_borderRight = nullptr;
 		bool m_borderNeedsUpdate = true;
+		int m_syncFrames = 2;
 
 		void UpdateWindowBorder();
 		void RenderWindowBorder();

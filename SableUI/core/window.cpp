@@ -527,91 +527,65 @@ void SableUI::Window::Draw()
 	}
 #endif
 
-	bool baseLayerDirty = false;
+	bool baseLayerDirty = m_baseRenderer->isDirty() || m_needsStaticRedraw;
 	bool anyFloatingPanelDirty = false;
 
-	if (m_baseRenderer->isDirty() || m_needsStaticRedraw)
-	{
-		baseLayerDirty = true;
-
-		m_baseRenderer->BeginRenderPass(&m_baseFramebuffer);
-		RenderWindowBorder();
-		m_baseRenderer->Draw(&m_baseFramebuffer);
-		m_baseRenderer->EndRenderPass();
-	}
-
-	for (const auto& pair : m_floatingPanels)
-	{
-		FloatingPanel* panel = pair.second;
-		if (panel->IsDirty())
-		{
-			panel->Render();
+	for (const auto& pair : m_floatingPanels) {
+		if (pair.second->IsDirty()) {
 			anyFloatingPanelDirty = true;
+			break;
 		}
 	}
 
-	// do work if anything is dirty or custom target queues exist
 	if (baseLayerDirty || anyFloatingPanelDirty || !m_customTargetQueues.empty())
+		m_syncFrames = 2;
+
+	if (m_syncFrames > 0)
 	{
-		// blit base layer
 		if (baseLayerDirty)
 		{
-			m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
+			m_baseRenderer->BeginRenderPass(&m_baseFramebuffer);
+			RenderWindowBorder();
+			m_baseRenderer->Draw(&m_baseFramebuffer);
+			m_baseRenderer->EndRenderPass();
 		}
 
-		// blit floating panels
-		if (baseLayerDirty || anyFloatingPanelDirty)
+		for (const auto& pair : m_floatingPanels)
+			if (pair.second->IsDirty())
+				pair.second->Render();
+
+		m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
+
+		for (const auto& pair : m_floatingPanels)
 		{
-			for (const auto& pair : m_floatingPanels)
-			{
-				FloatingPanel* panel = pair.second;
-				GpuFramebuffer* panelFBO = const_cast<GpuFramebuffer*>(panel->GetFramebuffer());
+			FloatingPanel* panel = pair.second;
+			GpuFramebuffer* panelFBO = const_cast<GpuFramebuffer*>(panel->GetFramebuffer());
 
-				Rect sourceRect = { 0, 0, panel->rect.w, panel->rect.h };
-				Rect destRect = panel->rect;
-				destRect.y = m_windowSize.h - destRect.y - destRect.h;
+			Rect sourceRect = { 0, 0, panel->rect.w, panel->rect.h };
+			Rect destRect = panel->rect;
+			destRect.y = m_windowSize.h - destRect.y - destRect.h;
 
-				m_baseRenderer->BlitToScreenWithRects(
-					panelFBO,
-					sourceRect,
-					destRect,
-					TextureInterpolation::Nearest
-				);
-			}
+			m_baseRenderer->BlitToScreenWithRects(panelFBO, sourceRect, destRect, TextureInterpolation::Nearest);
 		}
 
-		// execute custom queues
-		if (!m_customTargetQueues.empty())
+		for (CustomTargetQueue* queue : m_customTargetQueues)
 		{
-			for (CustomTargetQueue* queue : m_customTargetQueues)
+			if (!queue->drawables.empty())
 			{
-				if (!queue->drawables.empty())
-				{
-					for (DrawableBase* dr : queue->drawables)
-						m_baseRenderer->AddToDrawStack(dr);
+				for (DrawableBase* dr : queue->drawables)
+					m_baseRenderer->AddToDrawStack(dr);
 
-
-					// if rendering to window surface, render directly to back buffer (framebuffer 0)
-					if (queue->target == &m_windowSurface)
-					{
-						m_baseRenderer->BeginRenderPass(&m_windowSurface);
-						m_baseRenderer->Draw(&m_windowSurface);
-						m_baseRenderer->EndRenderPass();
-					}
-					else
-					{
-						// render to custom framebuffer
-						m_baseRenderer->BeginRenderPass(queue->target);
-						m_baseRenderer->Draw(queue->target);
-						m_baseRenderer->EndRenderPass();
-					}
-				}
+				GpuFramebuffer* target = (queue->target == &m_windowSurface) ? &m_windowSurface : queue->target;
+				m_baseRenderer->BeginRenderPass(target);
+				m_baseRenderer->Draw(target);
+				m_baseRenderer->EndRenderPass();
 			}
 		}
 
 		m_baseRenderer->CheckErrors();
 		glfwSwapBuffers(m_window);
 		m_needsStaticRedraw = false;
+		m_syncFrames--;
 	}
 }
 

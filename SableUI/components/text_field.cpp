@@ -215,7 +215,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		initialCursorPos.set(-1);
 	}
 
-	if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+	if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT) || ctx.mousePressed.test(SABLE_MOUSE_BUTTON_RIGHT))
 	{
 		Element* el = GetElementById("TextField");
 		if (el)

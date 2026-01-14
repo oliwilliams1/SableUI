@@ -149,7 +149,7 @@ namespace SableUI
 		~CustomTargetQueue();
 		static int GetNumInstances();
 		Window* window = nullptr;
-		const GpuFramebuffer* target = nullptr;
+		GpuFramebuffer* target = nullptr;
 		std::vector<DrawableBase*> drawables;
 
 		void AddRect(const Rect& rect, const Colour& colour, float borderRadius = 0.0f);
