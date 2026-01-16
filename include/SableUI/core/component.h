@@ -32,8 +32,9 @@ namespace SableUI
 
 		void LayoutWrapper();
 		void BackendInitialisePanel();
-		void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
 		void BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info);
+		void BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info = {});
+		void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
 		void Render(int z = 0);
 
 		BaseComponent* AddComponent(const std::string& componentName);

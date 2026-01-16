@@ -28,6 +28,7 @@
 #include <windows.h>
 #include <dwmapi.h>
 #endif
+#include <SableUI/core/component.h>
 
 using namespace SableMemory;
 
@@ -530,8 +531,10 @@ void SableUI::Window::Draw()
 	bool baseLayerDirty = m_baseRenderer->isDirty() || m_needsStaticRedraw;
 	bool anyFloatingPanelDirty = false;
 
-	for (const auto& pair : m_floatingPanels) {
-		if (pair.second->IsDirty()) {
+	for (const auto& pair : m_floatingPanels)
+	{
+		if (pair.second->IsDirty())
+		{
 			anyFloatingPanelDirty = true;
 			break;
 		}

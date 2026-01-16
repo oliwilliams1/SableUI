@@ -95,6 +95,34 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 	rootElement->LayoutChildren();
 }
 
+void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info)
+{
+	if (rootElement) SB_delete(rootElement);
+
+	if (!m_renderer)
+		SableUI_Runtime_Error("Renderer has not been initialised for component");
+
+	const Theme& t = GetTheme();
+
+	ElementInfo info = p_info;
+	info.type = ElementType::Div;
+	if (info.appearance.bg == Colour{ 0, 0, 0, 0 })
+		info.appearance.bg = t.base;
+	info.layout.width = rect.w;
+	info.layout.height = rect.h;
+	info.layout.wType = RectType::Fixed;
+	info.layout.hType = RectType::Fixed;
+	rootElement = SB_new<Element>(m_renderer, info);
+	rootElement->SetRect(rect);
+	rootElement->m_owner = this;
+
+	SetCurrentComponent(this);
+	SetElementBuilderContext(m_renderer, rootElement, false);
+	LayoutWrapper();
+
+	rootElement->LayoutChildren();
+}
+
 static size_t GetHash(int n, const char* name)
 {
 	size_t h = 0;

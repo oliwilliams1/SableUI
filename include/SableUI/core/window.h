@@ -167,7 +167,7 @@ namespace SableUI
 
 		FloatingPanel* newPanel = SableMemory::SB_new<FloatingPanel>(m_floatingRenderer, r);
 		T* comp = newPanel->AttachComponentByType<T>();
-		comp->SetRenderer(newPanel->GetRenderer());
+		newPanel->SetComponent(comp);
 		m_floatingPanels[id] = newPanel;
 
 		return comp;

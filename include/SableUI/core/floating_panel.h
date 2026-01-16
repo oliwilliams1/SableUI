@@ -25,6 +25,7 @@ namespace SableUI
         SplitterPanel* AddSplitter(PanelType type) override;
         ContentPanel* AddPanel() override;
         BaseComponent* AttachComponent(const std::string& componentName);
+        void SetComponent(BaseComponent* component);
 
         template <typename T>
         T* AttachComponentByType();

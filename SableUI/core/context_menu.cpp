@@ -13,11 +13,11 @@ public:
 	void Init(const std::vector<SableUI::ContextMenuItem>& items)
 	{
 		m_items = items;
+		needsRerender = true;
 	}
 
 	void Layout() override
 	{
-		Text("Hello!");
 		for (const auto& item : m_items)
 		{
 			switch (item.type)
@@ -107,10 +107,10 @@ int SableUI::ContextMenu::GetHeight()
 		switch (item.type)
 		{
 		case ContextMenuItemType::Normal:
-			totalHeight += 20;
+			totalHeight += 12;
 			break;
 		case ContextMenuItemType::Seperator:
-			totalHeight += 5;
+			totalHeight += 10;
 			break;
 		default:
 			SableUI_Error("Context menu has unknown item type");
@@ -127,8 +127,7 @@ void SableUI::ContextMenu::p_show(const UIEventContext& ctx)
 	m_rect.w = 200;
 	m_rect.h = GetHeight();
 
-	//CreateFloatingPanel("context menu", "ContextMenuComponent", m_rect);
-	FloatingPanelScoped(ref, ContextMenuComponent, "context menu", m_rect)
+	FloatingPanelScoped(ref, ContextMenuComponent, "context menu", m_rect, rounded(4), bg(51, 51, 51))
 	{
 		ref->Init(m_items);
 	}

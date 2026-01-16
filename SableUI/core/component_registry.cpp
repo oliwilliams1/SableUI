@@ -77,6 +77,15 @@ BaseComponent* FloatingPanel::AttachComponent(const std::string& componentName)
     return comp;
 }
 
+void FloatingPanel::SetComponent(BaseComponent* comp)
+{
+	if (m_component != nullptr)
+		SableMemory::SB_delete(m_component);
+
+    m_component = comp;
+	m_component->SetRenderer(m_renderer);
+}
+
 BaseComponent* BaseComponent::AddComponent(const std::string& componentName)
 {
     BaseComponent* component =

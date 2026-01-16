@@ -10,6 +10,7 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component_registry.h>
 #include <SableUI/styles/theme.h>
+#include <type_traits>
 
 /* non-macro user api */
 namespace SableUI
@@ -129,14 +130,16 @@ namespace SableUI
 			"FloatingPanelScope<T>: T must derive from BaseComponent");
 
 	public:
-		FloatingPanelScope(std::string id, Rect rect)
+		FloatingPanelScope(std::string id, Rect rect, const ElementInfo& info = {})
 		{
 			m_child = _getCurrentContext()->CreateFloatingPanelNoInit<T>(id, rect);
+			m_rect = rect;
+			m_info = info;
 		}
 
 		~FloatingPanelScope()
 		{
-			m_child->BackendInitialisePanel();
+			m_child->BackendInitialiseFloatingPanel(m_rect, m_info);
 		}
 
 		T* operator->() noexcept { return m_child; }
@@ -150,6 +153,8 @@ namespace SableUI
 
 	private:
 		T* m_child = nullptr;
+		Rect m_rect{};
+		ElementInfo m_info{};
 	};
 }
 
@@ -171,7 +176,7 @@ namespace SableUI
 
 #define ComponentScoped(name, T, owner, ...)									\
 	if (auto CONCAT(_cs_, __LINE__) =											\
-			ComponentScope<T>(													\
+			SableUI::ComponentScope<T>(											\
 				owner,															\
 				STRINGIFY(T),													\
 				SableUI::PackStyles(__VA_ARGS__)								\
@@ -180,18 +185,19 @@ namespace SableUI
 
 #define ComponentScopedWithStyle(name, T, owner, style)							\
 	if (auto CONCAT(_cs_, __LINE__) =											\
-			ComponentScope<T>(													\
+			SableUI::ComponentScope<T>(											\
 				owner,															\
 				STRINGIFY(T),													\
 				style															\
 			);																	\
 		T* name = CONCAT(_cs_, __LINE__).get())
 
-#define FloatingPanelScoped(name, T, id, rect)									\
+#define FloatingPanelScoped(name, T, id, rect, ...)								\
 	if (auto CONCAT(_fps_, __LINE__) =											\
-			FloatingPanelScope<T>(												\
+			SableUI::FloatingPanelScope<T>(										\
 				id,																\
-				rect															\
+				rect,															\
+				SableUI::PackStyles(__VA_ARGS__)								\
 			);																	\
 		T* name = CONCAT(_fps_, __LINE__).get())
 	
