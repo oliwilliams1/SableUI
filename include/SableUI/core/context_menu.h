@@ -40,7 +40,6 @@ namespace SableUI
 		void p_hide(const UIEventContext& ctx);
 
 		Rect m_rect;
-		bool m_isOpen = false;
 		bool m_showQueried = false;
 		bool m_hideQueried = false;
 		std::vector<ContextMenuItem> m_items;

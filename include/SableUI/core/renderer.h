@@ -198,6 +198,11 @@ namespace SableUI
 			GpuFramebuffer* source, GpuFramebuffer* target,
 			Rect sourceRect, Rect destRect,
 			TextureInterpolation interpolation = TextureInterpolation::Nearest) = 0;
+		virtual void DrawToScreen(
+			GpuFramebuffer* source,
+			const Rect& sourceRect,
+			const Rect& destRect,
+			const ivec2& windowSize) = 0;
 
 		bool isDirty() const { return !m_drawStack.empty(); };
 

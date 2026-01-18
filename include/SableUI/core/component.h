@@ -49,9 +49,10 @@ namespace SableUI
 		void HandleInput(const UIEventContext& ctx);
 		bool CheckAndUpdate();
 		void PostLayoutUpdate(const UIEventContext& ctx);
-		bool needsRerender = false;
 
 		void RegisterState(StateBase* state) { m_states.push_back(state); }
+
+		void MarkDirty();
 
 		void CopyStateFrom(const BaseComponent& other);
 		Element* GetElementById(const SableString& id);
@@ -67,6 +68,7 @@ namespace SableUI
 		void UpdateHoverStyling(const UIEventContext& ctx);
 
 	private:
+		bool needsRerender = false;
 		BaseComponent* AttachComponent(BaseComponent* component);
 		UIEventContext m_lastEventCtx;
 		Element* rootElement = nullptr;
@@ -150,8 +152,7 @@ namespace SableUI
 		void set(const T& newValue) {
 			if (m_value == newValue) return;
 			m_value = newValue;
-			m_owner->needsRerender = true;
-			_priv_comp_PostEmptyEvent();
+			m_owner->MarkDirty();
 		}
 
 		void Sync(StateBase* other) override {

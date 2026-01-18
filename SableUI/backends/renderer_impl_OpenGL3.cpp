@@ -51,14 +51,21 @@ public:
 	void EndRenderPass() override;
 	void BlitToScreen(GpuFramebuffer* source,
 		TextureInterpolation interpolation) override;
-	void BlitToScreenWithRects(GpuFramebuffer* source,
+	void BlitToScreenWithRects(
+		GpuFramebuffer* source,
 		const Rect& sourceRect,
 		const Rect& destRect,
 		TextureInterpolation interpolation) override;
 	void BlitToFramebuffer(
-		GpuFramebuffer* source, GpuFramebuffer* target,
+		GpuFramebuffer* source,
+		GpuFramebuffer* target,
 		Rect sourceRect, Rect destRect,
 		TextureInterpolation interpolation) override;
+	void DrawToScreen(
+		GpuFramebuffer* source,
+		const Rect& sourceRect,
+		const Rect& destRect,
+		const ivec2& windowSize) override;
 
 private:
 	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
@@ -231,6 +238,41 @@ void OpenGL3Backend::BlitToFramebuffer(
 		destRect.x + destRect.width, destRect.y + destRect.height,
 		GL_COLOR_BUFFER_BIT,
 		TextureInterpolationToOpenGLEnum(interpolation));
+}
+
+void OpenGL3Backend::DrawToScreen(
+	GpuFramebuffer* source,
+	const Rect& sourceRect,
+	const Rect& destRect,
+	const ivec2& windowSize)
+{
+	GlobalResources& g_res = SableUI::GetGlobalResources();
+	ContextResources& c_res = SableUI::GetContextResources(this);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	Viewport(0, 0, windowSize.w, windowSize.h);
+
+	float invW = 1.0f / float(windowSize.w);
+	float invH = 1.0f / float(windowSize.h);
+
+	float x_ndc = destRect.x * invW * 2.0f - 1.0f;
+	float y_ndc = destRect.y * invH * 2.0f - 1.0f;
+
+	float w_ndc = destRect.w * invW * 2.0f;
+	float h_ndc = destRect.h * invH * 2.0f;
+
+	source->GetColorAttachments()[0].Bind(0);
+
+	g_res.s_rect.Use();
+	glUniform4f(g_res.u_rectRect, x_ndc, y_ndc, w_ndc, h_ndc);
+	glUniform4f(g_res.u_rectRealRect,
+		sourceRect.x, sourceRect.y,
+		sourceRect.w, sourceRect.h);
+
+	glUniform1f(g_res.u_rectRadius, 0.0f);
+	glUniform1i(g_res.u_rectTexBool, 1);
+
+	c_res.rectObject->AddToDrawStack();
 }
 
 // ============================================================================

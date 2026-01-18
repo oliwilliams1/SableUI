@@ -568,7 +568,7 @@ void SableUI::Window::Draw()
 			Rect destRect = panel->rect;
 			destRect.y = m_windowSize.h - destRect.y - destRect.h;
 
-			m_baseRenderer->BlitToScreenWithRects(panelFBO, sourceRect, destRect, TextureInterpolation::Nearest);
+			m_baseRenderer->DrawToScreen(panelFBO, sourceRect, destRect, m_windowSize);
 		}
 
 		for (CustomTargetQueue* queue : m_customTargetQueues)
@@ -676,7 +676,12 @@ void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::stri
 
 void SableUI::Window::QueueDestroyFloatingPanel(const std::string& id)
 {
-	m_destroyPanelQueue.emplace_back(id);
+	m_destroyPanelQueue.push_back(id);
+}
+
+bool SableUI::Window::IsFloatingPanelActive(const std::string& id) const
+{
+	return m_floatingPanels.contains(id);
 }
 
 void SableUI::Window::DestroyFloatingPanel(const std::string& id)
@@ -694,10 +699,18 @@ void SableUI::Window::DestroyFloatingPanel(const std::string& id)
 
 void SableUI::Window::ExecuteDestroyFloatingPanelQueue()
 {
+	bool any = false;
 	for (const auto& id : m_destroyPanelQueue)
+	{
 		DestroyFloatingPanel(id);
+		any = true;
+	}
 
-	m_destroyPanelQueue.clear();
+	if (any)
+	{
+		m_destroyPanelQueue.clear();
+		PostEmptyEvent();
+	}
 }
 
 // ============================================================================

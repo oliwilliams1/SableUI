@@ -275,7 +275,7 @@ void SableUI::Element::SetText(const SableString& text)
             drText->m_text.m_colour = GetTheme().text;
         }
         drText->m_text.SetContent(renderer, text, drawable->m_rect.w,
-            info.text.fontSize, info.layout.maxH, info.text.lineHeight, info.text.justification);
+            info.text.fontSize, info.layout.maxH, info.text.lineHeight, info.text.justification.value_or(TextJustification::Left));
     }
     else
     {
@@ -790,7 +790,7 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
 			(c.b << 8) | c.a);
     }
 
-    hash_combine(h, ((int)info.text.justification << 16) |
+    hash_combine(h, ((int)info.text.justification.value_or(SableUI::TextJustification::Left) << 16) |
         (info.text.wrap ? 1 : 0));
 
     hash_combine(h, ((int)info.layout.layoutDirection << 24) |

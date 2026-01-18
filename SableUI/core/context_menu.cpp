@@ -2,8 +2,10 @@
 #include <SableUI/core/context_menu.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component.h>
-#include <SableUI/SableUI.h>
+#include <SableUI/components/button.h>
+#include <SableUI/styles/styles.h>
 #include <vector>
+#include <algorithm>
 
 using namespace SableUI::Style;
 
@@ -13,7 +15,7 @@ public:
 	void Init(const std::vector<SableUI::ContextMenuItem>& items)
 	{
 		m_items = items;
-		needsRerender = true;
+		MarkDirty();
 	}
 
 	void Layout() override
@@ -23,10 +25,13 @@ public:
 			switch (item.type)
 			{
 			case SableUI::ContextMenuItemType::Normal:
-				Text(item.text);
+				Button(item.text, [cb = item.callback]() {
+					cb();
+					SableUI::QueueDestroyFloatingPanel("context menu");
+				}, size_sm, w_fill, justify_left, mb(2));
 				break;
 			case SableUI::ContextMenuItemType::Seperator:
-				SplitterHorizontal();
+				SableUI::AddRect(SableUI::PackStyles(mx(2), mb(4), mt(2), h(1), w_fill, bg(70, 70, 70)));
 				break;
 			default:
 				SableUI_Error("Context menu has unknown item type");
@@ -40,7 +45,7 @@ private:
 
 SableUI::ContextMenuItem& SableUI::ContextMenu::AddItem(const SableString& text, std::function<void()> callback)
 {
-	if (m_isOpen)
+	if (IsFloatingPanelActive("context menu"))
 	{
 		SableUI_Warn("Cannot add items to an open context menu");
 		return m_items.back();
@@ -52,7 +57,7 @@ SableUI::ContextMenuItem& SableUI::ContextMenu::AddItem(const SableString& text,
 
 SableUI::ContextMenuItem& SableUI::ContextMenu::AddSeperator()
 {
-	if (m_isOpen)
+	if (IsFloatingPanelActive("context menu"))
 	{
 		SableUI_Warn("Cannot add items to an open context menu");
 		return m_items.back();
@@ -64,30 +69,46 @@ SableUI::ContextMenuItem& SableUI::ContextMenu::AddSeperator()
 
 void SableUI::ContextMenu::Update(const UIEventContext& ctx)
 {
-	if (m_showQueried && !m_isOpen)
-	{
-		p_show(ctx);
+	const bool isOpen = IsFloatingPanelActive("context menu");
 
-		m_isOpen = true;
+	if (m_showQueried)
+	{
+		if (isOpen)
+			p_hide(ctx);
+
+		p_show(ctx);
 		m_showQueried = false;
 		return;
 	}
 
-	if (m_hideQueried && m_isOpen)
+	if (m_hideQueried && isOpen)
 	{
 		p_hide(ctx);
-
-		m_isOpen = false;
 		m_hideQueried = false;
 		return;
 	}
 
-	if (m_isOpen && ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+	if (!isOpen)
+		return;
+
+	const bool mouseInMenu = RectBoundingBox(m_rect, ctx.mousePos);
+
+	if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+	{
+		if (!mouseInMenu)
+		{
+			p_hide(ctx);
+			return;
+		}
+	}
+
+	if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_RIGHT))
 	{
 		p_hide(ctx);
-		m_isOpen = false;
+		p_show(ctx);
 	}
 }
+
 
 void SableUI::ContextMenu::show()
 {
@@ -101,23 +122,23 @@ void SableUI::ContextMenu::hide()
 
 int SableUI::ContextMenu::GetHeight()
 {
-	int totalHeight = 0;
+	int totalHeight = -2;
 	for (const auto& item : m_items)
 	{
 		switch (item.type)
 		{
 		case ContextMenuItemType::Normal:
-			totalHeight += 12;
+			totalHeight += 22;
 			break;
 		case ContextMenuItemType::Seperator:
-			totalHeight += 10;
+			totalHeight += 8;
 			break;
 		default:
 			SableUI_Error("Context menu has unknown item type");
 		}
 	}
 
-	return totalHeight;
+	return (std::max)(totalHeight, 0);
 }
 
 void SableUI::ContextMenu::p_show(const UIEventContext& ctx)

@@ -257,6 +257,12 @@ void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 	OnUpdatePostLayout(ctx);
 }
 
+void SableUI::BaseComponent::MarkDirty()
+{
+	needsRerender = true;
+	PostEmptyEvent();
+}
+
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 {
 	/* Ensure both components have the same number of states,
@@ -308,7 +314,7 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 				el->info.appearance.bg = el->originalBg;
 
 			el->SetRect(el->rect);
-			needsRerender = true;
+			MarkDirty();
 		}
 	}
 }

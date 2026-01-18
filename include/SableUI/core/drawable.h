@@ -1,8 +1,10 @@
 #pragma once
-#include <vector>
 #include <SableUI/core/texture.h>
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/shader.h>
+#include <vector>
+#include <cstdint>
 
 namespace SableUI
 {
@@ -22,10 +24,25 @@ namespace SableUI
 		GpuObject* rectObject = nullptr;
 	};
 
+	struct GlobalResources {
+		Shader s_rect;
+		uint32_t u_rectColour = 0;
+		uint32_t u_rectRect = 0;
+		uint32_t u_rectTexBool = 0;
+		uint32_t u_rectRealRect = 0;
+		uint32_t u_rectRadius = 0;
+
+		Shader s_text;
+		uint32_t u_textTargetSize = 0;
+		uint32_t u_textPos = 0;
+		uint32_t u_textAtlas = 0;
+	};
+
 	void InitDrawables();
 	void DestroyDrawables();
 	class RendererBackend;
 	ContextResources& GetContextResources(RendererBackend* backend);
+	GlobalResources& GetGlobalResources();
 
 	class DrawableBase
 	{

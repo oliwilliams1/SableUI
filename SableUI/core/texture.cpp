@@ -207,7 +207,6 @@ void AsyncTextureLoader::ProcessCompletedLoads()
 					format
 				);
 
-				// Free CPU memory
 				stbi_image_free(req.target->cpuData);
 				req.target->cpuData = nullptr;
 
@@ -228,7 +227,7 @@ void AsyncTextureLoader::ProcessCompletedLoads()
 			for (BaseComponent* comp : req.target->dependentComponents)
 			{
 				if (comp)
-					comp->needsRerender = true;
+					comp->MarkDirty();
 			}
 		}
 

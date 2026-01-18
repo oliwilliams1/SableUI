@@ -42,7 +42,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
             if (newPos.y != ctx.scrollPos.y)
             {
                 ctx.scrollPos = newPos;
-                comp->needsRerender = true;
+                comp->MarkDirty();
             }
         }
     }
@@ -54,7 +54,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
         if (hover != ctx.barHovered)
         {
             ctx.barHovered = hover;
-            comp->needsRerender = true;
+            comp->MarkDirty();
         }
 
         if (ctx.isDragging)
@@ -63,7 +63,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
             {
                 ctx.isDragging = false;
                 ctx.barHovered = false;
-                comp->needsRerender = true;
+                comp->MarkDirty();
             }
             else
             {
@@ -89,7 +89,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
                         if (newScrollY != ctx.scrollPos.y)
                         {
                             ctx.scrollPos.y = newScrollY;
-                            comp->needsRerender = true;
+                            comp->MarkDirty();
                         }
                     }
                 }
@@ -100,7 +100,7 @@ void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx
             ctx.isDragging = true;
             ctx.dragOrigPos = eventCtx.mousePos;
             ctx.dragStartScrollY = ctx.scrollPos.y;
-            comp->needsRerender = true;
+            comp->MarkDirty();
         }
     }
 }
@@ -135,11 +135,11 @@ void SableUI::ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx
     if (newScrollPos.y != ctx.scrollPos.y)
     {
         ctx.scrollPos = newScrollPos;
-        comp->needsRerender = true;
+        comp->MarkDirty();
     }
     else if (changed)
     {
-        comp->needsRerender = true;
+        comp->MarkDirty();
     }
 
     ctx.prevScrollData = currentData;

@@ -1,10 +1,4 @@
 #pragma once
-#pragma warning(push)
-#pragma warning(disable : 4005)
-#include <string>
-#include <array>
-#include <vector>
-
 #include <SableUI/core/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
@@ -13,8 +7,12 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/floating_panel.h>
 #include <SableUI/core/drawable.h>
+
 #include <unordered_map>
-#pragma warning(pop)
+#include <string>
+#include <array>
+#include <vector>
+#include <utility>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -83,6 +81,7 @@ namespace SableUI
 
 		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
 		void QueueDestroyFloatingPanel(const std::string& id);
+		bool IsFloatingPanelActive(const std::string& id) const;
 
 		template <typename T>
 		T* CreateFloatingPanelNoInit(const std::string& id, const Rect& r);

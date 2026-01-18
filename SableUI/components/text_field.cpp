@@ -432,7 +432,7 @@ void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 		text->rect.w,
 		text->info.text.fontSize,
 		text->info.text.lineHeight,
-		text->info.text.justification
+		text->info.text.justification.value_or(TextJustification::Left)
 	);
 
 	if (cursorVisible.get())
@@ -455,7 +455,7 @@ void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 			text->rect.w,
 			text->info.text.fontSize,
 			text->info.text.lineHeight,
-			text->info.text.justification
+			text->info.text.justification.value_or(TextJustification::Left)
 		);
 
 		if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)

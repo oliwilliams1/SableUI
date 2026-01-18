@@ -472,6 +472,11 @@ void SableUI::QueueDestroyFloatingPanel(const std::string& id)
 	s_currentContext->QueueDestroyFloatingPanel(id);
 }
 
+bool SableUI::IsFloatingPanelActive(const std::string& id)
+{
+	return s_currentContext->IsFloatingPanelActive(id);
+}
+
 SableUI::Window* SableUI::_getCurrentContext()
 {
 	if (!s_currentContext)

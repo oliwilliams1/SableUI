@@ -6,6 +6,7 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/element.h>
 #include <SableUI/styles/theme.h>
+#include <SableUI/core/text.h>
 #include <functional>
 
 using namespace SableUI;
@@ -122,7 +123,7 @@ void Button::Layout()
 		Text(
 			label.get(),
 			textColour(col),
-			justify_center,
+			justify(i.text.justification.value_or(TextJustification::Center)),
 			wrapText(false)
 		);
 	}

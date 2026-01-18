@@ -63,7 +63,7 @@ namespace SableUI
 	struct TextProps {
 		SableString content;
 		std::optional<Colour> colour = std::nullopt;
-		TextJustification justification = TextJustification::Left;
+		std::optional<TextJustification> justification = std::nullopt;
 		int fontSize = 11;
 		float lineHeight = 1.15f;
 		bool wrap = true;

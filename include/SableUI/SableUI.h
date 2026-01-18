@@ -69,6 +69,7 @@ namespace SableUI
 
 	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r = { 0, 0, 100, 100 });
 	void QueueDestroyFloatingPanel(const std::string& id);
+	bool IsFloatingPanelActive(const std::string& id);
 
 	Window* _getCurrentContext();
 

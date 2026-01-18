@@ -87,13 +87,13 @@ void OnUpdate(const UIEventContext& ctx) override {
     if (ctx.isKeyDown.test(SABLE_KEY_W)) {
         // Move forward continuously
         posY -= speed * ctx.deltaTime;
-        needsRerender = true;
+        MarkDirty();
     }
     
     if (ctx.isKeyDown.test(SABLE_KEY_S)) {
         // Move backward continuously
         posY += speed * ctx.deltaTime;
-        needsRerender = true;
+        MarkDirty();
     }
 }
 ```

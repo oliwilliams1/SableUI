@@ -20,6 +20,6 @@ namespace SableUI
 #define TabUpdateHandler(tabContext)											\
 	if (tabContext.changed)														\
 	{																			\
-		needsRerender = true;													\
+		MarkDirty();															\
 		tabContext.changed = false;												\
 	}

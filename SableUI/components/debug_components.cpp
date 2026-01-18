@@ -143,7 +143,7 @@ void SableUI::MemoryDebugger::Layout()
 
 void SableUI::MemoryDebugger::OnUpdate(const UIEventContext& ctx)
 {
-	if (live) needsRerender = true;
+	if (live) MarkDirty();
 }
 
 // ============================================================================
@@ -254,7 +254,7 @@ void SableUI::PropertiesPanel::Layout()
 		Text("Text Properties", textColour(180, 180, 180), mb(2));
 		Text("Font Size: " + std::to_string(info.text.fontSize), mb(2));
 		Text("Line Height: " + std::to_string(info.text.lineHeight), mb(2));
-		Text("Text justification: " + TextJustificationToString(info.text.justification), mb(8));
+		Text("Text justification: " + TextJustificationToString(info.text.justification.value_or(TextJustification::Left)), mb(8));
 
 		Text("Positioning", textColour(180, 180, 180), mb(2));
 		Text(SableString::Format("Center X: %s", info.layout.centerX ? "true" : "false"), mb(2));
