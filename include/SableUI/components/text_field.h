@@ -11,7 +11,7 @@ namespace SableUI
 {
 	struct InputFieldData
 	{
-		SableString content;
+		SableString content = "";
 		SableString placeholder = U"Start typing...";
 		std::function<void()> onChange;
 		std::function<void()> onSubmit;
