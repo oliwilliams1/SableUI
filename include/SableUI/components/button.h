@@ -1,6 +1,9 @@
 #pragma once
 #include <SableUI/core/component.h>
 #include <SableUI/SableUI.h>
+#include <SableUI/core/element.h>
+#include <SableUI/core/events.h>
+#include <SableUI/utils/utils.h>
 #include <functional>
 
 namespace SableUI
@@ -17,13 +20,14 @@ namespace SableUI
 
 	private:
 		ElementInfo info;
-		State<SableString> label{ this, "Button" };
+		SableString label = "Button";
+		std::function<void()> onClickCallback = nullptr;
+
 		State<bool> isPressed{ this, false };
-		Ref<std::function<void()>> onClickCallback{ this, nullptr };
 	};
 }
 
-// Button component
+// Button component macro
 #define Button(label, callback, ...)											\
 	ComponentScopedWithStyle(													\
 		btn,																	\

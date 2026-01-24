@@ -18,8 +18,10 @@ void Button::Init(
 	const ElementInfo& p_info)
 {
 	info = p_info;
-	label.set(p_label);
-	onClickCallback.set(p_callback);
+	label = p_label;
+	onClickCallback = p_callback;
+
+	MarkDirty();
 }
 
 static Rect GetDefaultPadding(const ElementInfo& info)
@@ -54,11 +56,11 @@ static void ApplyButtonBackground(
 {
 	const Theme& t = GetTheme();
 
-	const float dFac = 0.8f;
+	const float dFac = 0.9f;
 
 	if (src.appearance.hasHoverBg)
 	{
-		PackStylesToInfo(i, 
+		PackStylesToInfo(i,
 			pressed ? hoverBg(src.appearance.bg * dFac, src.appearance.hoverBg * dFac)
 			: hoverBg(src.appearance.bg, src.appearance.hoverBg)
 		);
@@ -97,8 +99,8 @@ void Button::Layout()
 	i.layout.pL = padding.w;
 	i.layout.pB = padding.h;
 
-	i.layout.wType = info.layout.wType;
-	i.layout.hType = info.layout.hType;
+	i.layout.wType = RectType::Fill;
+	i.layout.hType = RectType::Fill;
 
 	Colour col;
 	if (info.text.colour.has_value())
@@ -114,14 +116,14 @@ void Button::Layout()
 	i.appearance.radius = 4;
 
 	i.onClickFunc = [this]() {
-		if (!info.appearance.disabled && onClickCallback.get())
-			onClickCallback.get()();
-	};
+		if (!info.appearance.disabled && onClickCallback)
+			onClickCallback();
+		};
 
 	if (SableUI::DivScope d(i); true)
 	{
 		Text(
-			label.get(),
+			label,
 			textColour(col),
 			justify(i.text.justification.value_or(TextJustification::Center)),
 			wrapText(false)

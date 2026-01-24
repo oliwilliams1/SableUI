@@ -159,6 +159,8 @@ namespace SableUI
 	};
 }
 
+// TODO: add Prop<T> to replace misleading State<T> in certain usecases.
+
 /* scoped RAII rect guard api */
 #define Div(...) if (SableUI::DivScope CONCAT(_d, __LINE__)						\
 					(SableUI::PackStyles(__VA_ARGS__)); true)
