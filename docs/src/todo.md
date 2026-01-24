@@ -38,10 +38,12 @@
 - [x] Overdraw with scrollview
 - [x] Child component state losses
 - [x] Scroll bar doesn't update on init / resize
+- [ ] Floating panel with transparent backgrounds blitted multiple times
 
 ### Features
 - [ ] Remove element tree from custom layout targets
 - [ ] Make another api for floating components
+- [ ] Add Prop<T>
 
 ### Graphics API
 - [ ] Abstract shaders
