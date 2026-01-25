@@ -5,6 +5,7 @@
 #include <SableUI/core/shader.h>
 #include <vector>
 #include <cstdint>
+#include <optional>
 
 namespace SableUI
 {
@@ -70,10 +71,10 @@ namespace SableUI
 		DrawableRect();
 		~DrawableRect();
 		static int GetNumInstances();
-		void Update(const Rect& rect, Colour colour, float borderRadius,
+		void Update(const Rect& rect, std::optional<Colour> colour, float borderRadius,
 			bool clipEnabled, const Rect& clipRect);
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
-		Colour m_colour = { 255, 255, 255, 255 };
+		std::optional<Colour> m_colour = std::nullopt;
 	};
 
 	class DrawableSplitter : public DrawableBase

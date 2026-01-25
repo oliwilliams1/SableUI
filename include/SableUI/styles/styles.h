@@ -128,7 +128,7 @@ namespace SableUI::Style
 	inline constexpr Property<TextJustification> justify(TextJustification v) {
 		return { v, [](ElementInfo& i, TextJustification val) { i.text.justification = val; } };
 	}
-	inline constexpr Property<bool> wrapText(bool v) {
+	inline constexpr Property<bool> textWrap(bool v) {
 		return { v, [](ElementInfo& i, bool val) { i.text.wrap = val; } };
 	}
 

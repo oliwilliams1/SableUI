@@ -60,26 +60,17 @@ static Colour GetCheckColour(const SableUI::ElementInfo& info, bool checked, con
 	if (info.appearance.disabled)
 	{
 		if (checked)
-			return (info.appearance.bg != Colour(0, 0, 0, 0))
-			? info.appearance.bg * 0.6f
-			: t.overlay2 * 0.6f;
+			return info.appearance.bg.value_or(t.overlay2) * 0.6f;
 
 		return t.overlay2;
 	}
 
-	Colour base;
+	Colour base{};
 
 	if (checked)
-	{
-		if (info.appearance.bg != Colour(0, 0, 0, 0))
-			base = info.appearance.bg;
-		else
-			base = t.checkColour;
-	}
+		base = info.appearance.bg.value_or(t.checkColour);
 	else
-	{
 		base = t.surface2;
-	}
 
 	return base;
 }
@@ -122,7 +113,7 @@ void Checkbox::Layout()
 
 		if (!label.get().empty())
 		{
-			Text(label.get(), centerY, wrapText(false), fontSize(fSize));
+			Text(label.get(), centerY, textWrap(false), fontSize(fSize));
 		}
 	}
 }

@@ -264,7 +264,7 @@ void SableUI::PropertiesPanel::Layout()
 		Text(selectedClipRect.get().ToString(), mb(8));
 
 		Text("Background Colour", textColour(180, 180, 180), mb(2));
-		RectElement(w(20), h(20), bg(info.appearance.bg));
+		RectElement(w(20), h(20), bg(info.appearance.bg.value_or(Colour{ 0, 0, 0, 0 })));
 	}
 }
 

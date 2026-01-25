@@ -1,13 +1,12 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <functional>
-
 #include <SableUI/core/renderer.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
+#include <vector>
+#include <string>
+#include <functional>
 #include <optional>
 
 namespace SableUI
@@ -49,7 +48,7 @@ namespace SableUI
 	};
 
 	struct AppearanceProps {
-		Colour bg = { 0, 0, 0, 0 };
+		std::optional<Colour> bg = std::nullopt;
 		Colour hoverBg = { 0, 0, 0, 0 };
 		bool hasHoverBg = false;
 		bool inheritBg = true;
@@ -103,7 +102,6 @@ namespace SableUI
 	};
 
 	struct Child;
-
 	class Element
 	{
 	public:
@@ -154,7 +152,7 @@ namespace SableUI
 		BaseComponent* m_owner = nullptr;
 		bool isHovered = false;
 		bool wasHovered = false;
-		Colour originalBg = { 0, 0, 0, 0 };
+		std::optional<Colour> originalBg = std::nullopt;
 
 	private:
 		DrawableBase* drawable = nullptr;

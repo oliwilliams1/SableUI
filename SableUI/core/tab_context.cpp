@@ -34,7 +34,7 @@ void SableUI::RenderTabHeader(TabContext& ctx, const ElementInfo& style)
 				})
 			)
 			{
-				Text(ctx.tabs[i], wrapText(false));
+				Text(ctx.tabs[i], textWrap(false));
 			}
 		}
 	}

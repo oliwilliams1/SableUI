@@ -156,10 +156,13 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            if (info.appearance.bg.a > 0)
+            if (info.appearance.bg.has_value())
             {
-                drawable->setZ(z);
-                renderer->AddToDrawStack(drRect);
+                if (info.appearance.bg.value().a > 0)
+                {
+                    drawable->setZ(z);
+                    renderer->AddToDrawStack(drRect);
+                }
             }
         }
         else
@@ -201,10 +204,13 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            if (info.appearance.bg.a > 0)
+            if (info.appearance.bg.has_value())
             {
-                drawable->setZ(z);
-                renderer->AddToDrawStack(drRect);
+                if (info.appearance.bg.value().a > 0)
+                {
+                    drawable->setZ(z);
+                    renderer->AddToDrawStack(drRect);
+                }
             }
         }
         else
@@ -798,8 +804,12 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
         (info.layout.centerY ? (1 << 8) : 0) |
         (static_cast<int>(info.appearance.radius) & 0xFF));
 
-    hash_combine(h, (info.appearance.bg.r << 24) | (info.appearance.bg.g << 16) |
-        (info.appearance.bg.b << 8) | info.appearance.bg.a);
+    if (info.text.colour.has_value())
+    {
+        const SableUI::Colour& c = info.text.colour.value();
+		hash_combine(h, (c.r << 24) | (c.g << 16) |
+			(c.b << 8) | c.a);
+    }
 
     return h;
 }

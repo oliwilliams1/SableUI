@@ -148,7 +148,8 @@ void SableUI::ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx
 SableUI::ScrollViewScope::ScrollViewScope(ScrollContext& context, const ElementInfo& info)
     : ctx(context)
 {
-    bgColour = info.appearance.bg;
+    const Theme& t = GetTheme();
+    bgColour = info.appearance.bg.value_or(t.crust);
 
     // viewport
     SableUI::StartDiv(PackStyles(id(ctx.GetViewportID()), w_fill, h_fill, left_right, overflow_hidden));

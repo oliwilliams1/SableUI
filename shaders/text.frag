@@ -9,10 +9,9 @@ uniform sampler2DArray uAtlas;
 
 void main()
 {
-    float alpha = texture(uAtlas, UV).r;
-    vec3 ink = colour.rgb * alpha;
-    
-    ink = pow(ink, vec3(1.0/1.8));
+	float a = texture(uAtlas, UV).r;
 
-    FragColour = vec4(ink, alpha * colour.a);
+	a = a * a * (3.0 - 2.0 * a);
+
+	FragColour = vec4(colour.rgb, a * colour.a);
 }

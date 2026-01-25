@@ -242,6 +242,7 @@ namespace SableUI
 #include <SableUI/core/tab_context.h>
 #include <SableUI/core/scroll_context.h>
 #include <SableUI/core/context_menu.h>
+#include <SableUI/core/modal_context.h>
 
 // Visual horizontal splitter element
 #define SplitterHorizontal(...)													\
@@ -256,7 +257,6 @@ namespace SableUI
 	Div(left_right, h_fit, w_fill, centerY, mt(8))								\
 	{																			\
 		RectElement(mx(2), h(1), w(6), bg(70, 70, 70), centerY);				\
-		Text(label, w_fit, wrapText(false), mx(2), mb(4));						\
+		Text(label, w_fit, textWrap(false), mx(2), mb(4));						\
 		RectElement(mx(2), h(1), w_fill, bg(70, 70, 70), centerY);				\
 	}
-	

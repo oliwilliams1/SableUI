@@ -75,10 +75,8 @@ void SableUI::TextFieldComponent::Layout()
 		return;
 	}
 
-	Colour bgColour = info.appearance.bg != Colour{ 0, 0, 0, 0 } ? info.appearance.bg : t.surface0;
-
-	Colour textCol = info.text.colour.has_value() ? info.text.colour.value() : t.text;
-
+	Colour bgColour = info.appearance.bg.value_or(t.surface0);
+	Colour textCol = info.text.colour.value_or(t.text);
 	Colour placeholderCol = t.subtext0;
 
 	float borderRadius = info.appearance.radius > 0 ? info.appearance.radius : 4.0f;
@@ -103,11 +101,11 @@ void SableUI::TextFieldComponent::Layout()
 	{
 		if (data.content.empty() && !data.isFocused)
 		{
-			Text(data.placeholder, textColour(placeholderCol), wrapText(m_multiline), fontSize(info.text.fontSize));
+			Text(data.placeholder, textColour(placeholderCol), textWrap(m_multiline), fontSize(info.text.fontSize));
 		}
 		else
 		{
-			Text(data.content, id("TextFieldText"), textColour(textCol), wrapText(m_multiline), fontSize(info.text.fontSize));
+			Text(data.content, id("TextFieldText"), textColour(textCol), textWrap(m_multiline), fontSize(info.text.fontSize));
 		}
 	}
 }

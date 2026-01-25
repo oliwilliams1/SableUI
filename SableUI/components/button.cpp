@@ -55,23 +55,26 @@ static void ApplyButtonBackground(
 	bool pressed)
 {
 	const Theme& t = GetTheme();
-
 	const float dFac = 0.9f;
 
 	if (src.appearance.hasHoverBg)
 	{
+		Colour base = src.appearance.bg.value_or(t.primary);
+
 		PackStylesToInfo(i,
-			pressed ? hoverBg(src.appearance.bg * dFac, src.appearance.hoverBg * dFac)
-			: hoverBg(src.appearance.bg, src.appearance.hoverBg)
+			pressed ? hoverBg(base * dFac, src.appearance.hoverBg * dFac)
+			: hoverBg(base, src.appearance.hoverBg)
 		);
 		return;
 	}
 
-	if (src.appearance.bg != Colour(0, 0, 0, 0))
+	if (src.appearance.bg.has_value() && *src.appearance.bg != Colour(0, 0, 0, 0))
 	{
+		Colour base = *src.appearance.bg;
+
 		PackStylesToInfo(i,
-			pressed ? hoverBg(src.appearance.bg * dFac, src.appearance.bg * dFac * dFac)
-			: hoverBg(src.appearance.bg, src.appearance.bg * dFac)
+			pressed ? hoverBg(base * dFac, base * dFac * dFac)
+			: hoverBg(base, base * dFac)
 		);
 		return;
 	}
@@ -126,7 +129,7 @@ void Button::Layout()
 			label,
 			textColour(col),
 			justify(i.text.justification.value_or(TextJustification::Center)),
-			wrapText(false)
+			textWrap(false)
 		);
 	}
 }

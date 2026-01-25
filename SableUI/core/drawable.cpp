@@ -158,7 +158,7 @@ int DrawableRect::GetNumInstances()
 	return s_drawableRectCount;
 }
 
-void DrawableRect::Update(const Rect& rect, Colour colour, float borderRadius, bool clipEnabled, const Rect& clipRect)
+void DrawableRect::Update(const Rect& rect, std::optional<Colour> colour, float borderRadius, bool clipEnabled, const Rect& clipRect)
 {
 	this->m_rect = rect;
 	this->m_colour = colour;
@@ -193,7 +193,8 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	glUniform4f(g_res.u_rectRect, x, y, w, h);
 	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
 	glUniform1f(g_res.u_rectRadius, m_borderRadius);
-	glUniform4f(g_res.u_rectColour, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
+	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
+	glUniform4f(g_res.u_rectColour, c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
 	glUniform1i(g_res.u_rectTexBool, 0);
 	res.rectObject->AddToDrawStack();
 }

@@ -102,12 +102,11 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 	if (!m_renderer)
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
 
-	const Theme& t = GetTheme();
-
 	ElementInfo info = p_info;
 	info.type = ElementType::Div;
-	if (info.appearance.bg == Colour{ 0, 0, 0, 0 })
-		info.appearance.bg = t.base;
+	if (!info.appearance.bg.has_value())
+		info.appearance.bg = GetTheme().base;
+
 	info.layout.width = rect.w;
 	info.layout.height = rect.h;
 	info.layout.wType = RectType::Fixed;
