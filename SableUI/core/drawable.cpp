@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <optional>
 
 using namespace SableUI;
 
@@ -158,11 +159,20 @@ int DrawableRect::GetNumInstances()
 	return s_drawableRectCount;
 }
 
-void DrawableRect::Update(const Rect& rect, std::optional<Colour> colour, float borderRadius, bool clipEnabled, const Rect& clipRect)
+void DrawableRect::Update(
+	const Rect& rect,
+	std::optional<Colour> colour,
+	float rTL, float rTR,
+	float rBL, float rBR,
+	bool clipEnabled,
+	const Rect& clipRect)
 {
 	this->m_rect = rect;
 	this->m_colour = colour;
-	this->m_borderRadius = borderRadius;
+	this->m_rTL = rTL;
+	this->m_rTR = rTR;
+	this->m_rBL = rBL;
+	this->m_rBR = rBR;
 	this->scissorEnabled = clipEnabled;
 	this->scissorRect = clipRect;
 }
@@ -192,7 +202,7 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	g_res.s_rect.Use();
 	glUniform4f(g_res.u_rectRect, x, y, w, h);
 	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
-	glUniform1f(g_res.u_rectRadius, m_borderRadius);
+	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
 	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
 	glUniform4f(g_res.u_rectColour, c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
 	glUniform1i(g_res.u_rectTexBool, 0);
@@ -246,7 +256,7 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 
 	g_res.s_rect.Use();
 	glUniform1i(g_res.u_rectTexBool, 0);
-	glUniform1f(g_res.u_rectRadius, 0.0f);
+	glUniform4f(g_res.u_rectRadius, 0.0f, 0.0f, 0.0f, 0.0f);
 	glUniform4f(g_res.u_rectColour, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
 
 	int startX = std::clamp(m_rect.x, 0, framebuffer->width);
@@ -329,10 +339,18 @@ int DrawableImage::GetNumInstances()
 	return s_drawableImageCount;
 }
 
-void SableUI::DrawableImage::Update(Rect& rect, float borderRadius, bool clipEnabled, const Rect& clipRect)
+void SableUI::DrawableImage::Update(
+	Rect& rect,
+	float rTL, float rTR,
+	float rBL, float rBR,
+	bool clipEnabled,
+	const Rect& clipRect)
 {
 	this->m_rect = rect;
-	this->m_borderRadius = borderRadius;
+	this->m_rTL = rTL;
+	this->m_rTR = rTR;
+	this->m_rBL = rBL;
+	this->m_rBR = rBR;
 	this->scissorEnabled = clipEnabled;
 	this->scissorRect = clipRect;
 }
@@ -364,7 +382,7 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 	g_res.s_rect.Use();
 	glUniform4f(g_res.u_rectRect, x, y, w, h);
 	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
-	glUniform1f(g_res.u_rectRadius, m_borderRadius);
+	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
 	glUniform1i(g_res.u_rectTexBool, 1);
 	res.rectObject->AddToDrawStack();
 }

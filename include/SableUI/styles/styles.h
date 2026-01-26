@@ -104,14 +104,63 @@ namespace SableUI::Style
 		return { v, [](ElementInfo& i, bool val) { i.appearance.inheritBg = val; } };
 	}
 	inline constexpr Property<float> rounded(float r) {
-		return { r, [](ElementInfo& i, float val) { i.appearance.radius = val; } };
+		return { r, [](ElementInfo& i, float val) { 
+			i.appearance.rTL = val; 
+			i.appearance.rTR = val; 
+			i.appearance.rBL = val;
+			i.appearance.rBR = val; 
+		} };
 	}
+	inline constexpr Property<float> roundedTL(float r) {
+		return { r, [](ElementInfo& i, float v) { i.appearance.rTL = v; } };
+	}
+
+	inline constexpr Property<float> roundedTR(float r) {
+		return { r, [](ElementInfo& i, float v) { i.appearance.rTR = v; } };
+	}
+
+	inline constexpr Property<float> roundedBL(float r) {
+		return { r, [](ElementInfo& i, float v) { i.appearance.rBL = v; } };
+	}
+
+	inline constexpr Property<float> roundedBR(float r) {
+		return { r, [](ElementInfo& i, float v) { i.appearance.rBR = v; } };
+	}
+	inline constexpr Property<float> roundedTop(float r) {
+		return { r, [](ElementInfo& i, float v) {
+			i.appearance.rTL = v;
+			i.appearance.rTR = v;
+		} };
+	}
+
+	inline constexpr Property<float> roundedBottom(float r) {
+		return { r, [](ElementInfo& i, float v) {
+			i.appearance.rBL = v;
+			i.appearance.rBR = v;
+		} };
+	}
+
+	inline constexpr Property<float> roundedLeft(float r) {
+		return { r, [](ElementInfo& i, float v) {
+			i.appearance.rTL = v;
+			i.appearance.rBL = v;
+		} };
+	}
+
+	inline constexpr Property<float> roundedRight(float r) {
+		return { r, [](ElementInfo& i, float v) {
+			i.appearance.rTR = v;
+			i.appearance.rBR = v;
+		} };
+	}
+
 	inline constexpr FlagProperty overflow_hidden = { [](ElementInfo& i) { i.appearance.clipChildren = true; } };
 
 	// sizes
 	inline constexpr FlagProperty size_sm = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Small; } };
 	inline constexpr FlagProperty size_md = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Medium; } };
 	inline constexpr FlagProperty size_lg = { [](ElementInfo& i) {i.appearance.size = ComponentSize::Large; } };
+	inline constexpr FlagProperty size_none = { [](ElementInfo& i) {i.appearance.size = ComponentSize::None; } };
 	inline constexpr Property<bool> disabled(bool v) {
 		return { v, [](ElementInfo& i, bool val) { i.appearance.disabled = val; } };
 	}

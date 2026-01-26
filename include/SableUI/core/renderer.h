@@ -152,7 +152,11 @@ namespace SableUI
 		GpuFramebuffer* target = nullptr;
 		std::vector<DrawableBase*> drawables;
 
-		void AddRect(const Rect& rect, const Colour& colour, float borderRadius = 0.0f);
+		void AddRect(
+			const Rect& rect, 
+			const Colour& colour, 
+			float rTL = 0.0f, float rTR = 0.0f,
+			float rBL = 0.0f, float rBR = 0.0f);
 
 		CustomTargetQueue(const CustomTargetQueue&) = delete;
 		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;

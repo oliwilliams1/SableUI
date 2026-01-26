@@ -91,14 +91,36 @@ void SableUI::Element::SetRect(const Rect& r)
     {
     case ElementType::Rect:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-            drRect->Update(rect, info.appearance.bg, info.appearance.radius, clipEnabled, clipRect);
+        {
+            drRect->Update(
+                rect, 
+                info.appearance.bg, 
+                info.appearance.rTL, 
+                info.appearance.rTR, 
+                info.appearance.rBL, 
+                info.appearance.rBR, 
+                clipEnabled, 
+                clipRect
+            );
+        }
         else
             SableUI_Error("Dynamic cast failed");
         break;
 
     case ElementType::Image:
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
-            drImage->Update(rect, info.appearance.radius, clipEnabled, clipRect);
+        {
+            drImage->Update(
+                rect,
+                info.appearance.rTL,
+                info.appearance.rTR,
+                info.appearance.rBL,
+                info.appearance.rBR,
+                clipEnabled,
+                clipRect
+            );
+
+        }
         else
             SableUI_Error("Dynamic cast failed");
         break;
@@ -116,7 +138,18 @@ void SableUI::Element::SetRect(const Rect& r)
 
     case ElementType::Div:
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
-            drRect->Update(rect, info.appearance.bg, info.appearance.radius, clipEnabled, clipRect);
+        {
+            drRect->Update(
+                rect,
+                info.appearance.bg,
+                info.appearance.rTL,
+                info.appearance.rTR,
+                info.appearance.rBL,
+                info.appearance.rBR,
+                clipEnabled,
+                clipRect
+            );
+        }
         else
             SableUI_Error("Dynamic cast failed");
         break;
@@ -801,8 +834,12 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
 
     hash_combine(h, ((int)info.layout.layoutDirection << 24) |
         (info.layout.centerX ? (1 << 16) : 0) |
-        (info.layout.centerY ? (1 << 8) : 0) |
-        (static_cast<int>(info.appearance.radius) & 0xFF));
+        (info.layout.centerY ? (1 << 8) : 0));
+
+    hash_combine(h, info.appearance.rTL);
+    hash_combine(h, info.appearance.rTR);
+    hash_combine(h, info.appearance.rBL);
+    hash_combine(h, info.appearance.rBR);
 
     if (info.text.colour.has_value())
     {

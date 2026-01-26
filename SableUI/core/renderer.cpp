@@ -45,12 +45,16 @@ int SableUI::CustomTargetQueue::GetNumInstances()
 	return s_targetQueueinstances;
 }
 
-void SableUI::CustomTargetQueue::AddRect(const Rect& rect, const Colour& colour, float borderRadius)
+void SableUI::CustomTargetQueue::AddRect(
+	const Rect& rect, 
+	const Colour& colour, 
+	float rTL, float rTR,
+	float rBL, float rBR)
 {
 	if (!target)
 		SableUI_Runtime_Error("CustomTargetQueue has not been initialised");
 
 	DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
-	drRect->Update(rect, colour, borderRadius, false, {});
+	drRect->Update(rect, colour, rTL, rTR, rBL, rBR, false, {});
 	drawables.push_back(drRect);
 }

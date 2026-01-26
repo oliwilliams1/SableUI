@@ -79,11 +79,12 @@ void SableUI::TextFieldComponent::Layout()
 	Colour textCol = info.text.colour.value_or(t.text);
 	Colour placeholderCol = t.subtext0;
 
-	float borderRadius = info.appearance.radius > 0 ? info.appearance.radius : 4.0f;
-
 	ElementInfo containerInfo = info;
 	containerInfo.appearance.bg = bgColour;
-	containerInfo.appearance.radius = borderRadius;
+	containerInfo.appearance.rTL = info.appearance.rTL > 0.0f ? info.appearance.rTL : 4.0f;
+	containerInfo.appearance.rTR = info.appearance.rTR > 0.0f ? info.appearance.rTR : 4.0f;
+	containerInfo.appearance.rBL = info.appearance.rBL > 0.0f ? info.appearance.rBL : 4.0f;
+	containerInfo.appearance.rBR = info.appearance.rBR > 0.0f ? info.appearance.rBR : 4.0f;
 
 	if (containerInfo.layout.wType == RectType::Undef) containerInfo.layout.wType = RectType::Fill;
 	if (containerInfo.layout.hType == RectType::Undef) containerInfo.layout.hType = RectType::FitContent;

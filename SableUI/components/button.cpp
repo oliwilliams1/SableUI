@@ -29,8 +29,9 @@ static Rect GetDefaultPadding(const ElementInfo& info)
 	switch (info.appearance.size)
 	{
 	case ComponentSize::Small:  return { 8, 4, 8, 4 };
+	case ComponentSize::Medium: return { 12, 6, 12, 6 };
 	case ComponentSize::Large:  return { 16, 10, 16, 10 };
-	default:                    return { 12, 6, 12, 6 }; // medium
+	default:					return { 0, 0, 0, 0 };
 	}
 }
 
@@ -68,20 +69,12 @@ static void ApplyButtonBackground(
 		return;
 	}
 
-	if (src.appearance.bg.has_value() && *src.appearance.bg != Colour(0, 0, 0, 0))
-	{
-		Colour base = *src.appearance.bg;
 
-		PackStylesToInfo(i,
-			pressed ? hoverBg(base * dFac, base * dFac * dFac)
-			: hoverBg(base, base * dFac)
-		);
-		return;
-	}
+	Colour base = src.appearance.bg.value_or(t.primary);
 
 	PackStylesToInfo(i,
-		pressed ? hoverBg(t.primary * dFac, t.primary * dFac * dFac)
-		: hoverBg(t.primary, t.primary * dFac)
+		pressed ? hoverBg(base * dFac, base * dFac * dFac)
+		: hoverBg(base, base * dFac)
 	);
 }
 
@@ -96,7 +89,7 @@ void Button::Layout()
 {
 	Rect padding = ResolvePadding(info);
 
-	ElementInfo i;
+	ElementInfo i{};
 	i.layout.pR = padding.x;
 	i.layout.pT = padding.y;
 	i.layout.pL = padding.w;
@@ -116,12 +109,15 @@ void Button::Layout()
 	else
 		ApplyButtonBackground(i, info, isPressed.get());
 
-	i.appearance.radius = 4;
+	i.appearance.rTL = info.appearance.rTL > 0.0f ? info.appearance.rTL : 4.0f;
+	i.appearance.rTR = info.appearance.rTR > 0.0f ? info.appearance.rTR : 4.0f;
+	i.appearance.rBL = info.appearance.rBL > 0.0f ? info.appearance.rBL : 4.0f;
+	i.appearance.rBR = info.appearance.rBR > 0.0f ? info.appearance.rBR : 4.0f;
 
 	i.onClickFunc = [this]() {
 		if (!info.appearance.disabled && onClickCallback)
 			onClickCallback();
-		};
+	};
 
 	if (SableUI::DivScope d(i); true)
 	{
@@ -129,7 +125,9 @@ void Button::Layout()
 			label,
 			textColour(col),
 			justify(i.text.justification.value_or(TextJustification::Center)),
-			textWrap(false)
+			textWrap(false),
+			fontSize(info.text.fontSize),
+			centerY
 		);
 	}
 }

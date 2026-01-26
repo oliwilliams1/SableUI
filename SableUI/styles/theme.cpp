@@ -166,7 +166,7 @@ Theme SableUI::BuiltInThemes::SableUIDark()
 	t.blue = Colour{ 30, 102, 245, 255 };
 	t.lavender = Colour{ 114, 135, 253, 255 };
 
-	t.primary = t.overlay0;
+	t.primary = Colour{ 18, 80, 118, 255 };
 	t.secondary = t.overlay1;
 
 	t.success = Colour{ 50, 255, 50, 255 };

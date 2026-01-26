@@ -55,7 +55,7 @@ namespace SableUI
 		void setZ(int z) { this->m_zIndex = z; }
 		int m_zIndex = 0;
 		Rect m_rect = { 0, 0, 0, 0 };
-		float m_borderRadius = 0.0f;
+		float m_rTL = 0.0f, m_rTR = 0.0f, m_rBL = 0.0f, m_rBR = 0.0f;
 		unsigned int uuid = 0;
 		bool orphan = false;
 		bool scissorEnabled = false;
@@ -71,8 +71,14 @@ namespace SableUI
 		DrawableRect();
 		~DrawableRect();
 		static int GetNumInstances();
-		void Update(const Rect& rect, std::optional<Colour> colour, float borderRadius,
-			bool clipEnabled, const Rect& clipRect);
+		void Update(
+			const Rect& rect, 
+			std::optional<Colour> colour,
+			float rTL, float rTR,
+			float rBL, float rBR,
+			bool clipEnabled,
+			const Rect& clipRect);
+
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		std::optional<Colour> m_colour = std::nullopt;
 	};
@@ -99,8 +105,13 @@ namespace SableUI
 		DrawableImage();
 		~DrawableImage();
 		static int GetNumInstances();
-		void Update(Rect& rect, float borderRadius,
-			bool clipEnabled, const Rect& clipRect);
+		void Update(
+			Rect& rect,
+			float rTL, float rTR,
+			float rBL, float rBR,
+			bool clipEnabled,
+			const Rect& clipRect);
+
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		void RegisterTextureDependancy(BaseComponent* component);
 		void DeregisterTextureDependancy(BaseComponent* component);

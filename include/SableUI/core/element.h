@@ -11,7 +11,7 @@
 
 namespace SableUI
 {
-	enum class ElementType
+	enum class ElementType : uint8_t
 	{
 		Undef,
 		Rect,
@@ -20,7 +20,7 @@ namespace SableUI
 		Div
 	};
 
-	enum class LayoutDirection
+	enum class LayoutDirection : uint8_t
 	{
 		UpDown,
 		DownUp,
@@ -28,11 +28,12 @@ namespace SableUI
 		RightLeft
 	};
 
-	enum class ComponentSize
+	enum class ComponentSize : uint8_t
 	{
 		Small,
 		Medium,
-		Large
+		Large,
+		None
 	};
 
 	struct LayoutProps {
@@ -52,7 +53,7 @@ namespace SableUI
 		Colour hoverBg = { 0, 0, 0, 0 };
 		bool hasHoverBg = false;
 		bool inheritBg = true;
-		float radius = 0.0f;
+		float rTL = 0.0f, rTR = 0.0f, rBL = 0.0f, rBR = 0.0f;
 
 		ComponentSize size = ComponentSize::Medium; // scaling for sableui components
 		bool disabled = false; // special property for sableui components
