@@ -44,6 +44,7 @@ namespace SableUI
 		int minW = 0, maxW = 0, minH = 0, maxH = 0;
 		int pT = 0, pB = 0, pL = 0, pR = 0;
 		int mT = 0, mB = 0, mL = 0, mR = 0;
+		int bT = 0, bB = 0, bL = 0, bR = 0;
 		bool centerX = false, centerY = false;
 		ivec2 pos = { -1, -1 };
 	};
@@ -51,6 +52,7 @@ namespace SableUI
 	struct AppearanceProps {
 		std::optional<Colour> bg = std::nullopt;
 		Colour hoverBg = { 0, 0, 0, 0 };
+		std::optional<Colour> borderColour = std::nullopt;
 		bool hasHoverBg = false;
 		bool inheritBg = true;
 		float rTL = 0.0f, rTR = 0.0f, rBL = 0.0f, rBR = 0.0f;

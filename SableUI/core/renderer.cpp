@@ -6,6 +6,7 @@
 #include <SableUI/core/window.h>
 #include <SableUI/utils/utils.h>
 #include <cstdint>
+#include <optional>
 
 uint32_t SableUI::RendererBackend::AllocateHandle()
 {
@@ -49,12 +50,15 @@ void SableUI::CustomTargetQueue::AddRect(
 	const Rect& rect, 
 	const Colour& colour, 
 	float rTL, float rTR,
-	float rBL, float rBR)
+	float rBL, float rBR,
+	std::optional<Colour> borderColour,
+	int bT, int bB,
+	int bL, int bR)
 {
 	if (!target)
 		SableUI_Runtime_Error("CustomTargetQueue has not been initialised");
 
 	DrawableRect* drRect = SableMemory::SB_new<DrawableRect>();
-	drRect->Update(rect, colour, rTL, rTR, rBL, rBR, false, {});
+	drRect->Update(rect, colour, rTL, rTR, rBL, rBR, borderColour, bT, bB, bL, bR, false, {});
 	drawables.push_back(drRect);
 }

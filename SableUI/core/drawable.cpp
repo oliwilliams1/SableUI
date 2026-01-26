@@ -84,7 +84,9 @@ void SableUI::InitDrawables()
 		g_res.u_rectRect = GetUniformLocation(g_res.s_rect, "uRect");
 		g_res.u_rectRadius = GetUniformLocation(g_res.s_rect, "uRadius");
 		g_res.u_rectRealRect = GetUniformLocation(g_res.s_rect, "uRealRect");
-		g_res.u_rectTexBool= GetUniformLocation(g_res.s_rect, "uUseTexture");
+		g_res.u_rectTexBool = GetUniformLocation(g_res.s_rect, "uUseTexture");
+		g_res.u_rectBorderSize = GetUniformLocation(g_res.s_rect, "uBorderSize");
+		g_res.u_rectBorderColour = GetUniformLocation(g_res.s_rect, "uBorderColour");
 		glUniform4f(g_res.u_rectColour, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 		glUniform1i(glGetUniformLocation(g_res.s_rect.m_shaderProgram, "uTexture"), 0);
 
@@ -164,6 +166,9 @@ void DrawableRect::Update(
 	std::optional<Colour> colour,
 	float rTL, float rTR,
 	float rBL, float rBR,
+	std::optional<Colour> borderColour,
+	int bT, int bB,
+	int bL, int bR,
 	bool clipEnabled,
 	const Rect& clipRect)
 {
@@ -173,6 +178,11 @@ void DrawableRect::Update(
 	this->m_rTR = rTR;
 	this->m_rBL = rBL;
 	this->m_rBR = rBR;
+	this->m_borderColour = borderColour;
+	this->m_bT = bT;
+	this->m_bB = bB;
+	this->m_bL = bL;
+	this->m_bR = bR;
 	this->scissorEnabled = clipEnabled;
 	this->scissorRect = clipRect;
 }
@@ -203,6 +213,12 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	glUniform4f(g_res.u_rectRect, x, y, w, h);
 	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
 	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
+	glUniform4i(g_res.u_rectBorderSize, m_bT, m_bB, m_bL, m_bR);
+	if (m_borderColour.has_value())
+	{
+		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
+		glUniform3f(g_res.u_rectColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f);
+	}
 	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
 	glUniform4f(g_res.u_rectColour, c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
 	glUniform1i(g_res.u_rectTexBool, 0);
@@ -343,6 +359,9 @@ void SableUI::DrawableImage::Update(
 	Rect& rect,
 	float rTL, float rTR,
 	float rBL, float rBR,
+	std::optional<Colour> borderColour,
+	int bT, int bB,
+	int bL, int bR,
 	bool clipEnabled,
 	const Rect& clipRect)
 {
@@ -351,6 +370,11 @@ void SableUI::DrawableImage::Update(
 	this->m_rTR = rTR;
 	this->m_rBL = rBL;
 	this->m_rBR = rBR;
+	this->m_borderColour = borderColour;
+	this->m_bT = bT;
+	this->m_bB = bB;
+	this->m_bL = bL;
+	this->m_bR = bR;
 	this->scissorEnabled = clipEnabled;
 	this->scissorRect = clipRect;
 }
@@ -383,6 +407,12 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 	glUniform4f(g_res.u_rectRect, x, y, w, h);
 	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
 	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
+	glUniform4i(g_res.u_rectBorderSize, m_bT, m_bB, m_bL, m_bR);
+	if (m_borderColour.has_value())
+	{
+		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
+		glUniform3f(g_res.u_rectColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f);
+	}
 	glUniform1i(g_res.u_rectTexBool, 1);
 	res.rectObject->AddToDrawStack();
 }

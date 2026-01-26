@@ -1,8 +1,9 @@
 #pragma once
-#include <cstdint>
-#include <vector>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/drawable.h>
+#include <cstdint>
+#include <vector>
+#include <optional>
 
 namespace SableUI
 {
@@ -153,10 +154,13 @@ namespace SableUI
 		std::vector<DrawableBase*> drawables;
 
 		void AddRect(
-			const Rect& rect, 
-			const Colour& colour, 
+			const Rect& rect,
+			const Colour& colour,
 			float rTL = 0.0f, float rTR = 0.0f,
-			float rBL = 0.0f, float rBR = 0.0f);
+			float rBL = 0.0f, float rBR = 0.0f,
+			std::optional<Colour> borderColour = std::nullopt,
+			int bT = 0, int bB = 0,
+			int bL = 0, int bR = 0);
 
 		CustomTargetQueue(const CustomTargetQueue&) = delete;
 		CustomTargetQueue& operator=(const CustomTargetQueue&) = delete;

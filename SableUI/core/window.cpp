@@ -1091,16 +1091,16 @@ void SableUI::Window::UpdateWindowBorder()
 	int w = m_windowSize.x;
 	int h = m_windowSize.y;
 
-	m_borderTop->Update({ 0, 0, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, false, {});
+	m_borderTop->Update({ 0, 0, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
 	m_borderTop->m_zIndex = 1000;
 
-	m_borderBottom->Update({ 0, h - 1, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, false, {});
+	m_borderBottom->Update({ 0, h - 1, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
 	m_borderBottom->m_zIndex = 1000;
 
-	m_borderLeft->Update({ 0, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, false, {});
+	m_borderLeft->Update({ 0, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
 	m_borderLeft->m_zIndex = 1000;
 
-	m_borderRight->Update({ w - 1, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, false, {});
+	m_borderRight->Update({ w - 1, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
 	m_borderRight->m_zIndex = 1000;
 
 	m_borderNeedsUpdate = false;

@@ -32,6 +32,8 @@ namespace SableUI
 		uint32_t u_rectTexBool = 0;
 		uint32_t u_rectRealRect = 0;
 		uint32_t u_rectRadius = 0;
+		uint32_t u_rectBorderSize = 0;
+		uint32_t u_rectBorderColour = 0;
 
 		Shader s_text;
 		uint32_t u_textTargetSize = 0;
@@ -56,6 +58,7 @@ namespace SableUI
 		int m_zIndex = 0;
 		Rect m_rect = { 0, 0, 0, 0 };
 		float m_rTL = 0.0f, m_rTR = 0.0f, m_rBL = 0.0f, m_rBR = 0.0f;
+		int m_bT = 0, m_bB = 0, m_bL = 0, m_bR = 0;
 		unsigned int uuid = 0;
 		bool orphan = false;
 		bool scissorEnabled = false;
@@ -76,11 +79,16 @@ namespace SableUI
 			std::optional<Colour> colour,
 			float rTL, float rTR,
 			float rBL, float rBR,
+			std::optional<Colour> borderColour,
+			int bT, int bB,
+			int bL, int bR,
 			bool clipEnabled,
 			const Rect& clipRect);
 
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+
 		std::optional<Colour> m_colour = std::nullopt;
+		std::optional<Colour> m_borderColour = std::nullopt;
 	};
 
 	class DrawableSplitter : public DrawableBase
@@ -109,13 +117,18 @@ namespace SableUI
 			Rect& rect,
 			float rTL, float rTR,
 			float rBL, float rBR,
+			std::optional<Colour> borderColour,
+			int bT, int bB, 
+			int bL, int bR,
 			bool clipEnabled,
 			const Rect& clipRect);
 
 		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
 		void RegisterTextureDependancy(BaseComponent* component);
 		void DeregisterTextureDependancy(BaseComponent* component);
+
 		Texture m_texture;
+		std::optional<Colour> m_borderColour = std::nullopt;
 	};
 
 	class DrawableText : public DrawableBase

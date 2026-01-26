@@ -239,6 +239,7 @@ namespace SableUI
 #include <SableUI/components/button.h>
 #include <SableUI/components/checkbox.h>
 #include <SableUI/components/text_field.h>
+#include <SableUI/components/calendar.h>
 #include <SableUI/core/tab_context.h>
 #include <SableUI/core/scroll_context.h>
 #include <SableUI/core/context_menu.h>

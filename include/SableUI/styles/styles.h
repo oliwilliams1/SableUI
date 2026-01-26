@@ -93,7 +93,32 @@ namespace SableUI::Style
 	inline constexpr Property<int> pl(int v) { return { v, [](ElementInfo& i, int val) { i.layout.pL = val; } }; }
 	inline constexpr Property<int> pr(int v) { return { v, [](ElementInfo& i, int val) { i.layout.pR = val; } }; }
 
-	// appearance
+	// borders
+	inline constexpr Property<int> b(int v) {
+		return { v, [](ElementInfo& i, int val) {
+			i.layout.bT = i.layout.bB = i.layout.bL = i.layout.bR = val;
+		} };
+	}
+	inline constexpr Property<int> bx(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bL = i.layout.bR = val; } };
+	}
+	inline constexpr Property<int> by(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bT = i.layout.bB = val; } };
+	}
+	inline constexpr Property<int> bt(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bT = val; } };
+	}
+	inline constexpr Property<int> bb(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bB = val; } };
+	}
+	inline constexpr Property<int> bl(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bL = val; } };
+	}
+	inline constexpr Property<int> br(int v) {
+		return { v, [](ElementInfo& i, int val) { i.layout.bR = val; } };
+	}
+
+	// bg colours
 	inline constexpr Property<Colour> bg(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
 		return { Colour(r, g, b, a), [](ElementInfo& i, Colour val) { i.appearance.bg = val; } };
 	}
@@ -103,6 +128,8 @@ namespace SableUI::Style
 	inline constexpr Property<bool> inheritBg(bool v) {
 		return { v, [](ElementInfo& i, bool val) { i.appearance.inheritBg = val; } };
 	}
+
+	// border radius
 	inline constexpr Property<float> rounded(float r) {
 		return { r, [](ElementInfo& i, float val) { 
 			i.appearance.rTL = val; 
@@ -154,6 +181,16 @@ namespace SableUI::Style
 		} };
 	}
 
+	// border colour
+	inline constexpr Property<Colour> borderColour(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
+		return { Colour(r, g, b, a), [](ElementInfo& i, Colour val) { i.appearance.borderColour = val; } };
+	}
+
+	inline constexpr Property<Colour> borderColour(Colour c) {
+		return { c, [](ElementInfo& i, Colour val) { i.appearance.borderColour = val; } };
+	}
+
+	// overflow
 	inline constexpr FlagProperty overflow_hidden = { [](ElementInfo& i) { i.appearance.clipChildren = true; } };
 
 	// sizes
