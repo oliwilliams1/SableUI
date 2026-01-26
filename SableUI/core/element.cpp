@@ -18,6 +18,16 @@
 #include <string>
 using namespace  SableMemory;
 
+static inline bool HasBorder(const SableUI::ElementInfo& i)
+{
+    return i.layout.bT || i.layout.bB || i.layout.bL || i.layout.bR;
+}
+
+static inline bool HasVisibleBackground(const SableUI::ElementInfo& i)
+{
+    return i.appearance.bg.has_value() && i.appearance.bg.value().a > 0;
+}
+
 static int n_elements = 0;
 static int n_vElements = 0;
 
@@ -204,13 +214,13 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            if (info.appearance.bg.has_value())
+            const bool hasBorder = HasBorder(info);
+            const bool hasBg = HasVisibleBackground(info);
+
+            if (hasBorder || hasBg)
             {
-                if (info.appearance.bg.value().a > 0)
-                {
-                    drawable->setZ(z);
-                    renderer->AddToDrawStack(drRect);
-                }
+                drawable->setZ(z);
+                renderer->AddToDrawStack(drRect);
             }
         }
         else
@@ -252,13 +262,13 @@ void SableUI::Element::Render(int z)
     {
         if (DrawableRect* drRect = dynamic_cast<DrawableRect*>(drawable))
         {
-            if (info.appearance.bg.has_value())
+            const bool hasBorder = HasBorder(info);
+            const bool hasBg = HasVisibleBackground(info);
+
+            if (hasBorder || hasBg)
             {
-                if (info.appearance.bg.value().a > 0)
-                {
-                    drawable->setZ(z);
-                    renderer->AddToDrawStack(drRect);
-                }
+                drawable->setZ(z);
+                renderer->AddToDrawStack(drRect);
             }
         }
         else

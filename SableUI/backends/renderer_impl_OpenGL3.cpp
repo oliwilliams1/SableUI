@@ -1,12 +1,5 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <algorithm>
-#include <set>
-#include <cstdint>
-#include <memory>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 #include <SableUI/core/renderer.h>
 #include <SableUI/utils/memory.h>
@@ -16,6 +9,15 @@
 #include <SableUI/utils/console.h>
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Renderer"
+
+#include <algorithm>
+#include <set>
+#include <cstdint>
+#include <memory>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 using namespace SableUI;
 
 struct OpenGLMesh
@@ -269,7 +271,7 @@ void OpenGL3Backend::DrawToScreen(
 		sourceRect.x, sourceRect.y,
 		sourceRect.w, sourceRect.h);
 
-	glUniform1f(g_res.u_rectRadius, 0.0f);
+	glUniform4f(g_res.u_rectRadius, 0.0f, 0.0f, 0.0f, 0.0f);
 	glUniform1i(g_res.u_rectTexBool, 1);
 
 	c_res.rectObject->AddToDrawStack();

@@ -51,54 +51,57 @@ void Calendar::Layout()
 		"July", "August", "September", "October", "November", "December"
 	};
 
-	const int cellSize = 32;
+	const int cellSize = 28; // VARY BASED ON COMPONENT SIZE
 
-	Div(bg(t.surface0), roundedTop(8), b(2), bb(0), borderColour(t.red))
+	Div(b(1), borderColour(t.overlay1), rounded(8), bg(t.mantle))
 	{
-		Div(left_right, mb(3), w_fill, p(4))
+		Div(bg(t.surface0), roundedTop(8), bg(t.surface0), bb(1), borderColour(t.overlay0), px(4))
 		{
-			Button(
-				"<",
-				[this]() {
-					PrevMonth();
-				},
-				w(32), h(32),
-				fontSize(14),
-				hoverBg(rgba(0, 0, 0, 0), t.surface1),
-				rounded(999),
-				textColour(t.subtext0)
-			);
-			Text(
-				SableString::Format("%s %d", monthNames[viewMonth.get()], viewYear.get()).bold(),
-				centerXY,
-				fontSize(14),
-				justify_center,
-				w_fill,
-				textColour(t.subtext1)
-			);
+			Div(left_right, mb(3), w_fill, p(4))
+			{
+				Button(
+					"<",
+					[this]() {
+						PrevMonth();
+					},
+					w(32), h(32),
+					fontSize(14),
+					hoverBg(rgba(0, 0, 0, 0), t.surface1),
+					rounded(999),
+					textColour(t.subtext0)
+				);
+				Text(
+					SableString::Format("%s %d", monthNames[viewMonth.get()], viewYear.get()).bold(),
+					centerXY,
+					fontSize(14),
+					justify_center,
+					w_fill,
+					textColour(t.subtext1)
+				);
 
-			Button(
-				">",
-				[this]() {
-					NextMonth();
-				},
-				w(32), h(32),
-				fontSize(14),
-				hoverBg(rgba(0, 0, 0, 0), t.surface1),
-				rounded(999),
-				textColour(t.subtext0)
-			);
+				Button(
+					">",
+					[this]() {
+						NextMonth();
+					},
+					w(32), h(32),
+					fontSize(14),
+					hoverBg(rgba(0, 0, 0, 0), t.surface1),
+					rounded(999),
+					textColour(t.subtext0)
+				);
+			}
+
+			Div(left_right, mb(2), py(8))
+			{
+				static const char* days[] = { "S", "M", "T", "W", "T", "F", "S" };
+				for (auto d : days)
+					Text(d, w(cellSize), centerXY, justify_center, fontSize(12), textColour(t.subtext0));
+			}
 		}
 
-		Div(left_right, mb(2), py(8))
-		{
-			static const char* days[] = { "S", "M", "T", "W", "T", "F", "S" };
-			for (auto d : days)
-				Text(d, w(cellSize), centerXY, justify_center, fontSize(12), textColour(t.subtext0));
-		}
+		RenderDays(cellSize);
 	}
-
-	RenderDays(cellSize);
 }
 
 void Calendar::PrevMonth()
@@ -142,44 +145,47 @@ void Calendar::RenderDays(int cellSize)
 
 	int day = 1;
 
-	for (int week = 0; week < 6; week++)
+	Div(p(4))
 	{
-		Div(left_right, b(2), bt(0), borderColour(t.red))
+		for (int week = 0; week < 6; week++)
 		{
-			for (int dow = 0; dow < 7; dow++)
+			Div(left_right)
 			{
-				int cellIndex = week * 7 + dow;
-
-				if (cellIndex < first || day > dim)
+				for (int dow = 0; dow < 7; dow++)
 				{
-					RectElement(w(cellSize), h(cellSize));
-				}
-				else
-				{
-					int thisDay = day;
-					bool selected = IsSelectedDay(vy, vm, thisDay);
+					int cellIndex = week * 7 + dow;
 
-					Colour baseColour = selected ? t.primary : rgba(0, 0, 0, 0);
-					Colour hoverColour = selected ? t.primary : t.surface1;
+					if (cellIndex < first || day > dim)
+					{
+						RectElement(w(cellSize), h(cellSize));
+					}
+					else
+					{
+						int thisDay = day;
+						bool selected = IsSelectedDay(vy, vm, thisDay);
 
-					Button(
-						SableString::Format("%d", thisDay),
-						([this, vy, vm, thisDay]() {
-							selectedYear.set(vy);
-							selectedMonth.set(vm);
-							selectedDay.set(thisDay);
-							}),
-						w(cellSize),
-						h(cellSize),
-						centerXY,
-						justify_center,
-						hoverBg(baseColour, hoverColour),
-						rounded(999),
-						fontSize(12),
-						size_none
-					);
+						Colour baseColour = selected ? t.primary : rgba(0, 0, 0, 0);
+						Colour hoverColour = selected ? t.primary : t.surface1;
 
-					day++;
+						Button(
+							SableString::Format("%d", thisDay),
+							([this, vy, vm, thisDay]() {
+								selectedYear.set(vy);
+								selectedMonth.set(vm);
+								selectedDay.set(thisDay);
+								}),
+							w(cellSize),
+							h(cellSize),
+							centerXY,
+							justify_center,
+							hoverBg(baseColour, hoverColour),
+							rounded(999),
+							fontSize(12),
+							size_none
+						);
+
+						day++;
+					}
 				}
 			}
 		}

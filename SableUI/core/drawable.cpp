@@ -14,7 +14,7 @@
 
 using namespace SableUI;
 
-/* rect globals - now per-context */
+/* rect globals */
 static std::map<void*, SableUI::ContextResources> g_contextResources;
 static GlobalResources g_res{};
 
@@ -57,10 +57,10 @@ ContextResources& SableUI::GetContextResources(RendererBackend* backend)
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
 	resources.rectObject = backend->CreateGpuObject(
-		rectVertices, 
+		rectVertices,
 		sizeof(rectVertices) / sizeof(Vertex),
-		indices, 
-		sizeof(indices) / sizeof(unsigned int), 
+		indices,
+		sizeof(indices) / sizeof(unsigned int),
 		layout
 	);
 
@@ -87,7 +87,6 @@ void SableUI::InitDrawables()
 		g_res.u_rectTexBool = GetUniformLocation(g_res.s_rect, "uUseTexture");
 		g_res.u_rectBorderSize = GetUniformLocation(g_res.s_rect, "uBorderSize");
 		g_res.u_rectBorderColour = GetUniformLocation(g_res.s_rect, "uBorderColour");
-		glUniform4f(g_res.u_rectColour, 32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 		glUniform1i(glGetUniformLocation(g_res.s_rect.m_shaderProgram, "uTexture"), 0);
 
 		g_res.s_text.LoadBasicShaders(text_vert, text_frag);
@@ -217,7 +216,7 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	if (m_borderColour.has_value())
 	{
 		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
-		glUniform3f(g_res.u_rectColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f);
+		glUniform4f(g_res.u_rectBorderColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f, bc.a / 255.0f);
 	}
 	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
 	glUniform4f(g_res.u_rectColour, c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
@@ -411,7 +410,7 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 	if (m_borderColour.has_value())
 	{
 		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
-		glUniform3f(g_res.u_rectColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f);
+		glUniform4f(g_res.u_rectBorderColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f, bc.a / 255.0f);
 	}
 	glUniform1i(g_res.u_rectTexBool, 1);
 	res.rectObject->AddToDrawStack();
@@ -462,7 +461,7 @@ void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	glUniform2f(g_res.u_textPos, m_rect.x, m_rect.y + m_rect.h);
 
 	glActiveTexture(GL_TEXTURE0);
-	
+
 	BindTextAtlasTexture();
 
 	glUniform1i(g_res.u_textAtlas, 0);
