@@ -53,6 +53,7 @@ namespace SableUI
 		void RegisterState(StateBase* state) { m_states.push_back(state); }
 
 		void MarkDirty();
+		bool IsDirty() const { return needsRerender; }
 
 		void CopyStateFrom(const BaseComponent& other);
 		Element* GetElementById(const SableString& id);
@@ -133,7 +134,7 @@ namespace SableUI
 	void _priv_comp_PostEmptyEvent();
 
 	template<typename T>
-	concept HasEqualityOperator = requires(const T & a, const T & b) {
+	concept HasEqualityOperator = requires(const T& a, const T& b) {
 		{ a == b } -> std::same_as<bool>;
 	};
 

@@ -5,6 +5,7 @@
 #include <SableUI/styles/theme.h>
 #include <SableUI/utils/utils.h>
 #include <ctime>
+#include <SableUI/core/component.h>
 
 static int DaysInMonth(int year, int month)
 {
@@ -30,28 +31,49 @@ static int FirstWeekday(int year, int month)
 using namespace SableUI;
 using namespace SableUI::Style;
 
-Calendar::Calendar()
+void Calendar::Init(State<CalendarContext>& calendarContext)
 {
+	m_data = &calendarContext;
+	const CalendarContext& dataRef = m_data->get();
+
 	auto now = std::time(nullptr);
 	auto* tm = std::localtime(&now);
-
-	viewYear.set(tm->tm_year + 1900);
-	viewMonth.set(tm->tm_mon);
-
-	selectedYear.set(viewYear.get());
-	selectedMonth.set(viewMonth.get());
-	selectedDay.set(tm->tm_mday);
+	
+	CalendarContext dataCopy = dataRef;
+	
+	if (dataRef.viewYear == -1) dataCopy.viewYear = tm->tm_year + 1900;
+	if (dataRef.viewMonth == -1) dataCopy.viewMonth = tm->tm_mon;
+	
+	if (dataRef.selectedYear == -1) dataCopy.selectedYear = dataCopy.viewYear;
+	if (dataRef.selectedMonth == -1) dataCopy.selectedMonth = dataCopy.viewMonth;
+	if (dataRef.selectedDay == -1) dataCopy.selectedDay = tm->tm_mday;
+	
+	if (dataCopy != m_data->get())
+	{
+		m_data->set(dataCopy);
+		MarkDirty();
+	}
 }
 
 void Calendar::Layout()
 {
 	const Theme& t = GetTheme();
 	const char* monthNames[] = {
+		"NULL",
 		"January", "February", "March", "April", "May", "June",
 		"July", "August", "September", "October", "November", "December"
 	};
 
 	const int cellSize = 28; // VARY BASED ON COMPONENT SIZE
+
+	if (!m_data)
+	{
+		Text("Calendar component has a null context, call Init() on the Calendar component passing a valid State<CalendarContext> in the parent component",
+			textColour(t.error));
+		return;
+	}
+
+	const CalendarContext& ctx = m_data->get();
 
 	Div(b(1), borderColour(t.overlay1), rounded(8), bg(t.mantle))
 	{
@@ -71,7 +93,7 @@ void Calendar::Layout()
 					textColour(t.subtext0)
 				);
 				Text(
-					SableString::Format("%s %d", monthNames[viewMonth.get()], viewYear.get()).bold(),
+					SableString::Format("%s %d", monthNames[ctx.viewMonth + 1], ctx.viewYear).bold(),
 					centerXY,
 					fontSize(14),
 					justify_center,
@@ -100,45 +122,78 @@ void Calendar::Layout()
 			}
 		}
 
-		RenderDays(cellSize);
+		RenderDays(cellSize, ctx);
 	}
 }
 
 void Calendar::PrevMonth()
 {
-	int m = viewMonth.get() - 1;
-	int y = viewYear.get();
+	const CalendarContext& ctx = m_data->get();
+
+	int m = ctx.viewMonth - 1;
+	int y = ctx.viewYear;
 
 	if (m < 0) { m = 11; y--; }
 
-	viewMonth.set(m);
-	viewYear.set(y);
+	CalendarContext dataCopy = { m_data->get() };
+	dataCopy.viewMonth = m;
+	dataCopy.viewYear = y;
+
+	if (dataCopy != m_data->get())
+	{
+		m_data->set(dataCopy);
+		MarkDirty();
+	}
 }
 
 void Calendar::NextMonth()
 {
-	int m = viewMonth.get() + 1;
-	int y = viewYear.get();
+	const CalendarContext& ctx = m_data->get();
+
+	int m = ctx.viewMonth + 1;
+	int y = ctx.viewYear;
 
 	if (m > 11) { m = 0; y++; }
 
-	viewMonth.set(m);
-	viewYear.set(y);
+	CalendarContext dataCopy = { m_data->get() };
+	dataCopy.viewMonth = m;
+	dataCopy.viewYear = y;
+
+	if (dataCopy != m_data->get())
+	{
+		m_data->set(dataCopy);
+		MarkDirty();
+	}
 }
 
-bool Calendar::IsSelectedDay(int y, int m, int d) const
+bool Calendar::IsSelectedDay(int y, int m, int d, const CalendarContext& ctx) const
 {
-	return selectedDay.get() == d &&
-		selectedMonth.get() == m &&
-		selectedYear.get() == y;
+
+	return ctx.selectedDay == d &&
+		ctx.selectedMonth == m &&
+		ctx.selectedYear == y;
 }
 
-void Calendar::RenderDays(int cellSize)
+void Calendar::SetSelectedDate(int y, int m, int d)
+{
+	CalendarContext dataCopy = m_data->get();
+	dataCopy.selectedYear = y;
+	dataCopy.selectedMonth = m;
+	dataCopy.selectedDay = d;
+
+	if (dataCopy != m_data->get())
+	{
+		m_data->set(dataCopy);
+		MarkDirty();
+	}
+}
+
+void Calendar::RenderDays(int cellSize, const CalendarContext& ctx)
 {
 	const auto& t = GetTheme();
 
-	int vy = viewYear.get();
-	int vm = viewMonth.get();
+	int vy = ctx.viewYear;
+	int vm = ctx.viewMonth;
 
 	int first = FirstWeekday(vy, vm);
 	int dim = DaysInMonth(vy, vm);
@@ -162,22 +217,16 @@ void Calendar::RenderDays(int cellSize)
 					else
 					{
 						int thisDay = day;
-						bool selected = IsSelectedDay(vy, vm, thisDay);
+						bool selected = IsSelectedDay(vy, vm, thisDay, ctx);
 
 						Colour baseColour = selected ? t.primary : rgba(0, 0, 0, 0);
 						Colour hoverColour = selected ? t.primary : t.surface1;
 
 						Button(
 							SableString::Format("%d", thisDay),
-							([this, vy, vm, thisDay]() {
-								selectedYear.set(vy);
-								selectedMonth.set(vm);
-								selectedDay.set(thisDay);
-								}),
-							w(cellSize),
-							h(cellSize),
-							centerXY,
-							justify_center,
+							([this, vy, vm, thisDay]() { SetSelectedDate(vy, vm, thisDay); }),
+							w(cellSize), h(cellSize),
+							centerXY, justify_center,
 							hoverBg(baseColour, hoverColour),
 							rounded(999),
 							fontSize(12),

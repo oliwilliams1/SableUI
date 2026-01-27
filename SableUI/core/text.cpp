@@ -1433,7 +1433,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 
 		if (!file)
 		{
-			SableUI_Error("Error reading pixel data from cache file: %s", filename.c_str());
+			SableUI_Error("Error reading pixel m_data from cache file: %s", filename.c_str());
 			file.close();
 			return false;
 		}

@@ -1,11 +1,12 @@
-#include <SableUI/components/text_field.h>
 #include <SableUI/SableUI.h>
+#include <SableUI/components/text_field.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/text.h>
 #include <SableUI/styles/styles.h>
 #include <SableUI/styles/theme.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/component.h>
 #include <algorithm>
 #include <cmath>
 

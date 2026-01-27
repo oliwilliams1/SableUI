@@ -31,10 +31,7 @@ namespace SableUI
         std::string GetBarID() const { return "BAR_" + std::to_string((size_t)this); }
     };
 
-    // Called during OnUpdate, handling user input
     void ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIEventContext& eventCtx);
-
-    // Called during OnUpdatePostLayout, handling Element Sizes
     void ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx);
 
     struct ScrollViewScope

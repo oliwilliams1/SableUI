@@ -30,7 +30,7 @@ namespace SableUI
 	public:
 		TextFieldComponent();
 
-		void Init(State<InputFieldData>& data, const ElementInfo& info,bool multiline = false);
+		void Init(State<InputFieldData>& data, const ElementInfo& info, bool multiline = false);
 
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
