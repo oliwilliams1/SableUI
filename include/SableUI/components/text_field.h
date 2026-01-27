@@ -24,7 +24,7 @@ namespace SableUI
 				&& isFocused == other.isFocused;
 		}
 	};
-
+	
 	class TextFieldComponent : public BaseComponent
 	{
 	public:
@@ -32,9 +32,13 @@ namespace SableUI
 
 		void Init(State<InputFieldData>& data, const ElementInfo& info, bool multiline = false);
 
+		virtual void ContentLeft() {};
+		virtual void ContentRight() {};
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
 		void OnUpdatePostLayout(const UIEventContext& ctx) override;
+		virtual void TextFieldOnUpdate(const UIEventContext& ctx) {};
+		virtual void TextFieldOnUpdatePostLayout(const UIEventContext& ctx) {};
 
 	private:
 		ElementInfo info;

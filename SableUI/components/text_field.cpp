@@ -90,25 +90,35 @@ void SableUI::TextFieldComponent::Layout()
 	if (containerInfo.layout.wType == RectType::Undef) containerInfo.layout.wType = RectType::Fill;
 	if (containerInfo.layout.hType == RectType::Undef) containerInfo.layout.hType = RectType::FitContent;
 
-	if (containerInfo.layout.pT == 0 && containerInfo.layout.pB == 0
-		&& containerInfo.layout.pL == 0 && containerInfo.layout.pR == 0)
-	{
-		containerInfo.layout.pT = containerInfo.layout.pB = 4;
-		containerInfo.layout.pL = containerInfo.layout.pR = 4;
-	}
+	containerInfo.layout.layoutDirection = LayoutDirection::LeftRight;
+	
+	ElementInfo centerInfo{};
+	centerInfo.layout.pT = (info.layout.pT == 0) ? 4 : info.layout.pT;
+	centerInfo.layout.pB = (info.layout.pB == 0) ? 4 : info.layout.pB;
+	centerInfo.layout.pR = (info.layout.pR == 0) ? 4 : info.layout.pR;
+	centerInfo.layout.pL = (info.layout.pL == 0) ? 4 : info.layout.pL;
+	centerInfo.id = "TextField";
+	centerInfo.layout.wType = RectType::Fill;
 
-	PackStylesToInfo(containerInfo, id("TextField"));
+	PackStylesToInfo(containerInfo);
 
 	if (DivScope d(containerInfo); true)
 	{
-		if (data.content.empty() && !data.isFocused)
+		ContentLeft();
+
+		if (DivScope d2(centerInfo); true)
 		{
-			Text(data.placeholder, textColour(placeholderCol), textWrap(m_multiline), fontSize(info.text.fontSize));
+			if (data.content.empty() && !data.isFocused)
+			{
+				Text(data.placeholder, textColour(placeholderCol), textWrap(m_multiline), fontSize(info.text.fontSize));
+			}
+			else
+			{
+				Text(data.content, id("TextFieldText"), textColour(textCol), textWrap(m_multiline), fontSize(info.text.fontSize));
+			}
 		}
-		else
-		{
-			Text(data.content, id("TextFieldText"), textColour(textCol), textWrap(m_multiline), fontSize(info.text.fontSize));
-		}
+
+		ContentRight();
 	}
 }
 
@@ -404,10 +414,14 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	}
 
 	externalState->set(dataCopy);
+
+	TextFieldOnUpdate(ctx);
 }
 
 void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 {
+	TextFieldOnUpdatePostLayout(ctx);
+
 	if (!externalState || !externalState->get().isFocused || !m_window) return;
 
 	if (!queueInitialised)
