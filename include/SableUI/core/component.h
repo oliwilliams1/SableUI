@@ -169,6 +169,8 @@ namespace SableUI
 			return *this;
 		}
 
+		BaseComponent* _owner() { return m_owner; }
+
 	private:
 		T m_value;
 		BaseComponent* m_owner;

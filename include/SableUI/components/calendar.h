@@ -10,6 +10,7 @@ namespace SableUI
 		int selectedYear = -1;
 		int selectedMonth = -1;
 		int selectedDay = -1;
+		bool open = false;
 
 		const bool operator==(const CalendarContext& other) const
 		{
@@ -17,7 +18,8 @@ namespace SableUI
 				&& viewMonth == other.viewMonth
 				&& selectedYear == other.selectedYear
 				&& selectedMonth == other.selectedMonth
-				&& selectedDay == other.selectedDay);
+				&& selectedDay == other.selectedDay
+				&& open == other.open);
 		}
 	};
 
@@ -36,4 +38,13 @@ namespace SableUI
 		bool IsSelectedDay(int y, int m, int d, const CalendarContext& ctx) const;
 		void RenderDays(int cellW, const CalendarContext& ctx);
 	};
+
+	void ToggleCalendarVisibility(State<CalendarContext>& calendarContextState);
+	
+	/**
+	* \brief Called in BaseComponent::OnUpdatePostLayout() that provides the state for calendar components
+	* \param calendarContextState the local state for the calendar component
+	* \param id the id of the element you want the calendar to appear on top of
+	**/
+	void CalendarHelperPostLayout(State<CalendarContext>& calendarContextState, const std::string& id);
 }

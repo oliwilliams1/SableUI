@@ -240,3 +240,32 @@ void Calendar::RenderDays(int cellSize, const CalendarContext& ctx)
 		}
 	}
 }
+
+void SableUI::ToggleCalendarVisibility(State<CalendarContext>& calendarContextState)
+{
+	CalendarContext dataCopy = { calendarContextState.get() };
+	dataCopy.open = !dataCopy.open;
+	calendarContextState.set(dataCopy);
+}
+
+void SableUI::CalendarHelperPostLayout(State<CalendarContext>& calendarContextState, const std::string& id)
+{
+	if (calendarContextState.get().open && !IsFloatingPanelActive(id))
+	{
+		BaseComponent* owner = calendarContextState._owner();
+		Element* ref = owner->GetElementById(id);
+		if (!ref) return;
+
+		Rect bottomRight = ref->rect;
+		bottomRight.y += bottomRight.h;
+
+		FloatingPanelScoped(ref, Calendar, id, Rect(bottomRight.x, bottomRight.y, 400, 400))
+		{
+			ref->Init(calendarContextState);
+		}
+	}
+	else if (!calendarContextState.get().open && IsFloatingPanelActive(id))
+	{
+		QueueDestroyFloatingPanel(id);
+	}
+}
