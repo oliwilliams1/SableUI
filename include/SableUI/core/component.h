@@ -35,6 +35,7 @@ namespace SableUI
 		void BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info);
 		void BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info = {});
 		void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
+		RendererBackend* GetRenderer() { return m_renderer; }
 		void Render(int z = 0);
 
 		BaseComponent* AddComponent(const std::string& componentName);
@@ -210,3 +211,4 @@ namespace SableUI
 
 #include <SableUI/states/interval.h>
 #include <SableUI/states/timer.h>
+#include <SableUI/states/floating_panel.h>

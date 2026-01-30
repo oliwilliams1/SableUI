@@ -226,7 +226,6 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 
 void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
-	// Propagate to element tree
 	rootElement->DistributeInputToElements(ctx);
 
 	m_lastEventCtx = ctx;
