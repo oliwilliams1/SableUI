@@ -1,5 +1,6 @@
 #pragma once
 #include <SableUI/core/component.h>
+#include <functional>
 
 namespace SableUI
 {
@@ -38,6 +39,9 @@ namespace SableUI
 		bool IsSelectedDay(int y, int m, int d, const CalendarContext& ctx) const;
 		void RenderDays(int cellW, const CalendarContext& ctx);
 	};
+
+	bool InitCalendarToDate(State<CalendarContext>& calendarContextState, int year, int month, int day);
+	bool InitCalendarToToday(State<CalendarContext>& calendarContextState);
 
 	void ToggleCalendarVisibility(State<CalendarContext>& calendarContextState);
 	

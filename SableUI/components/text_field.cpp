@@ -414,14 +414,10 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	}
 
 	externalState->set(dataCopy);
-
-	TextFieldOnUpdate(ctx);
 }
 
 void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 {
-	TextFieldOnUpdatePostLayout(ctx);
-
 	if (!externalState || !externalState->get().isFocused || !m_window) return;
 
 	if (!queueInitialised)

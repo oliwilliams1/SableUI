@@ -35,24 +35,17 @@ void Calendar::Init(State<CalendarContext>& calendarContext)
 {
 	m_data = &calendarContext;
 	const CalendarContext& dataRef = m_data->get();
+	
+	bool unitialised =
+		dataRef.viewYear == -1
+		|| dataRef.viewMonth == -1
+		|| dataRef.selectedDay == -1
+		|| dataRef.selectedMonth == -1
+		|| dataRef.selectedYear == -1;
 
-	auto now = std::time(nullptr);
-	auto* tm = std::localtime(&now);
-	
-	CalendarContext dataCopy = dataRef;
-	
-	if (dataRef.viewYear == -1) dataCopy.viewYear = tm->tm_year + 1900;
-	if (dataRef.viewMonth == -1) dataCopy.viewMonth = tm->tm_mon;
-	
-	if (dataRef.selectedYear == -1) dataCopy.selectedYear = dataCopy.viewYear;
-	if (dataRef.selectedMonth == -1) dataCopy.selectedMonth = dataCopy.viewMonth;
-	if (dataRef.selectedDay == -1) dataCopy.selectedDay = tm->tm_mday;
-	
-	if (dataCopy != m_data->get())
-	{
-		m_data->set(dataCopy);
-		MarkDirty();
-	}
+	if (unitialised)
+		if (InitCalendarToToday(*m_data))
+			MarkDirty();
 }
 
 void Calendar::Layout()
@@ -174,18 +167,49 @@ bool Calendar::IsSelectedDay(int y, int m, int d, const CalendarContext& ctx) co
 		ctx.selectedYear == y;
 }
 
+bool SableUI::InitCalendarToDate(State<CalendarContext>& calendarContextState, int year, int month, int day)
+{
+	CalendarContext dataCopy = calendarContextState.get();
+	dataCopy.selectedYear = year;
+	dataCopy.selectedMonth = month;
+	dataCopy.selectedDay = day;
+
+	if (dataCopy != calendarContextState.get())
+	{
+		calendarContextState.set(dataCopy);
+		return true;
+	}
+
+	return false;
+}
+
+bool SableUI::InitCalendarToToday(State<CalendarContext>& calendarContextState)
+{
+	CalendarContext dataCopy = calendarContextState.get();
+
+	auto now = std::time(nullptr);
+	auto* tm = std::localtime(&now);
+
+	dataCopy.viewYear = tm->tm_year + 1900;
+	dataCopy.viewMonth = tm->tm_mon;
+
+	dataCopy.selectedYear = dataCopy.viewYear;
+	dataCopy.selectedMonth = dataCopy.viewMonth;
+	dataCopy.selectedDay = tm->tm_mday;
+
+	if (dataCopy != calendarContextState.get())
+	{
+		calendarContextState.set(dataCopy);
+		return true;
+	}
+
+	return false;
+}
+
 void Calendar::SetSelectedDate(int y, int m, int d)
 {
-	CalendarContext dataCopy = m_data->get();
-	dataCopy.selectedYear = y;
-	dataCopy.selectedMonth = m;
-	dataCopy.selectedDay = d;
-
-	if (dataCopy != m_data->get())
-	{
-		m_data->set(dataCopy);
+	if (InitCalendarToDate(*m_data, y, m, d))
 		MarkDirty();
-	}
 }
 
 void Calendar::RenderDays(int cellSize, const CalendarContext& ctx)
@@ -259,7 +283,7 @@ void SableUI::CalendarHelperPostLayout(State<CalendarContext>& calendarContextSt
 		Rect bottomRight = ref->rect;
 		bottomRight.y += bottomRight.h;
 
-		FloatingPanelScoped(ref, Calendar, id, Rect(bottomRight.x, bottomRight.y, 400, 400))
+		FloatingPanelScoped(ref, Calendar, id, Rect(bottomRight.x, bottomRight.y, 206, 253), bg(0, 0, 0, 0))
 		{
 			ref->Init(calendarContextState);
 		}

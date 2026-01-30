@@ -12,7 +12,7 @@
 #include <string>
 #include <array>
 #include <vector>
-#include <utility>
+#include <algorithm>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -164,11 +164,22 @@ namespace SableUI
 			return nullptr;
 		}
 
-		FloatingPanel* newPanel = SableMemory::SB_new<FloatingPanel>(m_floatingRenderer, r);
+		Rect clampedRect = r;
+
+		if (clampedRect.x < 0) clampedRect.x = 0;
+		if (clampedRect.x + clampedRect.w > m_windowSize.x)
+			clampedRect.x = (std::max)(0.0f, float(m_windowSize.x - clampedRect.w));
+
+		if (clampedRect.y < 0) clampedRect.y = 0;
+		if (clampedRect.y + clampedRect.h > m_windowSize.y)
+			clampedRect.y = (std::max)(0.0f, float(m_windowSize.y - clampedRect.h));
+
+		FloatingPanel* newPanel = SableMemory::SB_new<FloatingPanel>(m_floatingRenderer, clampedRect);
 		T* comp = newPanel->AttachComponentByType<T>();
 		newPanel->SetComponent(comp);
 		m_floatingPanels[id] = newPanel;
 
 		return comp;
 	}
+
 }

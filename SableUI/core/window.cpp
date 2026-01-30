@@ -668,11 +668,22 @@ void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::stri
 		return;
 	}
 
-	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, r);
+	Rect clampedRect = r;
+
+	if (clampedRect.x < 0) clampedRect.x = 0;
+	if (clampedRect.x + clampedRect.w > m_windowSize.x)
+		clampedRect.x = (std::max)(0.0f, float(m_windowSize.x - clampedRect.w));
+
+	if (clampedRect.y < 0) clampedRect.y = 0;
+	if (clampedRect.y + clampedRect.h > m_windowSize.y)
+		clampedRect.y = (std::max)(0.0f, float(m_windowSize.y - clampedRect.h));
+
+	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, clampedRect);
 	BaseComponent* comp = newPanel->AttachComponent(componentName);
 	comp->BackendInitialisePanel();
 	m_floatingPanels[id] = newPanel;
 }
+
 
 void SableUI::Window::QueueDestroyFloatingPanel(const std::string& id)
 {

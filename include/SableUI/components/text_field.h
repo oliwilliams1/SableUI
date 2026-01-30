@@ -30,19 +30,19 @@ namespace SableUI
 	public:
 		TextFieldComponent();
 
-		void Init(State<InputFieldData>& data, const ElementInfo& info, bool multiline = false);
+		virtual void Init(State<InputFieldData>& data, const ElementInfo& info, bool multiline = false);
 
 		virtual void ContentLeft() {};
 		virtual void ContentRight() {};
 		void Layout() override;
 		void OnUpdate(const UIEventContext& ctx) override;
 		void OnUpdatePostLayout(const UIEventContext& ctx) override;
-		virtual void TextFieldOnUpdate(const UIEventContext& ctx) {};
-		virtual void TextFieldOnUpdatePostLayout(const UIEventContext& ctx) {};
 
-	private:
+	protected:
 		ElementInfo info;
 		State<InputFieldData>* externalState = nullptr;
+
+	private:
 
 		State<int> cursorPos{ this, 0 };
 		State<int> initialCursorPos{ this, -1 };

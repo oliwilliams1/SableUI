@@ -85,7 +85,7 @@ namespace SableUI
 		};
 
 		StringData* m_data;
-		size_t m_size; // Keep for quick access
+		size_t m_size;
 
 		void AddRef();
 		void Release();
