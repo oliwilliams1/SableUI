@@ -4,20 +4,15 @@
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
+#include <SableUI/states/state_base.h>
 #include <type_traits>
-#include <concepts>
 #include <vector>
 #include <string>
+#include <utility>
 
 namespace SableUI
 {
-	class StateBase
-	{
-	public:
-		virtual ~StateBase() = default;
-		virtual void Sync(StateBase* other) = 0;
-	};
-
+	class FloatingPanelStateBase;
 	class Window;
 	class BaseComponent
 	{
@@ -34,8 +29,8 @@ namespace SableUI
 		void BackendInitialisePanel();
 		void BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info);
 		void BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info = {});
-		void SetRenderer(RendererBackend* renderer) { m_renderer = renderer; }
-		RendererBackend* GetRenderer() { return m_renderer; }
+		void SetRenderer(RendererBackend* renderer);
+		RendererBackend* GetRenderer();
 		void Render(int z = 0);
 
 		BaseComponent* AddComponent(const std::string& componentName);
@@ -43,15 +38,16 @@ namespace SableUI
 		T* AddComponent();
 
 		Element* GetRootElement();
-		void SetRootElement(Element* element) { rootElement = element; }
-		int GetNumChildren() const { return m_childCount; }
+		void SetRootElement(Element* element);
+		int GetNumChildren() const;
 		bool Rerender(bool* hasContentsChanged = nullptr);
 
 		void HandleInput(const UIEventContext& ctx);
 		bool CheckAndUpdate();
 		void PostLayoutUpdate(const UIEventContext& ctx);
 
-		void RegisterState(StateBase* state) { m_states.push_back(state); }
+		void RegisterState(StateBase* state);
+		void RegisterFloatingPanel(FloatingPanelStateBase* state);
 
 		void MarkDirty();
 		bool IsDirty() const { return needsRerender; }
@@ -65,6 +61,7 @@ namespace SableUI
 	protected:
 		std::vector<BaseComponent*> m_garbageChildren;
 		std::vector<StateBase*> m_states;
+		std::vector<FloatingPanelStateBase*> m_floatingPanels;
 		std::vector<Element*> m_hoverElements;
 
 		void UpdateHoverStyling(const UIEventContext& ctx);
@@ -133,82 +130,10 @@ namespace SableUI
 	}
 
 	void _priv_comp_PostEmptyEvent();
-
-	template<typename T>
-	concept HasEqualityOperator = requires(const T& a, const T& b) {
-		{ a == b } -> std::same_as<bool>;
-	};
-
-	template<typename T>
-	class State : public StateBase {
-		static_assert(HasEqualityOperator<T>, "State<T> requires T to have an operator== overloaded");
-
-	public:
-		State(BaseComponent* owner, T initialValue)
-			: m_value(initialValue), m_owner(owner) {
-			owner->RegisterState(this);
-		}
-
-		const T& get() const { return m_value; }
-
-		void set(const T& newValue) {
-			if (m_value == newValue) return;
-			m_value = newValue;
-			m_owner->MarkDirty();
-		}
-
-		void Sync(StateBase* other) override {
-			if (!other) return;
-			auto* otherPtr = static_cast<State<T>*>(other);
-			this->m_value = otherPtr->m_value;
-		}
-
-		operator const T& () const { return m_value; }
-
-		State& operator=(const T& newValue) {
-			set(newValue);
-			return *this;
-		}
-
-		BaseComponent* _owner() { return m_owner; }
-
-	private:
-		T m_value;
-		BaseComponent* m_owner;
-	};
-
-	template<typename T>
-	class Ref : public StateBase {
-	public:
-		Ref(BaseComponent* owner, T initialValue)
-			: m_value(initialValue) {
-			owner->RegisterState(this);
-		}
-
-		void Sync(StateBase* other) override {
-			if (!other) return;
-			auto* otherPtr = static_cast<Ref<T>*>(other);
-			this->m_value = otherPtr->m_value;
-		}
-
-		T& get() { return m_value; }
-
-		void set(const T& newValue) {
-			m_value = newValue;
-		}
-
-		operator const T& () const { return m_value; }
-
-		Ref& operator=(const T& newValue) {
-			m_value = newValue;
-			return *this;
-		}
-
-	private:
-		T m_value;
-	};
 }
 
+#include <SableUI/states/state.h>
+#include <SableUI/states/ref.h>
 #include <SableUI/states/interval.h>
 #include <SableUI/states/timer.h>
 #include <SableUI/states/floating_panel.h>

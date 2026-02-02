@@ -10,7 +10,6 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component_registry.h>
 #include <SableUI/styles/theme.h>
-#include <type_traits>
 
 /* non-macro user api */
 namespace SableUI
@@ -67,10 +66,6 @@ namespace SableUI
 	void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
 	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
 
-	void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r = { 0, 0, 100, 100 });
-	void QueueDestroyFloatingPanel(const std::string& id);
-	bool IsFloatingPanelActive(const std::string& id);
-
 	Window* _getCurrentContext();
 
 	struct DivScope
@@ -123,40 +118,6 @@ namespace SableUI
 		info.appearance = AppearanceProps{};
 		return info;
 	}
-
-	template <typename T>
-	struct FloatingPanelScope
-	{
-		static_assert(std::is_base_of_v<BaseComponent, T>,
-			"FloatingPanelScope<T>: T must derive from BaseComponent");
-
-	public:
-		FloatingPanelScope(std::string id, Rect rect, const ElementInfo& info = {})
-		{
-			m_child = _getCurrentContext()->CreateFloatingPanelNoInit<T>(id, rect);
-			m_rect = rect;
-			m_info = info;
-		}
-
-		~FloatingPanelScope()
-		{
-			m_child->BackendInitialiseFloatingPanel(m_rect, m_info);
-		}
-
-		T* operator->() noexcept { return m_child; }
-		T& operator*()  noexcept { return *m_child; }
-		T* get()        noexcept { return m_child; }
-
-		FloatingPanelScope(const FloatingPanelScope&) = delete;
-		FloatingPanelScope& operator=(const FloatingPanelScope&) = delete;
-		FloatingPanelScope(FloatingPanelScope&& other) = delete;
-		FloatingPanelScope& operator=(FloatingPanelScope&& other) = delete;
-
-	private:
-		T* m_child = nullptr;
-		Rect m_rect{};
-		ElementInfo m_info{};
-	};
 }
 
 // TODO: add Prop<T> to replace misleading State<T> in certain usecases.
@@ -194,17 +155,7 @@ namespace SableUI
 				style															\
 			);																	\
 		T* name = CONCAT(_cs_, __LINE__).get())
-
-#define FloatingPanelScoped(name, T, id, rect, ...)								\
-	if (auto CONCAT(_fps_, __LINE__) =											\
-			SableUI::FloatingPanelScope<T>(										\
-				id,																\
-				rect,															\
-				SableUI::PackStyles(__VA_ARGS__)								\
-			);																	\
-		T* name = CONCAT(_fps_, __LINE__).get())
 	
-
 // Horizontal splitter
 #define HSplitter()	if (SableUI::SplitterScope CONCAT(_div_guard_, __LINE__)	\
 						(SableUI::PanelType::HorizontalSplitter); true)
@@ -243,8 +194,6 @@ namespace SableUI
 #include <SableUI/components/date_picker.h>
 #include <SableUI/core/tab_context.h>
 #include <SableUI/core/scroll_context.h>
-#include <SableUI/core/context_menu.h>
-#include <SableUI/core/modal_context.h>
 
 // Visual horizontal splitter element
 #define SplitterHorizontal(...)													\

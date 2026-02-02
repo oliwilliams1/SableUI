@@ -11,7 +11,6 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <SableUI/generated/resources.h>
-#include <SableUI/core/floating_panel.h>
 #include <SableUI/styles/theme.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
@@ -151,16 +150,10 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->MakeContextCurrent();
 
 	instance->m_baseRenderer->Viewport(0, 0, width, height);
-	instance->m_floatingRenderer->Viewport(0, 0, width, height);
-
 	if (width > 0 && height > 0)
 	{
 		instance->m_baseColourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
 		instance->m_baseFramebuffer.SetSize(width, height);
-
-		instance->m_floatingColourAttachment.CreateStorage(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		instance->m_floatingFramebuffer.SetSize(width, height);
-
 		instance->m_windowSurface.SetSize(width, height);
 	}
 
@@ -292,22 +285,12 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_baseRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	m_baseRenderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	m_floatingRenderer = RendererBackend::Create(backend);
-	m_floatingRenderer->SetBlending(true);
-	m_floatingRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-	m_floatingRenderer->Clear(0.0f, 0.0f, 0.0f, 0.0f);
-
 	if (width > 0 && height > 0)
 	{
 		m_baseColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
 		m_baseFramebuffer.SetSize(m_windowSize.x, m_windowSize.y);
 		m_baseFramebuffer.AttachColour(&m_baseColourAttachment, 0);
 		m_baseFramebuffer.Bake();
-
-		m_floatingColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		m_floatingFramebuffer.SetSize(m_windowSize.x, m_windowSize.y);
-		m_floatingFramebuffer.AttachColour(&m_floatingColourAttachment, 0);
-		m_floatingFramebuffer.Bake();
 	}
 
 	m_windowSurface.SetIsWindowSurface(true);
@@ -446,8 +429,6 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	if (IsMinimized())
 		return !glfwWindowShouldClose(m_window);
 
-	ExecuteDestroyFloatingPanelQueue();
-
 	SetContext(this);
 	MakeContextCurrent();
 
@@ -474,27 +455,8 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	}
 	m_root->PostLayoutUpdate(ctx);
 
-	// floating panels
-	for (const auto& pair : m_floatingPanels)
-		pair.second->DistributeEvents(ctx);
-
-	for (const auto& pair : m_floatingPanels)
-	{
-		bool res = pair.second->UpdateComponents();
-		if (res)
-		{
-			pair.second->ClearDrawStack();
-			pair.second->Render();
-			m_needsStaticRedraw = true;
-		}
-	}
-
-	for (const auto& pair : m_floatingPanels)
-		pair.second->PostLayoutUpdate(ctx);
-
 	StepCachedTexturesCleaner();
 	TextCacheFactory::CleanCache(m_baseRenderer);
-	TextCacheFactory::CleanCache(m_floatingRenderer);
 	HandleResize();
 
 	ctx.mousePressed.reset();
@@ -531,14 +493,14 @@ void SableUI::Window::Draw()
 	bool baseLayerDirty = m_baseRenderer->isDirty() || m_needsStaticRedraw;
 	bool anyFloatingPanelDirty = false;
 
-	for (const auto& pair : m_floatingPanels)
-	{
-		if (pair.second->IsDirty())
-		{
-			anyFloatingPanelDirty = true;
-			break;
-		}
-	}
+	//for (const auto& pair : m_floatingPanels)
+	//{
+	//	if (pair.second->IsDirty())
+	//	{
+	//		anyFloatingPanelDirty = true;
+	//		break;
+	//	}
+	//}
 
 	if (baseLayerDirty || anyFloatingPanelDirty || !m_customTargetQueues.empty())
 		m_syncFrames = 2;
@@ -553,23 +515,23 @@ void SableUI::Window::Draw()
 			m_baseRenderer->EndRenderPass();
 		}
 
-		for (const auto& pair : m_floatingPanels)
-			if (pair.second->IsDirty())
-				pair.second->Render();
+		//for (const auto& pair : m_floatingPanels)
+		//	if (pair.second->IsDirty())
+		//		pair.second->Render();
 
 		m_baseRenderer->BlitToScreen(&m_baseFramebuffer);
 
-		for (const auto& pair : m_floatingPanels)
-		{
-			FloatingPanel* panel = pair.second;
-			GpuFramebuffer* panelFBO = const_cast<GpuFramebuffer*>(panel->GetFramebuffer());
+		//for (const auto& pair : m_floatingPanels)
+		//{
+		//	FloatingPanel* panel = pair.second;
+		//	GpuFramebuffer* panelFBO = const_cast<GpuFramebuffer*>(panel->GetFramebuffer());
 
-			Rect sourceRect = { 0, 0, panel->rect.w, panel->rect.h };
-			Rect destRect = panel->rect;
-			destRect.y = m_windowSize.h - destRect.y - destRect.h;
+		//	Rect sourceRect = { 0, 0, panel->rect.w, panel->rect.h };
+		//	Rect destRect = panel->rect;
+		//	destRect.y = m_windowSize.h - destRect.y - destRect.h;
 
-			m_baseRenderer->DrawToScreen(panelFBO, sourceRect, destRect, m_windowSize);
-		}
+		//	m_baseRenderer->DrawToScreen(panelFBO, sourceRect, destRect, m_windowSize);
+		//}
 
 		for (CustomTargetQueue* queue : m_customTargetQueues)
 		{
@@ -653,74 +615,6 @@ void SableUI::Window::RemoveQueueReference(CustomTargetQueue* reference)
 			m_customTargetQueues.erase(m_customTargetQueues.begin() + i);
 			break;
 		}
-	}
-}
-
-// ============================================================================
-// Floating Panels
-// ============================================================================
-void SableUI::Window::CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r)
-{
-	auto it = m_floatingPanels.find(id);
-	if (it != m_floatingPanels.end())
-	{
-		SableUI_Error("CreateFloatingPanel() called with an already existing ID");
-		return;
-	}
-
-	Rect clampedRect = r;
-
-	if (clampedRect.x < 0) clampedRect.x = 0;
-	if (clampedRect.x + clampedRect.w > m_windowSize.x)
-		clampedRect.x = (std::max)(0.0f, float(m_windowSize.x - clampedRect.w));
-
-	if (clampedRect.y < 0) clampedRect.y = 0;
-	if (clampedRect.y + clampedRect.h > m_windowSize.y)
-		clampedRect.y = (std::max)(0.0f, float(m_windowSize.y - clampedRect.h));
-
-	FloatingPanel* newPanel = SB_new<FloatingPanel>(m_floatingRenderer, clampedRect);
-	BaseComponent* comp = newPanel->AttachComponent(componentName);
-	comp->BackendInitialisePanel();
-	m_floatingPanels[id] = newPanel;
-}
-
-
-void SableUI::Window::QueueDestroyFloatingPanel(const std::string& id)
-{
-	m_destroyPanelQueue.push_back(id);
-}
-
-bool SableUI::Window::IsFloatingPanelActive(const std::string& id) const
-{
-	return m_floatingPanels.contains(id);
-}
-
-void SableUI::Window::DestroyFloatingPanel(const std::string& id)
-{
-	auto it = m_floatingPanels.find(id);
-	if (it == m_floatingPanels.end())
-	{
-		SableUI_Error("QueueDestroyFloatingPanel() called without an existing ID");
-		return;
-	}
-
-	SB_delete(m_floatingPanels[id]);
-	m_floatingPanels.erase(id);
-}
-
-void SableUI::Window::ExecuteDestroyFloatingPanelQueue()
-{
-	bool any = false;
-	for (const auto& id : m_destroyPanelQueue)
-	{
-		DestroyFloatingPanel(id);
-		any = true;
-	}
-
-	if (any)
-	{
-		m_destroyPanelQueue.clear();
-		PostEmptyEvent();
 	}
 }
 
@@ -1137,11 +1031,6 @@ SableUI::Window::~Window()
 	if (m_window)
 		MakeContextCurrent();
 
-	for (const auto& pair : m_floatingPanels)
-	{
-		SB_delete(pair.second);
-	}
-
 	SB_delete(m_root);
 	DestroyDrawables();
 	if (m_borderTop)
@@ -1166,10 +1055,8 @@ SableUI::Window::~Window()
 	}
 
 	TextCacheFactory::ShutdownFactory(m_baseRenderer);
-	TextCacheFactory::ShutdownFactory(m_floatingRenderer);
 
 	SB_delete(m_baseRenderer);
-	SB_delete(m_floatingRenderer);
 
 	if (m_window)
 		glfwDestroyWindow(m_window);

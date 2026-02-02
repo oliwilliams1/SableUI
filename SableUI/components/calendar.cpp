@@ -274,22 +274,22 @@ void SableUI::ToggleCalendarVisibility(State<CalendarContext>& calendarContextSt
 
 void SableUI::CalendarHelperPostLayout(State<CalendarContext>& calendarContextState, const std::string& id)
 {
-	if (calendarContextState.get().open && !IsFloatingPanelActive(id))
-	{
-		BaseComponent* owner = calendarContextState._owner();
-		Element* ref = owner->GetElementById(id);
-		if (!ref) return;
+	//if (calendarContextState.get().open && !IsFloatingPanelActive(id))
+	//{
+	//	BaseComponent* owner = calendarContextState._owner();
+	//	Element* ref = owner->GetElementById(id);
+	//	if (!ref) return;
 
-		Rect bottomRight = ref->rect;
-		bottomRight.y += bottomRight.h;
+	//	Rect bottomRight = ref->rect;
+	//	bottomRight.y += bottomRight.h;
 
-		FloatingPanelScoped(ref, Calendar, id, Rect(bottomRight.x, bottomRight.y, 206, 253), bg(0, 0, 0, 0))
-		{
-			ref->Init(calendarContextState);
-		}
-	}
-	else if (!calendarContextState.get().open && IsFloatingPanelActive(id))
-	{
-		QueueDestroyFloatingPanel(id);
-	}
+	//	FloatingPanelScoped(ref, Calendar, id, Rect(bottomRight.x, bottomRight.y, 206, 253), bg(0, 0, 0, 0))
+	//	{
+	//		ref->Init(calendarContextState);
+	//	}
+	//}
+	//else if (!calendarContextState.get().open && IsFloatingPanelActive(id))
+	//{
+	//	QueueDestroyFloatingPanel(id);
+	//}
 }

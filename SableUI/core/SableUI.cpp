@@ -456,27 +456,6 @@ void SableUI::EndCustomLayoutScope(
 	s_customLayoutMode = false;
 }
 
-void SableUI::CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r)
-{
-	if (!s_currentContext)
-		SableUI_Runtime_Error("CreateFloatingPanel() called without a context");
-
-	s_currentContext->CreateFloatingPanel(id, componentName, r);
-}
-
-void SableUI::QueueDestroyFloatingPanel(const std::string& id)
-{
-	if (!s_currentContext)
-		SableUI_Runtime_Error("QueueDestroyFloatingPanel() called without a context");
-
-	s_currentContext->QueueDestroyFloatingPanel(id);
-}
-
-bool SableUI::IsFloatingPanelActive(const std::string& id)
-{
-	return s_currentContext->IsFloatingPanelActive(id);
-}
-
 SableUI::Window* SableUI::_getCurrentContext()
 {
 	if (!s_currentContext)

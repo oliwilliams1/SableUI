@@ -1,4 +1,5 @@
 #include <SableUI/core/component.h>
+#include <SableUI/states/floating_panel_base.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/events.h>
@@ -122,6 +123,16 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 	rootElement->LayoutChildren();
 }
 
+void SableUI::BaseComponent::SetRenderer(RendererBackend* renderer)
+{
+	m_renderer = renderer;
+}
+
+SableUI::RendererBackend* SableUI::BaseComponent::GetRenderer()
+{
+	return m_renderer;
+}
+
 static size_t GetHash(int n, const char* name)
 {
 	size_t h = 0;
@@ -164,6 +175,16 @@ SableUI::Element* SableUI::BaseComponent::GetRootElement()
 		SableUI_Runtime_Error("Attempt to access rootElement before is was initialised. Are you calling GetRootElement() inside of Layout()? -> this is unsupported, wrap your layout logic inside another div instead.");
 	}
 	return rootElement;
+}
+
+void SableUI::BaseComponent::SetRootElement(Element* element)
+{
+	rootElement = element;
+}
+
+int SableUI::BaseComponent::GetNumChildren() const
+{
+	return m_childCount;
 }
 
 bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
@@ -227,6 +248,10 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
 	rootElement->DistributeInputToElements(ctx);
+	
+	for (FloatingPanelStateBase* panel : m_floatingPanels)
+		if (panel->IsOpen())
+			panel->HandleInput(ctx);
 
 	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
@@ -252,7 +277,22 @@ void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 	for (auto* child : m_componentChildren)
 		child->PostLayoutUpdate(ctx);
 
+	for (FloatingPanelStateBase* panel : m_floatingPanels)
+		if (panel->IsOpen())
+			panel->PostLayoutUpdate(ctx);
+
 	OnUpdatePostLayout(ctx);
+}
+
+void SableUI::BaseComponent::RegisterState(StateBase* state)
+{
+	m_states.push_back(state);
+}
+
+void SableUI::BaseComponent::RegisterFloatingPanel(FloatingPanelStateBase* state)
+{
+	m_states.push_back(static_cast<StateBase*>(state));
+	m_floatingPanels.push_back(state);
 }
 
 void SableUI::BaseComponent::MarkDirty()
@@ -275,7 +315,6 @@ void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 	size_t count = std::min(m_states.size(), other.m_states.size());
 	for (size_t i = 0; i < count; i++)
 	{
-		// Polymorphic call to State<T>::Sync or Ref<T>::Sync
 		m_states[i]->Sync(other.m_states[i]);
 	}
 }

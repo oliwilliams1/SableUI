@@ -5,14 +5,11 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/console.h>
-#include <SableUI/core/floating_panel.h>
 #include <SableUI/core/drawable.h>
 
-#include <unordered_map>
 #include <string>
 #include <array>
 #include <vector>
-#include <algorithm>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -79,26 +76,13 @@ namespace SableUI
 		GpuFramebuffer* GetSurface() { return &m_windowSurface; }
 		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
 
-		void CreateFloatingPanel(const std::string& id, const std::string& componentName, const Rect& r);
-		void QueueDestroyFloatingPanel(const std::string& id);
-		bool IsFloatingPanelActive(const std::string& id) const;
-
-		template <typename T>
-		T* CreateFloatingPanelNoInit(const std::string& id, const Rect& r);
-
 		void MakeContextCurrent();
 		bool IsMinimized() const;
-
-		void ExecuteDestroyFloatingPanelQueue();
 	
 	private:
 		GpuFramebuffer m_baseFramebuffer;
 		RendererBackend* m_baseRenderer = nullptr;
 		GpuTexture2D m_baseColourAttachment;
-
-		RendererBackend* m_floatingRenderer = nullptr;
-		GpuFramebuffer m_floatingFramebuffer;
-		GpuTexture2D m_floatingColourAttachment;
 
 		GpuFramebuffer m_windowSurface;
 
@@ -137,9 +121,6 @@ namespace SableUI
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
 
 		std::vector<CustomTargetQueue*> m_customTargetQueues;
-		void DestroyFloatingPanel(const std::string& id);
-		std::unordered_map<std::string, FloatingPanel*> m_floatingPanels;
-		std::vector<std::string> m_destroyPanelQueue;
 
 	private:
 		DrawableRect* m_borderTop = nullptr;
@@ -154,32 +135,4 @@ namespace SableUI
 	};
 
 	class BaseComponent;
-	template <typename T>
-	inline T* Window::CreateFloatingPanelNoInit(const std::string& id, const Rect& r)
-	{
-		auto it = m_floatingPanels.find(id);
-		if (it != m_floatingPanels.end())
-		{
-			SableUI_Runtime_Error("CreateFloatingPanel() called with an already existing ID");
-			return nullptr;
-		}
-
-		Rect clampedRect = r;
-
-		if (clampedRect.x < 0) clampedRect.x = 0;
-		if (clampedRect.x + clampedRect.w > m_windowSize.x)
-			clampedRect.x = (std::max)(0.0f, float(m_windowSize.x - clampedRect.w));
-
-		if (clampedRect.y < 0) clampedRect.y = 0;
-		if (clampedRect.y + clampedRect.h > m_windowSize.y)
-			clampedRect.y = (std::max)(0.0f, float(m_windowSize.y - clampedRect.h));
-
-		FloatingPanel* newPanel = SableMemory::SB_new<FloatingPanel>(m_floatingRenderer, clampedRect);
-		T* comp = newPanel->AttachComponentByType<T>();
-		newPanel->SetComponent(comp);
-		m_floatingPanels[id] = newPanel;
-
-		return comp;
-	}
-
 }
