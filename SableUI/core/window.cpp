@@ -137,7 +137,6 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 		return;
 	}
 
-	instance->m_borderNeedsUpdate = true;
 	instance->m_windowSize = ivec2(width, height);
 
 	if (width <= 0 || height <= 0)
@@ -315,13 +314,6 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetCharCallback(m_window, CharCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_baseRenderer, width, height);
-
-	m_borderTop = SB_new<DrawableRect>();
-	m_borderBottom = SB_new<DrawableRect>();
-	m_borderLeft = SB_new<DrawableRect>();
-	m_borderRight = SB_new<DrawableRect>();
-
-	UpdateWindowBorder();
 }
 
 void SableUI::Window::MakeContextCurrent()
@@ -510,7 +502,6 @@ void SableUI::Window::Draw()
 		if (baseLayerDirty)
 		{
 			m_baseRenderer->BeginRenderPass(&m_baseFramebuffer);
-			RenderWindowBorder();
 			m_baseRenderer->Draw(&m_baseFramebuffer);
 			m_baseRenderer->EndRenderPass();
 		}
@@ -985,47 +976,6 @@ void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 	oldPos = pos;
 }
 
-void SableUI::Window::UpdateWindowBorder()
-{
-	if (!m_borderTop || !m_borderBottom || !m_borderLeft || !m_borderRight)
-		return;
-
-	const Theme& t = GetTheme();
-	Colour borderColor = t.surface2;
-
-	int w = m_windowSize.x;
-	int h = m_windowSize.y;
-
-	m_borderTop->Update({ 0, 0, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
-	m_borderTop->m_zIndex = 1000;
-
-	m_borderBottom->Update({ 0, h - 1, w, 1 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
-	m_borderBottom->m_zIndex = 1000;
-
-	m_borderLeft->Update({ 0, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
-	m_borderLeft->m_zIndex = 1000;
-
-	m_borderRight->Update({ w - 1, 1, 1, h - 2 }, borderColor, 0.0f, 0.0f, 0.0f, 0.0f, {}, 0, 0, 0, 0, false, {});
-	m_borderRight->m_zIndex = 1000;
-
-	m_borderNeedsUpdate = false;
-}
-
-void SableUI::Window::RenderWindowBorder()
-{
-	if (m_borderNeedsUpdate)
-		UpdateWindowBorder();
-
-	if (m_borderTop)
-		m_baseRenderer->AddToDrawStack(m_borderTop);
-	if (m_borderBottom)
-		m_baseRenderer->AddToDrawStack(m_borderBottom);
-	if (m_borderLeft)
-		m_baseRenderer->AddToDrawStack(m_borderLeft);
-	if (m_borderRight)
-		m_baseRenderer->AddToDrawStack(m_borderRight);
-}
-
 SableUI::Window::~Window()
 {
 	if (m_window)
@@ -1033,26 +983,6 @@ SableUI::Window::~Window()
 
 	SB_delete(m_root);
 	DestroyDrawables();
-	if (m_borderTop)
-	{
-		m_baseRenderer->ClearDrawable(m_borderTop);
-		SB_delete(m_borderTop);
-	}
-	if (m_borderBottom)
-	{
-		m_baseRenderer->ClearDrawable(m_borderBottom);
-		SB_delete(m_borderBottom);
-	}
-	if (m_borderLeft)
-	{
-		m_baseRenderer->ClearDrawable(m_borderLeft);
-		SB_delete(m_borderLeft);
-	}
-	if (m_borderRight)
-	{
-		m_baseRenderer->ClearDrawable(m_borderRight);
-		SB_delete(m_borderRight);
-	}
 
 	TextCacheFactory::ShutdownFactory(m_baseRenderer);
 

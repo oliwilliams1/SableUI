@@ -123,15 +123,7 @@ namespace SableUI
 		std::vector<CustomTargetQueue*> m_customTargetQueues;
 
 	private:
-		DrawableRect* m_borderTop = nullptr;
-		DrawableRect* m_borderBottom = nullptr;
-		DrawableRect* m_borderLeft = nullptr;
-		DrawableRect* m_borderRight = nullptr;
-		bool m_borderNeedsUpdate = true;
 		int m_syncFrames = 2;
-
-		void UpdateWindowBorder();
-		void RenderWindowBorder();
 	};
 
 	class BaseComponent;

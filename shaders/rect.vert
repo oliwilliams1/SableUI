@@ -3,7 +3,7 @@
 layout(location = 0) in vec2 aUV;
 out vec2 uv;
 
-layout(std140) uniform RectData
+layout(std140) uniform RectBlock
 {
 	vec4  uRect;         // x, y, w, h (NDC)
 	vec4  uColour;

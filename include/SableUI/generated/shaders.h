@@ -6,7 +6,7 @@ constexpr const char rect_frag[] = R"(#version 330 core
 in vec2 uv;
 out vec4 FragColor;
 
-layout(std140) uniform RectData
+layout(std140) uniform RectBlock
 {
     vec4  uRect;         // x, y, w, h (NDC)
     vec4  uColour;
@@ -100,7 +100,7 @@ constexpr const char rect_vert[] = R"(#version 330 core
 layout(location = 0) in vec2 aUV;
 out vec2 uv;
 
-layout(std140) uniform RectData
+layout(std140) uniform RectBlock
 {
 	vec4  uRect;         // x, y, w, h (NDC)
 	vec4  uColour;
@@ -145,7 +145,7 @@ layout (location = 2) in uint aColour;
 out vec3 UV;
 out vec4 colour;
 
-layout(std140) uniform TextData
+layout(std140) uniform TextBlock
 {
 	vec2 uTargetSize;
 	vec2 uPos;
@@ -161,7 +161,7 @@ void main()
 
 	colour = vec4(
 		float((aColour      ) & 0xFFu) / 255.0,
-		float((aColour >> 8)  & 0xFFu) / 255.0,
+		float((aColour >>  8) & 0xFFu) / 255.0,
 		float((aColour >> 16) & 0xFFu) / 255.0,
 		float((aColour >> 24) & 0xFFu) / 255.0
 	);

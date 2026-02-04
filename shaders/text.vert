@@ -7,7 +7,7 @@ layout (location = 2) in uint aColour;
 out vec3 UV;
 out vec4 colour;
 
-layout(std140) uniform TextData
+layout(std140) uniform TextBlock
 {
 	vec2 uTargetSize;
 	vec2 uPos;
@@ -23,7 +23,7 @@ void main()
 
 	colour = vec4(
 		float((aColour      ) & 0xFFu) / 255.0,
-		float((aColour >> 8)  & 0xFFu) / 255.0,
+		float((aColour >>  8) & 0xFFu) / 255.0,
 		float((aColour >> 16) & 0xFFu) / 255.0,
 		float((aColour >> 24) & 0xFFu) / 255.0
 	);
