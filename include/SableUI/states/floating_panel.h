@@ -1,11 +1,11 @@
 #pragma once
-#include <SableUI/core/component.h>
 #include <SableUI/states/state_base.h>
 #include <SableUI/states/floating_panel_base.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/renderer.h>
 #include <SableUI/core/events.h>
+#include <SableUI/core/element.h>
 #include <type_traits>
 
 namespace SableUI
@@ -30,7 +30,7 @@ namespace SableUI
 		void SetRect(const Rect& rect);
 
 		T* Initialise();
-		void Finalise();
+		void Finalise(const ElementInfo& info = {});
 
 		void HandleInput(const UIEventContext& ctx) override;
 		void Layout();
@@ -106,12 +106,12 @@ inline T* SableUI::FloatingPanelState<T>::Initialise()
 }
 
 template<typename T>
-inline void SableUI::FloatingPanelState<T>::Finalise()
+inline void SableUI::FloatingPanelState<T>::Finalise(const SableUI::ElementInfo& info)
 {
 	if (!m_child)
 		return;
 
-	m_child->BackendInitialiseFloatingPanel(m_rect, m_info);
+	m_child->BackendInitialiseFloatingPanel(m_rect, info);
 }
 
 template<typename T>

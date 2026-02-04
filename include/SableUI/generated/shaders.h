@@ -3,17 +3,21 @@
 
 constexpr const char rect_frag[] = R"(#version 330 core
 
+in vec2 uv;
 out vec4 FragColor;
 
-uniform vec4 uColour;        
-uniform vec4 uBorderColour; 
-uniform bool uUseTexture;
-uniform vec4 uRealRect;      // x, y, w, h in px
-uniform vec4 uRadius;        // tl, tr, bl, br in px
-uniform ivec4 uBorderSize;   // t, b, l, r in px
-uniform sampler2D uTexture;
+layout(std140) uniform RectData
+{
+    vec4  uRect;         // x, y, w, h (NDC)
+    vec4  uColour;
+    vec4  uBorderColour;
+    vec4  uRealRect;     // x, y, w, h (pixels)
+    vec4  uRadius;       // tl, tr, bl, br
+    ivec4 uBorderSize;   // t, b, l, r
+    int   uUseTexture;
+};
 
-in vec2 uv;
+uniform sampler2D uTexture;
 
 float GetRadius(vec2 p, vec2 center, vec4 r)
 {
@@ -84,7 +88,7 @@ void main()
         borderFactor = smoothstep(-0.5, 0.5, distInner); 
     }
 
-    vec4 fillCol = uUseTexture ? texture(uTexture, uv) : uColour;
+    vec4 fillCol = bool(uUseTexture) ? texture(uTexture, uv) : uColour;
     vec4 finalColor = mix(fillCol, uBorderColour, borderFactor);
     finalColor.a *= alphaOuter;
     
@@ -94,15 +98,23 @@ void main()
 constexpr const char rect_vert[] = R"(#version 330 core
 
 layout(location = 0) in vec2 aUV;
-
-uniform vec4 uRect; // x, y, w, h
-
 out vec2 uv;
+
+layout(std140) uniform RectData
+{
+	vec4  uRect;         // x, y, w, h (NDC)
+	vec4  uColour;
+	vec4  uBorderColour;
+	vec4  uRealRect;     // x, y, w, h (pixels)
+	vec4  uRadius;       // tl, tr, bl, br
+	ivec4 uBorderSize;   // t, b, l, r
+	int   uUseTexture;
+};
 
 void main()
 {
-    gl_Position = vec4(uRect.xy + aUV * uRect.zw, 0.0, 1.0);
-    uv = aUV;
+	gl_Position = vec4(uRect.xy + aUV * uRect.zw, 0.0, 1.0);
+	uv = aUV;
 }
 )";
 
@@ -133,8 +145,11 @@ layout (location = 2) in uint aColour;
 out vec3 UV;
 out vec4 colour;
 
-uniform vec2 uTargetSize;
-uniform vec2 uPos;
+layout(std140) uniform TextData
+{
+	vec2 uTargetSize;
+	vec2 uPos;
+};
 
 void main()
 {
@@ -145,10 +160,10 @@ void main()
 	UV = aUV;
 
 	colour = vec4(
-        float((aColour      ) & 0xFFu) / 255.0,
-        float((aColour >> 8)  & 0xFFu) / 255.0,
-        float((aColour >> 16) & 0xFFu) / 255.0,
-        float((aColour >> 24) & 0xFFu) / 255.0
-    );
+		float((aColour      ) & 0xFFu) / 255.0,
+		float((aColour >> 8)  & 0xFFu) / 255.0,
+		float((aColour >> 16) & 0xFFu) / 255.0,
+		float((aColour >> 24) & 0xFFu) / 255.0
+	);
 })";
 

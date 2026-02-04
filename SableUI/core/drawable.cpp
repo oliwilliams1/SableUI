@@ -31,6 +31,28 @@ Vertex rectVertices[] = {
 
 unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
+static inline void RectToNDC(
+	const Rect& r,
+	const GpuFramebuffer* fb,
+	float& x, float& y, float& w, float& h)
+{
+	x = (r.x / (float)fb->width);
+	y = (r.y / (float)fb->height);
+	w = (r.w / (float)fb->width);
+	h = (r.h / (float)fb->height);
+
+	x = x * 2.0f - 1.0f;
+	y = y * 2.0f - 1.0f;
+	w *= 2.0f;
+	h *= 2.0f;
+
+	w = (std::max)(0.0f, w);
+	h = (std::max)(0.0f, h);
+
+	y *= -1.0f;
+	h *= -1.0f;
+}
+
 static GLuint GetUniformLocation(Shader shader, const char* uniformName)
 {
 	shader.Use();
@@ -75,27 +97,46 @@ GlobalResources& SableUI::GetGlobalResources()
 void SableUI::InitDrawables()
 {
 	static bool shadersInitialized = false;
-	if (!shadersInitialized)
+	if (shadersInitialized)
+		return;
+
+	// rect
+	g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
+	glGenBuffers(1, &g_res.ubo_rect);
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(RectDrawData), nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	{
-		g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
-		g_res.s_rect.Use();
-
-		g_res.u_rectColour = GetUniformLocation(g_res.s_rect, "uColour");
-		g_res.u_rectRect = GetUniformLocation(g_res.s_rect, "uRect");
-		g_res.u_rectRadius = GetUniformLocation(g_res.s_rect, "uRadius");
-		g_res.u_rectRealRect = GetUniformLocation(g_res.s_rect, "uRealRect");
-		g_res.u_rectTexBool = GetUniformLocation(g_res.s_rect, "uUseTexture");
-		g_res.u_rectBorderSize = GetUniformLocation(g_res.s_rect, "uBorderSize");
-		g_res.u_rectBorderColour = GetUniformLocation(g_res.s_rect, "uBorderColour");
-		glUniform1i(glGetUniformLocation(g_res.s_rect.m_shaderProgram, "uTexture"), 0);
-
-		g_res.s_text.LoadBasicShaders(text_vert, text_frag);
-		g_res.u_textTargetSize = GetUniformLocation(g_res.s_text, "uTargetSize");
-		g_res.u_textPos = GetUniformLocation(g_res.s_text, "uPos");
-		g_res.u_textAtlas = GetUniformLocation(g_res.s_text, "uAtlas");
-
-		shadersInitialized = true;
+		GLuint program = g_res.s_rect.m_shaderProgram;
+		GLuint blockIndex = glGetUniformBlockIndex(program, "RectBlock");
+		glUniformBlockBinding(program, blockIndex, static_cast<GLuint>(UboBinding::Rect));
 	}
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, static_cast<GLuint>(UboBinding::Rect), g_res.ubo_rect);
+
+	glUseProgram(g_res.s_rect.m_shaderProgram);
+	glUniform1i(glGetUniformLocation(g_res.s_rect.m_shaderProgram, "uTexture"), 0);
+
+	// text
+	g_res.s_text.LoadBasicShaders(text_vert, text_frag);
+	glGenBuffers(1, &g_res.ubo_text);
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(TextDrawData), nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	{
+		GLuint program = g_res.s_text.m_shaderProgram;
+		GLuint blockIndex = glGetUniformBlockIndex(program, "TextBlock");
+		glUniformBlockBinding(program, blockIndex, static_cast<GLuint>(UboBinding::Text));
+	}
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, static_cast<GLuint>(UboBinding::Text), g_res.ubo_text);
+
+	glUseProgram(g_res.s_text.m_shaderProgram);
+	glUniform1i(glGetUniformLocation(g_res.s_text.m_shaderProgram, "uAtlas"), 0);
+
+	shadersInitialized = true;
 }
 
 void SableUI::DestroyDrawables()
@@ -188,39 +229,49 @@ void DrawableRect::Update(
 
 void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
-	/* normalise from texture bounds to [0, 1] */
-	float x = (m_rect.x / static_cast<float>(framebuffer->width));
-	float y = (m_rect.y / static_cast<float>(framebuffer->height));
-	float w = (m_rect.w / static_cast<float>(framebuffer->width));
-	float h = (m_rect.h / static_cast<float>(framebuffer->height));
+	float x, y, w, h;
+	RectToNDC(m_rect, framebuffer, x, y, w, h);
 
-	/* normalise to opengl NDC [0, 1] ->[-1, 1] */
-	x = x * 2.0f - 1.0f;
-	y = y * 2.0f - 1.0f;
-	w *= 2.0f;
-	h *= 2.0f;
+	RectDrawData data{};
 
-	/* prevent negative scale */
-	w = (std::max)(0.0f, w);
-	h = (std::max)(0.0f, h);
+	data.rect[0] = x;
+	data.rect[1] = y;
+	data.rect[2] = w;
+	data.rect[3] = h;
 
-	/* invert y axis */
-	y *= -1.0f;
-	h *= -1.0f;
+	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
+	data.colour[0] = c.r / 255.0f;
+	data.colour[1] = c.g / 255.0f;
+	data.colour[2] = c.b / 255.0f;
+	data.colour[3] = c.a / 255.0f;
+
+	Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
+	data.borderColour[0] = bc.r / 255.0f;
+	data.borderColour[1] = bc.g / 255.0f;
+	data.borderColour[2] = bc.b / 255.0f;
+	data.borderColour[3] = bc.a / 255.0f;
+
+	data.realRect[0] = m_rect.x;
+	data.realRect[1] = m_rect.y;
+	data.realRect[2] = m_rect.w;
+	data.realRect[3] = m_rect.h;
+
+	data.radius[0] = m_rTL;
+	data.radius[1] = m_rTR;
+	data.radius[2] = m_rBL;
+	data.radius[3] = m_rBR;
+
+	data.borderSize[0] = m_bT;
+	data.borderSize[1] = m_bB;
+	data.borderSize[2] = m_bL;
+	data.borderSize[3] = m_bR;
+
+	data.useTexture = 0;
 
 	g_res.s_rect.Use();
-	glUniform4f(g_res.u_rectRect, x, y, w, h);
-	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
-	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
-	glUniform4i(g_res.u_rectBorderSize, m_bT, m_bB, m_bL, m_bR);
-	if (m_borderColour.has_value())
-	{
-		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
-		glUniform4f(g_res.u_rectBorderColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f, bc.a / 255.0f);
-	}
-	Colour c = m_colour.value_or(Colour{ 0, 0, 0, 0 });
-	glUniform4f(g_res.u_rectColour, c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
-	glUniform1i(g_res.u_rectTexBool, 0);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
 	res.rectObject->AddToDrawStack();
 }
 
@@ -266,42 +317,45 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 
 void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
-	if (m_type == PanelType::Undef || m_type == PanelType::Base || m_type == PanelType::Root)
+	if (m_type == PanelType::Undef ||
+		m_type == PanelType::Base ||
+		m_type == PanelType::Root)
 		return;
 
 	g_res.s_rect.Use();
-	glUniform1i(g_res.u_rectTexBool, 0);
-	glUniform4f(g_res.u_rectRadius, 0.0f, 0.0f, 0.0f, 0.0f);
-	glUniform4f(g_res.u_rectColour, m_colour.r / 255.0f, m_colour.g / 255.0f, m_colour.b / 255.0f, m_colour.a / 255.0f);
+
+	RectDrawData data{};
+	Colour c = m_colour;
+
+	data.colour[0] = c.r / 255.0f;
+	data.colour[1] = c.g / 255.0f;
+	data.colour[2] = c.b / 255.0f;
+	data.colour[3] = c.a / 255.0f;
+
+	data.useTexture = 0;
 
 	int startX = std::clamp(m_rect.x, 0, framebuffer->width);
 	int startY = std::clamp(m_rect.y, 0, framebuffer->height);
-	int boundWidth = std::clamp(m_rect.w, 0, framebuffer->width - startX);
-	int boundHeight = std::clamp(m_rect.h, 0, framebuffer->height - startY);
+	int boundW = std::clamp(m_rect.w, 0, framebuffer->width - startX);
+	int boundH = std::clamp(m_rect.h, 0, framebuffer->height - startY);
 
-	static auto drawRect = [framebuffer, res](float x, float y, float w, float h) {
-		/* normalise from texture bounds to [0, 1] */
-		float normalizedX = (x / static_cast<float>(framebuffer->width));
-		float normalizedY = (y / static_cast<float>(framebuffer->height));
-		float normalizedW = (w / static_cast<float>(framebuffer->width));
-		float normalizedH = (h / static_cast<float>(framebuffer->height));
+	auto drawRect = [&](Rect r) {
+		float x, y, w, h;
+		RectToNDC(r, framebuffer, x, y, w, h);
 
-		/* normalise to opengl NDC [0, 1] -> [-1, 1] */
-		normalizedX = normalizedX * 2.0f - 1.0f;
-		normalizedY = normalizedY * 2.0f - 1.0f;
-		normalizedW *= 2.0f;
-		normalizedH *= 2.0f;
+		data.rect[0] = x;
+		data.rect[1] = y;
+		data.rect[2] = w;
+		data.rect[3] = h;
 
-		/* prevent negative scale */
-		normalizedW = (std::max)(0.0f, normalizedW);
-		normalizedH = (std::max)(0.0f, normalizedH);
+		data.realRect[0] = r.x;
+		data.realRect[1] = r.y;
+		data.realRect[2] = r.w;
+		data.realRect[3] = r.h;
 
-		/* invert y axis */
-		normalizedY *= -1.0f;
-		normalizedH *= -1.0f;
+		glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
 
-		glUniform4f(g_res.u_rectRect, normalizedX, normalizedY, normalizedW, normalizedH);
-		glUniform4f(g_res.u_rectRealRect, x, y, w, h);
 		res.rectObject->AddToDrawStack();
 	};
 
@@ -309,26 +363,24 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 	{
 		for (int offset : m_offsets)
 		{
-			float drawX = startX + static_cast<float>(offset) - m_bSize;
-			float drawWidth = m_bSize * 2.0f;
-
-			if (drawX + drawWidth >= 0 && drawX < framebuffer->width)
-			{
-				drawRect(drawX, static_cast<float>(startY), drawWidth, static_cast<float>(boundHeight));
-			}
+			drawRect({
+				startX + offset - m_bSize,
+				startY,
+				m_bSize * 2,
+				boundH
+			});
 		}
 	}
-	else if (m_type == PanelType::VerticalSplitter)
+	else
 	{
 		for (int offset : m_offsets)
 		{
-			float drawY = startY + static_cast<float>(offset) - m_bSize;
-			float drawHeight = m_bSize * 2.0f;
-
-			if (drawY + drawHeight >= 0 && drawY < framebuffer->height)
-			{
-				drawRect(static_cast<float>(startX), drawY, static_cast<float>(boundWidth), drawHeight);
-			}
+			drawRect({
+				startX,
+				startY + offset - m_bSize,
+				boundW,
+				m_bSize * 2
+			});
 		}
 	}
 }
@@ -380,39 +432,48 @@ void SableUI::DrawableImage::Update(
 
 void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
-	/* normalise from texture bounds to [0, 1] */
-	float x = (m_rect.x / static_cast<float>(framebuffer->width));
-	float y = (m_rect.y / static_cast<float>(framebuffer->height));
-	float w = (m_rect.w / static_cast<float>(framebuffer->width));
-	float h = (m_rect.h / static_cast<float>(framebuffer->height));
+	RectDrawData data{};
 
-	/* normalise to opengl NDC [0, 1] ->[-1, 1] */
-	x = x * 2.0f - 1.0f;
-	y = y * 2.0f - 1.0f;
-	w *= 2.0f;
-	h *= 2.0f;
+	float x, y, w, h;
+	RectToNDC(m_rect, framebuffer, x, y, w, h);
 
-	/* prevent negative scale */
-	w = (std::max)(0.0f, w);
-	h = (std::max)(0.0f, h);
+	data.rect[0] = x;
+	data.rect[1] = y;
+	data.rect[2] = w;
+	data.rect[3] = h;
 
-	/* invert y axis */
-	y *= -1.0f;
-	h *= -1.0f;
+	data.realRect[0] = m_rect.x;
+	data.realRect[1] = m_rect.y;
+	data.realRect[2] = m_rect.w;
+	data.realRect[3] = m_rect.h;
 
-	m_texture.Bind();
+	data.radius[0] = m_rTL;
+	data.radius[1] = m_rTR;
+	data.radius[2] = m_rBL;
+	data.radius[3] = m_rBR;
+
+	data.borderSize[0] = m_bT;
+	data.borderSize[1] = m_bB;
+	data.borderSize[2] = m_bL;
+	data.borderSize[3] = m_bR;
+
+	if (m_borderColour)
+	{
+		Colour bc = *m_borderColour;
+		data.borderColour[0] = bc.r / 255.0f;
+		data.borderColour[1] = bc.g / 255.0f;
+		data.borderColour[2] = bc.b / 255.0f;
+		data.borderColour[3] = bc.a / 255.0f;
+	}
+
+	data.useTexture = 1;
 
 	g_res.s_rect.Use();
-	glUniform4f(g_res.u_rectRect, x, y, w, h);
-	glUniform4f(g_res.u_rectRealRect, m_rect.x, m_rect.y, m_rect.w, m_rect.h);
-	glUniform4f(g_res.u_rectRadius, m_rTL, m_rTR, m_rBL, m_rBR);
-	glUniform4i(g_res.u_rectBorderSize, m_bT, m_bB, m_bL, m_bR);
-	if (m_borderColour.has_value())
-	{
-		Colour bc = m_borderColour.value_or(Colour{ 0, 0, 0, 0 });
-		glUniform4f(g_res.u_rectBorderColour, bc.r / 255.0f, bc.g / 255.0f, bc.b / 255.0f, bc.a / 255.0f);
-	}
-	glUniform1i(g_res.u_rectTexBool, 1);
+	m_texture.Bind();
+
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
+
 	res.rectObject->AddToDrawStack();
 }
 
@@ -456,15 +517,18 @@ void SableUI::DrawableText::Update(Rect& rect, bool clipEnabled, const Rect& cli
 
 void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
 {
+	TextDrawData data{};
+	data.targetSize[0] = static_cast<float>(framebuffer->width);
+	data.targetSize[1] = static_cast<float>(framebuffer->height);
+
+	data.pos[0] = m_rect.x;
+	data.pos[1] = m_rect.y + m_rect.h;
+
 	g_res.s_text.Use();
-	glUniform2f(g_res.u_textTargetSize, static_cast<float>(framebuffer->width), static_cast<float>(framebuffer->height));
-	glUniform2f(g_res.u_textPos, m_rect.x, m_rect.y + m_rect.h);
-
 	glActiveTexture(GL_TEXTURE0);
-
 	BindTextAtlasTexture();
-
-	glUniform1i(g_res.u_textAtlas, 0);
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TextDrawData), &data);
 
 	m_text.m_gpuObject->AddToDrawStack();
 }

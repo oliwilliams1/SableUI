@@ -1,16 +1,20 @@
 #version 330 core
 
+in vec2 uv;
 out vec4 FragColor;
 
-uniform vec4 uColour;        
-uniform vec4 uBorderColour; 
-uniform bool uUseTexture;
-uniform vec4 uRealRect;      // x, y, w, h in px
-uniform vec4 uRadius;        // tl, tr, bl, br in px
-uniform ivec4 uBorderSize;   // t, b, l, r in px
-uniform sampler2D uTexture;
+layout(std140) uniform RectData
+{
+    vec4  uRect;         // x, y, w, h (NDC)
+    vec4  uColour;
+    vec4  uBorderColour;
+    vec4  uRealRect;     // x, y, w, h (pixels)
+    vec4  uRadius;       // tl, tr, bl, br
+    ivec4 uBorderSize;   // t, b, l, r
+    int   uUseTexture;
+};
 
-in vec2 uv;
+uniform sampler2D uTexture;
 
 float GetRadius(vec2 p, vec2 center, vec4 r)
 {
@@ -81,7 +85,7 @@ void main()
         borderFactor = smoothstep(-0.5, 0.5, distInner); 
     }
 
-    vec4 fillCol = uUseTexture ? texture(uTexture, uv) : uColour;
+    vec4 fillCol = bool(uUseTexture) ? texture(uTexture, uv) : uColour;
     vec4 finalColor = mix(fillCol, uBorderColour, borderFactor);
     finalColor.a *= alphaOuter;
     

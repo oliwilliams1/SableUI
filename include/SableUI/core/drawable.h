@@ -27,18 +27,36 @@ namespace SableUI
 
 	struct GlobalResources {
 		Shader s_rect;
-		uint32_t u_rectColour = 0;
-		uint32_t u_rectRect = 0;
-		uint32_t u_rectTexBool = 0;
-		uint32_t u_rectRealRect = 0;
-		uint32_t u_rectRadius = 0;
-		uint32_t u_rectBorderSize = 0;
-		uint32_t u_rectBorderColour = 0;
+		uint32_t ubo_rect = 0;
 
 		Shader s_text;
-		uint32_t u_textTargetSize = 0;
-		uint32_t u_textPos = 0;
+		uint32_t ubo_text = 0;
 		uint32_t u_textAtlas = 0;
+	};
+
+	enum class UboBinding : signed long long
+	{
+		Rect = 0,
+		Text = 1,
+		Global = 2,
+	};
+
+	struct alignas(16) RectDrawData
+	{
+		float rect[4];
+		float colour[4];
+		float borderColour[4];
+		float realRect[4];
+		float radius[4];
+		int borderSize[4];
+		int useTexture;
+		int padding[3];
+	};
+
+	struct alignas(16) TextDrawData
+	{
+		float targetSize[2];
+		float pos[2];
 	};
 
 	void InitDrawables();

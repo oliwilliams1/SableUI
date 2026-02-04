@@ -254,25 +254,52 @@ void OpenGL3Backend::DrawToScreen(
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	Viewport(0, 0, windowSize.w, windowSize.h);
 
+	RectDrawData data{};
+
 	float invW = 1.0f / float(windowSize.w);
 	float invH = 1.0f / float(windowSize.h);
 
-	float x_ndc = destRect.x * invW * 2.0f - 1.0f;
-	float y_ndc = destRect.y * invH * 2.0f - 1.0f;
+	float x = destRect.x * invW * 2.0f - 1.0f;
+	float y = destRect.y * invH * 2.0f - 1.0f;
+	float w = destRect.w * invW * 2.0f;
+	float h = destRect.h * invH * 2.0f;
 
-	float w_ndc = destRect.w * invW * 2.0f;
-	float h_ndc = destRect.h * invH * 2.0f;
+	y *= -1.0f;
+	h *= -1.0f;
+
+	data.rect[0] = x;
+	data.rect[1] = y;
+	data.rect[2] = w;
+	data.rect[3] = h;
+
+	data.realRect[0] = sourceRect.x;
+	data.realRect[1] = sourceRect.y;
+	data.realRect[2] = sourceRect.w;
+	data.realRect[3] = sourceRect.h;
+
+	data.radius[0] = 0.0f;
+	data.radius[1] = 0.0f;
+	data.radius[2] = 0.0f;
+	data.radius[3] = 0.0f;
+
+	data.borderSize[0] = 0;
+	data.borderSize[1] = 0;
+	data.borderSize[2] = 0;
+	data.borderSize[3] = 0;
+
+	data.colour[0] = 1.0f;
+	data.colour[1] = 1.0f;
+	data.colour[2] = 1.0f;
+	data.colour[3] = 1.0f;
+
+	data.useTexture = 1;
 
 	source->GetColorAttachments()[0].Bind(0);
 
 	g_res.s_rect.Use();
-	glUniform4f(g_res.u_rectRect, x_ndc, y_ndc, w_ndc, h_ndc);
-	glUniform4f(g_res.u_rectRealRect,
-		sourceRect.x, sourceRect.y,
-		sourceRect.w, sourceRect.h);
 
-	glUniform4f(g_res.u_rectRadius, 0.0f, 0.0f, 0.0f, 0.0f);
-	glUniform1i(g_res.u_rectTexBool, 1);
+	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
 
 	c_res.rectObject->AddToDrawStack();
 }
