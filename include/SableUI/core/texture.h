@@ -88,6 +88,8 @@ namespace SableUI
 		int m_width = -1;
 		int m_height = -1;
 
+		uint32_t GetHandle() const;
+
 	private:
 		void GenerateDefaultTexture();
 

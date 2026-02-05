@@ -4,10 +4,12 @@
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/command_buffer.h>
 #include <vector>
 #include <string>
 #include <functional>
 #include <optional>
+#include <cstdint>
 
 namespace SableUI
 {
@@ -135,11 +137,11 @@ namespace SableUI
 
 		// event system
 		void DistributeInputToElements(const UIEventContext& ctx);
-		bool CheckElementTreeForChanges();
+		bool CheckElementTreeForChanges(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx);
 		Element* GetElementById(const SableString& id);
 
 		// rendering
-		void Render(int z = 1);
+		void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& countextResources, int z = 1);
 		Rect rect = { 0, 0, 0, 0 };
 		bool clipEnabled = false;
 		Rect clipRect = { 0, 0, 0, 0 };

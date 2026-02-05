@@ -1,23 +1,23 @@
 // Auto-generated shader header
 #pragma once
 
-constexpr const char rect_frag[] = R"(#version 330 core
+constexpr const char rect_frag[] = R"(#version 420 core
 
 in vec2 uv;
 out vec4 FragColor;
 
-layout(std140) uniform RectBlock
+layout(std140, binding = 1) uniform RectBlock
 {
-    vec4  uRect;         // x, y, w, h (NDC)
-    vec4  uColour;
-    vec4  uBorderColour;
-    vec4  uRealRect;     // x, y, w, h (pixels)
-    vec4  uRadius;       // tl, tr, bl, br
-    ivec4 uBorderSize;   // t, b, l, r
-    int   uUseTexture;
+	vec4  uRect;         // x, y, w, h (NDC)
+	vec4  uColour;
+	vec4  uBorderColour;
+	vec4  uRealRect;     // x, y, w, h (pixels)
+	vec4  uRadius;       // tl, tr, bl, br
+	ivec4 uBorderSize;   // t, b, l, r
+	int   uUseTexture;
 };
 
-uniform sampler2D uTexture;
+layout(binding = 0) uniform sampler2D uTexture;
 
 float GetRadius(vec2 p, vec2 center, vec4 r)
 {
@@ -95,12 +95,12 @@ void main()
     FragColor = finalColor;
 })";
 
-constexpr const char rect_vert[] = R"(#version 330 core
+constexpr const char rect_vert[] = R"(#version 420 core
 
 layout(location = 0) in vec2 aUV;
 out vec2 uv;
 
-layout(std140) uniform RectBlock
+layout(std140, binding = 1) uniform RectBlock
 {
 	vec4  uRect;         // x, y, w, h (NDC)
 	vec4  uColour;
@@ -118,14 +118,14 @@ void main()
 }
 )";
 
-constexpr const char text_frag[] = R"(#version 330 core
+constexpr const char text_frag[] = R"(#version 420 core
 
 out vec4 FragColour;
 
 in vec3 UV;
 in vec4 colour;
 
-uniform sampler2DArray uAtlas;
+layout(binding = 0) uniform sampler2DArray uAtlas;
 
 void main()
 {
@@ -136,7 +136,7 @@ void main()
 	FragColour = vec4(colour.rgb, a * colour.a);
 })";
 
-constexpr const char text_vert[] = R"(#version 330 core
+constexpr const char text_vert[] = R"(#version 420 core
 
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec3 aUV;
@@ -145,7 +145,7 @@ layout (location = 2) in uint aColour;
 out vec3 UV;
 out vec4 colour;
 
-layout(std140) uniform TextBlock
+layout(std140, binding = 2) uniform TextBlock
 {
 	vec2 uTargetSize;
 	vec2 uPos;

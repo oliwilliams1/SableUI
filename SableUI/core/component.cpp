@@ -145,9 +145,9 @@ static size_t GetHash(int n, const char* name)
 	return h;
 }
 
-void SableUI::BaseComponent::Render(int z)
+void SableUI::BaseComponent::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, int z)
 {
-	rootElement->Render(z);
+	rootElement->Render(cmd, framebuffer, contextResources, z);
 }
 
 void SableUI::BaseComponent::BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info)
@@ -187,7 +187,7 @@ int SableUI::BaseComponent::GetNumChildren() const
 	return m_childCount;
 }
 
-bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
+bool SableUI::BaseComponent::Rerender(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, bool* hasContentsChanged)
 {
 	Rect oldRect = { rootElement->rect };
 
@@ -239,7 +239,7 @@ bool SableUI::BaseComponent::Rerender(bool* hasContentsChanged)
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
-	Render();
+	Render(cmd, framebuffer, contextResources);
 
 	needsRerender = false;
 	return false;
@@ -258,15 +258,15 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 	UpdateHoverStyling(ctx);
 }
 
-bool SableUI::BaseComponent::CheckAndUpdate()
+bool SableUI::BaseComponent::CheckAndUpdate(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx)
 {
 	if (!needsRerender)
 	{
-		bool childChanged = rootElement->CheckElementTreeForChanges();
+		bool childChanged = rootElement->CheckElementTreeForChanges(cmd, fbo, ctx);
 		return childChanged;
 	}
 
-	Rerender(nullptr);
+	Rerender(cmd, fbo, ctx, nullptr);
 	needsRerender = false;
 
 	return true;

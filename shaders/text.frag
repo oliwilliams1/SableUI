@@ -1,11 +1,11 @@
-#version 330 core
+#version 420 core
 
 out vec4 FragColour;
 
 in vec3 UV;
 in vec4 colour;
 
-uniform sampler2DArray uAtlas;
+layout(binding = 0) uniform sampler2DArray uAtlas;
 
 void main()
 {

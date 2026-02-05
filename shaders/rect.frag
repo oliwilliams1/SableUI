@@ -1,20 +1,20 @@
-#version 330 core
+#version 420 core
 
 in vec2 uv;
 out vec4 FragColor;
 
-layout(std140) uniform RectBlock
+layout(std140, binding = 1) uniform RectBlock
 {
-    vec4  uRect;         // x, y, w, h (NDC)
-    vec4  uColour;
-    vec4  uBorderColour;
-    vec4  uRealRect;     // x, y, w, h (pixels)
-    vec4  uRadius;       // tl, tr, bl, br
-    ivec4 uBorderSize;   // t, b, l, r
-    int   uUseTexture;
+	vec4  uRect;         // x, y, w, h (NDC)
+	vec4  uColour;
+	vec4  uBorderColour;
+	vec4  uRealRect;     // x, y, w, h (pixels)
+	vec4  uRadius;       // tl, tr, bl, br
+	ivec4 uBorderSize;   // t, b, l, r
+	int   uUseTexture;
 };
 
-uniform sampler2D uTexture;
+layout(binding = 0) uniform sampler2D uTexture;
 
 float GetRadius(vec2 p, vec2 center, vec4 r)
 {

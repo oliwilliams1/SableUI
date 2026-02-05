@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec3 aUV;
@@ -7,7 +7,7 @@ layout (location = 2) in uint aColour;
 out vec3 UV;
 out vec4 colour;
 
-layout(std140) uniform TextBlock
+layout(std140, binding = 2) uniform TextBlock
 {
 	vec2 uTargetSize;
 	vec2 uPos;

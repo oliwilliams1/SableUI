@@ -7,6 +7,7 @@
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/component.h>
+#include <SableUI/core/command_buffer.h>
 
 #include <SableUI/utils/console.h>
 #undef SABLEUI_SUBSYSTEM
@@ -190,7 +191,7 @@ void SableUI::Element::SetInfo(const ElementInfo& info)
     this->info = info;
 }
 
-void SableUI::Element::Render(int z)
+void SableUI::Element::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, int z)
 {
     if (clipEnabled)
     {
@@ -201,7 +202,7 @@ void SableUI::Element::Render(int z)
                 for (Child* child : children)
                 {
                     Element* childElement = (Element*)*child;
-                    childElement->Render(z + 1);
+                    childElement->Render(cmd, framebuffer, contextResources, z + 1);
                 }
             }
             return;
@@ -220,7 +221,7 @@ void SableUI::Element::Render(int z)
             if (hasBorder || hasBg)
             {
                 drawable->setZ(z);
-                renderer->AddToDrawStack(drRect);
+                drRect->RecordCommands(cmd, framebuffer, contextResources);
             }
         }
         else
@@ -235,7 +236,7 @@ void SableUI::Element::Render(int z)
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
         {
             drawable->setZ(z);
-            renderer->AddToDrawStack(drImage);
+            drImage->RecordCommands(cmd, framebuffer, contextResources);
         }
         else
         {
@@ -249,7 +250,7 @@ void SableUI::Element::Render(int z)
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
             drawable->setZ(z);
-            renderer->AddToDrawStack(drText);
+            drText->RecordCommands(cmd, framebuffer, contextResources);
         }
         else
         {
@@ -268,7 +269,7 @@ void SableUI::Element::Render(int z)
             if (hasBorder || hasBg)
             {
                 drawable->setZ(z);
-                renderer->AddToDrawStack(drRect);
+                drRect->RecordCommands(cmd, framebuffer, contextResources);
             }
         }
         else
@@ -279,7 +280,7 @@ void SableUI::Element::Render(int z)
         for (Child* child : children)
         {
             Element* childElement = (Element*)*child;
-            childElement->Render(z + 1);
+            childElement->Render(cmd, framebuffer, contextResources, z + 1);
         }
         break;
     }
@@ -1031,16 +1032,16 @@ void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx)
     }
 }
 
-bool SableUI::Element::CheckElementTreeForChanges()
+bool SableUI::Element::CheckElementTreeForChanges(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx)
 {
     bool anyChanged = false;
 
     for (Child* child : children)
     {
         if (child->type == ChildType::COMPONENT)
-            anyChanged |= child->component->CheckAndUpdate();
+            anyChanged |= child->component->CheckAndUpdate(cmd, fbo, ctx);
         else
-            anyChanged |= child->element->CheckElementTreeForChanges();
+            anyChanged |= child->element->CheckElementTreeForChanges(cmd, fbo, ctx);
     }
 
     return anyChanged;
@@ -1072,7 +1073,6 @@ SableUI::Element::~Element()
         if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
             drImage->DeregisterTextureDependancy(m_owner);
     
-    renderer->ClearDrawable(drawable);
     SB_delete(drawable);
 
     for (Child* child : children) SB_delete(child);

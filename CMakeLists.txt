@@ -42,9 +42,6 @@ set(WEBP_UNICODE            OFF)
 
 add_subdirectory("vendor/libwebp")
 
-# SableUI
-file(GLOB_RECURSE SABLE_UI_SOURCES "SableUI/*.cpp" "include/*.h" "include/*.hpp")
-
 # Embed shaders
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 set(GENERATED_SHADER_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/include/SableUI/generated/shaders.h")
@@ -97,10 +94,77 @@ add_custom_target(EmbedResources
 	COMMENT "Embedding resources into ${GENERATED_RESOURCE_HEADER}"
 )
 
-add_library(SableUI STATIC ${SABLE_UI_SOURCES})
+add_library(SableUI STATIC 
+	"include/SableUI/SableUI.h"
+	"include/SableUI/components/button.h"
+	"include/SableUI/components/calendar.h"
+	"include/SableUI/components/checkbox.h"
+	"include/SableUI/components/date_picker.h"
+	"include/SableUI/components/debug_components.h"
+	"include/SableUI/components/text_field.h"
+	"include/SableUI/core/command_buffer.h"
+	"include/SableUI/core/component.h"
+	"include/SableUI/core/component_registry.h"
+	"include/SableUI/core/drawable.h"
+	"include/SableUI/core/events.h"
+	"include/SableUI/core/event_scheduler.h"
+	"include/SableUI/core/panel.h"
+	"include/SableUI/core/renderer.h"
+	"include/SableUI/core/scroll_context.h"
+	"include/SableUI/core/text.h"
+	"include/SableUI/core/texture.h"
+	"include/SableUI/core/text_cache.h"
+	"include/SableUI/core/window.h"
+	"include/SableUI/generated/resources.h"
+	"include/SableUI/generated/shaders.h"
+	"include/SableUI/states/floating_panel.h"
+	"include/SableUI/states/floating_panel_base.h"
+	"include/SableUI/states/interval.h"
+	"include/SableUI/states/ref.h"
+	"include/SableUI/states/state.h"
+	"include/SableUI/states/state_base.h"
+	"include/SableUI/states/timer.h"
+	"include/SableUI/styles/styles.h"
+	"include/SableUI/styles/theme.h"
+	"include/SableUI/utils/console.h"
+	"include/SableUI/utils/memory.h"
+	"include/SableUI/utils/string.h"
+	"include/SableUI/utils/utils.h"
+	"SableUI/backends/command_buffer_impl_OpenGL3.cpp"
+	"SableUI/backends/renderer_impl_OpenGL3.cpp"
+	"SableUI/components/button.cpp"
+	"SableUI/components/calendar.cpp"
+	"SableUI/components/checkbox.cpp"
+	"SableUI/components/date_picker.cpp"
+	"SableUI/components/debug_components.cpp"
+	"SableUI/components/text_field.cpp"
+	"SableUI/core/command_buffer.cpp"
+	"SableUI/core/component.cpp"
+	"SableUI/core/component_registry.cpp"
+	"SableUI/core/drawable.cpp"
+	"SableUI/core/element.cpp"
+	"SableUI/core/event_scheduler.cpp"
+	"SableUI/core/panel.cpp"
+	"SableUI/core/renderer.cpp"
+	"SableUI/core/SableUI.cpp"
+	"SableUI/core/scroll_context.cpp"
+	"SableUI/core/shader.cpp"
+	"SableUI/core/tab_context.cpp"
+	"SableUI/core/text.cpp"
+	"SableUI/core/texture.cpp"
+	"SableUI/core/text_cache.cpp"
+	"SableUI/core/window.cpp"
+	"SableUI/states/interval.cpp"
+	"SableUI/states/timer.cpp"
+	"SableUI/styles/theme.cpp"
+	"SableUI/utils/console.cpp"
+	"SableUI/utils/memory.cpp"
+	"SableUI/utils/string.cpp"
+	"SableUI/utils/utils.cpp"
+)
+
 add_dependencies(SableUI EmbedShaders EmbedResources)
 
-# Export include paths
 target_include_directories(SableUI PUBLIC
 	"${CMAKE_CURRENT_SOURCE_DIR}/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/SableUI"

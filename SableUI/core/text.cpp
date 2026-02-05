@@ -371,7 +371,7 @@ public:
 	FT_Library ft_library = nullptr;
 
 	void ResizeTextureArray(int newDepth);
-	void BindTextAtlasTexture() const { atlasTextureArray.Bind(); }
+	uint32_t GetTextAtlasTextureID() const { return atlasTextureArray.GetHandle(); }
 
 	std::map<char_t, Character> characters;
 	bool FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange);
@@ -1972,12 +1972,12 @@ SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, in
 	return obj;
 }
 
-void SableUI::BindTextAtlasTexture()
+uint32_t SableUI::GetTextAtlasHandle()
 {
 	if (!FontManager::GetInstance().isInitialized)
 		FontManager::GetInstance().Initialise();
 
-	return FontManager::GetInstance().BindTextAtlasTexture();
+	return FontManager::GetInstance().GetTextAtlasTextureID();
 }
 
 // ============================================================================

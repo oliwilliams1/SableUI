@@ -121,7 +121,7 @@ namespace SableUI
 
 	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& maxWidth);
 
-	void BindTextAtlasTexture();
+	uint32_t GetTextAtlasHandle();
 	void SetFontDPI(const vec2& dpi);
 	void InitFontManager();
 	void DestroyFontManager();

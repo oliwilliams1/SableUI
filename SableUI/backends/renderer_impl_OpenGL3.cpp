@@ -10,25 +10,18 @@
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Renderer"
 
-#include <algorithm>
-#include <set>
 #include <cstdint>
-#include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 using namespace SableUI;
 
-struct OpenGLMesh
-{
-	GLuint vao = 0, vbo = 0, ebo = 0;
-};
-
 class OpenGL3Backend : public RendererBackend
 {
 public:
 	OpenGL3Backend() { Initialise(); }
+	~OpenGL3Backend();
 	void Initialise() override;
 	void Clear(float r, float g, float b, float a) override;
 	void Viewport(int x, int y, int width, int height) override;
@@ -37,12 +30,9 @@ public:
 
 	void CheckErrors() override;
 
-	void ClearDrawableStack() override;
-	void ClearDrawable(const DrawableBase* drawable) override;
+	void ExecuteCommandBuffer() override;
 
-	void AddToDrawStack(DrawableBase* drawable) override;
-	void AddToDrawStack(const GpuObject* obj) override;
-	bool Draw(const GpuFramebuffer* framebuffer) override;
+	void DrawGpuObject(const GpuObject* obj) override;
 
 	GpuObject* CreateGpuObject(
 		const void* vertices, uint32_t numVertices,
@@ -71,6 +61,9 @@ public:
 
 private:
 	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
+
+	friend class OpenGLCommandExecutor;
+	OpenGLMesh& GetMesh(uint32_t handle) { return m_meshes[handle]; }
 };
 
 RendererBackend* SableUI::RendererBackend::Create(Backend backend)
@@ -125,6 +118,7 @@ static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolatio
 }
 
 bool gladInitialised = false;
+
 void OpenGL3Backend::Initialise()
 {
 	if (gladInitialised)
@@ -137,8 +131,15 @@ void OpenGL3Backend::Initialise()
     {
         SableUI_Runtime_Error("Failed to initialize GLAD");
     }
+
+	m_executor = CommandBufferExecutor::Create(Backend::OpenGL, &GetGlobalResources(), &GetContextResources(this));
 	
 	gladInitialised = true;
+}
+
+OpenGL3Backend::~OpenGL3Backend()
+{
+	SableMemory::SB_delete(m_executor);
 }
 
 void OpenGL3Backend::SetBlending(bool enabled)
@@ -307,19 +308,6 @@ void OpenGL3Backend::DrawToScreen(
 // ============================================================================
 // Drawables
 // ============================================================================
-void OpenGL3Backend::ClearDrawableStack()
-{
-	m_drawStack.clear();
-}
-
-void OpenGL3Backend::ClearDrawable(const DrawableBase* drawable)
-{
-	if (!drawable) return;
-	for (DrawableBase* d : m_drawStack)
-		if (d == drawable)
-			m_drawStack.erase(std::remove(m_drawStack.begin(), m_drawStack.end(), d), m_drawStack.end());
-}
-
 static int s_numGpuObjects = 0;
 GpuObject* OpenGL3Backend::CreateGpuObject(
 	const void* vertices, uint32_t numVertices,
@@ -327,7 +315,7 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 	const VertexLayout& layout)
 {
 	GpuObject* obj = SableMemory::SB_new<GpuObject>();
-	obj->m_context = this;
+	obj->context = this;
 	obj->numVertices = numVertices;
 	obj->numIndices = numIndices;
 	obj->layout = layout;
@@ -342,12 +330,15 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 	glGenBuffers(1, &GLmesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, GLmesh.vbo);
 	glBufferData(GL_ARRAY_BUFFER, numVertices * layout.stride, vertices, GL_STATIC_DRAW);
+	obj->vbo = GLmesh.vbo;
 
+	obj->ebo = uint32_t(-1);
 	if (indices && numIndices > 0)
 	{
 		glGenBuffers(1, &GLmesh.ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLmesh.ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+		obj->ebo = GLmesh.ebo;
 	}
 
 	uint32_t attrIndex = 0;
@@ -402,13 +393,13 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 
 	glBindVertexArray(0);
 
-	obj->m_handle = handle;
+	obj->handle = handle;
 	return obj;
 }
 
 void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 {
-	auto it = m_meshes.find(obj->m_handle);
+	auto it = m_meshes.find(obj->handle);
 	if (it == m_meshes.end()) return;
 
 	OpenGLMesh& mesh = it->second;
@@ -418,88 +409,28 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 	if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
 
 	m_meshes.erase(it);
-	FreeHandle(obj->m_handle);
+	FreeHandle(obj->handle);
 	s_numGpuObjects--;
 
-	obj->m_context = nullptr;
+	obj->context = nullptr;
 	SableMemory::SB_delete(obj);
 }
 
-bool OpenGL3Backend::Draw(const GpuFramebuffer* framebuffer)
+void OpenGL3Backend::ExecuteCommandBuffer()
 {
-	if (m_drawStack.empty()) return false;
-	if (!framebuffer) return false;
-
-	ContextResources& res = GetContextResources(this);
-
-	std::set<unsigned int> drawnUUIDs;
-
-	bool scissorActive = false;
-	Rect currentScissor;
-
-	for (DrawableBase* drawable : m_drawStack)
-	{
-		if (!drawable) continue;
-		if (!drawnUUIDs.insert(drawable->uuid).second) continue;
-
-		bool wantScissor = drawable->scissorEnabled;
-
-		if (wantScissor)
-		{
-			Rect newScissor = drawable->scissorRect;
-
-			newScissor.y = framebuffer->height - (newScissor.y + newScissor.h);
-
-			if (!scissorActive || currentScissor != newScissor)
-			{
-				if (!scissorActive)
-					glEnable(GL_SCISSOR_TEST);
-
-				int finalY = std::max(0, newScissor.y);
-
-				glScissor(newScissor.x, finalY, newScissor.w, newScissor.h);
-				currentScissor = newScissor;
-				scissorActive = true;
-			}
-		}
-		else
-		{
-			if (scissorActive)
-			{
-				glDisable(GL_SCISSOR_TEST);
-				scissorActive = false;
-			}
-		}
-
-		drawable->Draw(framebuffer, res);
-
-		if (drawable->orphan)
-			SableMemory::SB_delete(drawable);
-	}
-
-	if (scissorActive)
-		glDisable(GL_SCISSOR_TEST);
-
-	m_drawStack.clear();
-	return true;
+	m_executor->Execute(m_commandBuffer);
 }
 
-void OpenGL3Backend::AddToDrawStack(DrawableBase* drawable)
+void OpenGL3Backend::DrawGpuObject(const GpuObject* obj)
 {
-	m_drawStack.push_back(drawable);
-}
-
-void OpenGL3Backend::AddToDrawStack(const GpuObject* obj)
-{
-	OpenGLMesh& mesh = m_meshes[obj->m_handle];
+	OpenGLMesh& mesh = GetMesh(obj->handle);
 	if (mesh.vao == 0)
 	{
-		SableUI_Error("Invalid GPU object");
+		SableUI_Error("Invalid GPU object, VAO is null");
 		return;
 	}
 
-	glBindVertexArray(mesh.vao);
-	glDrawElements(GL_TRIANGLES, obj->numIndices, GL_UNSIGNED_INT, 0);
+	// m_commandBuffer.BindVertexBuffer
 }
 
 // ============================================================================
@@ -917,7 +848,7 @@ GpuTexture2DArray::~GpuTexture2DArray()
 // ============================================================================
 void GpuObject::AddToDrawStack() const
 {
-	m_context->AddToDrawStack(this);
+	context->DrawGpuObject(this);
 }
 
 GpuObject::GpuObject()
@@ -927,8 +858,8 @@ GpuObject::GpuObject()
 
 GpuObject::~GpuObject()
 {
-	if (m_context)
-		m_context->DestroyGpuObject(this);
+	if (context)
+		context->DestroyGpuObject(this);
 }
 
 int GpuObject::GetNumInstances()

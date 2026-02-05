@@ -61,7 +61,7 @@ void SableUI::TextCacheFactory::ShutdownFactory(RendererBackend* renderer)
 	{
 		for (auto& pair : it->second.m_cache)
 		{
-			pair.second.gpuObject->m_context->DestroyGpuObject(pair.second.gpuObject);
+			pair.second.gpuObject->context->DestroyGpuObject(pair.second.gpuObject);
 		}
 		s_textCacheFactories.erase(it);
 	}
@@ -108,7 +108,7 @@ void SableUI::TextCacheFactory::CleanCache_priv()
 	{
 		if (pair.second.refCount <= 0 && pair.second.lastConsumedFrame < m_currentFrame)
 		{
-			pair.second.gpuObject->m_context->DestroyGpuObject(pair.second.gpuObject);
+			pair.second.gpuObject->context->DestroyGpuObject(pair.second.gpuObject);
 			toDelete.push_back(pair.first);
 		}
 	}
@@ -124,7 +124,7 @@ void TextCacheFactory::Delete(TextCacheKey key)
 	auto it = m_cache.find(key);
 	if (it != m_cache.end())
 	{
-		it->second.gpuObject->m_context->DestroyGpuObject(it->second.gpuObject);
+		it->second.gpuObject->context->DestroyGpuObject(it->second.gpuObject);
 		m_cache.erase(it);
 	}
 	else

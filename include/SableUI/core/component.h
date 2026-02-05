@@ -5,6 +5,8 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/states/state_base.h>
+#include <SableUI/core/command_buffer.h>
+#include <SableUI/core/drawable.h>
 #include <type_traits>
 #include <vector>
 #include <string>
@@ -31,7 +33,7 @@ namespace SableUI
 		void BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info = {});
 		void SetRenderer(RendererBackend* renderer);
 		RendererBackend* GetRenderer();
-		void Render(int z = 0);
+		void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, int z = 0);
 
 		BaseComponent* AddComponent(const std::string& componentName);
 		template <typename T>
@@ -40,10 +42,10 @@ namespace SableUI
 		Element* GetRootElement();
 		void SetRootElement(Element* element);
 		int GetNumChildren() const;
-		bool Rerender(bool* hasContentsChanged = nullptr);
+		bool Rerender(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, bool* hasContentsChanged = nullptr);
 
 		void HandleInput(const UIEventContext& ctx);
-		bool CheckAndUpdate();
+		bool CheckAndUpdate(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources);
 		void PostLayoutUpdate(const UIEventContext& ctx);
 
 		void RegisterState(StateBase* state);

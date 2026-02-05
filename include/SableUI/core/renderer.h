@@ -1,6 +1,6 @@
 #pragma once
+#include <SableUI/core/command_buffer.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/drawable.h>
 #include <cstdint>
 #include <vector>
 #include <optional>
@@ -103,8 +103,10 @@ namespace SableUI
 		static int GetNumInstances();
 		GpuObject();
 		~GpuObject();
-		RendererBackend* m_context = nullptr;
-		uint32_t m_handle = 0;
+		RendererBackend* context = nullptr;
+		uint32_t handle = 0;
+		uint32_t vbo = 0;
+		uint32_t ebo = 0;
 		uint32_t numVertices = 0;
 		uint32_t numIndices = 0;
 		VertexLayout layout{};
@@ -113,8 +115,6 @@ namespace SableUI
 	};
 
 	// Renderer
-	enum class Backend { Undef, OpenGL, Vulkan, DirectX, Metal };
-
 	enum class BlendFactor
 	{
 		Zero,
@@ -143,6 +143,7 @@ namespace SableUI
 	struct GpuFramebuffer;
 	struct Element;
 	class Window;
+	class DrawableBase;
 	struct CustomTargetQueue
 	{
 	public:
@@ -168,6 +169,11 @@ namespace SableUI
 		CustomTargetQueue& operator=(CustomTargetQueue&& other) = delete;
 	};
 
+	struct OpenGLMesh
+	{
+		uint32_t vao = 0, vbo = 0, ebo = 0;
+	};
+
 	class RendererBackend
 	{
 	public:
@@ -179,12 +185,12 @@ namespace SableUI
 		virtual void SetBlending(bool enabled) = 0;
 		virtual void SetBlendFunction(BlendFactor src, BlendFactor dst) = 0;
 		virtual void CheckErrors() = 0;
+
+		CommandBuffer& GetCommandBuffer() { return m_commandBuffer; };
+		void ResetCommandBuffer() { m_commandBuffer.Reset(); };
+		virtual void ExecuteCommandBuffer() = 0;
 		
-		virtual void ClearDrawableStack() = 0;
-		virtual void ClearDrawable(const DrawableBase* drawable) = 0;
-		virtual void AddToDrawStack(DrawableBase* drawable) = 0;
-		virtual void AddToDrawStack(const GpuObject* obj) = 0;
-		virtual bool Draw(const GpuFramebuffer* target) = 0;
+		virtual void DrawGpuObject(const GpuObject* obj) = 0;
 
 		virtual GpuObject* CreateGpuObject(
 			const void* vertices, uint32_t numVertices,
@@ -212,7 +218,7 @@ namespace SableUI
 			const Rect& destRect,
 			const ivec2& windowSize) = 0;
 
-		bool isDirty() const { return !m_drawStack.empty(); };
+		bool isDirty() const { return !m_commandBuffer.empty(); };
 
 	protected:
 		uint32_t AllocateHandle();
@@ -221,8 +227,9 @@ namespace SableUI
 		std::vector<uint32_t> m_freeHandles;
 		Backend m_backend = Backend::Undef;
 
-		bool m_directDraw = false;
-		std::vector<DrawableBase*> m_drawStack;
+		CommandBuffer m_commandBuffer;
+
+		CommandBufferExecutor* m_executor = nullptr;
 	};
 
 	enum class TextureFormat
@@ -278,7 +285,7 @@ namespace SableUI
 		void CopyImageSubData(const GpuTexture2DArray& src, int srcX, int srcY, int srcZ,
 			int dstX, int dstY, int dstZ, int width, int height, int depth);
 
-		uint32_t m_textureID = 0;
+		uint32_t GetHandle() const { return m_textureID; };
 
 		GpuTexture2DArray(GpuTexture2DArray&& other) noexcept;
 		GpuTexture2DArray& operator=(GpuTexture2DArray&& other) noexcept;
@@ -286,6 +293,7 @@ namespace SableUI
 		GpuTexture2DArray& operator=(const GpuTexture2DArray&) = delete;
 
 	private:
+		uint32_t m_textureID = 0;
 		int m_width = 0, m_height = 0, m_depth = 0;
 	};
 

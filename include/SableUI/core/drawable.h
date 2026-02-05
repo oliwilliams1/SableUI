@@ -2,9 +2,8 @@
 #include <SableUI/core/texture.h>
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/shader.h>
+#include <SableUI/core/command_buffer.h>
 #include <vector>
-#include <cstdint>
 #include <optional>
 
 namespace SableUI
@@ -21,24 +20,12 @@ namespace SableUI
 
 	struct GpuObject;
 	struct GpuFramebuffer;
-	struct ContextResources {
-		GpuObject* rectObject = nullptr;
-	};
-
-	struct GlobalResources {
-		Shader s_rect;
-		uint32_t ubo_rect = 0;
-
-		Shader s_text;
-		uint32_t ubo_text = 0;
-		uint32_t u_textAtlas = 0;
-	};
 
 	enum class UboBinding : signed long long
 	{
-		Rect = 0,
-		Text = 1,
-		Global = 2,
+		Global = 0,
+		Rect = 1,
+		Text = 2
 	};
 
 	struct alignas(16) RectDrawData
@@ -59,6 +46,11 @@ namespace SableUI
 		float pos[2];
 	};
 
+	struct alignas(16) CommonTexturesDrawData
+	{
+
+	};
+
 	void InitDrawables();
 	void DestroyDrawables();
 	class RendererBackend;
@@ -71,7 +63,7 @@ namespace SableUI
 		DrawableBase();
 		virtual ~DrawableBase();
 		static int GetNumInstances();
-		virtual void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) = 0;
+		virtual void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) = 0;
 		void setZ(int z) { this->m_zIndex = z; }
 		int m_zIndex = 0;
 		Rect m_rect = { 0, 0, 0, 0 };
@@ -103,7 +95,7 @@ namespace SableUI
 			bool clipEnabled,
 			const Rect& clipRect);
 
-		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
 
 		std::optional<Colour> m_colour = std::nullopt;
 		std::optional<Colour> m_borderColour = std::nullopt;
@@ -118,7 +110,7 @@ namespace SableUI
 		static int GetNumInstances();
 		void Update(Rect& rect, Colour colour, PanelType type,
 			float pBSize = 0.0f, const std::vector<int>& segments = { 0 });
-		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 2;
 		std::vector<int> m_offsets;
@@ -141,7 +133,7 @@ namespace SableUI
 			bool clipEnabled,
 			const Rect& clipRect);
 
-		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
 		void RegisterTextureDependancy(BaseComponent* component);
 		void DeregisterTextureDependancy(BaseComponent* component);
 
@@ -157,7 +149,7 @@ namespace SableUI
 		static int GetNumInstances();
 		void Update(Rect& rect, bool clipEnabled,
 			const Rect& clipRect);
-		void Draw(const GpuFramebuffer* framebuffer, ContextResources& res) override;
+		void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
 		_Text m_text;
 	};
 }

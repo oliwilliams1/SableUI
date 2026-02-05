@@ -545,3 +545,12 @@ void SableUI::StepCachedTexturesCleaner()
 
 	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
 }
+
+uint32_t Texture::GetHandle() const
+{
+	auto gpu = m_cachedGpu;
+	if (!gpu)
+		return 0;
+
+	return gpu->gpuTexture.GetHandle();
+}

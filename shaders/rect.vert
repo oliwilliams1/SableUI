@@ -1,9 +1,9 @@
-#version 330 core
+#version 420 core
 
 layout(location = 0) in vec2 aUV;
 out vec2 uv;
 
-layout(std140) uniform RectBlock
+layout(std140, binding = 1) uniform RectBlock
 {
 	vec4  uRect;         // x, y, w, h (NDC)
 	vec4  uColour;

@@ -7,6 +7,7 @@
 #include <SableUI/core/window.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/command_buffer.h>
 #include <algorithm>
 #include <vector>
 #include <map>
@@ -102,39 +103,27 @@ void SableUI::InitDrawables()
 
 	// rect
 	g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
+
 	glGenBuffers(1, &g_res.ubo_rect);
 	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(RectDrawData), nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	{
-		GLuint program = g_res.s_rect.m_shaderProgram;
-		GLuint blockIndex = glGetUniformBlockIndex(program, "RectBlock");
-		glUniformBlockBinding(program, blockIndex, static_cast<GLuint>(UboBinding::Rect));
-	}
-
-	glBindBufferBase(GL_UNIFORM_BUFFER, static_cast<GLuint>(UboBinding::Rect), g_res.ubo_rect);
-
-	glUseProgram(g_res.s_rect.m_shaderProgram);
-	glUniform1i(glGetUniformLocation(g_res.s_rect.m_shaderProgram, "uTexture"), 0);
+	glBindBufferBase(
+		GL_UNIFORM_BUFFER,
+		static_cast<GLuint>(UboBinding::Rect),
+		g_res.ubo_rect
+	);
 
 	// text
 	g_res.s_text.LoadBasicShaders(text_vert, text_frag);
+
 	glGenBuffers(1, &g_res.ubo_text);
 	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(TextDrawData), nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	{
-		GLuint program = g_res.s_text.m_shaderProgram;
-		GLuint blockIndex = glGetUniformBlockIndex(program, "TextBlock");
-		glUniformBlockBinding(program, blockIndex, static_cast<GLuint>(UboBinding::Text));
-	}
-
-	glBindBufferBase(GL_UNIFORM_BUFFER, static_cast<GLuint>(UboBinding::Text), g_res.ubo_text);
-
-	glUseProgram(g_res.s_text.m_shaderProgram);
-	glUniform1i(glGetUniformLocation(g_res.s_text.m_shaderProgram, "uAtlas"), 0);
+	glBindBufferBase(
+		GL_UNIFORM_BUFFER,
+		static_cast<GLuint>(UboBinding::Text),
+		g_res.ubo_text
+	);
 
 	shadersInitialized = true;
 }
@@ -147,7 +136,7 @@ void SableUI::DestroyDrawables()
 	if (it != g_contextResources.end())
 	{
 		auto& res = it->second;
-		res.rectObject->m_context->DestroyGpuObject(res.rectObject);
+		res.rectObject->context->DestroyGpuObject(res.rectObject);
 	}
 
 	g_contextResources.clear();
@@ -227,7 +216,7 @@ void DrawableRect::Update(
 	this->scissorRect = clipRect;
 }
 
-void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
 {
 	float x, y, w, h;
 	RectToNDC(m_rect, framebuffer, x, y, w, h);
@@ -268,11 +257,11 @@ void DrawableRect::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 
 	data.useTexture = 0;
 
-	g_res.s_rect.Use();
-
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
-	res.rectObject->AddToDrawStack();
+	cmd.SetPipeline(PipelineType::Text);
+	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
+	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
+	cmd.DrawIndexed(contextResources.rectObject->numIndices);
 }
 
 // ============================================================================
@@ -315,14 +304,16 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 	this->m_offsets = segments;
 }
 
-void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
 {
 	if (m_type == PanelType::Undef ||
 		m_type == PanelType::Base ||
 		m_type == PanelType::Root)
 		return;
 
-	g_res.s_rect.Use();
+	cmd.SetPipeline(PipelineType::Text);
+	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
+	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
 
 	RectDrawData data{};
 	Colour c = m_colour;
@@ -353,10 +344,9 @@ void DrawableSplitter::Draw(const GpuFramebuffer* framebuffer, ContextResources&
 		data.realRect[2] = r.w;
 		data.realRect[3] = r.h;
 
-		glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
+		cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
 
-		res.rectObject->AddToDrawStack();
+		cmd.DrawIndexed(contextResources.rectObject->numIndices);
 	};
 
 	if (m_type == PanelType::HorizontalSplitter)
@@ -430,7 +420,7 @@ void SableUI::DrawableImage::Update(
 	this->scissorRect = clipRect;
 }
 
-void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
 {
 	RectDrawData data{};
 
@@ -471,10 +461,12 @@ void DrawableImage::Draw(const GpuFramebuffer* framebuffer, ContextResources& re
 	g_res.s_rect.Use();
 	m_texture.Bind();
 
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
-
-	res.rectObject->AddToDrawStack();
+	cmd.SetPipeline(PipelineType::Image);
+	cmd.BindTexture(0, m_texture.GetHandle());
+	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
+	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
+	cmd.DrawIndexed(contextResources.rectObject->numIndices);
 }
 
 void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)
@@ -515,7 +507,7 @@ void SableUI::DrawableText::Update(Rect& rect, bool clipEnabled, const Rect& cli
 	this->scissorRect = clipRect;
 };
 
-void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res)
+void DrawableText::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
 {
 	TextDrawData data{};
 	data.targetSize[0] = static_cast<float>(framebuffer->width);
@@ -524,11 +516,10 @@ void DrawableText::Draw(const GpuFramebuffer* framebuffer, ContextResources& res
 	data.pos[0] = m_rect.x;
 	data.pos[1] = m_rect.y + m_rect.h;
 
-	g_res.s_text.Use();
-	glActiveTexture(GL_TEXTURE0);
-	BindTextAtlasTexture();
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(TextDrawData), &data);
-
-	m_text.m_gpuObject->AddToDrawStack();
+	cmd.SetPipeline(PipelineType::Text);
+	cmd.BindTexture(0, GetTextAtlasHandle());
+	cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
+	cmd.BindVertexBuffer(m_text.m_gpuObject->vbo);
+	cmd.BindVertexBuffer(m_text.m_gpuObject->ebo);
+	cmd.DrawIndexed(m_text.m_gpuObject->numIndices);
 }
