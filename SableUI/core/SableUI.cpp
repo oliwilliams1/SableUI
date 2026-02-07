@@ -5,7 +5,7 @@
 #include <SableUI/core/event_scheduler.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/panel.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/text.h>
 #include <SableUI/core/window.h>
 #include <SableUI/styles/theme.h>
@@ -491,7 +491,7 @@ void SableUI::PreInit(int argc, char** argv)
 {
 	if (s_app != nullptr)
 	{
-		SableUI_Runtime_Error("SableUI::PreInit() must be called before SableUI::Initialise()");
+		SableUI_Runtime_Error("SableUI::PreInit() must be called before SableUI::InitialisePrimaryWindow()");
 	}
 
 	for (int i = 0; i < argc; i++)
@@ -513,7 +513,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 {
 	if (s_app != nullptr)
 	{
-		SableUI_Error("SableUI::SetBackend() must be called before SableUI::Initialise()");
+		SableUI_Error("SableUI::SetBackend() must be called before SableUI::InitialisePrimaryWindow()");
 		return;
 	}
 
@@ -523,7 +523,7 @@ void SableUI::SetBackend(const SableUI::Backend& backend)
 	SableUI_Log("Backend set to %s", s_backend == SableUI::Backend::OpenGL ? "OpenGL" : "Vulkan");
 }
  
-SableUI::Window* SableUI::Initialise(const char* name, int width, int height, const WindowInitInfo& info)
+SableUI::Window* SableUI::InitialisePrimaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app != nullptr)
 	{
@@ -561,7 +561,7 @@ void SableUI::Shutdown()
 	SableUI_Log("Shut down successfully");
 }
 
-SableUI::Window* SableUI::CreateSecondaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
+SableUI::Window* SableUI::InitialiseSecondaryWindow(const char* name, int width, int height, const WindowInitInfo& info)
 {
 	if (s_app == nullptr)
 		SableUI_Runtime_Error("SableUI has not been initialised");

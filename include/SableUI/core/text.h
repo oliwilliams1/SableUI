@@ -6,6 +6,7 @@
 
 namespace SableUI
 {
+	struct GpuTexture2DArray;
 	struct FontRange
 	{
 		FontRange();
@@ -121,7 +122,7 @@ namespace SableUI
 
 	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& maxWidth);
 
-	uint32_t GetTextAtlasHandle();
+	const GpuTexture2DArray* GetTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);
 	void InitFontManager();
 	void DestroyFontManager();

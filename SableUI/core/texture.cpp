@@ -2,7 +2,7 @@
 #include <SableUI/SableUI.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Texture"
@@ -546,11 +546,11 @@ void SableUI::StepCachedTexturesCleaner()
 	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
 }
 
-uint32_t Texture::GetHandle() const
+const GpuTexture2D* Texture::GetGpuTexture() const
 {
 	auto gpu = m_cachedGpu;
 	if (!gpu)
-		return 0;
+		return nullptr;
 
-	return gpu->gpuTexture.GetHandle();
+	return &gpu->gpuTexture;
 }

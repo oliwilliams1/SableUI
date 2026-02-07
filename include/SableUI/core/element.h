@@ -1,10 +1,9 @@
 #pragma once
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/command_buffer.h>
 #include <vector>
 #include <string>
 #include <functional>

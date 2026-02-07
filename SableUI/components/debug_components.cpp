@@ -5,7 +5,7 @@
 #include <SableUI/core/element.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/panel.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/scroll_context.h>
 #include <SableUI/core/tab_context.h>
 #include <SableUI/core/text.h>

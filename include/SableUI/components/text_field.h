@@ -1,6 +1,6 @@
 #pragma once
 #include <SableUI/core/component.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/window.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>

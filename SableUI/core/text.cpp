@@ -27,7 +27,7 @@
 #include FT_MODULE_H
 #include FT_FREETYPE_H
 
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/core/text_cache.h>
@@ -371,7 +371,7 @@ public:
 	FT_Library ft_library = nullptr;
 
 	void ResizeTextureArray(int newDepth);
-	uint32_t GetTextAtlasTextureID() const { return atlasTextureArray.GetHandle(); }
+	const SableUI::GpuTexture2DArray* GetTextAtlasTexture() const { return &atlasTextureArray; }
 
 	std::map<char_t, Character> characters;
 	bool FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange);
@@ -1972,12 +1972,12 @@ SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, in
 	return obj;
 }
 
-uint32_t SableUI::GetTextAtlasHandle()
+const SableUI::GpuTexture2DArray* SableUI::GetTextAtlasTexture()
 {
 	if (!FontManager::GetInstance().isInitialized)
 		FontManager::GetInstance().Initialise();
 
-	return FontManager::GetInstance().GetTextAtlasTextureID();
+	return FontManager::GetInstance().GetTextAtlasTexture();
 }
 
 // ============================================================================

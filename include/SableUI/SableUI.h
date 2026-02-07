@@ -4,7 +4,7 @@
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/panel.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/styles/styles.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/console.h>
@@ -20,8 +20,8 @@ namespace SableUI
 	void PreInit(int argc, char** argv);
 	void SetBackend(const Backend& backend);
 
-	Window* Initialise(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
-	Window* CreateSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
+	Window* InitialisePrimaryWindow(const char* name = "SableUI", int width = 800, int height = 600, const WindowInitInfo& info = {});
+	Window* InitialiseSecondaryWindow(const char* name = "Unnamed window", int width = 800, int height = 600, const WindowInitInfo& info = {});
 	void Shutdown();
 
 	void SetContext(Window* window);

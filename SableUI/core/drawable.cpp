@@ -2,19 +2,17 @@
 #include <SableUI/core/shader.h>
 #include <SableUI/generated/shaders.h>
 #include <SableUI/core/drawable.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/text.h>
 #include <SableUI/core/window.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/command_buffer.h>
 #include <algorithm>
 #include <vector>
 #include <map>
 #include <optional>
 
 using namespace SableUI;
-
 /* rect globals */
 static std::map<void*, SableUI::ContextResources> g_contextResources;
 static GlobalResources g_res{};
@@ -257,10 +255,9 @@ void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 
 	data.useTexture = 0;
 
-	cmd.SetPipeline(PipelineType::Text);
+	cmd.SetPipeline(PipelineType::Rect);
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
-	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
+	cmd.BindGpuObject(contextResources.rectObject->handle);
 	cmd.DrawIndexed(contextResources.rectObject->numIndices);
 }
 
@@ -312,8 +309,7 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 		return;
 
 	cmd.SetPipeline(PipelineType::Text);
-	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
-	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
+	cmd.BindGpuObject(contextResources.rectObject->handle);
 
 	RectDrawData data{};
 	Colour c = m_colour;
@@ -458,14 +454,10 @@ void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fra
 
 	data.useTexture = 1;
 
-	g_res.s_rect.Use();
-	m_texture.Bind();
-
 	cmd.SetPipeline(PipelineType::Image);
-	cmd.BindTexture(0, m_texture.GetHandle());
+	cmd.BindTexture(0, m_texture.GetGpuTexture());
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindVertexBuffer(contextResources.rectObject->vbo);
-	cmd.BindIndexBuffer(contextResources.rectObject->vbo);
+	cmd.BindGpuObject(contextResources.rectObject->handle);
 	cmd.DrawIndexed(contextResources.rectObject->numIndices);
 }
 
@@ -517,9 +509,8 @@ void DrawableText::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 	data.pos[1] = m_rect.y + m_rect.h;
 
 	cmd.SetPipeline(PipelineType::Text);
-	cmd.BindTexture(0, GetTextAtlasHandle());
+	cmd.BindTexture(0, GetTextAtlasTexture());
 	cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
-	cmd.BindVertexBuffer(m_text.m_gpuObject->vbo);
-	cmd.BindVertexBuffer(m_text.m_gpuObject->ebo);
+	cmd.BindGpuObject(m_text.m_gpuObject->handle);
 	cmd.DrawIndexed(m_text.m_gpuObject->numIndices);
 }

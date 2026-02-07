@@ -1,6 +1,6 @@
 #include <SableUI/core/window.h>
 #include <SableUI/SableUI.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/text_cache.h>
 #include <SableUI/utils/console.h>
@@ -11,7 +11,6 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <SableUI/generated/resources.h>
-#include <SableUI/styles/theme.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 #include <unordered_set>
@@ -318,10 +317,13 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 
 void SableUI::Window::MakeContextCurrent()
 {
-	if (m_window)
-	{
-		glfwMakeContextCurrent(m_window);
-	}
+	if (!m_window)
+		return;
+
+	if (glfwGetCurrentContext() == m_window)
+		return;
+
+	glfwMakeContextCurrent(m_window);
 }
 
 bool SableUI::Window::IsMinimized() const
@@ -543,6 +545,7 @@ void SableUI::Window::Draw()
 		glfwSwapBuffers(m_window);
 		m_needsStaticRedraw = false;
 		m_syncFrames--;
+		m_baseRenderer->GetCommandBuffer().Reset();
 	}
 }
 

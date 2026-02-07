@@ -1,7 +1,7 @@
-#include <SableUI/core/command_buffer.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <cstring>
 #include <cstdint>
+#include <utility>
 
 using namespace SableUI;
 
@@ -13,15 +13,15 @@ void CommandBuffer::Reset()
 
 void CommandBuffer::SetPipeline(PipelineType pipeline)
 {
-	if (m_state.currentPipeline == pipeline)
+	if (m_state.pipeline.has_value() && m_state.pipeline.value() == pipeline)
 		return;
-
-	m_state.currentPipeline = pipeline;
 
 	Command cmd;
 	cmd.type = CommandType::SetPipeline;
 	cmd.data = SetPipelineCmd{ pipeline };
 	m_commands.push_back(std::move(cmd));
+
+	m_state.pipeline = pipeline;
 }
 
 void CommandBuffer::SetBlendState(bool enabled, BlendFactor src, BlendFactor dst)
@@ -30,8 +30,6 @@ void CommandBuffer::SetBlendState(bool enabled, BlendFactor src, BlendFactor dst
 	cmd.type = CommandType::SetBlendState;
 	cmd.data = SetBlendStateCmd{ enabled, src, dst };
 	m_commands.push_back(std::move(cmd));
-
-	m_state.blendEnabled = enabled;
 }
 
 void CommandBuffer::SetScissor(int x, int y, int width, int height)
@@ -40,35 +38,20 @@ void CommandBuffer::SetScissor(int x, int y, int width, int height)
 	cmd.type = CommandType::SetScissor;
 	cmd.data = SetScissorCmd{ x, y, width, height };
 	m_commands.push_back(std::move(cmd));
-
-	m_state.scissorEnabled = true;
 }
 
 void CommandBuffer::DisableScissor()
 {
-	if (!m_state.scissorEnabled)
-		return;
-
 	Command cmd;
 	cmd.type = CommandType::DisableScissor;
 	m_commands.push_back(std::move(cmd));
-
-	m_state.scissorEnabled = false;
 }
 
-void CommandBuffer::BindVertexBuffer(uint32_t vbo)
+void CommandBuffer::BindGpuObject(uint32_t handle)
 {
 	Command cmd;
-	cmd.type = CommandType::BindVertexBuffer;
-	cmd.data = BindVertexBufferCmd{ vbo };
-	m_commands.push_back(std::move(cmd));
-}
-
-void CommandBuffer::BindIndexBuffer(uint32_t ebo)
-{
-	Command cmd;
-	cmd.type = CommandType::BindIndexBuffer;
-	cmd.data = BindIndexBufferCmd{ ebo };
+	cmd.type = CommandType::BindGpuObject;
+	cmd.data = BindGpuObjectCmd{ handle };
 	m_commands.push_back(std::move(cmd));
 }
 
@@ -80,11 +63,14 @@ void CommandBuffer::BindUniformBuffer(uint32_t binding, uint32_t ubo)
 	m_commands.push_back(std::move(cmd));
 }
 
-void CommandBuffer::BindTexture(uint32_t slot, uint32_t texture)
+void CommandBuffer::BindTexture(uint32_t slot, const GpuTexture* texture)
 {
+	if (!texture)
+		return;
+
 	Command cmd;
 	cmd.type = CommandType::BindTexture;
-	cmd.data = BindTextureCmd{ slot, texture };
+	cmd.data = BindTextureCmd{ slot, texture->GetHandle(), texture->GetType() };
 	m_commands.push_back(std::move(cmd));
 }
 
@@ -94,7 +80,6 @@ void CommandBuffer::UpdateUniformBuffer(uint32_t ubo, uint32_t offset, uint32_t 
 	cmd.type = CommandType::UpdateUniformBuffer;
 	cmd.data = UpdateUniformBufferCmd{ ubo, offset, size };
 
-	// Copy data inline
 	cmd.inlineData.resize(size);
 	std::memcpy(cmd.inlineData.data(), data, size);
 

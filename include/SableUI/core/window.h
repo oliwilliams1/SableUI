@@ -1,5 +1,5 @@
 #pragma once
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>

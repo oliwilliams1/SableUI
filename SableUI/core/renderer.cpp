@@ -1,5 +1,5 @@
 #include <SableUI/core/drawable.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/element.h> // For SB_delete (~Element())
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>

@@ -62,6 +62,7 @@ namespace SableUI
 	};
 
 	class BaseComponent;
+	struct GpuTexture2D;
 	struct Texture
 	{
 		Texture();
@@ -88,7 +89,7 @@ namespace SableUI
 		int m_width = -1;
 		int m_height = -1;
 
-		uint32_t GetHandle() const;
+		const GpuTexture2D* GetGpuTexture() const;
 
 	private:
 		void GenerateDefaultTexture();

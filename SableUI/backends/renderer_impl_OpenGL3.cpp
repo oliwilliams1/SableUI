@@ -1,10 +1,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/shader.h>
+#include <SableUI/types/renderer_types.h>
+#include <SableUI/renderer/gpu_texture.h>
+#include <SableUI/renderer/gpu_object.h>
+#include <SableUI/renderer/gpu_framebuffer.h>
+#include <variant>
 
 #include <SableUI/utils/console.h>
 #undef SABLEUI_SUBSYSTEM
@@ -17,6 +23,9 @@
 
 using namespace SableUI;
 
+// ============================================================================
+// OpenGL Backend
+// ============================================================================
 class OpenGL3Backend : public RendererBackend
 {
 public:
@@ -27,12 +36,8 @@ public:
 	void Viewport(int x, int y, int width, int height) override;
 	void SetBlending(bool enabled) override;
 	void SetBlendFunction(BlendFactor src, BlendFactor dst) override;
-
 	void CheckErrors() override;
-
 	void ExecuteCommandBuffer() override;
-
-	void DrawGpuObject(const GpuObject* obj) override;
 
 	GpuObject* CreateGpuObject(
 		const void* vertices, uint32_t numVertices,
@@ -60,6 +65,10 @@ public:
 		const ivec2& windowSize) override;
 
 private:
+	struct OpenGLMesh
+	{
+		GLuint vao = 0, vbo = 0, ebo = 0;
+	};
 	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
 
 	friend class OpenGLCommandExecutor;
@@ -80,7 +89,10 @@ RendererBackend* SableUI::RendererBackend::Create(Backend backend)
 	}
 }
 
-static GLenum BlendFactorToOpenGLEnum(BlendFactor factor)
+// ============================================================================
+// Abstract Type Conversions
+// ============================================================================
+static GLenum BlendFactorToGL(BlendFactor factor)
 {
 	switch (factor)
 	{
@@ -105,6 +117,16 @@ static GLenum BlendFactorToOpenGLEnum(BlendFactor factor)
 	}
 }
 
+static GLenum TextureInterpolationToGL(TextureInterpolation interp)
+{
+	switch (interp)
+	{
+	case TextureInterpolation::Nearest: return GL_NEAREST;
+	case TextureInterpolation::Linear: return GL_LINEAR;
+	default: return GL_NEAREST;
+	}
+}
+
 static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolation)
 {
 	switch (interpolation)
@@ -117,24 +139,82 @@ static GLenum TextureInterpolationToOpenGLEnum(TextureInterpolation interpolatio
 	}
 }
 
-bool gladInitialised = false;
+static inline GLenum TextureFormatToGLFormat(TextureFormat format)
+{
+	switch (format)
+	{
+	case SableUI::TextureFormat::RGBA8:		return GL_RGBA;
+	case SableUI::TextureFormat::RGB8:		return GL_RGB;
+	case SableUI::TextureFormat::RG8:		return GL_RG;
+	case SableUI::TextureFormat::R8:		return GL_RED;
+	case SableUI::TextureFormat::Undefined:	return GL_RGB;
+	default:								return GL_RGB;
+	}
+}
 
+static inline GLenum TextureFormatToGLInternalFormat(TextureFormat format)
+{
+	switch (format)
+	{
+	case SableUI::TextureFormat::RGBA8:		return GL_RGBA8;
+	case SableUI::TextureFormat::RGB8:		return GL_RGB8;
+	case SableUI::TextureFormat::RG8:		return GL_RG8;
+	case SableUI::TextureFormat::R8:		return GL_R8;
+	case SableUI::TextureFormat::Undefined:	return GL_RGB8;
+	default:								return GL_RGB8;
+	}
+}
+
+static inline GLenum TextureTypeToGL(TextureType type)
+{
+	switch (type)
+	{
+	case TextureType::Texture2D:			return GL_TEXTURE_2D;
+	case TextureType::Texture2DArray:		return GL_TEXTURE_2D_ARRAY;
+	default:								return GL_TEXTURE_2D;
+	}
+}
+
+static inline void VertexFormatToGL(VertexFormat format, bool& isInteger, int& count, GLenum& type)
+{
+	switch (format)
+	{
+	case VertexFormat::Float1:	count = 1; type = GL_FLOAT;								break;
+	case VertexFormat::Float2:	count = 2; type = GL_FLOAT;								break;
+	case VertexFormat::Float3:	count = 3; type = GL_FLOAT;								break;
+	case VertexFormat::Float4:	count = 4; type = GL_FLOAT;								break;
+	case VertexFormat::UInt1:	count = 1; type = GL_UNSIGNED_INT;	isInteger = true;	break;
+	case VertexFormat::UInt2:	count = 2; type = GL_UNSIGNED_INT;	isInteger = true;	break;
+	case VertexFormat::UInt3:	count = 3; type = GL_UNSIGNED_INT;	isInteger = true;	break;
+	case VertexFormat::UInt4:	count = 4; type = GL_UNSIGNED_INT;	isInteger = true;	break;
+	case VertexFormat::Int1:	count = 1; type = GL_INT;			isInteger = true;	break;
+	case VertexFormat::Int2:	count = 2; type = GL_INT;			isInteger = true;	break;
+	case VertexFormat::Int3:	count = 3; type = GL_INT;			isInteger = true;	break;
+	case VertexFormat::Int4:	count = 4; type = GL_INT;			isInteger = true;	break;
+	default: break;
+	}
+}
+
+// ============================================================================
+// OpenGL3Backend Implementations
+// ============================================================================
+bool gladInitialised = false;
 void OpenGL3Backend::Initialise()
 {
-	if (gladInitialised)
-		return;
+	if (!gladInitialised)
+	{
+		SableUI_Log("Using OpenGL backend");
 
-	SableUI_Log("Using OpenGL backend");
-
-	// init after window is cleared
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) 
-    {
-        SableUI_Runtime_Error("Failed to initialize GLAD");
-    }
-
-	m_executor = CommandBufferExecutor::Create(Backend::OpenGL, &GetGlobalResources(), &GetContextResources(this));
+		// init after window is cleared
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) 
+		{
+			SableUI_Runtime_Error("Failed to initialize GLAD");
+		}
 	
-	gladInitialised = true;
+		gladInitialised = true;
+	}
+
+	m_executor = CommandBufferExecutor::Create(Backend::OpenGL, &GetGlobalResources(), &GetContextResources(this), this);
 }
 
 OpenGL3Backend::~OpenGL3Backend()
@@ -150,7 +230,7 @@ void OpenGL3Backend::SetBlending(bool enabled)
 
 void OpenGL3Backend::SetBlendFunction(BlendFactor src, BlendFactor dst)
 {
-	glBlendFunc(BlendFactorToOpenGLEnum(src), BlendFactorToOpenGLEnum(dst));
+	glBlendFunc(BlendFactorToGL(src), BlendFactorToGL(dst));
 }
 
 void OpenGL3Backend::Clear(float r, float g, float b, float a)
@@ -302,7 +382,7 @@ void OpenGL3Backend::DrawToScreen(
 	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
 
-	c_res.rectObject->AddToDrawStack();
+	//c_res.rectObject->AddToDrawStack();
 }
 
 // ============================================================================
@@ -350,22 +430,7 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 		GLboolean normalized = attr.normalised ? GL_TRUE : GL_FALSE;
 		bool isInteger = false;
 
-		switch (attr.format)
-		{
-		case VertexFormat::Float1: count = 1; type = GL_FLOAT; break;
-		case VertexFormat::Float2: count = 2; type = GL_FLOAT; break;
-		case VertexFormat::Float3: count = 3; type = GL_FLOAT; break;
-		case VertexFormat::Float4: count = 4; type = GL_FLOAT; break;
-		case VertexFormat::UInt1: count = 1; type = GL_UNSIGNED_INT; isInteger = true; break;
-		case VertexFormat::UInt2: count = 2; type = GL_UNSIGNED_INT; isInteger = true; break;
-		case VertexFormat::UInt3: count = 3; type = GL_UNSIGNED_INT; isInteger = true; break;
-		case VertexFormat::UInt4: count = 4; type = GL_UNSIGNED_INT; isInteger = true; break;
-		case VertexFormat::Int1: count = 1; type = GL_INT; isInteger = true; break;
-		case VertexFormat::Int2: count = 2; type = GL_INT; isInteger = true; break;
-		case VertexFormat::Int3: count = 3; type = GL_INT; isInteger = true; break;
-		case VertexFormat::Int4: count = 4; type = GL_INT; isInteger = true; break;
-		default: break;
-		}
+		VertexFormatToGL(attr.format, isInteger, count, type);
 
 		if (isInteger)
 		{
@@ -419,18 +484,6 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 void OpenGL3Backend::ExecuteCommandBuffer()
 {
 	m_executor->Execute(m_commandBuffer);
-}
-
-void OpenGL3Backend::DrawGpuObject(const GpuObject* obj)
-{
-	OpenGLMesh& mesh = GetMesh(obj->handle);
-	if (mesh.vao == 0)
-	{
-		SableUI_Error("Invalid GPU object, VAO is null");
-		return;
-	}
-
-	// m_commandBuffer.BindVertexBuffer
 }
 
 // ============================================================================
@@ -503,68 +556,32 @@ void SableUI::RenderTarget::Bind() const
 }
 
 // ============================================================================
-// Texture2D
+// Gpu Textures
 // ============================================================================
-static inline GLenum TextureFormatToGLFormat(TextureFormat format)
-{
-	switch (format)
-	{
-	case SableUI::TextureFormat::RGBA8:
-		return GL_RGBA;
-	case SableUI::TextureFormat::RGB8:
-		return GL_RGB;
-	case SableUI::TextureFormat::RG8:
-		return GL_RG;
-	case SableUI::TextureFormat::R8:
-		return GL_RED;
-	case SableUI::TextureFormat::Undefined:
-		return GL_RGB;
-	default:
-		return GL_RGB;
-	}
-}
-
-static inline GLenum TextureFormatToGLInternalFormat(TextureFormat format)
-{
-	switch (format)
-	{
-	case SableUI::TextureFormat::RGBA8:
-		return GL_RGBA8;
-	case SableUI::TextureFormat::RGB8:
-		return GL_RGB8;
-	case SableUI::TextureFormat::RG8:
-		return GL_RG8;
-	case SableUI::TextureFormat::R8:
-		return GL_R8;
-	case SableUI::TextureFormat::Undefined:
-		return GL_RGB8;
-	default:
-		return GL_RGB8;
-	}
-}
-
 void GpuTexture2D::Bind(uint32_t slot) const
 {
 	if (slot > 15)
 		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
+
 	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	glBindTexture(GL_TEXTURE_2D, handle);
 }
 
 void GpuTexture2D::Unbind(uint32_t slot) const
 {
 	if (slot > 15)
 		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
+
 	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void GpuTexture2D::CreateStorage(int width, int height, TextureFormat format, TextureUsage usage)
 {
-	if (m_textureID == 0)
-		glGenTextures(1, &m_textureID);
+	if (handle == 0)
+		glGenTextures(1, &handle);
 
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	glBindTexture(GL_TEXTURE_2D, handle);
 
 	GLenum internalFormat = TextureFormatToGLInternalFormat(format);
 
@@ -595,10 +612,10 @@ void GpuTexture2D::CreateStorage(int width, int height, TextureFormat format, Te
 
 void GpuTexture2D::SetData(const uint8_t* pixels, int width, int height, TextureFormat p_format)
 {
-	if (m_textureID == 0)
-		glGenTextures(1, &m_textureID);
+	if (handle == 0)
+		glGenTextures(1, &handle);
 
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
+	glBindTexture(GL_TEXTURE_2D, handle);
 
 	GLenum internalFormat = TextureFormatToGLInternalFormat(p_format);
 	GLenum format = TextureFormatToGLFormat(p_format);
@@ -619,8 +636,8 @@ void GpuTexture2D::SetData(const uint8_t* pixels, int width, int height, Texture
 
 GpuTexture2D::~GpuTexture2D()
 {
-	if (m_textureID != 0)
-		glDeleteTextures(1, &m_textureID);
+	if (handle != 0)
+		glDeleteTextures(1, &handle);
 }
 
 // ============================================================================
@@ -730,22 +747,30 @@ GpuFramebuffer::~GpuFramebuffer()
 // ============================================================================
 // Texture2DArray
 // ============================================================================
-void GpuTexture2DArray::Bind() const
+void GpuTexture2DArray::Bind(uint32_t slot) const
 {
-	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureID);
+	if (slot > 15)
+		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
+
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, handle);
 }
 
-void GpuTexture2DArray::Unbind() const
+void GpuTexture2DArray::Unbind(uint32_t slot) const
 {
+	if (slot > 15)
+		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
+
+	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 void GpuTexture2DArray::Init(int width, int height, int depth)
 {
-	if (m_textureID == 0)
-		glGenTextures(1, &m_textureID);
+	if (handle == 0)
+		glGenTextures(1, &handle);
 
-	glBindTexture(GL_TEXTURE_2D_ARRAY, m_textureID);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, handle);
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, width, height, depth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -767,7 +792,6 @@ void GpuTexture2DArray::Resize(int newDepth)
 	glGenTextures(1, &newTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
 
-	// Changed from GL_RGB8 to GL_R8
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, m_width, m_height, newDepth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -776,13 +800,13 @@ void GpuTexture2DArray::Resize(int newDepth)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	/* copy old texture to new, with new depth */
-	GLuint oldAtlasTextureArray = m_textureID;
+	GLuint oldAtlasTextureArray = handle;
 	glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
 		newTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
 		m_width, m_height, m_depth);
 
 	glDeleteTextures(1, &oldAtlasTextureArray);
-	m_textureID = newTextureArray;
+	handle = newTextureArray;
 	m_depth = newDepth;
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
@@ -790,7 +814,6 @@ void GpuTexture2DArray::Resize(int newDepth)
 void GpuTexture2DArray::SubImage(int xOffset, int yOffset, int zOffset,
 	int width, int height, int depth, const uint8_t* pixels)
 {
-	// Changed from GL_RGB to GL_RED
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, xOffset, yOffset, zOffset,
 		width, height, depth, GL_RED, GL_UNSIGNED_BYTE, pixels);
 }
@@ -799,58 +822,19 @@ void GpuTexture2DArray::CopyImageSubData(const GpuTexture2DArray& src,
 	int srcX, int srcY, int srcZ, int dstX,
 	int dstY, int dstZ, int width, int height, int depth)
 {
-	glCopyImageSubData(src.m_textureID, GL_TEXTURE_2D_ARRAY, 0,
-		srcX, srcY, srcZ, m_textureID, GL_TEXTURE_2D_ARRAY, 0, \
+	glCopyImageSubData(src.handle, GL_TEXTURE_2D_ARRAY, 0,
+		srcX, srcY, srcZ, handle, GL_TEXTURE_2D_ARRAY, 0,
 		dstX, dstY, dstZ, width, height, depth);
-}
-
-GpuTexture2DArray::GpuTexture2DArray(GpuTexture2DArray&& other) noexcept
-	: m_textureID(other.m_textureID),
-	m_width(other.m_width),
-	m_height(other.m_height),
-	m_depth(other.m_depth)
-{
-	other.m_textureID = 0;
-	other.m_width = 0;
-	other.m_height = 0;
-	other.m_depth = 0;
-}
-
-GpuTexture2DArray& SableUI::GpuTexture2DArray::operator=(GpuTexture2DArray&& other) noexcept
-{
-	if (this != &other)
-	{
-		if (m_textureID != 0)
-		{
-			glDeleteTextures(1, &m_textureID);
-		}
-
-		m_textureID = other.m_textureID;
-		m_width = other.m_width;
-		m_height = other.m_height;
-		m_depth = other.m_depth;
-
-		other.m_textureID = 0;
-		other.m_width = 0;
-		other.m_height = 0;
-		other.m_depth = 0;
-	}
-	return *this;
 }
 
 GpuTexture2DArray::~GpuTexture2DArray()
 {
-	glDeleteTextures(1, &m_textureID);
+	glDeleteTextures(1, &handle);
 }
 
 // ===========================================================================
 // Gpu Object
 // ============================================================================
-void GpuObject::AddToDrawStack() const
-{
-	context->DrawGpuObject(this);
-}
-
 GpuObject::GpuObject()
 {
 	s_numGpuObjects++;
@@ -865,4 +849,244 @@ GpuObject::~GpuObject()
 int GpuObject::GetNumInstances()
 {
 	return s_numGpuObjects;
+}
+
+// ============================================================================
+// OpenGL Command Buffer Executor
+// ============================================================================
+class OpenGLCommandExecutor : public CommandBufferExecutor
+{
+public:
+	OpenGLCommandExecutor(GlobalResources* globalRes, ContextResources* contextRes, OpenGL3Backend* backend)
+		: m_globalRes(globalRes), m_contextRes(contextRes), m_backend(backend) {};
+
+	void Execute(const CommandBuffer& cmdBuffer) override
+	{
+		SableUI_Log("Executing %zu commands", cmdBuffer.GetCommandCount());
+		for (const Command& cmd : cmdBuffer.GetCommands())
+		{
+			switch (cmd.type)
+			{
+			case CommandType::SetPipeline:
+				ExecuteSetPipeline(std::get<SetPipelineCmd>(cmd.data));
+				break;
+
+			case CommandType::SetBlendState:
+				ExecuteSetBlendState(std::get<SetBlendStateCmd>(cmd.data));
+				break;
+
+			case CommandType::SetScissor:
+				ExecuteSetScissor(std::get<SetScissorCmd>(cmd.data));
+				break;
+
+			case CommandType::DisableScissor:
+				glDisable(GL_SCISSOR_TEST);
+				break;
+
+			case CommandType::BindGpuObject:
+				ExecuteBindGpuObject(std::get<BindGpuObjectCmd>(cmd.data));
+				break;
+
+			case CommandType::BindUniformBuffer:
+				ExecuteBindUniformBuffer(std::get<BindUniformBufferCmd>(cmd.data));
+				break;
+
+			case CommandType::BindTexture:
+				ExecuteBindTexture(std::get<BindTextureCmd>(cmd.data));
+				break;
+
+			case CommandType::UpdateUniformBuffer:
+				ExecuteUpdateUniformBuffer(std::get<UpdateUniformBufferCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::DrawIndexed:
+				ExecuteDrawIndexed(std::get<DrawIndexedCmd>(cmd.data));
+				break;
+
+			case CommandType::Draw:
+				ExecuteDraw(std::get<DrawCmd>(cmd.data));
+				break;
+
+			case CommandType::Clear:
+				ExecuteClear(std::get<ClearCmd>(cmd.data));
+				break;
+
+			case CommandType::BeginRenderPass:
+				ExecuteBeginRenderPass(std::get<BeginRenderPassCmd>(cmd.data));
+				break;
+
+			case CommandType::EndRenderPass:
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				break;
+
+			case CommandType::BlitFramebuffer:
+				ExecuteBlitFramebuffer(std::get<BlitFramebufferCmd>(cmd.data));
+				break;
+
+			default:
+				SableUI_Error("Unknown command type");
+				break;
+			}
+		}
+	}
+
+private:
+	GlobalResources* m_globalRes;
+	ContextResources* m_contextRes;
+	OpenGL3Backend* m_backend;
+
+	void ExecuteSetPipeline(const SetPipelineCmd& cmd)
+	{
+		switch (cmd.pipeline)
+		{
+		case PipelineType::Rect:
+			m_globalRes->s_rect.Use();
+			break;
+		case PipelineType::Text:
+			m_globalRes->s_text.Use();
+			break;
+		case PipelineType::Image:
+			m_globalRes->s_rect.Use();
+			break;
+		}
+	}
+
+	void ExecuteSetBlendState(const SetBlendStateCmd& cmd)
+	{
+		if (cmd.enabled)
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(BlendFactorToGL(cmd.srcFactor), BlendFactorToGL(cmd.dstFactor));
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+		}
+	}
+
+	void ExecuteSetScissor(const SetScissorCmd& cmd)
+	{
+		glEnable(GL_SCISSOR_TEST);
+		glScissor(cmd.x, cmd.y, cmd.width, cmd.height);
+	}
+
+	void ExecuteBindGpuObject(const BindGpuObjectCmd& cmd)
+	{
+		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(cmd.handle);
+		if (mesh.vao == 0)
+		{
+			SableUI_Error("Invalid GPU object handle: VAO is null");
+			return;
+		}
+
+		glBindVertexArray(mesh.vao);
+	}
+
+	void ExecuteBindUniformBuffer(const BindUniformBufferCmd& cmd)
+	{
+		glBindBufferBase(GL_UNIFORM_BUFFER, cmd.binding, cmd.ubo);
+	}
+
+	void ExecuteBindTexture(const BindTextureCmd& cmd)
+	{
+		glActiveTexture(GL_TEXTURE0 + cmd.slot);
+		glBindTexture(TextureTypeToGL(cmd.type), cmd.handle);
+	}
+
+	void ExecuteUpdateUniformBuffer(const UpdateUniformBufferCmd& cmd, const std::vector<uint8_t>& data)
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, cmd.ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, cmd.offset, cmd.size, data.data());
+	}
+
+	void ExecuteDrawIndexed(const DrawIndexedCmd& cmd)
+	{
+		if (cmd.instanceCount > 1)
+		{
+			glDrawElementsInstancedBaseVertex(
+				GL_TRIANGLES,
+				cmd.indexCount,
+				GL_UNSIGNED_INT,
+				(void*)(cmd.firstIndex * sizeof(uint32_t)),
+				cmd.instanceCount,
+				cmd.vertexOffset
+			);
+		}
+		else
+		{
+			glDrawElements(
+				GL_TRIANGLES,
+				cmd.indexCount,
+				GL_UNSIGNED_INT,
+				(void*)(cmd.firstIndex * sizeof(uint32_t))
+			);
+		}
+	}
+
+	void ExecuteDraw(const DrawCmd& cmd)
+	{
+		if (cmd.instanceCount > 1)
+			glDrawArraysInstanced(GL_TRIANGLES, cmd.firstVertex, cmd.vertexCount, cmd.instanceCount);
+		else
+			glDrawArrays(GL_TRIANGLES, cmd.firstVertex, cmd.vertexCount);
+	}
+
+	void ExecuteClear(const ClearCmd& cmd)
+	{
+		glClearColor(cmd.r, cmd.g, cmd.b, cmd.a);
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+
+	void ExecuteBeginRenderPass(const BeginRenderPassCmd& cmd)
+	{
+		if (!cmd.framebuffer->isWindowSurface)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, cmd.framebuffer->GetHandle());
+			glViewport(0, 0, cmd.framebuffer->GetColorAttachments()[0].GetWidth(),
+				cmd.framebuffer->GetColorAttachments()[0].GetHeight());
+		}
+		else
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+	}
+
+	void ExecuteBlitFramebuffer(const BlitFramebufferCmd& cmd)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd.srcFBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cmd.dstFBO);
+		glBlitFramebuffer(
+			cmd.srcX0, cmd.srcY0, cmd.srcX1, cmd.srcY1,
+			cmd.dstX0, cmd.dstY0, cmd.dstX1, cmd.dstY1,
+			GL_COLOR_BUFFER_BIT,
+			TextureInterpolationToGL(cmd.filter)
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+};
+
+SableUI::CommandBufferExecutor* SableUI::CommandBufferExecutor::Create(
+	Backend backend,
+	GlobalResources* globalRes,
+	ContextResources* contextRes,
+	RendererBackend* renderer)
+{
+	if (OpenGL3Backend* oglBackend = dynamic_cast<OpenGL3Backend*>(renderer))
+	{
+		switch (backend)
+		{
+		case SableUI::Backend::OpenGL:
+			return SableMemory::SB_new<OpenGLCommandExecutor>(globalRes, contextRes, oglBackend);
+			break;
+		default:
+			SableUI_Error("Resorting to OpenGL command buffer executor");
+			return SableMemory::SB_new<OpenGLCommandExecutor>(globalRes, contextRes, oglBackend);
+			break;
+		}
+	}
+	else
+	{
+		SableUI_Runtime_Error("OpenGL command buffer executer initialised with a non OpenGL renderer");
+		return nullptr;
+	}
 }

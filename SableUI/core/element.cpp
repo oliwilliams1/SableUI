@@ -1,17 +1,16 @@
 #include <SableUI/core/element.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/events.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/styles/theme.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/component.h>
-#include <SableUI/core/command_buffer.h>
 
 #include <SableUI/utils/console.h>
 #undef SABLEUI_SUBSYSTEM
-#define SABLEUI_SUBSYSTEM "SableUI::Element"
+#define SABLEUI_SUBSYSTEM "Element"
 
 #include <type_traits>
 #include <functional>

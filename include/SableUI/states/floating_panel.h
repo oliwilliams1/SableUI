@@ -3,7 +3,7 @@
 #include <SableUI/states/floating_panel_base.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/core/events.h>
 #include <SableUI/core/element.h>
 #include <type_traits>

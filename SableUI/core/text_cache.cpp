@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <SableUI/core/renderer.h>
+#include <SableUI/renderer/renderer.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/string.h>
 #include <SableUI/core/text.h>

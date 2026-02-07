@@ -102,14 +102,14 @@ add_library(SableUI STATIC
 	"include/SableUI/components/date_picker.h"
 	"include/SableUI/components/debug_components.h"
 	"include/SableUI/components/text_field.h"
-	"include/SableUI/core/command_buffer.h"
+	
 	"include/SableUI/core/component.h"
 	"include/SableUI/core/component_registry.h"
 	"include/SableUI/core/drawable.h"
 	"include/SableUI/core/events.h"
 	"include/SableUI/core/event_scheduler.h"
 	"include/SableUI/core/panel.h"
-	"include/SableUI/core/renderer.h"
+	"include/SableUI/renderer/renderer.h"
 	"include/SableUI/core/scroll_context.h"
 	"include/SableUI/core/text.h"
 	"include/SableUI/core/texture.h"
@@ -130,7 +130,7 @@ add_library(SableUI STATIC
 	"include/SableUI/utils/memory.h"
 	"include/SableUI/utils/string.h"
 	"include/SableUI/utils/utils.h"
-	"SableUI/backends/command_buffer_impl_OpenGL3.cpp"
+	
 	"SableUI/backends/renderer_impl_OpenGL3.cpp"
 	"SableUI/components/button.cpp"
 	"SableUI/components/calendar.cpp"
@@ -161,7 +161,7 @@ add_library(SableUI STATIC
 	"SableUI/utils/memory.cpp"
 	"SableUI/utils/string.cpp"
 	"SableUI/utils/utils.cpp"
-)
+ "include/SableUI/types/renderer_types.h" "include/SableUI/renderer/gpu_texture.h" "include/SableUI/renderer/gpu_framebuffer.h" "include/SableUI/renderer/gpu_object.h")
 
 add_dependencies(SableUI EmbedShaders EmbedResources)
 

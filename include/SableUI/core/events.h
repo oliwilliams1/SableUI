@@ -160,7 +160,7 @@ namespace SableUI
 	{
 		float deltaTime = 0.0f;
 
-		ivec2 mousePos = { 0, 0 };
+		ivec2 mousePos = { -1, -1 };
 		ivec2 mouseDelta = { 0, 0 };
 		vec2 scrollDelta = { 0.0f, 0.0f };
 
