@@ -862,7 +862,6 @@ public:
 
 	void Execute(const CommandBuffer& cmdBuffer) override
 	{
-		SableUI_Log("Executing %zu commands", cmdBuffer.GetCommandCount());
 		for (const Command& cmd : cmdBuffer.GetCommands())
 		{
 			switch (cmd.type)

@@ -283,6 +283,8 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_baseRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	m_baseRenderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
+	SetupDrawableBindings();
+
 	if (width > 0 && height > 0)
 	{
 		m_baseColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
@@ -424,7 +426,6 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 		return !glfwWindowShouldClose(m_window);
 
 	SetContext(this);
-	MakeContextCurrent();
 
 	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
 
@@ -473,17 +474,6 @@ void SableUI::Window::Draw()
 
 	SetContext(this);
 	MakeContextCurrent();
-
-#ifdef _WIN32
-	MSG msg;
-	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		if (msg.message == WM_QUIT)
-			exit(0);
-	}
-#endif
 
 	bool baseLayerDirty = m_baseRenderer->isDirty() || m_needsStaticRedraw;
 	bool anyFloatingPanelDirty = false;

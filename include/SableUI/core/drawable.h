@@ -45,6 +45,7 @@ namespace SableUI
 	};
 
 	void InitDrawables();
+	void SetupDrawableBindings();
 	void DestroyDrawables();
 	class RendererBackend;
 	ContextResources& GetContextResources(RendererBackend* backend);

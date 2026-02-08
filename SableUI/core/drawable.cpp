@@ -105,11 +105,6 @@ void SableUI::InitDrawables()
 	glGenBuffers(1, &g_res.ubo_rect);
 	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(RectDrawData), nullptr, GL_DYNAMIC_DRAW);
-	glBindBufferBase(
-		GL_UNIFORM_BUFFER,
-		static_cast<GLuint>(UboBinding::Rect),
-		g_res.ubo_rect
-	);
 
 	// text
 	g_res.s_text.LoadBasicShaders(text_vert, text_frag);
@@ -117,13 +112,27 @@ void SableUI::InitDrawables()
 	glGenBuffers(1, &g_res.ubo_text);
 	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(TextDrawData), nullptr, GL_DYNAMIC_DRAW);
+
+	shadersInitialized = true;
+
+	// Setup bindings for the current context
+	SetupDrawableBindings();
+}
+
+// NEW FUNCTION - called per-context
+void SableUI::SetupDrawableBindings()
+{
+	glBindBufferBase(
+		GL_UNIFORM_BUFFER,
+		static_cast<GLuint>(UboBinding::Rect),
+		g_res.ubo_rect
+	);
+
 	glBindBufferBase(
 		GL_UNIFORM_BUFFER,
 		static_cast<GLuint>(UboBinding::Text),
 		g_res.ubo_text
 	);
-
-	shadersInitialized = true;
 }
 
 void SableUI::DestroyDrawables()
