@@ -6,6 +6,7 @@
 #include <SableUI/renderer/gpu_framebuffer.h>
 #include <vector>
 #include <optional>
+#include <cstdint>
 
 namespace SableUI
 {
@@ -19,7 +20,7 @@ namespace SableUI
 		Undef
 	};
 
-	enum class UboBinding : signed long long
+	enum class UboBinding : uint32_t
 	{
 		Global = 0,
 		Rect = 1,
@@ -44,9 +45,10 @@ namespace SableUI
 		float pos[2];
 	};
 
-	void InitDrawables();
-	void SetupDrawableBindings();
-	void DestroyDrawables();
+	void SetupGlobalResources(RendererBackend* renderer);
+	void DestroyGlobalResources(RendererBackend* renderer);
+	void SetupContextBindings(RendererBackend* renderer);
+	void DestroyContextResources(RendererBackend* renderer);
 	class RendererBackend;
 	ContextResources& GetContextResources(RendererBackend* backend);
 	GlobalResources& GetGlobalResources();

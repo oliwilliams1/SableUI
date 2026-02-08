@@ -111,6 +111,10 @@ namespace SableUI
 		virtual void SetBlendFunction(BlendFactor src, BlendFactor dst) = 0;
 		virtual void CheckErrors() = 0;
 
+		virtual uint32_t CreateUniformBuffer(size_t size, const void* initialData = nullptr) = 0;
+		virtual void DestroyUniformBuffer(uint32_t ubo) = 0;
+		virtual void BindUniformBufferBase(uint32_t binding, uint32_t ubo) = 0;
+
 		CommandBuffer& GetCommandBuffer() { return m_commandBuffer; };
 		void ResetCommandBuffer() { m_commandBuffer.Reset(); };
 		virtual void ExecuteCommandBuffer() = 0;

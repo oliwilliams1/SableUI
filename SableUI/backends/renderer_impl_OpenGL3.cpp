@@ -37,6 +37,11 @@ public:
 	void SetBlending(bool enabled) override;
 	void SetBlendFunction(BlendFactor src, BlendFactor dst) override;
 	void CheckErrors() override;
+
+	uint32_t CreateUniformBuffer(size_t size, const void* initialData = nullptr) override;
+	void DestroyUniformBuffer(uint32_t ubo) override;
+	void BindUniformBufferBase(uint32_t binding, uint32_t ubo) override;
+
 	void ExecuteCommandBuffer() override;
 
 	GpuObject* CreateGpuObject(
@@ -251,6 +256,27 @@ void OpenGL3Backend::CheckErrors()
 	{
 		SableUI_Error("OpenGL error: %d", err);
 	}
+}
+
+uint32_t OpenGL3Backend::CreateUniformBuffer(size_t size, const void* initialData)
+{
+	GLuint ubo = 0;
+	glGenBuffers(1, &ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, size, initialData, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	return ubo;
+}
+
+void OpenGL3Backend::DestroyUniformBuffer(uint32_t ubo)
+{
+	GLuint buffer = ubo;
+	glDeleteBuffers(1, &buffer);
+}
+
+void OpenGL3Backend::BindUniformBufferBase(uint32_t binding, uint32_t ubo)
+{
+	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
 }
 
 void OpenGL3Backend::BeginRenderPass(const GpuFramebuffer* fbo)

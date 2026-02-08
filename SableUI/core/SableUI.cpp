@@ -620,7 +620,8 @@ App::App(const char* name, int width, int height, const SableUI::WindowInitInfo&
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
 	SableUI::InitFontManager();
-	SableUI::InitDrawables();
+	SableUI::SetupGlobalResources(m_mainWindow->GetBaseRenderer());
+	
 	SetContext(m_mainWindow);
 }
 
@@ -732,13 +733,12 @@ void App::Render()
 App::~App()
 {
 	SableUI::DestroyFontManager();
-	SableUI::DestroyDrawables();
+	SableUI::DestroyGlobalResources(m_mainWindow->GetBaseRenderer());
 
 	for (SableUI::Window* window : m_secondaryWindows) SB_delete(window);
 	m_secondaryWindows.clear();
 
 	SB_delete(m_mainWindow);
-	m_mainWindow = nullptr;
 
 	SableUI::ComponentRegistry::Shutdown();
 	SableUI::SableUI_Window_Terminate_GLFW();

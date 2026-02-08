@@ -1,4 +1,3 @@
-#include <glad/glad.h>
 #include <SableUI/core/shader.h>
 #include <SableUI/generated/shaders.h>
 #include <SableUI/core/drawable.h>
@@ -13,7 +12,8 @@
 #include <optional>
 
 using namespace SableUI;
-/* rect globals */
+
+// rect globals
 static std::map<void*, SableUI::ContextResources> g_contextResources;
 static GlobalResources g_res{};
 
@@ -52,17 +52,6 @@ static inline void RectToNDC(
 	h *= -1.0f;
 }
 
-static GLuint GetUniformLocation(Shader shader, const char* uniformName)
-{
-	shader.Use();
-	GLuint location = glGetUniformLocation(shader.m_shaderProgram, uniformName);
-	if (location == -1)
-	{
-		SableUI_Error("Warning: %s uniform not found!", uniformName);
-	}
-	return location;
-}
-
 ContextResources& SableUI::GetContextResources(RendererBackend* backend)
 {
 	void* ctx = GetCurrentContext_voidType();
@@ -93,7 +82,7 @@ GlobalResources& SableUI::GetGlobalResources()
 	return g_res;
 }
 
-void SableUI::InitDrawables()
+void SableUI::SetupGlobalResources(RendererBackend* renderer)
 {
 	static bool shadersInitialized = false;
 	if (shadersInitialized)
@@ -101,41 +90,30 @@ void SableUI::InitDrawables()
 
 	// rect
 	g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
-
-	glGenBuffers(1, &g_res.ubo_rect);
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(RectDrawData), nullptr, GL_DYNAMIC_DRAW);
+	g_res.ubo_rect = renderer->CreateUniformBuffer(sizeof(RectDrawData), nullptr);
 
 	// text
 	g_res.s_text.LoadBasicShaders(text_vert, text_frag);
+	g_res.ubo_text = renderer->CreateUniformBuffer(sizeof(TextDrawData), nullptr);
 
-	glGenBuffers(1, &g_res.ubo_text);
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_text);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(TextDrawData), nullptr, GL_DYNAMIC_DRAW);
-
+	// setup bindings for the current context
+	SetupContextBindings(renderer);
 	shadersInitialized = true;
-
-	// Setup bindings for the current context
-	SetupDrawableBindings();
 }
 
-// NEW FUNCTION - called per-context
-void SableUI::SetupDrawableBindings()
+void SableUI::DestroyGlobalResources(RendererBackend* renderer)
 {
-	glBindBufferBase(
-		GL_UNIFORM_BUFFER,
-		static_cast<GLuint>(UboBinding::Rect),
-		g_res.ubo_rect
-	);
-
-	glBindBufferBase(
-		GL_UNIFORM_BUFFER,
-		static_cast<GLuint>(UboBinding::Text),
-		g_res.ubo_text
-	);
+	renderer->DestroyUniformBuffer(g_res.ubo_rect);
+	renderer->DestroyUniformBuffer(g_res.ubo_text);
 }
 
-void SableUI::DestroyDrawables()
+void SableUI::SetupContextBindings(RendererBackend* renderer)
+{
+	renderer->BindUniformBufferBase(static_cast<uint32_t>(UboBinding::Rect), g_res.ubo_rect);
+	renderer->BindUniformBufferBase(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
+}
+
+void SableUI::DestroyContextResources(RendererBackend* renderer)
 {
 	void* ctx = SableUI::GetCurrentContext_voidType();
 
