@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <SableUI/renderer/renderer.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/utils/utils.h>
@@ -10,6 +11,7 @@
 #include <SableUI/renderer/gpu_texture.h>
 #include <SableUI/renderer/gpu_object.h>
 #include <SableUI/renderer/gpu_framebuffer.h>
+#include <SableUI/renderer/resource_handle.h>
 #include <variant>
 
 #include <SableUI/utils/console.h>
@@ -908,8 +910,15 @@ public:
 				glDisable(GL_SCISSOR_TEST);
 				break;
 
+			case CommandType::CreateGpuObject:
+				ExecuteCreateGpuObject(std::get<CreateGpuObjectCmd>(cmd.data), cmd.inlineData);
+			
 			case CommandType::BindGpuObject:
 				ExecuteBindGpuObject(std::get<BindGpuObjectCmd>(cmd.data));
+				break;
+
+			case CommandType::DestroyGpuObject:
+				ExecuteDestroyGpuObejct(std::get<DestroyGpuObjectCmd>(cmd.data));
 				break;
 
 			case CommandType::BindUniformBuffer:
@@ -956,6 +965,7 @@ public:
 	}
 
 private:
+	std::unordered_map<ResourceHandle, uint32_t> m_gpuHandles;
 	GlobalResources* m_globalRes;
 	ContextResources* m_contextRes;
 	OpenGL3Backend* m_backend;
@@ -995,18 +1005,6 @@ private:
 		glScissor(cmd.x, cmd.y, cmd.width, cmd.height);
 	}
 
-	void ExecuteBindGpuObject(const BindGpuObjectCmd& cmd)
-	{
-		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(cmd.handle);
-		if (mesh.vao == 0)
-		{
-			SableUI_Error("Invalid GPU object handle: VAO is null");
-			return;
-		}
-
-		glBindVertexArray(mesh.vao);
-	}
-
 	void ExecuteBindUniformBuffer(const BindUniformBufferCmd& cmd)
 	{
 		glBindBufferBase(GL_UNIFORM_BUFFER, cmd.binding, cmd.ubo);
@@ -1016,6 +1014,74 @@ private:
 	{
 		glActiveTexture(GL_TEXTURE0 + cmd.slot);
 		glBindTexture(TextureTypeToGL(cmd.type), cmd.handle);
+	}
+
+	void ExecuteCreateGpuObject(
+		const CreateGpuObjectCmd& cmd,
+		const std::vector<uint8_t>& data)
+	{
+		size_t vertexDataSize = cmd.numVertices * cmd.layout.stride;
+		const void* vertexData = data.data();
+		const uint32_t* indexData = nullptr;
+
+		if (cmd.numIndices > 0)
+			indexData = reinterpret_cast<const uint32_t*>(data.data() + vertexDataSize);
+
+		GpuObject* obj = m_backend->CreateGpuObject(
+			vertexData, cmd.numVertices,
+			indexData, cmd.numIndices,
+			cmd.layout
+		);
+
+		m_gpuHandles[cmd.handle] = obj->handle;
+	}
+
+	uint32_t GetGpuHandle(ResourceHandle cpuHandle)
+	{
+		auto it = m_gpuHandles.find(cpuHandle);
+		if (it == m_gpuHandles.end())
+		{
+			SableUI_Runtime_Error("Invalid CPU handle, resource not created yet");
+			return 0;
+		}
+		return it->second;
+	}
+
+	void ExecuteBindGpuObject(const BindGpuObjectCmd& cmd)
+	{
+		uint32_t gpuHandle = GetGpuHandle(cmd.handle);
+		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(gpuHandle);
+		glBindVertexArray(mesh.vao);
+	}
+
+	void ExecuteDestroyGpuObejct(const DestroyGpuObjectCmd& cmd)
+	{
+		auto it = m_gpuHandles.find(cmd.handle);
+		if (it == m_gpuHandles.end())
+		{
+			SableUI_Warn("Attempted to destroy GPU object that doesn't exist (CPU handle: %u)",	cmd.handle.index);
+			return;
+		}
+
+		uint32_t gpuHandle = it->second;
+
+		auto meshIt = m_backend->m_meshes.find(gpuHandle);
+		if (meshIt == m_backend->m_meshes.end())
+		{
+			SableUI_Error("GPU handle exists in mapping but mesh doesn't exist (GPU handle: %u)", gpuHandle);
+			m_gpuHandles.erase(it);
+			return;
+		}
+
+		OpenGL3Backend::OpenGLMesh& mesh = meshIt->second;
+
+		if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
+		if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
+		if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
+
+		m_backend->m_meshes.erase(meshIt);
+		m_backend->FreeHandle(gpuHandle);
+		m_gpuHandles.erase(it);
 	}
 
 	void ExecuteUpdateUniformBuffer(const UpdateUniformBufferCmd& cmd, const std::vector<uint8_t>& data)

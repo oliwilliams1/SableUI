@@ -1,4 +1,5 @@
 #pragma once
+#include <SableUI/renderer/resource_handle.h>
 #include <cstdint>
 #include <vector>
 #include <variant>
@@ -14,10 +15,14 @@ namespace SableUI
 		SetBlendState,
 		SetScissor,
 		DisableScissor,
-		BindGpuObject,
 		BindUniformBuffer,
 		BindTexture,
+		CreateGpuObject,
+		BindGpuObject,
 		UpdateUniformBuffer,
+		DestroyGpuObject,
+		DeleteTexture2D,
+		DeleteUniformBuffer,
 		DrawIndexed,
 		Draw,
 		Clear,
@@ -164,11 +169,6 @@ namespace SableUI
 		int x, y, width, height;
 	};
 
-	struct BindGpuObjectCmd
-	{
-		uint32_t handle;
-	};
-
 	struct BindUniformBufferCmd
 	{
 		uint32_t binding;
@@ -180,6 +180,24 @@ namespace SableUI
 		uint32_t slot;
 		uint32_t handle;
 		TextureType type;
+	};
+
+	struct CreateGpuObjectCmd
+	{
+		ResourceHandle handle;
+		uint32_t numVertices;
+		uint32_t numIndices;
+		VertexLayout layout;
+	};
+
+	struct BindGpuObjectCmd
+	{
+		ResourceHandle handle;
+	};
+
+	struct DestroyGpuObjectCmd
+	{
+		ResourceHandle handle;
 	};
 
 	struct UpdateUniformBufferCmd
@@ -232,6 +250,8 @@ namespace SableUI
 		BindGpuObjectCmd,
 		BindUniformBufferCmd,
 		BindTextureCmd,
+		CreateGpuObjectCmd,
+		DestroyGpuObjectCmd,
 		UpdateUniformBufferCmd,
 		DrawIndexedCmd,
 		DrawCmd,

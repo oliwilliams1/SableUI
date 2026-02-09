@@ -4,7 +4,8 @@
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/text.h>
 #include <SableUI/core/window.h>
-#include <SableUI/utils/console.h>
+#include <SableUI/types/renderer_types.h>
+#include <SableUI/renderer/resource_handle.h>
 #include <SableUI/utils/utils.h>
 #include <algorithm>
 #include <vector>
@@ -66,14 +67,14 @@ ContextResources& SableUI::GetContextResources(RendererBackend* backend)
 
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
-	resources.rectObject = backend->CreateGpuObject(
+
+	ResourceHandle handle = backend->GetCommandBuffer().CreateGpuObject(
 		rectVertices,
 		sizeof(rectVertices) / sizeof(Vertex),
-		indices,
-		sizeof(indices) / sizeof(unsigned int),
+		indices, sizeof(indices) / sizeof(unsigned int),
 		layout
 	);
-
+	resources.rectObject = handle;
 	return resources;
 }
 
@@ -121,7 +122,7 @@ void SableUI::DestroyContextResources(RendererBackend* renderer)
 	if (it != g_contextResources.end())
 	{
 		auto& res = it->second;
-		res.rectObject->context->DestroyGpuObject(res.rectObject);
+		//res.rectObject->context->DestroyGpuObject(res.rectObject);
 	}
 
 	g_contextResources.clear();
@@ -244,8 +245,8 @@ void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 
 	cmd.SetPipeline(PipelineType::Rect);
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindGpuObject(contextResources.rectObject->handle);
-	cmd.DrawIndexed(contextResources.rectObject->numIndices);
+	cmd.BindGpuObject(contextResources.rectObject);
+	cmd.DrawIndexed(6);
 }
 
 // ============================================================================
@@ -296,7 +297,7 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 		return;
 
 	cmd.SetPipeline(PipelineType::Text);
-	cmd.BindGpuObject(contextResources.rectObject->handle);
+	cmd.BindGpuObject(contextResources.rectObject);
 
 	RectDrawData data{};
 	Colour c = m_colour;
@@ -329,7 +330,7 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 
 		cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
 
-		cmd.DrawIndexed(contextResources.rectObject->numIndices);
+		cmd.DrawIndexed(6);
 	};
 
 	if (m_type == PanelType::HorizontalSplitter)
@@ -444,8 +445,8 @@ void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fra
 	cmd.SetPipeline(PipelineType::Image);
 	cmd.BindTexture(0, m_texture.GetGpuTexture());
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindGpuObject(contextResources.rectObject->handle);
-	cmd.DrawIndexed(contextResources.rectObject->numIndices);
+	cmd.BindGpuObject(contextResources.rectObject);
+	cmd.DrawIndexed(6);
 }
 
 void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)

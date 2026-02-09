@@ -1,7 +1,9 @@
 #include <SableUI/renderer/renderer.h>
+#include <SableUI/types/renderer_types.h>
 #include <cstring>
 #include <cstdint>
 #include <utility>
+#include <SableUI/renderer/resource_handle.h>
 
 using namespace SableUI;
 
@@ -47,12 +49,49 @@ void CommandBuffer::DisableScissor()
 	m_commands.push_back(std::move(cmd));
 }
 
-void CommandBuffer::BindGpuObject(uint32_t handle)
+ResourceHandle CommandBuffer::CreateGpuObject(
+	const void* vertices, uint32_t numVertices,
+	const uint32_t* indices, uint32_t numIndices,
+	const VertexLayout& layout)
+{
+	ResourceHandle handle = m_handleAllocator.Allocate(ResourceType::GpuObject);
+
+	Command cmd;
+	cmd.type = CommandType::CreateGpuObject;
+	cmd.data = CreateGpuObjectCmd{
+		handle,
+		numVertices,
+		numIndices,
+		layout
+	};
+
+	size_t vertexDataSize = numVertices * layout.stride;
+	size_t indexDataSize = numIndices * sizeof(uint32_t);
+	size_t totalSize = vertexDataSize + indexDataSize;
+
+	cmd.inlineData.resize(totalSize);
+	std::memcpy(cmd.inlineData.data(), vertices, vertexDataSize);
+	if (indices && numIndices > 0)
+		std::memcpy(cmd.inlineData.data() + vertexDataSize, indices, indexDataSize);
+
+	m_commands.push_back(std::move(cmd));
+
+	return handle;
+}
+
+void SableUI::CommandBuffer::BindGpuObject(ResourceHandle handle)
 {
 	Command cmd;
 	cmd.type = CommandType::BindGpuObject;
 	cmd.data = BindGpuObjectCmd{ handle };
 	m_commands.push_back(std::move(cmd));
+}
+
+void SableUI::CommandBuffer::DestroyGpuObject(ResourceHandle handle)
+{
+	Command cmd;
+	cmd.type = CommandType::DestroyGpuObject;
+	cmd.data = DestroyGpuObjectCmd{ handle };
 }
 
 void CommandBuffer::BindUniformBuffer(uint32_t binding, uint32_t ubo)
