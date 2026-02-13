@@ -20,6 +20,7 @@ namespace SableUI
 		CreateGpuObject,
 		BindGpuObject,
 		UpdateUniformBuffer,
+		DrawGpuObject,
 		DestroyGpuObject,
 		DeleteTexture2D,
 		DeleteUniformBuffer,
@@ -207,6 +208,12 @@ namespace SableUI
 		uint32_t size;
 	};
 
+	struct DrawGpuObjectCmd
+	{
+		ResourceHandle handle;
+		uint32_t instanceCount;
+	};
+
 	struct DrawIndexedCmd
 	{
 		uint32_t indexCount;
@@ -249,6 +256,7 @@ namespace SableUI
 		SetScissorCmd,
 		BindGpuObjectCmd,
 		BindUniformBufferCmd,
+		DrawGpuObjectCmd,
 		BindTextureCmd,
 		CreateGpuObjectCmd,
 		DestroyGpuObjectCmd,

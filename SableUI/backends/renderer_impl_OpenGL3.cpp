@@ -50,7 +50,10 @@ public:
 		const void* vertices, uint32_t numVertices,
 		const uint32_t* indices, uint32_t numIndices,
 		const VertexLayout& layout) override;
+
 	void DestroyGpuObject(GpuObject* obj) override;
+	GpuObjectMetadata& GetMeshMetadata(uint32_t handle) override;
+
 	void BeginRenderPass(const GpuFramebuffer* fbo) override;
 	void EndRenderPass() override;
 	void BlitToScreen(GpuFramebuffer* source,
@@ -77,6 +80,7 @@ private:
 		GLuint vao = 0, vbo = 0, ebo = 0;
 	};
 	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
+	std::unordered_map<uint32_t, GpuObjectMetadata> m_meshMetadata;
 
 	friend class OpenGLCommandExecutor;
 	OpenGLMesh& GetMesh(uint32_t handle) { return m_meshes[handle]; }
@@ -221,7 +225,14 @@ void OpenGL3Backend::Initialise()
 		gladInitialised = true;
 	}
 
+	m_commandBuffer.SetAllocator(&m_resourceAllocator);
+
+	CommandBuffer tempCB = CreateSecondaryCommandBuffer();
+	SetupContextResources(tempCB, this);
+
 	m_executor = CommandBufferExecutor::Create(Backend::OpenGL, &GetGlobalResources(), &GetContextResources(this), this);
+
+	m_executor->Execute(tempCB);
 }
 
 OpenGL3Backend::~OpenGL3Backend()
@@ -438,15 +449,12 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 	glGenBuffers(1, &GLmesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, GLmesh.vbo);
 	glBufferData(GL_ARRAY_BUFFER, numVertices * layout.stride, vertices, GL_STATIC_DRAW);
-	obj->vbo = GLmesh.vbo;
 
-	obj->ebo = uint32_t(-1);
 	if (indices && numIndices > 0)
 	{
 		glGenBuffers(1, &GLmesh.ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLmesh.ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(uint32_t), indices, GL_STATIC_DRAW);
-		obj->ebo = GLmesh.ebo;
 	}
 
 	uint32_t attrIndex = 0;
@@ -486,6 +494,11 @@ GpuObject* OpenGL3Backend::CreateGpuObject(
 
 	glBindVertexArray(0);
 
+	GpuObjectMetadata metadata;
+	metadata.vertexCount = numVertices;
+	metadata.indexCount = numIndices;
+	m_meshMetadata[handle] = metadata;
+
 	obj->handle = handle;
 	return obj;
 }
@@ -507,6 +520,11 @@ void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
 
 	obj->context = nullptr;
 	SableMemory::SB_delete(obj);
+}
+
+GpuObjectMetadata& OpenGL3Backend::GetMeshMetadata(uint32_t handle)
+{
+	return m_meshMetadata[handle];
 }
 
 void OpenGL3Backend::ExecuteCommandBuffer()
@@ -912,13 +930,14 @@ public:
 
 			case CommandType::CreateGpuObject:
 				ExecuteCreateGpuObject(std::get<CreateGpuObjectCmd>(cmd.data), cmd.inlineData);
+				break;
 			
 			case CommandType::BindGpuObject:
 				ExecuteBindGpuObject(std::get<BindGpuObjectCmd>(cmd.data));
 				break;
 
 			case CommandType::DestroyGpuObject:
-				ExecuteDestroyGpuObejct(std::get<DestroyGpuObjectCmd>(cmd.data));
+				ExecuteDestroyGpuObject(std::get<DestroyGpuObjectCmd>(cmd.data));
 				break;
 
 			case CommandType::BindUniformBuffer:
@@ -931,6 +950,10 @@ public:
 
 			case CommandType::UpdateUniformBuffer:
 				ExecuteUpdateUniformBuffer(std::get<UpdateUniformBufferCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::DrawGpuObject:
+				ExecuteDrawGpuObject(std::get<DrawGpuObjectCmd>(cmd.data));
 				break;
 
 			case CommandType::DrawIndexed:
@@ -1054,7 +1077,7 @@ private:
 		glBindVertexArray(mesh.vao);
 	}
 
-	void ExecuteDestroyGpuObejct(const DestroyGpuObjectCmd& cmd)
+	void ExecuteDestroyGpuObject(const DestroyGpuObjectCmd& cmd)
 	{
 		auto it = m_gpuHandles.find(cmd.handle);
 		if (it == m_gpuHandles.end())
@@ -1088,6 +1111,35 @@ private:
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, cmd.ubo);
 		glBufferSubData(GL_UNIFORM_BUFFER, cmd.offset, cmd.size, data.data());
+	}
+
+	void ExecuteDrawGpuObject(const DrawGpuObjectCmd& cmd)
+	{
+		uint32_t gpuHandle = GetGpuHandle(cmd.handle);
+		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(gpuHandle);
+		GpuObjectMetadata& meshMetadata = m_backend->GetMeshMetadata(gpuHandle);
+		glBindVertexArray(mesh.vao);
+		
+		if (cmd.instanceCount > 1)
+		{
+			glDrawElementsInstancedBaseVertex(
+				GL_TRIANGLES,
+				meshMetadata.indexCount,
+				GL_UNSIGNED_INT,
+				0,
+				cmd.instanceCount,
+				0
+			);
+		}
+		else
+		{
+			glDrawElements(
+				GL_TRIANGLES,
+				meshMetadata.indexCount,
+				GL_UNSIGNED_INT,
+				0
+			);
+		}
 	}
 
 	void ExecuteDrawIndexed(const DrawIndexedCmd& cmd)

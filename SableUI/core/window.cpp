@@ -283,8 +283,6 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	m_baseRenderer->SetBlendFunction(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	m_baseRenderer->Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	SetupContextBindings(m_baseRenderer);
-
 	if (width > 0 && height > 0)
 	{
 		m_baseColourAttachment.CreateStorage(m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);

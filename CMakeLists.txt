@@ -166,7 +166,9 @@ add_library(SableUI STATIC
 	"include/SableUI/renderer/gpu_framebuffer.h"
 	"include/SableUI/renderer/gpu_object.h"
 	"include/SableUI/renderer/resource_handle.h"
- "include/SableUI/renderer/command_buffer.h")
+ 	"include/SableUI/renderer/command_buffer.h"
+	"SableUI/renderer/resource_handle.cpp"
+)
 
 add_dependencies(SableUI EmbedShaders EmbedResources)
 

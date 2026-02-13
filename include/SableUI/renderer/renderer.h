@@ -20,12 +20,13 @@ namespace SableUI
 
 	// SableUI-specific resources
 	struct GlobalResources {
+		bool initialised = false;
 		Shader s_rect;
-		uint32_t ubo_rect = 0;
+		uint32_t ubo_rect = static_cast<uint32_t>(-1);
 
 		Shader s_text;
-		uint32_t ubo_text = 0;
-		uint32_t u_textAtlas = 0;
+		uint32_t ubo_text = static_cast<uint32_t>(-1);
+		uint32_t u_textAtlas = static_cast<uint32_t>(-1);
 	};
 
 	struct ContextResources {
@@ -54,12 +55,16 @@ namespace SableUI
 		CommandBuffer& GetCommandBuffer() { return m_commandBuffer; };
 		void ResetCommandBuffer() { m_commandBuffer.Reset(); };
 		virtual void ExecuteCommandBuffer() = 0;
+
+		CommandBuffer CreateSecondaryCommandBuffer() { return CommandBuffer(&m_resourceAllocator); }
 		
 		virtual GpuObject* CreateGpuObject(
 			const void* vertices, uint32_t numVertices,
 			const uint32_t* indices, uint32_t numIndices,
 			const VertexLayout& layout) = 0;
 		virtual void DestroyGpuObject(GpuObject* obj) = 0;
+
+		virtual GpuObjectMetadata& GetMeshMetadata(uint32_t handle) = 0;
 
 		virtual void BeginRenderPass(const GpuFramebuffer* fbo) = 0;
 		virtual void EndRenderPass() = 0;
@@ -82,6 +87,7 @@ namespace SableUI
 			const ivec2& windowSize) = 0;
 
 		bool isDirty() const { return !m_commandBuffer.empty(); };
+		ResourceHandleAllocator& GetResourceAllocator() { return m_resourceAllocator; }
 
 	protected:
 		uint32_t AllocateHandle();
@@ -92,6 +98,7 @@ namespace SableUI
 
 		CommandBuffer m_commandBuffer;
 		CommandBufferExecutor* m_executor = nullptr;
+		ResourceHandleAllocator m_resourceAllocator;
 	};
 
 	struct CustomTargetQueue

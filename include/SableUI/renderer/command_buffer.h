@@ -18,9 +18,12 @@ namespace SableUI
 	{
 	public:
 		CommandBuffer() = default;
+		explicit CommandBuffer(ResourceHandleAllocator* allocator) : m_allocator(allocator) {};
 		~CommandBuffer() = default;
 
 		void Reset();
+
+		void SetAllocator(ResourceHandleAllocator* allocator) { m_allocator = allocator; }
 
 		void SetPipeline(PipelineType pipeline);
 		void SetBlendState(bool enabled, BlendFactor src, BlendFactor dst);
@@ -40,6 +43,7 @@ namespace SableUI
 
 		void UpdateUniformBuffer(uint32_t ubo, uint32_t offset, uint32_t size, const void* data);
 
+		void DrawGpuObject(ResourceHandle object, uint32_t instanceCount = 1);
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1,
 			uint32_t firstIndex = 0, int32_t vertexOffset = 0,
 			uint32_t firstInstance = 0);
@@ -61,7 +65,7 @@ namespace SableUI
 		size_t GetCommandCount() const { return m_commands.size(); }
 
 	private:
-		ResourceHandleAllocator m_handleAllocator;
+		ResourceHandleAllocator* m_allocator = nullptr;
 		std::vector<Command> m_commands;
 
 		struct State

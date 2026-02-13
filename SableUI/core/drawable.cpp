@@ -6,11 +6,13 @@
 #include <SableUI/core/window.h>
 #include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/utils/utils.h>
 #include <algorithm>
 #include <vector>
 #include <map>
 #include <optional>
+#include <cstdint>
 
 using namespace SableUI;
 
@@ -53,29 +55,13 @@ static inline void RectToNDC(
 	h *= -1.0f;
 }
 
-ContextResources& SableUI::GetContextResources(RendererBackend* backend)
+// ============================================================================
+// Global Resources
+// ============================================================================
+void SableUI::DestroyGlobalResources(RendererBackend* renderer)
 {
-	void* ctx = GetCurrentContext_voidType();
-
-	auto it = g_contextResources.find(ctx);
-	if (it != g_contextResources.end())
-	{
-		return it->second;
-	}
-
-	ContextResources& resources = g_contextResources[ctx];
-
-	VertexLayout layout;
-	layout.Add(VertexFormat::Float2);
-
-	ResourceHandle handle = backend->GetCommandBuffer().CreateGpuObject(
-		rectVertices,
-		sizeof(rectVertices) / sizeof(Vertex),
-		indices, sizeof(indices) / sizeof(unsigned int),
-		layout
-	);
-	resources.rectObject = handle;
-	return resources;
+	renderer->DestroyUniformBuffer(g_res.ubo_rect);
+	renderer->DestroyUniformBuffer(g_res.ubo_text);
 }
 
 GlobalResources& SableUI::GetGlobalResources()
@@ -83,35 +69,47 @@ GlobalResources& SableUI::GetGlobalResources()
 	return g_res;
 }
 
-void SableUI::SetupGlobalResources(RendererBackend* renderer)
+// ============================================================================
+// Context Resources
+// ============================================================================
+void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer)
 {
-	static bool shadersInitialized = false;
-	if (shadersInitialized)
-		return;
+	if (!g_res.initialised)
+	{
+		// rect
+		g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
+		g_res.ubo_rect = renderer->CreateUniformBuffer(sizeof(RectDrawData), nullptr);
 
-	// rect
-	g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
-	g_res.ubo_rect = renderer->CreateUniformBuffer(sizeof(RectDrawData), nullptr);
+		// text
+		g_res.s_text.LoadBasicShaders(text_vert, text_frag);
+		g_res.ubo_text = renderer->CreateUniformBuffer(sizeof(TextDrawData), nullptr);
 
-	// text
-	g_res.s_text.LoadBasicShaders(text_vert, text_frag);
-	g_res.ubo_text = renderer->CreateUniformBuffer(sizeof(TextDrawData), nullptr);
+		g_res.initialised = true;
+	}
 
-	// setup bindings for the current context
-	SetupContextBindings(renderer);
-	shadersInitialized = true;
-}
+	void* ctx = GetCurrentContext_voidType();
 
-void SableUI::DestroyGlobalResources(RendererBackend* renderer)
-{
-	renderer->DestroyUniformBuffer(g_res.ubo_rect);
-	renderer->DestroyUniformBuffer(g_res.ubo_text);
-}
+	ContextResources& resources = g_contextResources[ctx];
 
-void SableUI::SetupContextBindings(RendererBackend* renderer)
-{
-	renderer->BindUniformBufferBase(static_cast<uint32_t>(UboBinding::Rect), g_res.ubo_rect);
-	renderer->BindUniformBufferBase(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
+	VertexLayout layout;
+	layout.Add(VertexFormat::Float2);
+
+	ResourceHandle handle = cb.CreateGpuObject(
+		rectVertices,
+		sizeof(rectVertices) / sizeof(Vertex),
+		indices, sizeof(indices) / sizeof(unsigned int),
+		layout
+	);
+
+	if (!handle.IsValid())
+	{
+		SableUI_Runtime_Error("Failed to create rect GPU object");
+	}
+
+	resources.rectObject = handle;
+
+	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Rect), g_res.ubo_rect);
+	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
 }
 
 void SableUI::DestroyContextResources(RendererBackend* renderer)
@@ -126,6 +124,19 @@ void SableUI::DestroyContextResources(RendererBackend* renderer)
 	}
 
 	g_contextResources.clear();
+}
+
+ContextResources& SableUI::GetContextResources(RendererBackend* renderer)
+{
+	void* ctx = GetCurrentContext_voidType();
+
+	auto it = g_contextResources.find(ctx);
+	if (it != g_contextResources.end())
+	{
+		return it->second;
+	}
+
+	SableUI_Runtime_Error("GetContextResources failed to find resources");
 }
 
 // ============================================================================
@@ -245,8 +256,7 @@ void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 
 	cmd.SetPipeline(PipelineType::Rect);
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindGpuObject(contextResources.rectObject);
-	cmd.DrawIndexed(6);
+	cmd.DrawGpuObject(contextResources.rectObject);
 }
 
 // ============================================================================
@@ -297,7 +307,6 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 		return;
 
 	cmd.SetPipeline(PipelineType::Text);
-	cmd.BindGpuObject(contextResources.rectObject);
 
 	RectDrawData data{};
 	Colour c = m_colour;
@@ -330,7 +339,7 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 
 		cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
 
-		cmd.DrawIndexed(6);
+		cmd.DrawGpuObject(contextResources.rectObject);
 	};
 
 	if (m_type == PanelType::HorizontalSplitter)
@@ -445,8 +454,7 @@ void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fra
 	cmd.SetPipeline(PipelineType::Image);
 	cmd.BindTexture(0, m_texture.GetGpuTexture());
 	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.BindGpuObject(contextResources.rectObject);
-	cmd.DrawIndexed(6);
+	cmd.DrawGpuObject(contextResources.rectObject);
 }
 
 void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)
@@ -496,9 +504,9 @@ void DrawableText::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 	data.pos[0] = m_rect.x;
 	data.pos[1] = m_rect.y + m_rect.h;
 
-	cmd.SetPipeline(PipelineType::Text);
-	cmd.BindTexture(0, GetTextAtlasTexture());
-	cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
-	cmd.BindGpuObject(m_text.m_gpuObject->handle);
-	cmd.DrawIndexed(m_text.m_gpuObject->numIndices);
+	//cmd.SetPipeline(PipelineType::Text);
+	//cmd.BindTexture(0, GetTextAtlasTexture());
+	//cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
+	//cmd.BindGpuObject(m_text.m_gpuObject->handle);
+	//cmd.DrawIndexed(m_text.m_gpuObject->numIndices);
 }

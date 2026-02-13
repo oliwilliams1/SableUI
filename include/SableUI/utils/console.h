@@ -50,7 +50,7 @@ namespace SableUI
         static void Warn(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
         static void Error(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
         static void NotifyError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
-        static void RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
+        [[noreturn]] static void RuntimeError(const char* format, const char* file, int line, const char* func, const char* subsystem, ...);
 
         static inline std::vector<LogData> m_Logs;
     

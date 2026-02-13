@@ -620,7 +620,6 @@ App::App(const char* name, int width, int height, const SableUI::WindowInitInfo&
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
 	SableUI::InitFontManager();
-	SableUI::SetupGlobalResources(m_mainWindow->GetBaseRenderer());
 	
 	SetContext(m_mainWindow);
 }

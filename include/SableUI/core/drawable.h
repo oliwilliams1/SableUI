@@ -45,13 +45,12 @@ namespace SableUI
 		float pos[2];
 	};
 
-	void SetupGlobalResources(RendererBackend* renderer);
 	void DestroyGlobalResources(RendererBackend* renderer);
-	void SetupContextBindings(RendererBackend* renderer);
-	void DestroyContextResources(RendererBackend* renderer);
-	class RendererBackend;
-	ContextResources& GetContextResources(RendererBackend* backend);
 	GlobalResources& GetGlobalResources();
+
+	void SetupContextResources(CommandBuffer& cb, RendererBackend* renderer);
+	void DestroyContextResources(RendererBackend* renderer);
+	ContextResources& GetContextResources(RendererBackend* backend);
 
 	class DrawableBase
 	{

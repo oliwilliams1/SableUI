@@ -32,9 +32,9 @@ namespace SableUI
     class ResourceHandleAllocator
     {
     public:
-        ResourceHandle Allocate(ResourceType type) { return {}; };
-        void Free(ResourceHandle handle) {};
-        bool IsValid(ResourceHandle handle) const {};
+        ResourceHandle Allocate(ResourceType type);
+        void Free(ResourceHandle handle);
+        bool IsValid(ResourceHandle handle) const;
 
     private:
         struct Slot
