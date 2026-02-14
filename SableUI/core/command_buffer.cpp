@@ -220,3 +220,11 @@ void CommandBuffer::BlitFramebuffer(uint32_t srcFBO, uint32_t dstFBO,
                                    dstX0, dstY0, dstX1, dstY1, filter };
     m_commands.push_back(std::move(cmd));
 }
+
+void CommandBuffer::BlitToScreen(const GpuFramebuffer* framebuffer)
+{
+    Command cmd;
+    cmd.type = CommandType::BlitToScreen;
+    cmd.data = BlitToScreenCmd{ framebuffer };
+    m_commands.push_back(std::move(cmd));
+}

@@ -2,11 +2,11 @@
 #include <SableUI/generated/shaders.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/renderer/renderer.h>
-#include <SableUI/core/text.h>
 #include <SableUI/core/window.h>
 #include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/resource_handle.h>
 #include <SableUI/renderer/command_buffer.h>
+#include <SableUI/utils/console.h>
 #include <SableUI/utils/utils.h>
 #include <algorithm>
 #include <vector>
@@ -306,7 +306,7 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 		m_type == PanelType::Root)
 		return;
 
-	cmd.SetPipeline(PipelineType::Text);
+	cmd.SetPipeline(PipelineType::Rect);
 
 	RectDrawData data{};
 	Colour c = m_colour;

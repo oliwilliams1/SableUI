@@ -30,6 +30,7 @@ namespace SableUI
 		BeginRenderPass,
 		EndRenderPass,
 		BlitFramebuffer,
+		BlitToScreen
 	};
 
 	enum class PipelineType : uint8_t
@@ -91,7 +92,7 @@ namespace SableUI
 
 	struct VertexAttribute
 	{
-		uint16_t offset;
+		uint16_t offset = 0;
 		VertexFormat format = VertexFormat::Undef;
 		bool normalised = false;
 	};
@@ -250,6 +251,11 @@ namespace SableUI
 		TextureInterpolation filter;
 	};
 
+	struct BlitToScreenCmd
+	{
+		const GpuFramebuffer* framebuffer;
+	};
+
 	using CommandData = std::variant<
 		SetPipelineCmd,
 		SetBlendStateCmd,
@@ -265,7 +271,8 @@ namespace SableUI
 		DrawCmd,
 		ClearCmd,
 		BeginRenderPassCmd,
-		BlitFramebufferCmd
+		BlitFramebufferCmd,
+		BlitToScreenCmd
 	>;
 
 	struct Command

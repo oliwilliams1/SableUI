@@ -980,6 +980,10 @@ public:
 				ExecuteBlitFramebuffer(std::get<BlitFramebufferCmd>(cmd.data));
 				break;
 
+			case CommandType::BlitToScreen:
+				ExecuteBlitToScreen(std::get<BlitToScreenCmd>(cmd.data));
+				break;
+
 			default:
 				SableUI_Error("Unknown command type");
 				break;
@@ -1043,7 +1047,7 @@ private:
 		const CreateGpuObjectCmd& cmd,
 		const std::vector<uint8_t>& data)
 	{
-		size_t vertexDataSize = cmd.numVertices * cmd.layout.stride;
+		size_t vertexDataSize = static_cast<size_t>(cmd.numVertices) * cmd.layout.stride;
 		const void* vertexData = data.data();
 		const uint32_t* indexData = nullptr;
 
@@ -1204,6 +1208,18 @@ private:
 			GL_COLOR_BUFFER_BIT,
 			TextureInterpolationToGL(cmd.filter)
 		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void ExecuteBlitToScreen(const BlitToScreenCmd& cmd)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd.framebuffer->GetHandle());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, cmd.framebuffer->width, cmd.framebuffer->height,
+			0, 0, cmd.framebuffer->width, cmd.framebuffer->height,
+			GL_COLOR_BUFFER_BIT,
+			GL_NEAREST);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 };

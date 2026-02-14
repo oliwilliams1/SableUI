@@ -1,15 +1,16 @@
 #pragma once
+#include <SableUI/renderer/gpu_framebuffer.h>
+#include <SableUI/renderer/gpu_texture.h>
+#include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/utils/memory.h>
-#include <SableUI/utils/console.h>
-#include <SableUI/core/drawable.h>
 
 #include <string>
 #include <array>
 #include <vector>
+#include <unordered_set>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -74,15 +75,15 @@ namespace SableUI
 		void SubmitCustomQueue(CustomTargetQueue* queue);
 		void RemoveQueueReference(CustomTargetQueue* queue);
 		GpuFramebuffer* GetSurface() { return &m_windowSurface; }
-		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
+		RendererBackend* GetBaseRenderer() const { return m_renderer; }
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
 	
 	private:
-		GpuFramebuffer m_baseFramebuffer;
-		RendererBackend* m_baseRenderer = nullptr;
-		GpuTexture2D m_baseColourAttachment;
+		GpuFramebuffer m_framebuffer;
+		RendererBackend* m_renderer = nullptr;
+		GpuTexture2D m_colourAttachment;
 
 		GpuFramebuffer m_windowSurface;
 
