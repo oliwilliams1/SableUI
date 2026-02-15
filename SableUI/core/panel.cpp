@@ -11,6 +11,7 @@
 #include <SableUI/styles/theme.h>
 #include <algorithm>
 #include <vector>
+#include <SableUI/core/window.h>
 
 using namespace SableMemory;
 
@@ -40,11 +41,11 @@ void SableUI::BasePanel::DistributeEvents(const UIEventContext& ctx)
 		child->DistributeEvents(ctx);
 }
 
-bool SableUI::BasePanel::UpdateComponents(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+bool SableUI::BasePanel::UpdateComponents(const DrawableDrawData& drData)
 {
 	bool anyChanged = false;
 	for (BasePanel* child : children)
-		anyChanged |= child->UpdateComponents(cmd, framebuffer, contextResources);
+		anyChanged |= child->UpdateComponents(drData);
 	return anyChanged;
 }
 
@@ -89,13 +90,13 @@ SableUI::RootPanel::~RootPanel()
 	children.clear();
 }
 
-void SableUI::RootPanel::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::RootPanel::Render(const DrawableDrawData& drData)
 {
 	for (SableUI::BasePanel* child : children)
-		child->Render(cmd, framebuffer, contextResources);
+		child->Render(drData);
 }
 
-void SableUI::RootPanel::Recalculate(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::RootPanel::Recalculate(const DrawableDrawData& drData)
 {
 	for (SableUI::BasePanel* child : children)
 	{
@@ -105,14 +106,14 @@ void SableUI::RootPanel::Recalculate(CommandBuffer& cmd, const GpuFramebuffer* f
 		child->rect.h = rect.h;
 
 		child->CalculateScales();
-		child->CalculatePositions(cmd, framebuffer, contextResources);
+		child->CalculatePositions(drData);
 		child->CalculateMinBounds();
 
 		if (child->type == PanelType::Base)
 		{
 			if (SableUI::ContentPanel* panelChild = dynamic_cast<SableUI::ContentPanel*>(child))
 			{
-				panelChild->Update(cmd, framebuffer, contextResources);
+				panelChild->Update(drData);
 			}
 			else
 			{
@@ -132,10 +133,16 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
 	children.push_back(node);
 
-	CommandBuffer& cmd = m_renderer->GetCommandBuffer();
-	GpuFramebuffer* fbo = _getCurrentContext()->GetSurface();
-	ContextResources& ctx = GetContextResources(m_renderer);
-	Recalculate(cmd, fbo, ctx);
+	const Window* window = _getCurrentContext();
+	DrawableDrawData drData = DrawableDrawData(
+		m_renderer->GetCommandBuffer(),
+		window->GetSurface(),
+		window->m_windowSize.x,
+		window->m_windowSize.y,
+		GetContextResources(m_renderer)
+	);
+
+	Recalculate(drData);
 	return node;
 }
 
@@ -149,10 +156,16 @@ SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
 	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
 	children.push_back(node);
 
-	CommandBuffer& cmd = m_renderer->GetCommandBuffer();
-	GpuFramebuffer* fbo = _getCurrentContext()->GetSurface();
-	ContextResources& ctx = GetContextResources(m_renderer);
-	Recalculate(cmd, fbo, ctx);
+	const Window* window = _getCurrentContext();
+	DrawableDrawData drData = DrawableDrawData(
+		m_renderer->GetCommandBuffer(),
+		window->GetSurface(),
+		window->m_windowSize.x,
+		window->m_windowSize.y,
+		GetContextResources(m_renderer)
+	);
+
+	Recalculate(drData);
 	return node;
 }
 
@@ -169,7 +182,7 @@ void SableUI::RootPanel::CalculateScales()
 	return;
 }
 
-void SableUI::RootPanel::CalculatePositions(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::RootPanel::CalculatePositions(const DrawableDrawData& drData)
 {
 	SableUI_Error("Method does not exist for root node, use RootNode.Recalculate() instead");
 	return;
@@ -198,24 +211,31 @@ int SableUI::SplitterPanel::GetNumInstances()
 	return s_splitterPanelCount;
 }
 
-void SableUI::SplitterPanel::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::SplitterPanel::Render(const DrawableDrawData& drData)
 {
-	if (!m_drawableUpToDate) Update(cmd, framebuffer, contextResources);
+	if (!m_drawableUpToDate) Update(drData);
 	for (SableUI::BasePanel* child : children)
-		child->Render(cmd, framebuffer, contextResources);
+		child->Render(drData);
 
 	m_drawable->m_zIndex = 999;
-	m_drawable->RecordCommands(cmd, framebuffer, contextResources);
+	m_drawable->RecordCommands(drData);
 }
 
 SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 {
 	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
 	children.push_back(node);
-	CommandBuffer& cmd = m_renderer->GetCommandBuffer();
-	GpuFramebuffer* fbo = _getCurrentContext()->GetSurface();
-	ContextResources& ctx = GetContextResources(m_renderer);
-	FindRoot()->Recalculate(cmd, fbo, ctx);
+
+	const Window* window = _getCurrentContext();
+	DrawableDrawData drData = DrawableDrawData(
+		m_renderer->GetCommandBuffer(),
+		window->GetSurface(),
+		window->m_windowSize.x,
+		window->m_windowSize.y,
+		GetContextResources(m_renderer)
+	);
+
+	FindRoot()->Recalculate(drData);
 	return node;
 }
 
@@ -223,10 +243,17 @@ SableUI::ContentPanel* SableUI::SplitterPanel::AddPanel()
 {
 	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
 	children.push_back(node);
-	CommandBuffer& cmd = m_renderer->GetCommandBuffer();
-	GpuFramebuffer* fbo = _getCurrentContext()->GetSurface();
-	ContextResources& ctx = GetContextResources(m_renderer);
-	FindRoot()->Recalculate(cmd, fbo, ctx);
+
+	const Window* window = _getCurrentContext();
+	DrawableDrawData drData = DrawableDrawData(
+		m_renderer->GetCommandBuffer(),
+		window->GetSurface(),
+		window->m_windowSize.x,
+		window->m_windowSize.y,
+		GetContextResources(m_renderer)
+	);
+
+	FindRoot()->Recalculate(drData);
 	return node;
 }
 
@@ -391,7 +418,7 @@ void SableUI::SplitterPanel::CalculateScales()
 		child->CalculateScales();
 }
 
-void SableUI::SplitterPanel::CalculatePositions(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::SplitterPanel::CalculatePositions(const DrawableDrawData& drData)
 {
 	if (children.empty()) return;
 
@@ -438,12 +465,12 @@ void SableUI::SplitterPanel::CalculatePositions(CommandBuffer& cmd, const GpuFra
 	for (BasePanel* child : children)
 	{
 		bool childPositionChanged = false;
-		child->CalculatePositions(cmd, framebuffer, contextResources);
+		child->CalculatePositions(drData);
 		if (childPositionChanged)
 			toUpdate = true;
 	}
 
-	if (toUpdate) Update(cmd, framebuffer, contextResources);
+	if (toUpdate) Update(drData);
 }
 
 void SableUI::SplitterPanel::CalculateMinBounds()
@@ -484,13 +511,13 @@ void SableUI::SplitterPanel::CalculateMinBounds()
 	}
 }
 
-void SableUI::SplitterPanel::Update(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::SplitterPanel::Update(const DrawableDrawData& drData)
 {
 	std::vector<int> segments;
 
 	for (SableUI::BasePanel* child : children)
 	{
-		child->Update(cmd, framebuffer, contextResources);
+		child->Update(drData);
 
 		if (type == PanelType::HorizontalSplitter)
 			segments.push_back(child->rect.x - rect.x);
@@ -501,7 +528,7 @@ void SableUI::SplitterPanel::Update(CommandBuffer& cmd, const GpuFramebuffer* fr
 	const Theme& t = GetTheme();
 	m_drawable->Update(rect, t.surface2, type, bSize, segments);
 	m_drawableUpToDate = true;
-	Render(cmd, framebuffer, contextResources);
+	Render(drData);
 }
 
 SableUI::SplitterPanel::~SplitterPanel()
@@ -547,7 +574,7 @@ SableUI::ContentPanel* SableUI::ContentPanel::AddPanel()
 	return nullptr;
 }
 
-void SableUI::ContentPanel::Update(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::ContentPanel::Update(const DrawableDrawData& drData)
 {
 	if (m_component == nullptr)
 	{
@@ -569,13 +596,13 @@ void SableUI::ContentPanel::Update(CommandBuffer& cmd, const GpuFramebuffer* fra
 
 	m_component->GetRootElement()->SetRect(realRect);
 	m_component->GetRootElement()->LayoutChildren();
-	Render(cmd, framebuffer, contextResources);
+	Render(drData);
 }
 
-void SableUI::ContentPanel::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void SableUI::ContentPanel::Render(const DrawableDrawData& drData)
 {
 	if (m_component)
-		m_component->Render(cmd, framebuffer, contextResources);
+		m_component->Render(drData);
 }
 
 void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx)
@@ -584,17 +611,17 @@ void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx)
 		m_component->HandleInput(ctx);
 }
 
-bool SableUI::ContentPanel::UpdateComponents(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+bool SableUI::ContentPanel::UpdateComponents(const DrawableDrawData& drData)
 {
 	if (!m_component)
 		return false;
 
-	bool changed = m_component->CheckAndUpdate(cmd, framebuffer, contextResources);
+	bool changed = m_component->CheckAndUpdate(drData);
 
 	if (changed)
 	{
 		m_component->GetRootElement()->LayoutChildren();
-		Update(cmd, framebuffer, contextResources);
+		Update(drData);
 	}
 
 	return changed;

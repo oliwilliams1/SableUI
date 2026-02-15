@@ -5,12 +5,8 @@
 #include <SableUI/renderer/command_buffer.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/core/drawable.h>
-#include <SableUI/utils/utils.h>
 #include <SableUI/core/shader.h>
 #include <SableUI/types/renderer_types.h>
-#include <SableUI/renderer/gpu_texture.h>
-#include <SableUI/renderer/gpu_object.h>
-#include <SableUI/renderer/gpu_framebuffer.h>
 #include <SableUI/renderer/resource_handle.h>
 #include <variant>
 
@@ -34,56 +30,17 @@ public:
 	OpenGL3Backend() { Initialise(); }
 	~OpenGL3Backend();
 	void Initialise() override;
-	void Clear(float r, float g, float b, float a) override;
-	void Viewport(int x, int y, int width, int height) override;
-	void SetBlending(bool enabled) override;
-	void SetBlendFunction(BlendFactor src, BlendFactor dst) override;
 	void CheckErrors() override;
 
-	uint32_t CreateUniformBuffer(size_t size, const void* initialData = nullptr) override;
-	void DestroyUniformBuffer(uint32_t ubo) override;
-	void BindUniformBufferBase(uint32_t binding, uint32_t ubo) override;
-
 	void ExecuteCommandBuffer() override;
-
-	GpuObject* CreateGpuObject(
-		const void* vertices, uint32_t numVertices,
-		const uint32_t* indices, uint32_t numIndices,
-		const VertexLayout& layout) override;
-
-	void DestroyGpuObject(GpuObject* obj) override;
-	GpuObjectMetadata& GetMeshMetadata(uint32_t handle) override;
-
-	void BeginRenderPass(const GpuFramebuffer* fbo) override;
-	void EndRenderPass() override;
-	void BlitToScreen(GpuFramebuffer* source,
-		TextureInterpolation interpolation) override;
-	void BlitToScreenWithRects(
-		GpuFramebuffer* source,
-		const Rect& sourceRect,
-		const Rect& destRect,
-		TextureInterpolation interpolation) override;
-	void BlitToFramebuffer(
-		GpuFramebuffer* source,
-		GpuFramebuffer* target,
-		Rect sourceRect, Rect destRect,
-		TextureInterpolation interpolation) override;
-	void DrawToScreen(
-		GpuFramebuffer* source,
-		const Rect& sourceRect,
-		const Rect& destRect,
-		const ivec2& windowSize) override;
 
 private:
 	struct OpenGLMesh
 	{
 		GLuint vao = 0, vbo = 0, ebo = 0;
 	};
-	std::unordered_map<uint32_t, OpenGLMesh> m_meshes;
-	std::unordered_map<uint32_t, GpuObjectMetadata> m_meshMetadata;
 
 	friend class OpenGLCommandExecutor;
-	OpenGLMesh& GetMesh(uint32_t handle) { return m_meshes[handle]; }
 };
 
 RendererBackend* SableUI::RendererBackend::Create(Backend backend)
@@ -240,28 +197,6 @@ OpenGL3Backend::~OpenGL3Backend()
 	SableMemory::SB_delete(m_executor);
 }
 
-void OpenGL3Backend::SetBlending(bool enabled)
-{
-	if (enabled) glEnable(GL_BLEND);
-	else glDisable(GL_BLEND);
-}
-
-void OpenGL3Backend::SetBlendFunction(BlendFactor src, BlendFactor dst)
-{
-	glBlendFunc(BlendFactorToGL(src), BlendFactorToGL(dst));
-}
-
-void OpenGL3Backend::Clear(float r, float g, float b, float a)
-{
-	glClearColor(r, g, b, a);
-	glClear(GL_COLOR_BUFFER_BIT);
-}
-
-void OpenGL3Backend::Viewport(int x, int y, int width, int height)
-{
-	glViewport(x, y, width, height);
-}
-
 void OpenGL3Backend::CheckErrors()
 {
 	GLenum err;
@@ -271,630 +206,9 @@ void OpenGL3Backend::CheckErrors()
 	}
 }
 
-uint32_t OpenGL3Backend::CreateUniformBuffer(size_t size, const void* initialData)
-{
-	GLuint ubo = 0;
-	glGenBuffers(1, &ubo);
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferData(GL_UNIFORM_BUFFER, size, initialData, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	return ubo;
-}
-
-void OpenGL3Backend::DestroyUniformBuffer(uint32_t ubo)
-{
-	GLuint buffer = ubo;
-	glDeleteBuffers(1, &buffer);
-}
-
-void OpenGL3Backend::BindUniformBufferBase(uint32_t binding, uint32_t ubo)
-{
-	glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
-}
-
-void OpenGL3Backend::BeginRenderPass(const GpuFramebuffer* fbo)
-{
-	if (!fbo->isWindowSurface)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo->GetHandle());
-		glViewport(0, 0, fbo->GetColorAttachments()[0].GetWidth(),
-			fbo->GetColorAttachments()[0].GetHeight());
-	}
-	else
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-}
-
-void OpenGL3Backend::EndRenderPass()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void OpenGL3Backend::BlitToScreen(
-	GpuFramebuffer* source,
-	TextureInterpolation interpolation)
-{
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, source->width, source->height,
-		0, 0, source->width, source->height,
-		GL_COLOR_BUFFER_BIT,
-		TextureInterpolationToOpenGLEnum(interpolation));
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void OpenGL3Backend::BlitToScreenWithRects(
-	GpuFramebuffer* source,
-	const Rect& sourceRect,
-	const Rect& destRect,
-	TextureInterpolation interpolation)
-{
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-	glBlitFramebuffer(
-		sourceRect.x, sourceRect.y,
-		sourceRect.x + sourceRect.w, sourceRect.y + sourceRect.h,
-		destRect.x, destRect.y,
-		destRect.x + destRect.w, destRect.y + destRect.h,
-		GL_COLOR_BUFFER_BIT,
-		TextureInterpolationToOpenGLEnum(interpolation)
-	);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void OpenGL3Backend::BlitToFramebuffer(
-	GpuFramebuffer* source, GpuFramebuffer* target,
-	Rect sourceRect, Rect destRect,
-	TextureInterpolation interpolation)
-{
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, source->GetHandle());
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->GetHandle());
-	glBlitFramebuffer(
-		sourceRect.x, sourceRect.y,
-		sourceRect.x + sourceRect.width, sourceRect.y + sourceRect.height,
-		destRect.x, destRect.y,
-		destRect.x + destRect.width, destRect.y + destRect.height,
-		GL_COLOR_BUFFER_BIT,
-		TextureInterpolationToOpenGLEnum(interpolation));
-}
-
-void OpenGL3Backend::DrawToScreen(
-	GpuFramebuffer* source,
-	const Rect& sourceRect,
-	const Rect& destRect,
-	const ivec2& windowSize)
-{
-	GlobalResources& g_res = SableUI::GetGlobalResources();
-	ContextResources& c_res = SableUI::GetContextResources(this);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	Viewport(0, 0, windowSize.w, windowSize.h);
-
-	RectDrawData data{};
-
-	float invW = 1.0f / float(windowSize.w);
-	float invH = 1.0f / float(windowSize.h);
-
-	float x = destRect.x * invW * 2.0f - 1.0f;
-	float y = destRect.y * invH * 2.0f - 1.0f;
-	float w = destRect.w * invW * 2.0f;
-	float h = destRect.h * invH * 2.0f;
-
-	y *= -1.0f;
-	h *= -1.0f;
-
-	data.rect[0] = x;
-	data.rect[1] = y;
-	data.rect[2] = w;
-	data.rect[3] = h;
-
-	data.realRect[0] = sourceRect.x;
-	data.realRect[1] = sourceRect.y;
-	data.realRect[2] = sourceRect.w;
-	data.realRect[3] = sourceRect.h;
-
-	data.radius[0] = 0.0f;
-	data.radius[1] = 0.0f;
-	data.radius[2] = 0.0f;
-	data.radius[3] = 0.0f;
-
-	data.borderSize[0] = 0;
-	data.borderSize[1] = 0;
-	data.borderSize[2] = 0;
-	data.borderSize[3] = 0;
-
-	data.colour[0] = 1.0f;
-	data.colour[1] = 1.0f;
-	data.colour[2] = 1.0f;
-	data.colour[3] = 1.0f;
-
-	data.useTexture = 1;
-
-	source->GetColorAttachments()[0].Bind(0);
-
-	g_res.s_rect.Use();
-
-	glBindBuffer(GL_UNIFORM_BUFFER, g_res.ubo_rect);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RectDrawData), &data);
-
-	//c_res.rectObject->AddToDrawStack();
-}
-
-// ============================================================================
-// Drawables
-// ============================================================================
-static int s_numGpuObjects = 0;
-GpuObject* OpenGL3Backend::CreateGpuObject(
-	const void* vertices, uint32_t numVertices,
-	const uint32_t* indices, uint32_t numIndices,
-	const VertexLayout& layout)
-{
-	GpuObject* obj = SableMemory::SB_new<GpuObject>();
-	obj->context = this;
-	obj->numVertices = numVertices;
-	obj->numIndices = numIndices;
-	obj->layout = layout;
-
-	uint32_t handle = AllocateHandle();
-	m_meshes[handle] = OpenGLMesh();
-	OpenGLMesh& GLmesh = m_meshes[handle];
-
-	glGenVertexArrays(1, &GLmesh.vao);
-	glBindVertexArray(GLmesh.vao);
-
-	glGenBuffers(1, &GLmesh.vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, GLmesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, numVertices * layout.stride, vertices, GL_STATIC_DRAW);
-
-	if (indices && numIndices > 0)
-	{
-		glGenBuffers(1, &GLmesh.ebo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLmesh.ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(uint32_t), indices, GL_STATIC_DRAW);
-	}
-
-	uint32_t attrIndex = 0;
-	for (const auto& attr : layout.attributes)
-	{
-		glEnableVertexAttribArray(attrIndex);
-		GLenum type = GL_FLOAT;
-		GLint count = 1;
-		GLboolean normalized = attr.normalised ? GL_TRUE : GL_FALSE;
-		bool isInteger = false;
-
-		VertexFormatToGL(attr.format, isInteger, count, type);
-
-		if (isInteger)
-		{
-			glVertexAttribIPointer(
-				attrIndex,
-				count,
-				type,
-				layout.stride,
-				reinterpret_cast<void*>(attr.offset)
-			);
-		}
-		else
-		{
-			glVertexAttribPointer(
-				attrIndex,
-				count,
-				type,
-				normalized,
-				layout.stride,
-				reinterpret_cast<void*>(attr.offset)
-			);
-		}
-		attrIndex++;
-	}
-
-	glBindVertexArray(0);
-
-	GpuObjectMetadata metadata;
-	metadata.vertexCount = numVertices;
-	metadata.indexCount = numIndices;
-	m_meshMetadata[handle] = metadata;
-
-	obj->handle = handle;
-	return obj;
-}
-
-void OpenGL3Backend::DestroyGpuObject(GpuObject* obj)
-{
-	auto it = m_meshes.find(obj->handle);
-	if (it == m_meshes.end()) return;
-
-	OpenGLMesh& mesh = it->second;
-
-	if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
-	if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
-	if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
-
-	m_meshes.erase(it);
-	FreeHandle(obj->handle);
-	s_numGpuObjects--;
-
-	obj->context = nullptr;
-	SableMemory::SB_delete(obj);
-}
-
-GpuObjectMetadata& OpenGL3Backend::GetMeshMetadata(uint32_t handle)
-{
-	return m_meshMetadata[handle];
-}
-
 void OpenGL3Backend::ExecuteCommandBuffer()
 {
 	m_executor->Execute(m_commandBuffer);
-}
-
-// ============================================================================
-// Render Target
-// ============================================================================
-SableUI::RenderTarget::RenderTarget(int width, int height)
-	: width(width), height(height)
-{
-	InitTexture();
-}
-
-SableUI::RenderTarget::~RenderTarget()
-{
-	glDeleteTextures(1, &m_textureID);
-}
-
-void SableUI::RenderTarget::InitTexture()
-{
-	if (targetType == RenderTargetType::Window)
-	{
-		SableUI_Warn("Cannot create GPU texture for texture target of window");
-		return;
-	};
-
-	if (m_textureID == 0)
-	{
-		glGenTextures(1, &m_textureID);
-	}
-
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-}
-
-void SableUI::RenderTarget::Resize(int w, int h)
-{
-	bool u = false;
-
-	if (w != width || h != height)
-		u = true;
-
-	width = w;
-	height = h;
-
-	if (u && targetType != RenderTargetType::Window) Update();
-}
-
-void SableUI::RenderTarget::Update() const
-{
-	if (targetType == RenderTargetType::Window)
-	{
-		SableUI_Warn("Cannot update GPU texture for texture target of window");
-		return;
-	};
-
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-}
-
-void SableUI::RenderTarget::Bind() const
-{
-	if (targetType == RenderTargetType::Window)
-	{
-		SableUI_Warn("Cannot bind GPU texture for texture target of window");
-		return;
-	};
-
-	glBindTexture(GL_TEXTURE_2D, m_textureID);
-}
-
-// ============================================================================
-// Gpu Textures
-// ============================================================================
-void GpuTexture2D::Bind(uint32_t slot) const
-{
-	if (slot > 15)
-		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
-
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, handle);
-}
-
-void GpuTexture2D::Unbind(uint32_t slot) const
-{
-	if (slot > 15)
-		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
-
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void GpuTexture2D::CreateStorage(int width, int height, TextureFormat format, TextureUsage usage)
-{
-	if (handle == 0)
-		glGenTextures(1, &handle);
-
-	glBindTexture(GL_TEXTURE_2D, handle);
-
-	GLenum internalFormat = TextureFormatToGLInternalFormat(format);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
-		TextureFormatToGLFormat(format), GL_UNSIGNED_BYTE, nullptr);
-
-	if (usage == TextureUsage::RenderTarget)
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}
-	else
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	m_width = width;
-	m_height = height;
-	m_format = format;
-	m_usage = usage;
-}
-
-void GpuTexture2D::SetData(const uint8_t* pixels, int width, int height, TextureFormat p_format)
-{
-	if (handle == 0)
-		glGenTextures(1, &handle);
-
-	glBindTexture(GL_TEXTURE_2D, handle);
-
-	GLenum internalFormat = TextureFormatToGLInternalFormat(p_format);
-	GLenum format = TextureFormatToGLFormat(p_format);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	m_width = width;
-	m_height = height;
-	m_format = p_format;
-}
-
-GpuTexture2D::~GpuTexture2D()
-{
-	if (handle != 0)
-		glDeleteTextures(1, &handle);
-}
-
-// ============================================================================
-// Framebuffer
-// ============================================================================
-void GpuFramebuffer::AttachColour(GpuTexture2D* texture, int slot)
-{
-	if (isWindowSurface)
-	{
-		SableUI_Error("Cannot add a colour attachment to a window surface");
-		return;
-	}
-	if (slot < 0 || slot >= 8)
-	{
-		SableUI_Error("Color attachment slot must be between 0 and 7");
-		return;
-	}
-
-	if (m_colorAttachments.size() <= static_cast<size_t>(slot))
-	{
-		m_colorAttachments.resize(slot + 1);
-	}
-
-	m_colorAttachments[slot] = std::move(*texture);
-}
-
-void GpuFramebuffer::AttachDepthStencil(GpuTexture2D* texture)
-{
-	m_depthStencilAttachment = std::move(*texture);
-}
-
-void GpuFramebuffer::Bake()
-{
-	if (isWindowSurface)
-	{
-		SableUI_Error("Cannot bake a window-surface framebuffer");
-		return;
-	}
-
-	if (m_handle == 0)
-		glGenFramebuffers(1, &m_handle);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, m_handle);
-
-	std::vector<GLenum> drawBuffers;
-	for (size_t i = 0; i < m_colorAttachments.size(); ++i)
-	{
-		if (m_colorAttachments[i].GetHandle() != 0)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i,
-				GL_TEXTURE_2D, m_colorAttachments[i].GetHandle(), 0);
-			drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-		}
-	}
-
-	if (!drawBuffers.empty())
-	{
-		glDrawBuffers(drawBuffers.size(), drawBuffers.data());
-	}
-
-	if (m_depthStencilAttachment.GetHandle() != 0)
-	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-			GL_TEXTURE_2D, m_depthStencilAttachment.GetHandle(), 0);
-	}
-
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (status != GL_FRAMEBUFFER_COMPLETE)
-	{
-		SableUI_Error("Framebuffer is not complete! Status: 0x%x", status);
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void GpuFramebuffer::SetSize(int p_width, int p_height)
-{
-	if (width == p_width && width == p_height)
-		return;
-
-	width = p_width;
-	height = p_height;
-
-	for (auto& texture : m_colorAttachments)
-	{
-		if (texture.GetHandle() != 0)
-		{
-			texture.CreateStorage(width, height, texture.GetFormat(), texture.GetUsage());
-		}
-	}
-
-	if (m_depthStencilAttachment.GetHandle() != 0)
-	{
-		m_depthStencilAttachment.CreateStorage(width, height, m_depthStencilAttachment.GetFormat(), TextureUsage::RenderTarget);
-	}
-
-	if (m_handle != 0)
-		Bake();
-}
-
-GpuFramebuffer::~GpuFramebuffer()
-{
-	if (m_handle != 0)
-		glDeleteFramebuffers(1, &m_handle);
-}
-
-// ============================================================================
-// Texture2DArray
-// ============================================================================
-void GpuTexture2DArray::Bind(uint32_t slot) const
-{
-	if (slot > 15)
-		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
-
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, handle);
-}
-
-void GpuTexture2DArray::Unbind(uint32_t slot) const
-{
-	if (slot > 15)
-		SableUI_Error("A maximum of 15 texture units is supported for compatibility");
-
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
-
-void GpuTexture2DArray::Init(int width, int height, int depth)
-{
-	if (handle == 0)
-		glGenTextures(1, &handle);
-
-	glBindTexture(GL_TEXTURE_2D_ARRAY, handle);
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, width, height, depth);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-}
-
-void GpuTexture2DArray::Resize(int newDepth)
-{
-	if (newDepth <= m_depth)
-	{
-		SableUI_Warn("Trying to resize texture array to a smaller or same depth (old: %i, new: %i)",
-			m_depth, newDepth);
-		return;
-	}
-
-	GLuint newTextureArray = 0;
-	glGenTextures(1, &newTextureArray);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, newTextureArray);
-
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, m_width, m_height, newDepth);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	/* copy old texture to new, with new depth */
-	GLuint oldAtlasTextureArray = handle;
-	glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
-		newTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
-		m_width, m_height, m_depth);
-
-	glDeleteTextures(1, &oldAtlasTextureArray);
-	handle = newTextureArray;
-	m_depth = newDepth;
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
-
-void GpuTexture2DArray::SubImage(int xOffset, int yOffset, int zOffset,
-	int width, int height, int depth, const uint8_t* pixels)
-{
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, xOffset, yOffset, zOffset,
-		width, height, depth, GL_RED, GL_UNSIGNED_BYTE, pixels);
-}
-
-void GpuTexture2DArray::CopyImageSubData(const GpuTexture2DArray& src,
-	int srcX, int srcY, int srcZ, int dstX,
-	int dstY, int dstZ, int width, int height, int depth)
-{
-	glCopyImageSubData(src.handle, GL_TEXTURE_2D_ARRAY, 0,
-		srcX, srcY, srcZ, handle, GL_TEXTURE_2D_ARRAY, 0,
-		dstX, dstY, dstZ, width, height, depth);
-}
-
-GpuTexture2DArray::~GpuTexture2DArray()
-{
-	glDeleteTextures(1, &handle);
-}
-
-// ===========================================================================
-// Gpu Object
-// ============================================================================
-GpuObject::GpuObject()
-{
-	s_numGpuObjects++;
-}
-
-GpuObject::~GpuObject()
-{
-	if (context)
-		context->DestroyGpuObject(this);
-}
-
-int GpuObject::GetNumInstances()
-{
-	return s_numGpuObjects;
 }
 
 // ============================================================================
@@ -903,8 +217,9 @@ int GpuObject::GetNumInstances()
 class OpenGLCommandExecutor : public CommandBufferExecutor
 {
 public:
-	OpenGLCommandExecutor(GlobalResources* globalRes, ContextResources* contextRes, OpenGL3Backend* backend)
-		: m_globalRes(globalRes), m_contextRes(contextRes), m_backend(backend) {};
+	OpenGLCommandExecutor(GlobalResources* globalRes, ContextResources* contextRes,
+		OpenGL3Backend* backend)
+		: m_globalRes(globalRes), m_contextRes(contextRes), m_backend(backend) {}
 
 	void Execute(const CommandBuffer& cmdBuffer) override
 	{
@@ -928,16 +243,8 @@ public:
 				glDisable(GL_SCISSOR_TEST);
 				break;
 
-			case CommandType::CreateGpuObject:
-				ExecuteCreateGpuObject(std::get<CreateGpuObjectCmd>(cmd.data), cmd.inlineData);
-				break;
-			
-			case CommandType::BindGpuObject:
-				ExecuteBindGpuObject(std::get<BindGpuObjectCmd>(cmd.data));
-				break;
-
-			case CommandType::DestroyGpuObject:
-				ExecuteDestroyGpuObject(std::get<DestroyGpuObjectCmd>(cmd.data));
+			case CommandType::SetViewport:
+				ExecuteSetViewport(std::get<SetViewportCmd>(cmd.data));
 				break;
 
 			case CommandType::BindUniformBuffer:
@@ -948,8 +255,88 @@ public:
 				ExecuteBindTexture(std::get<BindTextureCmd>(cmd.data));
 				break;
 
+			case CommandType::BindGpuObject:
+				ExecuteBindGpuObject(std::get<BindGpuObjectCmd>(cmd.data));
+				break;
+
+			case CommandType::BindFramebuffer:
+				ExecuteBindFramebuffer(std::get<BindFramebufferCmd>(cmd.data));
+				break;
+
+			case CommandType::CreateGpuObject:
+				ExecuteCreateGpuObject(std::get<CreateGpuObjectCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::DestroyGpuObject:
+				ExecuteDestroyGpuObject(std::get<DestroyGpuObjectCmd>(cmd.data));
+				break;
+
+			case CommandType::CreateTexture2D:
+				ExecuteCreateTexture2D(std::get<CreateTexture2DCmd>(cmd.data));
+				break;
+
+			case CommandType::CreateTexture2DArray:
+				ExecuteCreateTexture2DArray(std::get<CreateTexture2DArrayCmd>(cmd.data));
+				break;
+
+			case CommandType::ResizeTexture2DArray:
+				ExecuteResizeTexture2DArray(std::get<ResizeTexture2DArrayCmd>(cmd.data));
+				break;
+
+			case CommandType::SubImageTexture2DArray:
+				ExecuteSubImageTexture2DArray(std::get<SubImageTexture2DArrayCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::CopyImageDataTexture2DArray:
+				ExecuteCopyImageDataTexture2DArray(std::get<CopyImageDataTexture2DArrayCmd>(cmd.data));
+				break;
+
+			case CommandType::SetDataTexture2D:
+				ExecuteSetTextureData(std::get<SetTextureDataCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::CreateStorageTexture2D:
+				ExecuteCreateTextureStorage(std::get<CreateTextureStorageCmd>(cmd.data));
+				break;
+
+			case CommandType::DestroyTexture2D:
+				ExecuteDestroyTexture2D(std::get<DestroyTexture2DCmd>(cmd.data));
+				break;
+
+			case CommandType::CreateFramebuffer:
+				ExecuteCreateFramebuffer(std::get<CreateFramebufferCmd>(cmd.data));
+				break;
+
+			case CommandType::AttachColourTexture:
+				ExecuteAttachColorTexture(std::get<AttachColorTextureCmd>(cmd.data));
+				break;
+
+			case CommandType::AttachDepthStencilTexture:
+				ExecuteAttachDepthStencilTexture(std::get<AttachDepthStencilTextureCmd>(cmd.data));
+				break;
+
+			case CommandType::BakeFramebuffer:
+				ExecuteBakeFramebuffer(std::get<BakeFramebufferCmd>(cmd.data));
+				break;
+
+			case CommandType::SetFramebufferSize:
+				ExecuteSetFramebufferSize(std::get<SetFramebufferSizeCmd>(cmd.data));
+				break;
+
+			case CommandType::DestroyFramebuffer:
+				ExecuteDestroyFramebuffer(std::get<DestroyFramebufferCmd>(cmd.data));
+				break;
+
+			case CommandType::CreateUniformBuffer:
+				ExecuteCreateUniformBuffer(std::get<CreateUniformBufferCmd>(cmd.data), cmd.inlineData);
+				break;
+
 			case CommandType::UpdateUniformBuffer:
 				ExecuteUpdateUniformBuffer(std::get<UpdateUniformBufferCmd>(cmd.data), cmd.inlineData);
+				break;
+
+			case CommandType::DestroyUniformBuffer:
+				ExecuteDestroyUniformBuffer(std::get<DestroyUniformBufferCmd>(cmd.data));
 				break;
 
 			case CommandType::DrawGpuObject:
@@ -985,17 +372,29 @@ public:
 				break;
 
 			default:
-				SableUI_Error("Unknown command type");
+				SableUI_Error("Unknown command type: %d", static_cast<int>(cmd.type));
 				break;
 			}
 		}
 	}
 
 private:
-	std::unordered_map<ResourceHandle, uint32_t> m_gpuHandles;
+	std::unordered_map<ResourceHandle, OpenGL3Backend::OpenGLMesh> m_gpuObjects;
+	std::unordered_map<ResourceHandle, GLuint> m_textures;
+	std::unordered_map<ResourceHandle, GLuint> m_framebuffers;
+	std::unordered_map<ResourceHandle, GLuint> m_uniformBuffers;
+
+	std::unordered_map<ResourceHandle, GpuObjectMetadata> m_meshMetadata;
+	std::unordered_map<ResourceHandle, TextureMetadata> m_textureMetadata;
+	std::unordered_map<ResourceHandle, FramebufferMetadata> m_framebufferMetadata;
+
 	GlobalResources* m_globalRes;
 	ContextResources* m_contextRes;
 	OpenGL3Backend* m_backend;
+
+	// ============================================================================
+	// Pipeline state
+	// ============================================================================
 
 	void ExecuteSetPipeline(const SetPipelineCmd& cmd)
 	{
@@ -1032,103 +431,559 @@ private:
 		glScissor(cmd.x, cmd.y, cmd.width, cmd.height);
 	}
 
+	void ExecuteSetViewport(const SetViewportCmd& cmd)
+	{
+		glViewport(cmd.x, cmd.y, cmd.width, cmd.height);
+	}
+
+	// ============================================================================
+	// Resource binding
+	// ============================================================================
+	
 	void ExecuteBindUniformBuffer(const BindUniformBufferCmd& cmd)
 	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, cmd.binding, cmd.ubo);
+		auto it = m_uniformBuffers.find(cmd.buffer);
+		if (it == m_uniformBuffers.end())
+		{
+			SableUI_Error("Attempting to bind non-existent uniform buffer");
+			return;
+		}
+		glBindBufferBase(GL_UNIFORM_BUFFER, cmd.binding, it->second);
 	}
 
 	void ExecuteBindTexture(const BindTextureCmd& cmd)
 	{
-		glActiveTexture(GL_TEXTURE0 + cmd.slot);
-		glBindTexture(TextureTypeToGL(cmd.type), cmd.handle);
-	}
-
-	void ExecuteCreateGpuObject(
-		const CreateGpuObjectCmd& cmd,
-		const std::vector<uint8_t>& data)
-	{
-		size_t vertexDataSize = static_cast<size_t>(cmd.numVertices) * cmd.layout.stride;
-		const void* vertexData = data.data();
-		const uint32_t* indexData = nullptr;
-
-		if (cmd.numIndices > 0)
-			indexData = reinterpret_cast<const uint32_t*>(data.data() + vertexDataSize);
-
-		GpuObject* obj = m_backend->CreateGpuObject(
-			vertexData, cmd.numVertices,
-			indexData, cmd.numIndices,
-			cmd.layout
-		);
-
-		m_gpuHandles[cmd.handle] = obj->handle;
-	}
-
-	uint32_t GetGpuHandle(ResourceHandle cpuHandle)
-	{
-		auto it = m_gpuHandles.find(cpuHandle);
-		if (it == m_gpuHandles.end())
+		auto it = m_textures.find(cmd.texture);
+		if (it == m_textures.end())
 		{
-			SableUI_Runtime_Error("Invalid CPU handle, resource not created yet");
-			return 0;
+			SableUI_Error("Attempting to bind non-existent texture");
+			return;
 		}
-		return it->second;
+
+		auto& metadata = m_textureMetadata[cmd.texture];
+		GLenum target = (metadata.type == TextureType::Texture2DArray)
+			? GL_TEXTURE_2D_ARRAY
+			: GL_TEXTURE_2D;
+
+		glActiveTexture(GL_TEXTURE0 + cmd.slot);
+		glBindTexture(target, it->second);
 	}
 
 	void ExecuteBindGpuObject(const BindGpuObjectCmd& cmd)
 	{
-		uint32_t gpuHandle = GetGpuHandle(cmd.handle);
-		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(gpuHandle);
-		glBindVertexArray(mesh.vao);
+		auto it = m_gpuObjects.find(cmd.handle);
+		if (it == m_gpuObjects.end())
+		{
+			SableUI_Error("Attempting to bind non-existent GPU object");
+			return;
+		}
+		glBindVertexArray(it->second.vao);
 	}
 
-	void ExecuteDestroyGpuObject(const DestroyGpuObjectCmd& cmd)
+	void ExecuteBindFramebuffer(const BindFramebufferCmd& cmd)
 	{
-		auto it = m_gpuHandles.find(cmd.handle);
-		if (it == m_gpuHandles.end())
+		auto it = m_framebuffers.find(cmd.framebuffer);
+		if (it == m_framebuffers.end())
 		{
-			SableUI_Warn("Attempted to destroy GPU object that doesn't exist (CPU handle: %u)",	cmd.handle.index);
+			SableUI_Error("Attempting to bind non-existent framebuffer");
 			return;
 		}
 
-		uint32_t gpuHandle = it->second;
-
-		auto meshIt = m_backend->m_meshes.find(gpuHandle);
-		if (meshIt == m_backend->m_meshes.end())
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+		if (metadata.isWindowSurface)
 		{
-			SableUI_Error("GPU handle exists in mapping but mesh doesn't exist (GPU handle: %u)", gpuHandle);
-			m_gpuHandles.erase(it);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		else
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, it->second);
+		}
+	}
+
+	// ============================================================================
+	// Texture management
+	// ============================================================================
+
+	void ExecuteCreateTexture2D(const CreateTexture2DCmd& cmd)
+	{
+		GLuint texID;
+		glGenTextures(1, &texID);
+		m_textures[cmd.handle] = texID;
+
+		TextureMetadata metadata;
+		metadata.width = cmd.width;
+		metadata.height = cmd.height;
+		metadata.format = cmd.format;
+		metadata.usage = cmd.usage;
+		metadata.type = TextureType::Texture2D;
+		m_textureMetadata[cmd.handle] = metadata;
+
+		if (cmd.width > 0 && cmd.height > 0)
+		{
+			glBindTexture(GL_TEXTURE_2D, texID);
+
+			GLenum internalFormat = TextureFormatToGLInternalFormat(cmd.format);
+			GLenum format = TextureFormatToGLFormat(cmd.format);
+
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, cmd.width, cmd.height,
+				0, format, GL_UNSIGNED_BYTE, nullptr);
+
+			if (cmd.usage == TextureUsage::RenderTarget)
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			}
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+	}
+
+	void ExecuteCreateTexture2DArray(const CreateTexture2DArrayCmd& cmd)
+	{
+		GLuint texID;
+		glGenTextures(1, &texID);
+		m_textures[cmd.handle] = texID;
+
+		TextureMetadata metadata;
+		metadata.width = cmd.width;
+		metadata.height = cmd.height;
+		metadata.depth = cmd.depth;
+		metadata.format = cmd.format;
+		metadata.usage = cmd.usage;
+		metadata.type = TextureType::Texture2DArray;
+		m_textureMetadata[cmd.handle] = metadata;
+
+		if (cmd.width > 0 && cmd.height > 0 && cmd.depth > 0)
+		{
+			glBindTexture(GL_TEXTURE_2D_ARRAY, texID);
+
+			GLenum internalFormat = TextureFormatToGLInternalFormat(cmd.format);
+			GLenum format = TextureFormatToGLFormat(cmd.format);
+
+			glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalFormat, cmd.width, cmd.height, cmd.depth);
+
+			if (cmd.usage == TextureUsage::RenderTarget)
+			{
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			}
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+	}
+
+	void ExecuteResizeTexture2DArray(const ResizeTexture2DArrayCmd& cmd)
+	{
+		TextureMetadata& metadata = m_textureMetadata[cmd.handle];
+
+		GLuint newTexID;
+		glGenTextures(1, &newTexID);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, newTexID);
+
+		GLenum internalFormat = TextureFormatToGLInternalFormat(metadata.format);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalFormat, metadata.width, metadata.height, cmd.newDepth);
+
+		if (metadata.usage == TextureUsage::RenderTarget)
+		{
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		GLuint oldAtlasTextureArray = m_textures[cmd.handle];
+		int copyDepth = std::min(metadata.depth, cmd.newDepth);
+
+		glCopyImageSubData(oldAtlasTextureArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+			newTexID, GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,
+			metadata.width, metadata.height, copyDepth);
+
+		metadata.depth = cmd.newDepth;
+
+		glDeleteTextures(1, &oldAtlasTextureArray);
+		m_textures[cmd.handle] = newTexID;
+		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	}
+
+	void ExecuteSubImageTexture2DArray(const SubImageTexture2DArrayCmd& cmd, const std::vector<uint8_t>& data)
+	{
+		GLuint texID = m_textures[cmd.handle];
+		if (texID == 0) return;
+
+		glBindTexture(GL_TEXTURE_2D_ARRAY, texID);
+
+		GLenum format = TextureFormatToGLFormat(cmd.format);
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+		glTexSubImage3D(
+			GL_TEXTURE_2D_ARRAY, 0,
+			cmd.xOffset, cmd.yOffset, cmd.zOffset,
+			cmd.width, cmd.height, cmd.depth,
+			format, GL_UNSIGNED_BYTE,
+			data.data()
+		);
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	}
+
+	void ExecuteCopyImageDataTexture2DArray(const CopyImageDataTexture2DArrayCmd& cmd)
+	{
+		GLuint src = m_textures[cmd.src];
+		GLuint dst = m_textures[cmd.dst];
+
+		glCopyImageSubData(src, GL_TEXTURE_2D_ARRAY, 0,
+			cmd.srcX, cmd.srcY, cmd.srcZ, dst, GL_TEXTURE_2D_ARRAY, 0,
+			cmd.dstX, cmd.dstY, cmd.dstZ, cmd.width, cmd.height, cmd.depth);
+	}
+
+	void ExecuteSetTextureData(const SetTextureDataCmd& cmd,
+		const std::vector<uint8_t>& data)
+	{
+		auto it = m_textures.find(cmd.texture);
+		if (it == m_textures.end())
+		{
+			SableUI_Error("Attempting to set data on non-existent texture");
 			return;
 		}
 
-		OpenGL3Backend::OpenGLMesh& mesh = meshIt->second;
+		glBindTexture(GL_TEXTURE_2D, it->second);
 
-		if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
-		if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
-		if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
+		GLenum internalFormat = TextureFormatToGLInternalFormat(cmd.format);
+		GLenum format = TextureFormatToGLFormat(cmd.format);
 
-		m_backend->m_meshes.erase(meshIt);
-		m_backend->FreeHandle(gpuHandle);
-		m_gpuHandles.erase(it);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, cmd.width, cmd.height,
+			0, format, GL_UNSIGNED_BYTE, data.data());
+
+		auto& metadata = m_textureMetadata[cmd.texture];
+		metadata.width = cmd.width;
+		metadata.height = cmd.height;
+		metadata.format = cmd.format;
 	}
 
-	void ExecuteUpdateUniformBuffer(const UpdateUniformBufferCmd& cmd, const std::vector<uint8_t>& data)
+	void ExecuteCreateTextureStorage(const CreateTextureStorageCmd& cmd)
 	{
-		glBindBuffer(GL_UNIFORM_BUFFER, cmd.ubo);
+		auto it = m_textures.find(cmd.texture);
+		if (it == m_textures.end())
+		{
+			SableUI_Error("Attempting to create storage for non-existent texture");
+			return;
+		}
+
+		glBindTexture(GL_TEXTURE_2D, it->second);
+
+		GLenum internalFormat = TextureFormatToGLInternalFormat(cmd.format);
+		GLenum format = TextureFormatToGLFormat(cmd.format);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, cmd.width, cmd.height,
+			0, format, GL_UNSIGNED_BYTE, nullptr);
+
+		auto& metadata = m_textureMetadata[cmd.texture];
+		metadata.width = cmd.width;
+		metadata.height = cmd.height;
+		metadata.format = cmd.format;
+		metadata.usage = cmd.usage;
+	}
+
+	void ExecuteDestroyTexture2D(const DestroyTexture2DCmd& cmd)
+	{
+		auto it = m_textures.find(cmd.handle);
+		if (it == m_textures.end())
+		{
+			SableUI_Warn("Attempting to destroy non-existent texture");
+			return;
+		}
+
+		GLuint texID = it->second;
+		glDeleteTextures(1, &texID);
+
+		m_textures.erase(it);
+		m_textureMetadata.erase(cmd.handle);
+	}
+
+	// ============================================================================
+	// Framebuffer management
+	// ============================================================================
+
+	void ExecuteCreateFramebuffer(const CreateFramebufferCmd& cmd)
+	{
+		if (cmd.isWindowSurface)
+		{
+			m_framebuffers[cmd.handle] = 0;
+
+			FramebufferMetadata metadata;
+			metadata.width = cmd.width;
+			metadata.height = cmd.height;
+			metadata.isWindowSurface = true;
+			m_framebufferMetadata[cmd.handle] = metadata;
+		}
+		else
+		{
+			GLuint fboID;
+			glGenFramebuffers(1, &fboID);
+			m_framebuffers[cmd.handle] = fboID;
+
+			FramebufferMetadata metadata;
+			metadata.width = cmd.width;
+			metadata.height = cmd.height;
+			metadata.isWindowSurface = false;
+			m_framebufferMetadata[cmd.handle] = metadata;
+		}
+	}
+
+	void ExecuteAttachColorTexture(const AttachColorTextureCmd& cmd)
+	{
+		auto fboIt = m_framebuffers.find(cmd.framebuffer);
+		auto texIt = m_textures.find(cmd.texture);
+
+		if (fboIt == m_framebuffers.end() || texIt == m_textures.end())
+		{
+			SableUI_Error("Invalid framebuffer or texture handle in AttachColourTexture");
+			return;
+		}
+
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+		if (metadata.isWindowSurface)
+		{
+			SableUI_Error("Cannot attach texture to window surface framebuffer");
+			return;
+		}
+
+		if (metadata.colorAttachments.size() <= static_cast<size_t>(cmd.slot))
+		{
+			metadata.colorAttachments.resize(cmd.slot + 1);
+		}
+		metadata.colorAttachments[cmd.slot] = cmd.texture;
+	}
+
+	void ExecuteAttachDepthStencilTexture(const AttachDepthStencilTextureCmd& cmd)
+	{
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+		if (metadata.isWindowSurface)
+		{
+			SableUI_Error("Cannot attach depth/stencil to window surface framebuffer");
+			return;
+		}
+
+		metadata.depthStencilAttachment = cmd.texture;
+	}
+
+	void ExecuteBakeFramebuffer(const BakeFramebufferCmd& cmd)
+	{
+		auto fboIt = m_framebuffers.find(cmd.framebuffer);
+		if (fboIt == m_framebuffers.end())
+		{
+			SableUI_Error("Attempting to bake non-existent framebuffer");
+			return;
+		}
+
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+		if (metadata.isWindowSurface)
+		{
+			SableUI_Warn("Cannot bake window surface framebuffer");
+			return;
+		}
+
+		GLuint fboID = fboIt->second;
+		glBindFramebuffer(GL_FRAMEBUFFER, fboID);
+
+		std::vector<GLenum> drawBuffers;
+		for (size_t i = 0; i < metadata.colorAttachments.size(); ++i)
+		{
+			if (metadata.colorAttachments[i].IsValid())
+			{
+				auto texIt = m_textures.find(metadata.colorAttachments[i]);
+				if (texIt != m_textures.end())
+				{
+					glFramebufferTexture2D(GL_FRAMEBUFFER,
+						GL_COLOR_ATTACHMENT0 + i,
+						GL_TEXTURE_2D,
+						texIt->second,
+						0);
+					drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+				}
+			}
+		}
+
+		if (!drawBuffers.empty())
+		{
+			glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+		}
+
+		if (metadata.depthStencilAttachment.IsValid())
+		{
+			auto texIt = m_textures.find(metadata.depthStencilAttachment);
+			if (texIt != m_textures.end())
+			{
+				glFramebufferTexture2D(GL_FRAMEBUFFER,
+					GL_DEPTH_STENCIL_ATTACHMENT,
+					GL_TEXTURE_2D,
+					texIt->second,
+					0);
+			}
+		}
+
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE)
+		{
+			SableUI_Error("Framebuffer is not complete! Status: 0x%x", status);
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void ExecuteSetFramebufferSize(const SetFramebufferSizeCmd& cmd)
+	{
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+		metadata.width = cmd.width;
+		metadata.height = cmd.height;
+
+		if (!metadata.isWindowSurface)
+		{
+			for (const auto& texHandle : metadata.colorAttachments)
+			{
+				if (texHandle.IsValid())
+				{
+					auto& texMetadata = m_textureMetadata[texHandle];
+					CreateTextureStorageCmd storageCmd;
+					storageCmd.texture = texHandle;
+					storageCmd.width = cmd.width;
+					storageCmd.height = cmd.height;
+					storageCmd.format = texMetadata.format;
+					storageCmd.usage = texMetadata.usage;
+					ExecuteCreateTextureStorage(storageCmd);
+				}
+			}
+
+			if (metadata.depthStencilAttachment.IsValid())
+			{
+				auto& texMetadata = m_textureMetadata[metadata.depthStencilAttachment];
+				CreateTextureStorageCmd storageCmd;
+				storageCmd.texture = metadata.depthStencilAttachment;
+				storageCmd.width = cmd.width;
+				storageCmd.height = cmd.height;
+				storageCmd.format = texMetadata.format;
+				storageCmd.usage = texMetadata.usage;
+				ExecuteCreateTextureStorage(storageCmd);
+			}
+
+			BakeFramebufferCmd bakeCmd;
+			bakeCmd.framebuffer = cmd.framebuffer;
+			ExecuteBakeFramebuffer(bakeCmd);
+		}
+	}
+
+	void ExecuteDestroyFramebuffer(const DestroyFramebufferCmd& cmd)
+	{
+		auto it = m_framebuffers.find(cmd.handle);
+		if (it == m_framebuffers.end())
+		{
+			SableUI_Warn("Attempting to destroy non-existent framebuffer");
+			return;
+		}
+
+		auto& metadata = m_framebufferMetadata[cmd.handle];
+		if (!metadata.isWindowSurface && it->second != 0)
+		{
+			GLuint fboID = it->second;
+			glDeleteFramebuffers(1, &fboID);
+		}
+
+		m_framebuffers.erase(it);
+		m_framebufferMetadata.erase(cmd.handle);
+	}
+
+	// ============================================================================
+	// UBO
+	// ============================================================================
+
+	void ExecuteCreateUniformBuffer(const CreateUniformBufferCmd& cmd,
+		const std::vector<uint8_t>& initialData)
+	{
+		GLuint uboID;
+		glGenBuffers(1, &uboID);
+		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
+
+		const void* data = initialData.empty() ? nullptr : initialData.data();
+		glBufferData(GL_UNIFORM_BUFFER, cmd.size, data, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		m_uniformBuffers[cmd.handle] = uboID;
+	}
+
+	void ExecuteUpdateUniformBuffer(const UpdateUniformBufferCmd& cmd,
+		const std::vector<uint8_t>& data)
+	{
+		auto it = m_uniformBuffers.find(cmd.buffer);
+		if (it == m_uniformBuffers.end())
+		{
+			SableUI_Error("Attempting to update non-existent uniform buffer");
+			return;
+		}
+
+		glBindBuffer(GL_UNIFORM_BUFFER, it->second);
 		glBufferSubData(GL_UNIFORM_BUFFER, cmd.offset, cmd.size, data.data());
 	}
 
+	void ExecuteDestroyUniformBuffer(const DestroyUniformBufferCmd& cmd)
+	{
+		auto it = m_uniformBuffers.find(cmd.handle);
+		if (it == m_uniformBuffers.end())
+		{
+			SableUI_Warn("Attempting to destroy non-existent uniform buffer");
+			return;
+		}
+
+		GLuint uboID = it->second;
+		glDeleteBuffers(1, &uboID);
+		m_uniformBuffers.erase(it);
+	}
+
+	// ============================================================================
+	// Drawing
+	// ============================================================================
+
 	void ExecuteDrawGpuObject(const DrawGpuObjectCmd& cmd)
 	{
-		uint32_t gpuHandle = GetGpuHandle(cmd.handle);
-		OpenGL3Backend::OpenGLMesh& mesh = m_backend->GetMesh(gpuHandle);
-		GpuObjectMetadata& meshMetadata = m_backend->GetMeshMetadata(gpuHandle);
+		auto objIt = m_gpuObjects.find(cmd.handle);
+		auto metaIt = m_meshMetadata.find(cmd.handle);
+
+		if (objIt == m_gpuObjects.end() || metaIt == m_meshMetadata.end())
+		{
+			SableUI_Error("Attempting to draw non-existent GPU object");
+			return;
+		}
+
+		const OpenGL3Backend::OpenGLMesh& mesh = objIt->second;
+		const GpuObjectMetadata& metadata = metaIt->second;
+
 		glBindVertexArray(mesh.vao);
-		
+
 		if (cmd.instanceCount > 1)
 		{
 			glDrawElementsInstancedBaseVertex(
 				GL_TRIANGLES,
-				meshMetadata.indexCount,
+				metadata.indexCount,
 				GL_UNSIGNED_INT,
 				0,
 				cmd.instanceCount,
@@ -1139,7 +994,7 @@ private:
 		{
 			glDrawElements(
 				GL_TRIANGLES,
-				meshMetadata.indexCount,
+				metadata.indexCount,
 				GL_UNSIGNED_INT,
 				0
 			);
@@ -1173,10 +1028,19 @@ private:
 	void ExecuteDraw(const DrawCmd& cmd)
 	{
 		if (cmd.instanceCount > 1)
-			glDrawArraysInstanced(GL_TRIANGLES, cmd.firstVertex, cmd.vertexCount, cmd.instanceCount);
+		{
+			glDrawArraysInstanced(GL_TRIANGLES, cmd.firstVertex,
+				cmd.vertexCount, cmd.instanceCount);
+		}
 		else
+		{
 			glDrawArrays(GL_TRIANGLES, cmd.firstVertex, cmd.vertexCount);
+		}
 	}
+
+	// ============================================================================
+	// Render pass
+	// ============================================================================
 
 	void ExecuteClear(const ClearCmd& cmd)
 	{
@@ -1186,41 +1050,178 @@ private:
 
 	void ExecuteBeginRenderPass(const BeginRenderPassCmd& cmd)
 	{
-		if (!cmd.framebuffer->isWindowSurface)
+		auto fboIt = m_framebuffers.find(cmd.framebuffer);
+		if (fboIt == m_framebuffers.end())
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, cmd.framebuffer->GetHandle());
-			glViewport(0, 0, cmd.framebuffer->GetColorAttachments()[0].GetWidth(),
-				cmd.framebuffer->GetColorAttachments()[0].GetHeight());
+			SableUI_Error("Attempting to begin render pass with non-existent framebuffer");
+			return;
+		}
+
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+
+		if (metadata.isWindowSurface)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, fboIt->second);
+
+			if (!metadata.colorAttachments.empty() &&
+				metadata.colorAttachments[0].IsValid())
+			{
+				auto& texMetadata = m_textureMetadata[metadata.colorAttachments[0]];
+				glViewport(0, 0, texMetadata.width, texMetadata.height);
+			}
 		}
 	}
 
 	void ExecuteBlitFramebuffer(const BlitFramebufferCmd& cmd)
 	{
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd.srcFBO);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cmd.dstFBO);
+		auto srcIt = m_framebuffers.find(cmd.srcFramebuffer);
+		auto dstIt = m_framebuffers.find(cmd.dstFramebuffer);
+
+		if (srcIt == m_framebuffers.end() || dstIt == m_framebuffers.end())
+		{
+			SableUI_Error("Invalid framebuffer handle in BlitFramebuffer");
+			return;
+		}
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, srcIt->second);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstIt->second);
+
 		glBlitFramebuffer(
 			cmd.srcX0, cmd.srcY0, cmd.srcX1, cmd.srcY1,
 			cmd.dstX0, cmd.dstY0, cmd.dstX1, cmd.dstY1,
 			GL_COLOR_BUFFER_BIT,
 			TextureInterpolationToGL(cmd.filter)
 		);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void ExecuteBlitToScreen(const BlitToScreenCmd& cmd)
 	{
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, cmd.framebuffer->GetHandle());
+		auto srcIt = m_framebuffers.find(cmd.framebuffer);
+		if (srcIt == m_framebuffers.end())
+		{
+			SableUI_Error("Invalid framebuffer handle in BlitToScreen");
+			return;
+		}
+
+		auto& metadata = m_framebufferMetadata[cmd.framebuffer];
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, srcIt->second);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBlitFramebuffer(0, 0, cmd.framebuffer->width, cmd.framebuffer->height,
-			0, 0, cmd.framebuffer->width, cmd.framebuffer->height,
+
+		glBlitFramebuffer(
+			0, 0, metadata.width, metadata.height,
+			0, 0, metadata.width, metadata.height,
 			GL_COLOR_BUFFER_BIT,
-			GL_NEAREST);
+			TextureInterpolationToGL(cmd.filter)
+		);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void ExecuteCreateGpuObject(const CreateGpuObjectCmd& cmd,
+		const std::vector<uint8_t>& data)
+	{
+		OpenGL3Backend::OpenGLMesh mesh;
+
+		glGenVertexArrays(1, &mesh.vao);
+		glBindVertexArray(mesh.vao);
+
+		size_t vertexDataSize = static_cast<size_t>(cmd.numVertices) * cmd.layout.stride;
+		const void* vertexData = data.data();
+		const uint32_t* indexData = nullptr;
+
+		if (cmd.numIndices > 0)
+			indexData = reinterpret_cast<const uint32_t*>(data.data() + vertexDataSize);
+
+		glGenBuffers(1, &mesh.vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+		glBufferData(GL_ARRAY_BUFFER, vertexDataSize, vertexData, GL_STATIC_DRAW);
+
+		if (indexData && cmd.numIndices > 0)
+		{
+			glGenBuffers(1, &mesh.ebo);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+				cmd.numIndices * sizeof(uint32_t),
+				indexData,
+				GL_STATIC_DRAW);
+		}
+
+		uint32_t attrIndex = 0;
+		for (const auto& attr : cmd.layout.attributes)
+		{
+			glEnableVertexAttribArray(attrIndex);
+
+			GLenum type = GL_FLOAT;
+			GLint count = 1;
+			GLboolean normalized = attr.normalised ? GL_TRUE : GL_FALSE;
+			bool isInteger = false;
+
+			VertexFormatToGL(attr.format, isInteger, count, type);
+
+			if (isInteger)
+			{
+				glVertexAttribIPointer(
+					attrIndex,
+					count,
+					type,
+					cmd.layout.stride,
+					reinterpret_cast<void*>(static_cast<uintptr_t>(attr.offset))
+				);
+			}
+			else
+			{
+				glVertexAttribPointer(
+					attrIndex,
+					count,
+					type,
+					normalized,
+					cmd.layout.stride,
+					reinterpret_cast<void*>(static_cast<uintptr_t>(attr.offset))
+				);
+			}
+			attrIndex++;
+		}
+
+		glBindVertexArray(0);
+
+		m_gpuObjects[cmd.handle] = mesh;
+
+		GpuObjectMetadata metadata;
+		metadata.vertexCount = cmd.numVertices;
+		metadata.indexCount = cmd.numIndices;
+		m_meshMetadata[cmd.handle] = metadata;
+	}
+
+	void ExecuteDestroyGpuObject(const DestroyGpuObjectCmd& cmd)
+	{
+		auto it = m_gpuObjects.find(cmd.handle);
+		if (it == m_gpuObjects.end())
+		{
+			SableUI_Warn("Attempting to destroy non-existent GPU object (handle index: %u)",
+				cmd.handle.index);
+			return;
+		}
+
+		OpenGL3Backend::OpenGLMesh& mesh = it->second;
+
+		if (mesh.vao != 0)
+			glDeleteVertexArrays(1, &mesh.vao);
+
+		if (mesh.vbo != 0)
+			glDeleteBuffers(1, &mesh.vbo);
+
+		if (mesh.ebo != 0)
+			glDeleteBuffers(1, &mesh.ebo);
+
+		m_gpuObjects.erase(it);
+		m_meshMetadata.erase(cmd.handle);
 	}
 };
 

@@ -35,13 +35,14 @@ unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
 static inline void RectToNDC(
 	const Rect& r,
-	const GpuFramebuffer* fb,
+	int fbWidth,
+	int fbHeight,
 	float& x, float& y, float& w, float& h)
 {
-	x = (r.x / (float)fb->width);
-	y = (r.y / (float)fb->height);
-	w = (r.w / (float)fb->width);
-	h = (r.h / (float)fb->height);
+	x = (r.x / (float)fbWidth);
+	y = (r.y / (float)fbHeight);
+	w = (r.w / (float)fbWidth);
+	h = (r.h / (float)fbHeight);
 
 	x = x * 2.0f - 1.0f;
 	y = y * 2.0f - 1.0f;
@@ -60,8 +61,22 @@ static inline void RectToNDC(
 // ============================================================================
 void SableUI::DestroyGlobalResources(RendererBackend* renderer)
 {
-	renderer->DestroyUniformBuffer(g_res.ubo_rect);
-	renderer->DestroyUniformBuffer(g_res.ubo_text);
+	if (!g_res.initialised)
+		return;
+
+	CommandBuffer& cmd = renderer->GetCommandBuffer();
+
+	// Destroy uniform buffers via command buffer
+	if (g_res.ubo_rect.IsValid())
+		cmd.DestroyUniformBuffer(g_res.ubo_rect);
+
+	if (g_res.ubo_text.IsValid())
+		cmd.DestroyUniformBuffer(g_res.ubo_text);
+
+	// Execute destruction commands immediately
+	renderer->ExecuteCommandBuffer();
+
+	g_res.initialised = false;
 }
 
 GlobalResources& SableUI::GetGlobalResources()
@@ -76,28 +91,30 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 {
 	if (!g_res.initialised)
 	{
-		// rect
+		// Create shaders (these are still immediate - they don't touch GPU resources)
 		g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
-		g_res.ubo_rect = renderer->CreateUniformBuffer(sizeof(RectDrawData), nullptr);
-
-		// text
 		g_res.s_text.LoadBasicShaders(text_vert, text_frag);
-		g_res.ubo_text = renderer->CreateUniformBuffer(sizeof(TextDrawData), nullptr);
+
+		// Create uniform buffers via command buffer
+		g_res.ubo_rect = cb.CreateUniformBuffer(sizeof(RectDrawData), nullptr);
+		g_res.ubo_text = cb.CreateUniformBuffer(sizeof(TextDrawData), nullptr);
 
 		g_res.initialised = true;
 	}
 
 	void* ctx = GetCurrentContext_voidType();
-
 	ContextResources& resources = g_contextResources[ctx];
 
+	// Create rect vertex layout
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
 
+	// Create the rect GPU object via command buffer
 	ResourceHandle handle = cb.CreateGpuObject(
 		rectVertices,
 		sizeof(rectVertices) / sizeof(Vertex),
-		indices, sizeof(indices) / sizeof(unsigned int),
+		indices,
+		sizeof(indices) / sizeof(unsigned int),
 		layout
 	);
 
@@ -108,6 +125,7 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 
 	resources.rectObject = handle;
 
+	// Bind uniform buffers for this context
 	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Rect), g_res.ubo_rect);
 	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
 }
@@ -119,8 +137,15 @@ void SableUI::DestroyContextResources(RendererBackend* renderer)
 	auto it = g_contextResources.find(ctx);
 	if (it != g_contextResources.end())
 	{
+		CommandBuffer& cmd = renderer->GetCommandBuffer();
 		auto& res = it->second;
-		//res.rectObject->context->DestroyGpuObject(res.rectObject);
+
+		// Destroy GPU object via command buffer
+		if (res.rectObject.IsValid())
+			cmd.DestroyGpuObject(res.rectObject);
+
+		// Execute destruction commands immediately
+		renderer->ExecuteCommandBuffer();
 	}
 
 	g_contextResources.clear();
@@ -213,10 +238,10 @@ void DrawableRect::Update(
 	this->scissorRect = clipRect;
 }
 
-void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void DrawableRect::RecordCommands(const DrawableDrawData& drData)
 {
 	float x, y, w, h;
-	RectToNDC(m_rect, framebuffer, x, y, w, h);
+	RectToNDC(m_rect, drData.fbWidth, drData.fbHeight, x, y, w, h);
 
 	RectDrawData data{};
 
@@ -254,9 +279,9 @@ void DrawableRect::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fram
 
 	data.useTexture = 0;
 
-	cmd.SetPipeline(PipelineType::Rect);
-	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.DrawGpuObject(contextResources.rectObject);
+	drData.cmd.SetPipeline(PipelineType::Rect);
+	drData.cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+	drData.cmd.DrawGpuObject(drData.contextResources.rectObject);
 }
 
 // ============================================================================
@@ -299,14 +324,14 @@ void DrawableSplitter::Update(Rect& rect, Colour colour, PanelType type,
 	this->m_offsets = segments;
 }
 
-void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void DrawableSplitter::RecordCommands(const DrawableDrawData& drData)
 {
 	if (m_type == PanelType::Undef ||
 		m_type == PanelType::Base ||
 		m_type == PanelType::Root)
 		return;
 
-	cmd.SetPipeline(PipelineType::Rect);
+	drData.cmd.SetPipeline(PipelineType::Rect);
 
 	RectDrawData data{};
 	Colour c = m_colour;
@@ -318,14 +343,14 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 
 	data.useTexture = 0;
 
-	int startX = std::clamp(m_rect.x, 0, framebuffer->width);
-	int startY = std::clamp(m_rect.y, 0, framebuffer->height);
-	int boundW = std::clamp(m_rect.w, 0, framebuffer->width - startX);
-	int boundH = std::clamp(m_rect.h, 0, framebuffer->height - startY);
+	int startX = std::clamp(m_rect.x, 0, drData.fbWidth);
+	int startY = std::clamp(m_rect.y, 0, drData.fbHeight);
+	int boundW = std::clamp(m_rect.w, 0, drData.fbWidth - startX);
+	int boundH = std::clamp(m_rect.h, 0, drData.fbHeight - startY);
 
 	auto drawRect = [&](Rect r) {
 		float x, y, w, h;
-		RectToNDC(r, framebuffer, x, y, w, h);
+		RectToNDC(r, drData.fbWidth, drData.fbHeight, x, y, w, h);
 
 		data.rect[0] = x;
 		data.rect[1] = y;
@@ -337,9 +362,8 @@ void DrawableSplitter::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* 
 		data.realRect[2] = r.w;
 		data.realRect[3] = r.h;
 
-		cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-
-		cmd.DrawGpuObject(contextResources.rectObject);
+		drData.cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+		drData.cmd.DrawGpuObject(drData.contextResources.rectObject);
 	};
 
 	if (m_type == PanelType::HorizontalSplitter)
@@ -413,12 +437,12 @@ void SableUI::DrawableImage::Update(
 	this->scissorRect = clipRect;
 }
 
-void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void DrawableImage::RecordCommands(const DrawableDrawData& drData)
 {
 	RectDrawData data{};
 
 	float x, y, w, h;
-	RectToNDC(m_rect, framebuffer, x, y, w, h);
+	RectToNDC(m_rect, drData.fbWidth, drData.fbHeight, x, y, w, h);
 
 	data.rect[0] = x;
 	data.rect[1] = y;
@@ -451,10 +475,16 @@ void DrawableImage::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* fra
 
 	data.useTexture = 1;
 
-	cmd.SetPipeline(PipelineType::Image);
-	cmd.BindTexture(0, m_texture.GetGpuTexture());
-	cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	cmd.DrawGpuObject(contextResources.rectObject);
+	drData.cmd.SetPipeline(PipelineType::Image);
+
+	//ResourceHandle texHandle = m_texture.GetTextureHandle();
+	//if (texHandle.IsValid())
+	//{
+	//	cmd.BindTexture(0, texHandle);
+	//}
+	//
+	//cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+	//cmd.DrawGpuObject(contextResources.rectObject);
 }
 
 void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)
@@ -495,18 +525,31 @@ void SableUI::DrawableText::Update(Rect& rect, bool clipEnabled, const Rect& cli
 	this->scissorRect = clipRect;
 };
 
-void DrawableText::RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources)
+void DrawableText::RecordCommands(const DrawableDrawData& drData)
 {
-	TextDrawData data{};
-	data.targetSize[0] = static_cast<float>(framebuffer->width);
-	data.targetSize[1] = static_cast<float>(framebuffer->height);
-
-	data.pos[0] = m_rect.x;
-	data.pos[1] = m_rect.y + m_rect.h;
-
+	//if (!m_text.HasGeometry())
+	//	return;
+	//
+	//TextDrawData data{};
+	//data.targetSize[0] = static_cast<float>(fbWidth);
+	//data.targetSize[1] = static_cast<float>(fbHeight);
+	//
+	//data.pos[0] = m_rect.x;
+	//data.pos[1] = m_rect.y + m_rect.h;
+	//
 	//cmd.SetPipeline(PipelineType::Text);
-	//cmd.BindTexture(0, GetTextAtlasTexture());
+	//
+	//ResourceHandle atlasTexture = m_text.GetAtlasTexture();
+	//if (atlasTexture.IsValid())
+	//{
+	//	cmd.BindTexture(0, atlasTexture);
+	//}
+	//
 	//cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
-	//cmd.BindGpuObject(m_text.m_gpuObject->handle);
-	//cmd.DrawIndexed(m_text.m_gpuObject->numIndices);
+	//
+	//ResourceHandle textGeometry = m_text.GetGpuObjectHandle();
+	//if (textGeometry.IsValid())
+	//{
+	//	cmd.DrawGpuObject(textGeometry);
+	//}
 }

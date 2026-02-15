@@ -1,16 +1,14 @@
 #pragma once
-#include <SableUI/renderer/gpu_framebuffer.h>
-#include <SableUI/renderer/gpu_texture.h>
+#include <SableUI/renderer/resource_handle.h>
 #include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 
+#include <unordered_set>
 #include <string>
 #include <array>
-#include <vector>
-#include <unordered_set>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -72,20 +70,18 @@ namespace SableUI
 		UIEventContext ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		void SubmitCustomQueue(CustomTargetQueue* queue);
-		void RemoveQueueReference(CustomTargetQueue* queue);
-		GpuFramebuffer* GetSurface() { return &m_windowSurface; }
+		ResourceHandle GetSurface() const { return m_windowSurface; }
 		RendererBackend* GetBaseRenderer() const { return m_renderer; }
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
 	
 	private:
-		GpuFramebuffer m_framebuffer;
 		RendererBackend* m_renderer = nullptr;
-		GpuTexture2D m_colourAttachment;
+		ResourceHandle m_windowSurface;
 
-		GpuFramebuffer m_windowSurface;
+		ResourceHandle m_framebuffer;
+		ResourceHandle m_colourAttachment;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled, bool isLastChild);
@@ -120,8 +116,6 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
-
-		std::vector<CustomTargetQueue*> m_customTargetQueues;
 
 	private:
 		int m_syncFrames = 2;

@@ -6,8 +6,32 @@
 
 namespace SableUI
 {
-	struct GpuFramebuffer;
 	enum class Backend { Undef, OpenGL, Vulkan, DirectX, Metal };
+
+	struct FramebufferMetadata
+	{
+		int width = 0;
+		int height = 0;
+		bool isWindowSurface = false;
+		std::vector<ResourceHandle> colorAttachments;
+		ResourceHandle depthStencilAttachment;
+	};
+
+	struct TextureMetadata
+	{
+		int width = 0;
+		int height = 0;
+		int depth = -1;
+		TextureFormat format = TextureFormat::Undefined;
+		TextureUsage usage = TextureUsage::ShaderSample;
+		TextureType type = TextureType::Texture2D;
+	};
+
+	struct GpuObjectMetadata
+	{
+		uint32_t vertexCount = 0;
+		uint32_t indexCount = 0;
+	};
 
 	enum class CommandType : uint8_t
 	{
@@ -15,22 +39,46 @@ namespace SableUI
 		SetBlendState,
 		SetScissor,
 		DisableScissor,
-		BindUniformBuffer,
-		BindTexture,
+		Clear,
+
+		BlitFramebuffer,
+		BlitToScreen,
+		SetViewport,
+		
 		CreateGpuObject,
 		BindGpuObject,
-		UpdateUniformBuffer,
 		DrawGpuObject,
 		DestroyGpuObject,
-		DeleteTexture2D,
-		DeleteUniformBuffer,
+
+		CreateTexture2D,
+		CreateStorageTexture2D,
+		BindTexture,
+		DestroyTexture2D,
+		SetDataTexture2D,
+		
+		CreateTexture2DArray,
+		ResizeTexture2DArray,
+		SubImageTexture2DArray,
+		CopyImageDataTexture2DArray,
+		
+		CreateUniformBuffer,
+		BindUniformBuffer,
+		UpdateUniformBuffer,
+		DestroyUniformBuffer,
+
+		CreateFramebuffer,
+		DestroyFramebuffer,
+		BindFramebuffer,
+		AttachColourTexture,
+		AttachDepthStencilTexture,
+		BakeFramebuffer,
+		SetFramebufferSize,
+		
 		DrawIndexed,
 		Draw,
-		Clear,
+
 		BeginRenderPass,
-		EndRenderPass,
-		BlitFramebuffer,
-		BlitToScreen
+		EndRenderPass		
 	};
 
 	enum class PipelineType : uint8_t
@@ -113,6 +161,7 @@ namespace SableUI
 			stride = currentOffset;
 		}
 	};
+
 	enum class BlendFactor
 	{
 		Zero,
@@ -154,6 +203,9 @@ namespace SableUI
 		Storage
 	};
 
+	// ============================================================================
+	// Command Structures
+	// ============================================================================
 	struct SetPipelineCmd
 	{
 		PipelineType pipeline;
@@ -161,27 +213,41 @@ namespace SableUI
 
 	struct SetBlendStateCmd
 	{
-		bool enabled;
-		BlendFactor srcFactor;
-		BlendFactor dstFactor;
+		bool enabled = true;
+		BlendFactor srcFactor = BlendFactor::SrcAlpha;
+		BlendFactor dstFactor = BlendFactor::OneMinusSrcAlpha;
 	};
 
 	struct SetScissorCmd
 	{
-		int x, y, width, height;
+		int x = 0, y = 0, width = 0, height = 0;
+	};
+
+	struct SetViewportCmd
+	{
+		int x = 0, y = 0, width = 0, height = 0;
 	};
 
 	struct BindUniformBufferCmd
 	{
 		uint32_t binding;
-		uint32_t ubo;
+		ResourceHandle buffer;
 	};
 
 	struct BindTextureCmd
 	{
 		uint32_t slot;
-		uint32_t handle;
-		TextureType type;
+		ResourceHandle texture;
+	};
+
+	struct BindGpuObjectCmd
+	{
+		ResourceHandle handle;
+	};
+
+	struct BindFramebufferCmd
+	{
+		ResourceHandle framebuffer;
 	};
 
 	struct CreateGpuObjectCmd
@@ -192,19 +258,137 @@ namespace SableUI
 		VertexLayout layout;
 	};
 
-	struct BindGpuObjectCmd
+	struct DestroyGpuObjectCmd
 	{
 		ResourceHandle handle;
 	};
 
-	struct DestroyGpuObjectCmd
+	struct CreateTexture2DCmd
+	{
+		ResourceHandle handle;
+		int width = 0;
+		int height = 0;
+		TextureFormat format = TextureFormat::RGBA8;
+		TextureUsage usage = TextureUsage::ShaderSample;
+	};
+
+	struct DestroyTexture2DCmd
+	{
+		ResourceHandle handle;
+	};
+
+	struct SetTextureDataCmd
+	{
+		ResourceHandle texture;
+		int width;
+		int height;
+		TextureFormat format;
+	};
+
+	struct CreateTextureStorageCmd
+	{
+		ResourceHandle texture;
+		int width;
+		int height;
+		TextureFormat format;
+		TextureUsage usage;
+	};
+
+	struct CreateTexture2DArrayCmd
+	{
+		ResourceHandle handle;
+		int width = 0;
+		int height = 0;
+		int depth = 0;
+		TextureFormat format = TextureFormat::RGBA8;
+		TextureUsage usage = TextureUsage::ShaderSample;
+	};
+
+	struct ResizeTexture2DArrayCmd
+	{
+		ResourceHandle handle;
+		int newDepth = 0;
+	};
+
+	struct SubImageTexture2DArrayCmd
+	{
+		ResourceHandle handle;
+		int xOffset = 0;
+		int yOffset = 0;
+		int zOffset = 0;
+		int width = 0;
+		int height = 0;
+		int depth = 0;
+		TextureFormat format = TextureFormat::RGB8;
+	};
+
+	struct CopyImageDataTexture2DArrayCmd
+	{
+		ResourceHandle src;
+		ResourceHandle dst;
+		int srcX = 0;
+		int srcY = 0;
+		int srcZ = 0;
+		int dstX = 0;
+		int dstY = 0;
+		int dstZ = 0;
+		int width = 0;
+		int height = 0;
+		int depth = 0;
+	};
+
+	struct CreateFramebufferCmd
+	{
+		ResourceHandle handle;
+		int width = 0;
+		int height = 0;
+		bool isWindowSurface = false;
+	};
+
+	struct DestroyFramebufferCmd
+	{
+		ResourceHandle handle;
+	};
+
+	struct AttachColorTextureCmd
+	{
+		ResourceHandle framebuffer;
+		ResourceHandle texture;
+		int slot = 0;
+	};
+
+	struct AttachDepthStencilTextureCmd
+	{
+		ResourceHandle framebuffer;
+		ResourceHandle texture;
+	};
+
+	struct BakeFramebufferCmd
+	{
+		ResourceHandle framebuffer;
+	};
+
+	struct SetFramebufferSizeCmd
+	{
+		ResourceHandle framebuffer;
+		int width;
+		int height;
+	};
+
+	struct CreateUniformBufferCmd
+	{
+		ResourceHandle handle;
+		uint32_t size;
+	};
+
+	struct DestroyUniformBufferCmd
 	{
 		ResourceHandle handle;
 	};
 
 	struct UpdateUniformBufferCmd
 	{
-		uint32_t ubo;
+		ResourceHandle buffer;
 		uint32_t offset;
 		uint32_t size;
 	};
@@ -212,61 +396,80 @@ namespace SableUI
 	struct DrawGpuObjectCmd
 	{
 		ResourceHandle handle;
-		uint32_t instanceCount;
+		uint32_t instanceCount = 1;
 	};
 
 	struct DrawIndexedCmd
 	{
 		uint32_t indexCount;
-		uint32_t instanceCount;
-		uint32_t firstIndex;
-		int32_t vertexOffset;
-		uint32_t firstInstance;
+		uint32_t instanceCount = 1;
+		uint32_t firstIndex = 0;
+		int32_t vertexOffset = 0;
+		uint32_t firstInstance = 0;
 	};
 
 	struct DrawCmd
 	{
 		uint32_t vertexCount;
-		uint32_t instanceCount;
-		uint32_t firstVertex;
-		uint32_t firstInstance;
+		uint32_t instanceCount = 1;
+		uint32_t firstVertex = 0;
+		uint32_t firstInstance = 0;
 	};
 
 	struct ClearCmd
 	{
-		float r, g, b, a;
+		float r = 0.0f, g = 0.0f, b = 0.0f, a = 1.0f;
 	};
 
 	struct BeginRenderPassCmd
 	{
-		const GpuFramebuffer* framebuffer;
+		ResourceHandle framebuffer;
 	};
 
 	struct BlitFramebufferCmd
 	{
-		uint32_t srcFBO;
-		uint32_t dstFBO;
-		int srcX0, srcY0, srcX1, srcY1;
-		int dstX0, dstY0, dstX1, dstY1;
-		TextureInterpolation filter;
+		ResourceHandle srcFramebuffer;
+		ResourceHandle dstFramebuffer;
+		int srcX0 = 0, srcY0 = 0, srcX1 = 0, srcY1 = 0;
+		int dstX0 = 0, dstY0 = 0, dstX1 = 0, dstY1 = 0;
+		TextureInterpolation filter = TextureInterpolation::Nearest;
 	};
 
 	struct BlitToScreenCmd
 	{
-		const GpuFramebuffer* framebuffer;
+		ResourceHandle framebuffer;
+		TextureInterpolation filter = TextureInterpolation::Nearest;
 	};
 
-	using CommandData = std::variant<
+	using CommandData = std::variant <
 		SetPipelineCmd,
 		SetBlendStateCmd,
 		SetScissorCmd,
-		BindGpuObjectCmd,
+		SetViewportCmd,
 		BindUniformBufferCmd,
-		DrawGpuObjectCmd,
 		BindTextureCmd,
+		BindGpuObjectCmd,
+		BindFramebufferCmd,
 		CreateGpuObjectCmd,
 		DestroyGpuObjectCmd,
+		CreateTexture2DCmd,
+		DestroyTexture2DCmd,
+		SetTextureDataCmd,
+		CreateTextureStorageCmd,
+		CreateTexture2DArrayCmd,
+		ResizeTexture2DArrayCmd,
+		SubImageTexture2DArrayCmd,
+		CopyImageDataTexture2DArrayCmd,
+		CreateFramebufferCmd,
+		DestroyFramebufferCmd,
+		AttachColorTextureCmd,
+		AttachDepthStencilTextureCmd,
+		BakeFramebufferCmd,
+		SetFramebufferSizeCmd,
+		CreateUniformBufferCmd,
+		DestroyUniformBufferCmd,
 		UpdateUniformBufferCmd,
+		DrawGpuObjectCmd,
 		DrawIndexedCmd,
 		DrawCmd,
 		ClearCmd,
@@ -280,25 +483,5 @@ namespace SableUI
 		CommandType type;
 		CommandData data;
 		std::vector<uint8_t> inlineData;
-	};
-
-	struct RenderTarget
-	{
-		RenderTarget() = default;
-		RenderTarget(int width, int height);
-		~RenderTarget();
-
-		void SetTarget(RenderTargetType target) { this->targetType = target; };
-		void InitTexture();
-		void Resize(int width, int height);
-
-		void Bind() const;
-
-		int width = 0, height = 0;
-		RenderTargetType targetType = RenderTargetType::Window;
-
-	private:
-		uint32_t m_textureID = 0;
-		void Update() const;
 	};
 }

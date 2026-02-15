@@ -136,11 +136,11 @@ namespace SableUI
 
 		// event system
 		void DistributeInputToElements(const UIEventContext& ctx);
-		bool CheckElementTreeForChanges(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx);
+		bool CheckElementTreeForChanges(const DrawableDrawData& drData);
 		Element* GetElementById(const SableString& id);
 
 		// rendering
-		void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& countextResources, int z = 1);
+		void Render(const DrawableDrawData& drData, int z = 1);
 		Rect rect = { 0, 0, 0, 0 };
 		bool clipEnabled = false;
 		Rect clipRect = { 0, 0, 0, 0 };

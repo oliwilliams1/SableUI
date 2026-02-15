@@ -7,6 +7,7 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
+#include <SableUI/core/drawable.h>
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -145,9 +146,9 @@ static size_t GetHash(int n, const char* name)
 	return h;
 }
 
-void SableUI::BaseComponent::Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, int z)
+void SableUI::BaseComponent::Render(const DrawableDrawData& drData, int z)
 {
-	rootElement->Render(cmd, framebuffer, contextResources, z);
+	rootElement->Render(drData, z);
 }
 
 void SableUI::BaseComponent::BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info)
@@ -187,7 +188,7 @@ int SableUI::BaseComponent::GetNumChildren() const
 	return m_childCount;
 }
 
-bool SableUI::BaseComponent::Rerender(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, bool* hasContentsChanged)
+bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasContentsChanged)
 {
 	Rect oldRect = { rootElement->rect };
 
@@ -239,7 +240,7 @@ bool SableUI::BaseComponent::Rerender(CommandBuffer& cmd, const GpuFramebuffer* 
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
-	Render(cmd, framebuffer, contextResources);
+	Render(drData);
 
 	needsRerender = false;
 	return false;
@@ -258,15 +259,15 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 	UpdateHoverStyling(ctx);
 }
 
-bool SableUI::BaseComponent::CheckAndUpdate(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx)
+bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
 {
 	if (!needsRerender)
 	{
-		bool childChanged = rootElement->CheckElementTreeForChanges(cmd, fbo, ctx);
+		bool childChanged = rootElement->CheckElementTreeForChanges(drData);
 		return childChanged;
 	}
 
-	Rerender(cmd, fbo, ctx, nullptr);
+	Rerender(drData, nullptr);
 	needsRerender = false;
 
 	return true;
