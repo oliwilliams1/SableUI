@@ -63,8 +63,8 @@ namespace SableUI
 	void SetNextPanelMaxHeight(int height);
 	void SetNextPanelMinBounds(ivec2 bounds);
 
-	void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
-	void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
+	//void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
+	//void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
 
 	Window* _getCurrentContext();
 

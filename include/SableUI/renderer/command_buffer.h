@@ -55,7 +55,7 @@ namespace SableUI
 			TextureFormat format,
 			TextureUsage usage);
 		
-		void DestroyTexture2D(ResourceHandle handle);
+		void DestroyTexture(ResourceHandle handle);
 
 		ResourceHandle CreateTexture2DArray(
 			int width, int height, int layers,

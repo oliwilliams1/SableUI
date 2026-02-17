@@ -1,12 +1,13 @@
 ﻿#pragma once
+#include <SableUI/utils/utils.h>
+#include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <SableUI/utils/utils.h>
 
 namespace SableUI
 {
-	struct GpuTexture2DArray;
 	struct FontRange
 	{
 		FontRange();
@@ -50,6 +51,7 @@ namespace SableUI
 	};
 	
 	TextSizeResult QueryTextSize(
+		SableUI::CommandBuffer& cmd,
 		const SableString& text,
 		int maxWidth,
 		int fontSize = 11,
@@ -67,6 +69,7 @@ namespace SableUI
 	};
 
 	CursorPosition QueryCursorPosition(
+		SableUI::CommandBuffer& cmd,
 		const SableString& text,
 		size_t cursorIndex,
 		int maxWidth,
@@ -76,19 +79,19 @@ namespace SableUI
 	);
 
 	class RendererBackend;
-	struct GpuObject;
 	struct TextCacheKey;
-	struct _Text {
-		_Text();
-		~_Text();
-		_Text(const _Text&) = delete;
-		_Text& operator=(const _Text&) = delete;
-		_Text(_Text&& other) noexcept;
-		_Text& operator=(_Text&& other) = delete;
+	struct TextObj {
+		TextObj();
+		~TextObj();
+		TextObj(const TextObj&) = delete;
+		TextObj& operator=(const TextObj&) = delete;
+		TextObj(TextObj&& other) noexcept;
+		TextObj& operator=(TextObj&& other) = delete;
 
 		static int GetNumInstances();
 
 		int SetContent(
+			CommandBuffer& cmd,
 			RendererBackend* renderer,
 			const SableString& str,
 			int maxWidth,
@@ -98,8 +101,8 @@ namespace SableUI
 			TextJustification justification = TextJustification::Left
 		);
 
-		int UpdateMaxWidth(int maxWidth);
-		int GetMinWidth(bool wrapped);
+		int UpdateMaxWidth(CommandBuffer& cmd, int maxWidth);
+		int GetMinWidth(CommandBuffer& cmd, bool wrapped);
 		int GetUnwrappedHeight();
 
 		SableString m_content;
@@ -112,7 +115,7 @@ namespace SableUI
 		int m_actualWrappedWidth = 0;
 		TextJustification m_justify = TextJustification::Left;
 		unsigned int m_fontTextureID = 0;
-		GpuObject* m_gpuObject = nullptr;
+		ResourceHandle m_gpuObject;
 		uint32_t indiciesSize = 0;
 		RendererBackend* m_renderer = nullptr;
 
@@ -120,10 +123,10 @@ namespace SableUI
 		std::vector<TextCacheKey> m_cacheKeys;
 	};
 
-	GpuObject* GetTextGpuObject(const _Text* text, int& height, int& maxWidth);
+	ResourceHandle GetTextGpuHandle(CommandBuffer& cmd, const TextObj* text, int& height, int& maxWidth);
 
-	const GpuTexture2DArray* GetTextAtlasTexture();
+	ResourceHandle GetTextAtlasTexture();
 	void SetFontDPI(const vec2& dpi);
-	void InitFontManager();
+	void InitFontManager(SableUI::CommandBuffer& cmd);
 	void DestroyFontManager();
 }

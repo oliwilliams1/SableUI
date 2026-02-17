@@ -299,8 +299,8 @@ public:
 				ExecuteCreateTextureStorage(std::get<CreateTextureStorageCmd>(cmd.data));
 				break;
 
-			case CommandType::DestroyTexture2D:
-				ExecuteDestroyTexture2D(std::get<DestroyTexture2DCmd>(cmd.data));
+			case CommandType::DestroyTexture:
+				ExecuteDestroyTexture(std::get<DestroyTextureCmd>(cmd.data));
 				break;
 
 			case CommandType::CreateFramebuffer:
@@ -705,7 +705,7 @@ private:
 		metadata.usage = cmd.usage;
 	}
 
-	void ExecuteDestroyTexture2D(const DestroyTexture2DCmd& cmd)
+	void ExecuteDestroyTexture(const DestroyTextureCmd& cmd)
 	{
 		auto it = m_textures.find(cmd.handle);
 		if (it == m_textures.end())

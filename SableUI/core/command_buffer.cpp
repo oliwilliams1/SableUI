@@ -266,7 +266,7 @@ void CommandBuffer::CreateStorageTexture2D(ResourceHandle texture,
     m_commands.push_back(std::move(cmd));
 }
 
-void CommandBuffer::DestroyTexture2D(ResourceHandle handle)
+void CommandBuffer::DestroyTexture(ResourceHandle handle)
 {
     if (!handle.IsValid())
     {
@@ -275,8 +275,8 @@ void CommandBuffer::DestroyTexture2D(ResourceHandle handle)
     }
 
     Command cmd;
-    cmd.type = CommandType::DestroyTexture2D;
-    cmd.data = DestroyTexture2DCmd{ handle };
+    cmd.type = CommandType::DestroyTexture;
+    cmd.data = DestroyTextureCmd{ handle };
     m_commands.push_back(std::move(cmd));
 
     if (m_allocator)

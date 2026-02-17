@@ -3,6 +3,7 @@
 #include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/command_buffer.h>
 #include <SableUI/renderer/resource_handle.h>
+#include <SableUI/core/text_cache.h>
 #include <cstdint>
 #include <vector>
 
@@ -49,6 +50,8 @@ namespace SableUI
 		bool isDirty() const { return !m_commandBuffer.empty(); };
 		ResourceHandleAllocator& GetResourceAllocator() { return m_resourceAllocator; }
 
+		TextCacheFactory m_textCacheFactory;
+	
 	protected:
 		uint32_t AllocateHandle();
 		void FreeHandle(uint32_t handle);

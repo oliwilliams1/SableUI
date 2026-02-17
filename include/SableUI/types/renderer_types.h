@@ -8,31 +8,6 @@ namespace SableUI
 {
 	enum class Backend { Undef, OpenGL, Vulkan, DirectX, Metal };
 
-	struct FramebufferMetadata
-	{
-		int width = 0;
-		int height = 0;
-		bool isWindowSurface = false;
-		std::vector<ResourceHandle> colorAttachments;
-		ResourceHandle depthStencilAttachment;
-	};
-
-	struct TextureMetadata
-	{
-		int width = 0;
-		int height = 0;
-		int depth = -1;
-		TextureFormat format = TextureFormat::Undefined;
-		TextureUsage usage = TextureUsage::ShaderSample;
-		TextureType type = TextureType::Texture2D;
-	};
-
-	struct GpuObjectMetadata
-	{
-		uint32_t vertexCount = 0;
-		uint32_t indexCount = 0;
-	};
-
 	enum class CommandType : uint8_t
 	{
 		SetPipeline,
@@ -53,7 +28,7 @@ namespace SableUI
 		CreateTexture2D,
 		CreateStorageTexture2D,
 		BindTexture,
-		DestroyTexture2D,
+		DestroyTexture,
 		SetDataTexture2D,
 		
 		CreateTexture2DArray,
@@ -272,7 +247,7 @@ namespace SableUI
 		TextureUsage usage = TextureUsage::ShaderSample;
 	};
 
-	struct DestroyTexture2DCmd
+	struct DestroyTextureCmd
 	{
 		ResourceHandle handle;
 	};
@@ -453,7 +428,7 @@ namespace SableUI
 		CreateGpuObjectCmd,
 		DestroyGpuObjectCmd,
 		CreateTexture2DCmd,
-		DestroyTexture2DCmd,
+		DestroyTextureCmd,
 		SetTextureDataCmd,
 		CreateTextureStorageCmd,
 		CreateTexture2DArrayCmd,
@@ -483,5 +458,30 @@ namespace SableUI
 		CommandType type;
 		CommandData data;
 		std::vector<uint8_t> inlineData;
+	};
+
+	struct FramebufferMetadata
+	{
+		int width = 0;
+		int height = 0;
+		bool isWindowSurface = false;
+		std::vector<ResourceHandle> colorAttachments;
+		ResourceHandle depthStencilAttachment;
+	};
+
+	struct TextureMetadata
+	{
+		int width = 0;
+		int height = 0;
+		int depth = -1;
+		TextureFormat format = TextureFormat::Undefined;
+		TextureUsage usage = TextureUsage::ShaderSample;
+		TextureType type = TextureType::Texture2D;
+	};
+
+	struct GpuObjectMetadata
+	{
+		uint32_t vertexCount = 0;
+		uint32_t indexCount = 0;
 	};
 }

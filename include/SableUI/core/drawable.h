@@ -176,6 +176,6 @@ namespace SableUI
 
 		void RecordCommands(const DrawableDrawData& data) override;
 
-		_Text m_text;
+		TextObj m_text;
 	};
 }

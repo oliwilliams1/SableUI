@@ -123,7 +123,7 @@ void SableUI::MemoryDebugger::Layout()
 			CustomTargetQueue::GetNumInstances()));
 
 		TextSeperator("Utilities");
-		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
+		Text(SableString::Format("Text: %d", TextObj::GetNumInstances()));
 		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
 		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
 

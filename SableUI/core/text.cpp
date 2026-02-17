@@ -31,6 +31,7 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/core/text_cache.h>
+#include <SableUI/renderer/resource_handle.h>
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Font Manager"
 
@@ -355,23 +356,24 @@ public:
 	FontManager(FontManager&&) = delete;
 	FontManager& operator=(FontManager&&) = delete;
 
-	bool Initialise();
+	bool Initialise(SableUI::CommandBuffer& cmd);
 	void Shutdown();
-	bool isInitialized = false;
+	bool isInitialised = false;
 	void GetTextVertexData(
-		const SableUI::_Text* text,
+		SableUI::CommandBuffer& cmd,
+		const SableUI::TextObj* text,
 		std::vector<TextVertex>& outVertices,
 		std::vector<uint32_t>& outIndices,
 		int& outHeight,
 		int& outActualLineWidth);
-	int GetMinWidth(SableUI::_Text* text, bool wrapped);
+	int GetMinWidth(SableUI::CommandBuffer& cmd, SableUI::TextObj* text, bool wrapped);
 
 	void InitFreeType();
 	void ShutdownFreeType();
 	FT_Library ft_library = nullptr;
 
-	void ResizeTextureArray(int newDepth);
-	const SableUI::GpuTexture2DArray* GetTextAtlasTexture() const { return &atlasTextureArray; }
+	void ResizeTextureArray(SableUI::CommandBuffer cmd, int newDepth);
+	const SableUI::ResourceHandle GetTextAtlasTexture() const { return atlasTextureArray; }
 
 	std::map<char_t, Character> characters;
 	bool FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange);
@@ -383,7 +385,7 @@ public:
 	bool LoadFontPackByFilename(const std::string& fontDir, const std::string& filename);
 	bool SetStyleChar(char32_t c);
 
-	SableUI::GpuTexture2DArray atlasTextureArray;
+	SableUI::ResourceHandle atlasTextureArray;
 	int atlasDepth = MIN_ATLAS_DEPTH;
 	SableUI::u16vec2 atlasCursor = { ATLAS_PADDING, ATLAS_PADDING };
 
@@ -392,21 +394,21 @@ public:
 	FontRangeHash GetAtlasHash(const SableUI::FontRange& range, int fontSize);
 	FT_Face GetFontForChar(char32_t c, int fontSize, const std::string& fontPathForAtlas,
 		std::map<std::string, FT_Face>& currentLoadedFaces) const;
-	void RenderGlyphs(Atlas& atlas);
-	void LoadFontRange(Atlas& atlas, const SableUI::FontRange& range);
+	void RenderGlyphs(SableUI::CommandBuffer& cmd, Atlas& atlas);
+	void LoadFontRange(SableUI::CommandBuffer& cmd, Atlas& atlas, const SableUI::FontRange& range);
 
 	void SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
 		const std::map<char32_t, Character>& charsToSerialise, int initialYOffset);
-	bool DeserialiseAtlas(const std::string& filename, Atlas& outAtlas);
+	bool DeserialiseAtlas(SableUI::CommandBuffer& cmd, const std::string& filename, Atlas& outAtlas);
 
 	bool SerialiseFontPack(const SableUI::FontPack& pack);
 	bool DeserialiseFontPack(const std::string& fontFilename, SableUI::FontPack& outPack);
 	std::string GetFontPackCacheFilename(const std::string& fontFilename);
 
-	void UploadAtlasToGPU(int height, int initialY, uint8_t* pixels);
+	void UploadAtlasToGPU(SableUI::CommandBuffer& cmd, int height, int initialY, uint8_t* pixels);
 
 private:
-	FontManager() : isInitialized(false) {}
+	FontManager() : isInitialised(false) {}
 
 	std::unordered_map<std::string, FT_Face> m_cachedFaces;
 	std::mutex m_faceCacheMutex;
@@ -427,19 +429,19 @@ FontManager& FontManager::GetInstance()
 	return instance;
 }
 
-bool FontManager::Initialise()
+bool FontManager::Initialise(SableUI::CommandBuffer& cmd)
 {
-	if (isInitialized)
+	if (isInitialised)
 	{
 		SableUI_Log("FontManager already initialised");
 		return true;
 	}
 
 	SableUI_Log("FontManager initialised");
-	isInitialized = true;
+	isInitialised = true;
 
 	// init (w, h, d)
-	atlasTextureArray.Init(ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH);
+	atlasTextureArray = cmd.CreateTexture2DArray(ATLAS_WIDTH, ATLAS_HEIGHT, MIN_ATLAS_DEPTH, SableUI::TextureFormat::R8);
 
 	atlasDepth = MIN_ATLAS_DEPTH;
 	fontManager = &GetInstance();
@@ -457,7 +459,7 @@ bool FontManager::Initialise()
 
 void FontManager::Shutdown()
 {
-	if (!isInitialized) return;
+	if (!isInitialised) return;
 
 	{
 		std::lock_guard<std::mutex> lock(m_faceCacheMutex);
@@ -476,7 +478,7 @@ void FontManager::Shutdown()
 
 	ShutdownFreeType();
 	SableUI_Log("FontManager shut down");
-	isInitialized = false;
+	isInitialised = false;
 	fontManager = nullptr;
 }
 
@@ -812,7 +814,7 @@ bool FontManager::FindFontRangeForChar(char32_t c, SableUI::FontRange& outRange)
 	return false;
 }
 
-void FontManager::ResizeTextureArray(int newDepth)
+void FontManager::ResizeTextureArray(SableUI::CommandBuffer cmd, int newDepth)
 {
 	if (newDepth <= atlasDepth)
 	{
@@ -821,16 +823,9 @@ void FontManager::ResizeTextureArray(int newDepth)
 		return;
 	}
 
-	SableUI::GpuTexture2DArray newAtlasTextureArray;
-	newAtlasTextureArray.Init(ATLAS_WIDTH, ATLAS_HEIGHT, newDepth);
-	newAtlasTextureArray.CopyImageSubData(atlasTextureArray, 0, 0, 0, 0, 0, 0,
-		ATLAS_WIDTH, ATLAS_HEIGHT, atlasDepth);
-
-	atlasTextureArray = std::move(newAtlasTextureArray);
+	cmd.ResizeTexture2DArray(atlasTextureArray, newDepth);
 	atlasDepth = newDepth;
-
-	atlasTextureArray.Unbind();
-} // newAtlasTextureArray will be destroyed
+}
 
 FontRangeHash FontManager::GetAtlasHash(const SableUI::FontRange& range, int fontSize)
 {
@@ -909,7 +904,7 @@ FT_Face FontManager::GetFontForChar(char32_t c, int fontSize, const std::string&
 	return face;
 }
 
-void FontManager::RenderGlyphs(Atlas& atlas)
+void FontManager::RenderGlyphs(SableUI::CommandBuffer& cmd, Atlas& atlas)
 {
 	SableUI_Log("Rendering glyphs for range: U+%04X - U+%04X (size %i) from %s",
 		static_cast<unsigned int>(atlas.range.start),
@@ -993,7 +988,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 
 	if (newDepth > atlasDepth)
 	{
-		ResizeTextureArray(newDepth);
+		ResizeTextureArray(cmd, newDepth);
 	}
 
 	auto atlasPixels = new uint8_t[static_cast<size_t>(ATLAS_WIDTH) * requiredHeightForPass * 1];
@@ -1111,7 +1106,7 @@ void FontManager::RenderGlyphs(Atlas& atlas)
 		atlasCursor.x += size.x + ATLAS_PADDING;
 	}
 
-	UploadAtlasToGPU(requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels);
+	UploadAtlasToGPU(cmd, requiredHeightForPass, initialAtlasYForRenderPass, atlasPixels);
 
 	SerialiseAtlas(atlas, atlasPixels, ATLAS_WIDTH, requiredHeightForPass,
 		charsForSerialization, initialAtlasYForRenderPass);
@@ -1283,10 +1278,8 @@ bool FontManager::DeserialiseFontPack(const std::string& fontFilename, SableUI::
 	}
 }
 
-void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels)
+void FontManager::UploadAtlasToGPU(SableUI::CommandBuffer& cmd, int height, int initialY, uint8_t* pixels)
 {
-	atlasTextureArray.Bind();
-
 	int currentUploadY = 0;
 	while (currentUploadY < height)
 	{
@@ -1299,15 +1292,11 @@ void FontManager::UploadAtlasToGPU(int height, int initialY, uint8_t* pixels)
 
 		if (heightToUpload <= 0) break;
 
-		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) *
-			ATLAS_WIDTH * 1);
+		const uint8_t* chunkPixels = pixels + (static_cast<size_t>(currentUploadY) * ATLAS_WIDTH * 1);
 
-		atlasTextureArray.SubImage(0, yOffsetInTargetLayer, targetLayer, ATLAS_WIDTH, heightToUpload, 1, chunkPixels);
-
+		cmd.SubImageTexture2DArray(atlasTextureArray, 0, yOffsetInTargetLayer, targetLayer, ATLAS_WIDTH, heightToUpload, 1, SableUI::TextureFormat::R8, chunkPixels);
 		currentUploadY += heightToUpload;
 	}
-
-	atlasTextureArray.Unbind();
 }
 
 void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width, int height,
@@ -1378,7 +1367,7 @@ void FontManager::SerialiseAtlas(const Atlas& atlas, uint8_t* pixels, int width,
 	SableUI_Log("Saved atlas to %s", filename.c_str());
 }
 
-bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
+bool FontManager::DeserialiseAtlas(SableUI::CommandBuffer& cmd, const std::string& filename, Atlas& outAtlas)
 {
 	std::ifstream file(filename, std::ios::binary);
 
@@ -1444,9 +1433,9 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 		int requiredDepthForDeserialization = static_cast<int>(std::ceil(static_cast<float>(proposedEndGlobalY) / ATLAS_HEIGHT));
 
 		if (requiredDepthForDeserialization > atlasDepth)
-			ResizeTextureArray(requiredDepthForDeserialization);
+			ResizeTextureArray(cmd, requiredDepthForDeserialization);
 
-		UploadAtlasToGPU(cachedHeight, initialAtlasYForDeserialisedPass, pixels_buffer.get());
+		UploadAtlasToGPU(cmd, cachedHeight, initialAtlasYForDeserialisedPass, pixels_buffer.get());
 
 		atlasCursor.y += cachedHeight + ATLAS_PADDING;
 
@@ -1489,7 +1478,7 @@ bool FontManager::DeserialiseAtlas(const std::string& filename, Atlas& outAtlas)
 	}
 }
 
-void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
+void FontManager::LoadFontRange(SableUI::CommandBuffer& cmd, Atlas& atlas, const SableUI::FontRange& range)
 {
 	atlas.range = range;
 
@@ -1509,7 +1498,7 @@ void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
 
 	if (std::filesystem::exists(filename))
 	{
-		if (DeserialiseAtlas(filename, atlas))
+		if (DeserialiseAtlas(cmd, filename, atlas))
 		{
 			loadedFromCache = true;
 		}
@@ -1522,7 +1511,7 @@ void FontManager::LoadFontRange(Atlas& atlas, const SableUI::FontRange& range)
 
 	if (!loadedFromCache)
 	{
-		RenderGlyphs(atlas);
+		RenderGlyphs(cmd, atlas);
 	}
 
 	atlases.emplace_back(atlas);
@@ -1541,7 +1530,8 @@ struct TextToken {
 };
 
 void FontManager::GetTextVertexData(
-	const SableUI::_Text* text,
+	SableUI::CommandBuffer& cmd,
+	const SableUI::TextObj* text,
 	std::vector<TextVertex>& outVertices,
 	std::vector<uint32_t>& outIndices,
 	int& outHeight,
@@ -1624,7 +1614,7 @@ void FontManager::GetTextVertexData(
 			{
 				Atlas newAtlas{};
 				newAtlas.fontSize = text->m_fontSize;
-				LoadFontRange(newAtlas, targetRange);
+				LoadFontRange(cmd, newAtlas, targetRange);
 
 				it = characters.find(charKey);
 				if (it != characters.end())
@@ -1744,7 +1734,7 @@ void FontManager::GetTextVertexData(
 				{
 					Atlas newAtlas{};
 					newAtlas.fontSize = text->m_fontSize;
-					LoadFontRange(newAtlas, targetRange);
+					LoadFontRange(cmd, newAtlas, targetRange);
 					it = characters.find(charKey);
 				}
 			}
@@ -1859,7 +1849,7 @@ void FontManager::GetTextVertexData(
 	outActualLineWidth = static_cast<int>(std::ceil(maxActualLineWidth));
 }
 
-int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
+int FontManager::GetMinWidth(SableUI::CommandBuffer& cmd, SableUI::TextObj* text, bool wrapped)
 {
 	if (wrapped)
 	{
@@ -1894,7 +1884,7 @@ int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
 				{
 					Atlas newAtlas{};
 					newAtlas.fontSize = text->m_fontSize;
-					LoadFontRange(newAtlas, targetRange);
+					LoadFontRange(cmd, newAtlas, targetRange);
 					auto newIt = characters.find(charKey);
 					if (newIt != characters.end())
 					{
@@ -1933,7 +1923,7 @@ int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
 				{
 					Atlas newAtlas{};
 					newAtlas.fontSize = text->m_fontSize;
-					LoadFontRange(newAtlas, targetRange);
+					LoadFontRange(cmd, newAtlas, targetRange);
 					auto newIt = characters.find(charKey);
 					if (newIt != characters.end())
 					{
@@ -1948,34 +1938,29 @@ int FontManager::GetMinWidth(SableUI::_Text* text, bool wrapped)
 	}
 }
 
-SableUI::GpuObject* SableUI::GetTextGpuObject(const _Text* text, int& height, int& maxWidth)
+SableUI::ResourceHandle SableUI::GetTextGpuHandle(CommandBuffer& cmd, const TextObj* text, int& height, int& maxWidth)
 {
 	if (fontManager == nullptr)
-		FontManager::GetInstance().Initialise();
+		SableUI_Runtime_Error("In refactoring tha graphics api, you must explicitly initialise/shutdown fontmanager!");
 
 	std::vector<TextVertex> vertices;
 	std::vector<uint32_t> indices;
-	fontManager->GetTextVertexData(text, vertices, indices, height, maxWidth);
+	fontManager->GetTextVertexData(cmd, text, vertices, indices, height, maxWidth);
 
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
 	layout.Add(VertexFormat::Float3);
 	layout.Add(VertexFormat::UInt1);
 
-	GpuObject* obj = text->m_renderer->CreateGpuObject(
-		vertices.data(),
-		vertices.size(),
-		indices.data(),
-		indices.size(),
-		layout);
-
-	return obj;
+	ResourceHandle handle = cmd.CreateGpuObject(vertices.data(), vertices.size(), indices.data(), indices.size(), layout);
+	
+	return handle;
 }
 
-const SableUI::GpuTexture2DArray* SableUI::GetTextAtlasTexture()
+SableUI::ResourceHandle SableUI::GetTextAtlasTexture()
 {
-	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialise();
+	if (fontManager == nullptr)
+		SableUI_Runtime_Error("In refactoring tha graphics api, you must explicitly initialise/shutdown fontmanager!");
 
 	return FontManager::GetInstance().GetTextAtlasTexture();
 }
@@ -1984,6 +1969,7 @@ const SableUI::GpuTexture2DArray* SableUI::GetTextAtlasTexture()
 // Size queries
 // ============================================================================
 SableUI::CursorPosition SableUI::QueryCursorPosition(
+	SableUI::CommandBuffer& cmd,
 	const SableString& text,
 	size_t cursorIndex,
 	int maxWidth,
@@ -1992,9 +1978,6 @@ SableUI::CursorPosition SableUI::QueryCursorPosition(
 	SableUI::TextJustification justification
 )
 {
-	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialise();
-
 	FontManager& fontManager = FontManager::GetInstance();
 
 	CursorPosition result = { 0, 0, 0, 0 };
@@ -2049,7 +2032,7 @@ SableUI::CursorPosition SableUI::QueryCursorPosition(
 			{
 				Atlas newAtlas{};
 				newAtlas.fontSize = fontSize;
-				fontManager.LoadFontRange(newAtlas, targetRange);
+				fontManager.LoadFontRange(cmd, newAtlas, targetRange);
 
 				auto newIt = fontManager.characters.find(charKey);
 				if (newIt != fontManager.characters.end())
@@ -2093,6 +2076,7 @@ SableUI::CursorPosition SableUI::QueryCursorPosition(
 }
 
 SableUI::TextSizeResult SableUI::QueryTextSize(
+	SableUI::CommandBuffer& cmd,
 	const SableString& text,
 	int maxWidth,
 	int fontSize,
@@ -2101,8 +2085,8 @@ SableUI::TextSizeResult SableUI::QueryTextSize(
 	int maxHeight
 )
 {
-	if (!FontManager::GetInstance().isInitialized)
-		FontManager::GetInstance().Initialise();
+	if (fontManager == nullptr)
+		SableUI_Runtime_Error("In refactoring tha graphics api, you must explicitly initialise/shutdown fontmanager!");
 
 	FontManager& fontManager = FontManager::GetInstance();
 
@@ -2149,7 +2133,7 @@ SableUI::TextSizeResult SableUI::QueryTextSize(
 			{
 				Atlas newAtlas{};
 				newAtlas.fontSize = fontSize;
-				fontManager.LoadFontRange(newAtlas, targetRange);
+				fontManager.LoadFontRange(cmd, newAtlas, targetRange);
 
 				auto newIt = fontManager.characters.find(charKey);
 				if (newIt != fontManager.characters.end())
@@ -2214,22 +2198,24 @@ SableUI::TextSizeResult SableUI::QueryTextSize(
 // ============================================================================
 static int s_textCount = 0;
 
-SableUI::_Text::_Text()
+SableUI::TextObj::TextObj()
 	{ s_textCount++; }
 
-SableUI::_Text::~_Text()
+SableUI::TextObj::~TextObj()
 {
 	for (const auto& key : m_cacheKeys)
-		TextCacheFactory::Release(m_renderer, key);
+	{
+		m_renderer->m_textCacheFactory.Release(key);
+	}
 	m_cacheKeys.clear();
 
-	m_gpuObject = nullptr;
+	m_gpuObject = {};
 	m_renderer = nullptr;
 
 	s_textCount--;
 }
 
-SableUI::_Text::_Text(_Text&& other) noexcept
+SableUI::TextObj::TextObj(TextObj&& other) noexcept
 	: m_content(std::move(other.m_content)),
 	m_colour(other.m_colour),
 	m_fontSize(other.m_fontSize),
@@ -2245,12 +2231,13 @@ SableUI::_Text::_Text(_Text&& other) noexcept
 	m_renderer(other.m_renderer),
 	m_cacheKeys(std::move(other.m_cacheKeys))
 {
-	other.m_gpuObject = nullptr;
+	other.m_gpuObject = {};
 	other.m_cacheKeys.clear();
 	other.m_renderer = nullptr;
 }
 
-int SableUI::_Text::SetContent(
+int SableUI::TextObj::SetContent(
+	CommandBuffer& cmd,
 	RendererBackend* renderer,
 	const SableString& str,
 	int maxWidth, int fontSize,
@@ -2258,7 +2245,8 @@ int SableUI::_Text::SetContent(
 	TextJustification justification)
 {
 	for (const auto& oldKey : m_cacheKeys)
-		TextCacheFactory::Release(m_renderer, oldKey);
+		renderer->m_textCacheFactory.Release(oldKey);
+	
 	m_cacheKeys.clear();
 
 	m_renderer = renderer;
@@ -2270,47 +2258,40 @@ int SableUI::_Text::SetContent(
 	m_justify = justification;
 
 	TextCacheKey key(this);
-	m_gpuObject = TextCacheFactory::Get(this, m_cachedHeight);
+	m_gpuObject = m_renderer->m_textCacheFactory.Get(cmd, this, m_cachedHeight);
 	m_cacheKeys.push_back(key);
 
 	return m_cachedHeight;
 }
 
-int SableUI::_Text::UpdateMaxWidth(int maxWidth)
+int SableUI::TextObj::UpdateMaxWidth(CommandBuffer& cmd, int maxWidth)
 {
 	if (m_maxWidth == maxWidth)
 		return m_cachedHeight;
 
 	for (const auto& oldKey : m_cacheKeys)
-		TextCacheFactory::Release(m_renderer, oldKey);
-	m_cacheKeys.clear();
+		m_renderer->m_textCacheFactory.Release(oldKey);
 
+	m_cacheKeys.clear();
 	m_maxWidth = maxWidth;
 
-	if (fontManager == nullptr || !fontManager->isInitialized)
-		FontManager::GetInstance().Initialise();
-
-	fontManager = &FontManager::GetInstance();
-
 	TextCacheKey key(this);
-	m_gpuObject = TextCacheFactory::Get(this, m_cachedHeight);
+	m_gpuObject = m_renderer->m_textCacheFactory.Get(cmd, this, m_cachedHeight);
 	m_cacheKeys.push_back(key);
 
 	return m_cachedHeight;
 }
 
 
-int SableUI::_Text::GetMinWidth(bool wrapped)
+int SableUI::TextObj::GetMinWidth(CommandBuffer& cmd, bool wrapped)
 {
-	if (fontManager == nullptr || !fontManager->isInitialized)
-		FontManager::GetInstance().Initialise();
+	if (fontManager == nullptr)
+		SableUI_Runtime_Error("In refactoring tha graphics api, you must explicitly initialise/shutdown fontmanager!");
 
-	fontManager = &FontManager::GetInstance();
-
-	return fontManager->GetMinWidth(this, wrapped);
+	return fontManager->GetMinWidth(cmd, this, wrapped);
 }
 
-int SableUI::_Text::GetUnwrappedHeight()
+int SableUI::TextObj::GetUnwrappedHeight()
 {
 	int lines = 1;
 	for (char32_t c : m_content)
@@ -2324,7 +2305,7 @@ int SableUI::_Text::GetUnwrappedHeight()
 	return lines * m_lineSpacingPx;
 }
 
-int SableUI::_Text::GetNumInstances()
+int SableUI::TextObj::GetNumInstances()
 {
 	return s_textCount;
 }
@@ -2334,8 +2315,15 @@ void SableUI::DestroyFontManager()
 	FontManager::GetInstance().Shutdown();
 }
 
-void SableUI::InitFontManager()
+void SableUI::InitFontManager(SableUI::CommandBuffer& cmd)
 {
 	if (fontManager == nullptr)
-		FontManager::GetInstance().Initialise();
+	{
+		FontManager::GetInstance().Initialise(cmd);
+		fontManager = &FontManager::GetInstance();
+	}
+	else
+	{
+		SableUI_Error("Font manager double initialisation, skipping");
+	}
 }
