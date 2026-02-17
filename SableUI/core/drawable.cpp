@@ -66,15 +66,14 @@ void SableUI::DestroyGlobalResources(RendererBackend* renderer)
 
 	CommandBuffer& cmd = renderer->GetCommandBuffer();
 
-	// Destroy uniform buffers via command buffer
 	if (g_res.ubo_rect.IsValid())
 		cmd.DestroyUniformBuffer(g_res.ubo_rect);
 
 	if (g_res.ubo_text.IsValid())
 		cmd.DestroyUniformBuffer(g_res.ubo_text);
 
-	// Execute destruction commands immediately
 	renderer->ExecuteCommandBuffer();
+	renderer->ResetCommandBuffer();
 
 	g_res.initialised = false;
 }
@@ -91,11 +90,9 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 {
 	if (!g_res.initialised)
 	{
-		// Create shaders (these are still immediate - they don't touch GPU resources)
 		g_res.s_rect.LoadBasicShaders(rect_vert, rect_frag);
 		g_res.s_text.LoadBasicShaders(text_vert, text_frag);
 
-		// Create uniform buffers via command buffer
 		g_res.ubo_rect = cb.CreateUniformBuffer(sizeof(RectDrawData), nullptr);
 		g_res.ubo_text = cb.CreateUniformBuffer(sizeof(TextDrawData), nullptr);
 
@@ -105,11 +102,9 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 	void* ctx = GetCurrentContext_voidType();
 	ContextResources& resources = g_contextResources[ctx];
 
-	// Create rect vertex layout
 	VertexLayout layout;
 	layout.Add(VertexFormat::Float2);
 
-	// Create the rect GPU object via command buffer
 	ResourceHandle handle = cb.CreateGpuObject(
 		rectVertices,
 		sizeof(rectVertices) / sizeof(Vertex),
@@ -125,7 +120,6 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 
 	resources.rectObject = handle;
 
-	// Bind uniform buffers for this context
 	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Rect), g_res.ubo_rect);
 	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
 }
@@ -140,11 +134,9 @@ void SableUI::DestroyContextResources(RendererBackend* renderer)
 		CommandBuffer& cmd = renderer->GetCommandBuffer();
 		auto& res = it->second;
 
-		// Destroy GPU object via command buffer
 		if (res.rectObject.IsValid())
 			cmd.DestroyGpuObject(res.rectObject);
 
-		// Execute destruction commands immediately
 		renderer->ExecuteCommandBuffer();
 	}
 

@@ -285,10 +285,12 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	cb.SetBlendState(true, BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
 	cb.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
+	m_colourAttachment = cb.CreateTexture2D(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+	m_framebuffer = cb.CreateFramebuffer(width, height, false);
+	m_windowSurface = cb.CreateFramebuffer(width, height, true);
+
 	if (width > 0 && height > 0)
 	{
-		cb.CreateStorageTexture2D(m_colourAttachment, m_windowSize.x, m_windowSize.y, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		cb.SetFramebufferSize(m_framebuffer, m_windowSize.x, m_windowSize.y);
 		cb.AttachColourTexture(m_framebuffer, m_colourAttachment, 0);
 		cb.BakeFramebuffer(m_framebuffer);
 	}
