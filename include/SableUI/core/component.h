@@ -13,7 +13,6 @@
 
 namespace SableUI
 {
-	class FloatingPanelStateBase;
 	class Window;
 	class BaseComponent
 	{
@@ -48,7 +47,7 @@ namespace SableUI
 		void PostLayoutUpdate(const UIEventContext& ctx);
 
 		void RegisterState(StateBase* state);
-		void RegisterFloatingPanel(FloatingPanelStateBase* state);
+		//void RegisterFloatingPanel(FloatingPanelStateBase* state);
 
 		void MarkDirty();
 		bool IsDirty() const { return needsRerender; }
@@ -62,7 +61,7 @@ namespace SableUI
 	protected:
 		std::vector<BaseComponent*> m_garbageChildren;
 		std::vector<StateBase*> m_states;
-		std::vector<FloatingPanelStateBase*> m_floatingPanels;
+		//std::vector<FloatingPanelStateBase*> m_floatingPanels;
 		std::vector<Element*> m_hoverElements;
 
 		void UpdateHoverStyling(const UIEventContext& ctx);
@@ -137,4 +136,3 @@ namespace SableUI
 #include <SableUI/states/ref.h>
 #include <SableUI/states/interval.h>
 #include <SableUI/states/timer.h>
-#include <SableUI/states/floating_panel.h>

@@ -427,7 +427,7 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 
 	SetContext(this);
 
-	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
+	AsyncTextureLoader::GetInstance().ProcessCompletedLoads(m_renderer->GetCommandBuffer());
 
 	if (m_needsRefresh)
 	{
@@ -459,8 +459,10 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	}
 	m_root->PostLayoutUpdate(ctx);
 
-	StepCachedTexturesCleaner();
-	TextCacheFactory::CleanCache(m_renderer);
+	StepCachedTexturesCleaner(m_renderer->GetCommandBuffer());
+
+	// TODO: clean up this call:
+	m_renderer->m_textCacheFactory.CleanCache(m_renderer->GetCommandBuffer());
 	HandleResize();
 
 	ctx.mousePressed.reset();
@@ -980,8 +982,6 @@ SableUI::Window::~Window()
 
 	SB_delete(m_root);
 	DestroyContextResources(m_renderer);
-
-	TextCacheFactory::ShutdownFactory(m_renderer);
 
 	SB_delete(m_renderer);
 

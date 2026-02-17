@@ -148,7 +148,7 @@ void SableUI::Element::SetRect(const Rect& r)
     case ElementType::Text:
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
-            rect.h = drText->m_text.UpdateMaxWidth(rect.w);
+            rect.h = drText->m_text.UpdateMaxWidth(renderer->GetCommandBuffer(), rect.w);
             info.layout.height = rect.h;
             drText->Update(rect, clipEnabled, clipRect);
         }
@@ -310,7 +310,7 @@ void SableUI::Element::SetImage(const std::string& path)
 
     if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
     {
-        drImage->m_texture.LoadTextureOptimised(path, info.layout.width, info.layout.height);
+        drImage->m_texture.LoadTextureOptimised(renderer->GetCommandBuffer(), path, info.layout.width, info.layout.height);
         info.text.content = path;
 
         if (m_owner)
@@ -338,7 +338,7 @@ void SableUI::Element::SetText(const SableString& text)
             SableUI_Warn("Text colour not set, using default");
             drText->m_text.m_colour = GetTheme().text;
         }
-        drText->m_text.SetContent(renderer, text, drawable->m_rect.w,
+        drText->m_text.SetContent(renderer->GetCommandBuffer(), renderer, text, drawable->m_rect.w,
             info.text.fontSize, info.layout.maxH, info.text.lineHeight, info.text.justification.value_or(TextJustification::Left));
     }
     else
@@ -347,7 +347,7 @@ void SableUI::Element::SetText(const SableString& text)
     }
 }
 
-int SableUI::Element::GetMinWidth()
+int SableUI::Element::GetMinWidth(CommandBuffer& cmd)
 {
     int calculatedMinWidth = info.layout.minW;
 
@@ -369,7 +369,7 @@ int SableUI::Element::GetMinWidth()
             for (Child* child : children)
             {
                 Element* childElement = (Element*)*child;
-                int childTotalWidth = childElement->GetMinWidth() +
+                int childTotalWidth = childElement->GetMinWidth(cmd) +
                     childElement->info.layout.mL + childElement->info.layout.mR;
                 calculatedMinWidth = std::max(calculatedMinWidth, childTotalWidth);
             }
@@ -379,7 +379,7 @@ int SableUI::Element::GetMinWidth()
             for (Child* child : children)
             {
                 Element* childElement = (Element*)*child;
-                int childTotalWidth = childElement->GetMinWidth() +
+                int childTotalWidth = childElement->GetMinWidth(cmd) +
                     childElement->info.layout.mL + childElement->info.layout.mR;
                 calculatedMinWidth += childTotalWidth;
             }
@@ -389,7 +389,7 @@ int SableUI::Element::GetMinWidth()
     {
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
-            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetMinWidth(info.text.wrap));
+            calculatedMinWidth = std::max(calculatedMinWidth, drText->m_text.GetMinWidth(cmd, info.text.wrap));
         }
     }
     else
@@ -465,6 +465,8 @@ void SableUI::Element::LayoutChildren()
     if (info.type != ElementType::Div) return;
     if (children.empty()) return;
 
+    CommandBuffer& cmd = renderer->GetCommandBuffer();
+
     if (info.layout.pos.x != -1 || info.layout.pos.y != -1)
     {
         rect.x = info.layout.pos.x;
@@ -478,7 +480,7 @@ void SableUI::Element::LayoutChildren()
 
     size_t numChildren = children.size();
 
-    rect.w = std::max(rect.w, GetMinWidth());
+    rect.w = std::max(rect.w, GetMinWidth(cmd));
     rect.h = std::max(rect.h, GetMinHeight());
 
     // Calculate container area (no padding or border)
@@ -586,7 +588,7 @@ void SableUI::Element::LayoutChildren()
             }
             else if (childElement->info.layout.wType == RectType::FitContent)
             {
-                int minWidth = childElement->GetMinWidth();
+                int minWidth = childElement->GetMinWidth(cmd);
                 totalFixedMainAxis += std::min(std::max(0, minWidth),
                     childElement->info.layout.maxW > 0 ? childElement->info.layout.maxW : minWidth);
             }
@@ -640,7 +642,7 @@ void SableUI::Element::LayoutChildren()
             {
                 if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
                 {
-                    int newHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                    int newHeight = drText->m_text.UpdateMaxWidth(cmd, childContentWidth);
                     if (newHeight != childElement->info.layout.height)
                     {
                         childElement->info.layout.height = newHeight;
@@ -679,7 +681,7 @@ void SableUI::Element::LayoutChildren()
             }
             else if (childElement->info.layout.wType == RectType::FitContent)
             {
-                childContentWidth = std::max(0, childElement->GetMinWidth() - childElement->info.layout.pL - childElement->info.layout.pR);
+                childContentWidth = std::max(0, childElement->GetMinWidth(cmd) - childElement->info.layout.pL - childElement->info.layout.pR);
             }
             else
             {
@@ -698,7 +700,7 @@ void SableUI::Element::LayoutChildren()
             }
             else if (childElement->info.layout.wType == RectType::FitContent)
             {
-                childContentWidth = std::max(0, childElement->GetMinWidth() - childElement->info.layout.pL - childElement->info.layout.pR);
+                childContentWidth = std::max(0, childElement->GetMinWidth(cmd) - childElement->info.layout.pL - childElement->info.layout.pR);
             }
             else
             {
@@ -731,7 +733,7 @@ void SableUI::Element::LayoutChildren()
         {
             if (DrawableText* drText = dynamic_cast<DrawableText*>(childElement->drawable))
             {
-                int newHeight = drText->m_text.UpdateMaxWidth(childContentWidth);
+                int newHeight = drText->m_text.UpdateMaxWidth(cmd, childContentWidth);
                 if (newHeight != childElement->info.layout.height)
                 {
                     childElement->info.layout.height = newHeight;

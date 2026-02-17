@@ -5,6 +5,7 @@
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
+#include <SableUI/states/state.h>
 #include <functional>
 
 namespace SableUI
@@ -50,7 +51,7 @@ namespace SableUI
 		Interval m_cursorBlinkInterval{ this };
 
 		bool queueInitialised = false;
-		CustomTargetQueue queue;
+		//CustomTargetQueue queue;
 		Window* m_window = nullptr;
 		bool m_multiline = false;
 

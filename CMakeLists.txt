@@ -117,8 +117,6 @@ add_library(SableUI STATIC
 	"include/SableUI/core/window.h"
 	"include/SableUI/generated/resources.h"
 	"include/SableUI/generated/shaders.h"
-	"include/SableUI/states/floating_panel.h"
-	"include/SableUI/states/floating_panel_base.h"
 	"include/SableUI/states/interval.h"
 	"include/SableUI/states/ref.h"
 	"include/SableUI/states/state.h"

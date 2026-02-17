@@ -71,7 +71,7 @@ namespace SableUI
 		ivec2 m_windowSize = { 0, 0 };
 
 		ResourceHandle GetSurface() const { return m_windowSurface; }
-		RendererBackend* GetBaseRenderer() const { return m_renderer; }
+		RendererBackend* GetRenderer() const { return m_renderer; }
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;

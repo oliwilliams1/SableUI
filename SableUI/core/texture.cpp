@@ -3,6 +3,7 @@
 #include <SableUI/utils/console.h>
 #include <SableUI/core/component.h>
 #include <SableUI/renderer/renderer.h>
+#include <SableUI/renderer/resource_handle.h>
 
 #undef SABLEUI_SUBSYSTEM
 #define SABLEUI_SUBSYSTEM "Texture"
@@ -48,7 +49,7 @@ struct SableUI::CachedGpuTexture
 	int width = 0;
 	int height = 0;
 	int channels = 0;
-	GpuTexture2D gpuTexture;
+	ResourceHandle gpuTexture;
 
 	TextureLoadState state = TextureLoadState::Empty;
 	bool inUse = true;
@@ -173,7 +174,7 @@ void AsyncTextureLoader::QueueLoad(const std::string& path, int width, int heigh
 	m_queueCV.notify_one();
 }
 
-void AsyncTextureLoader::ProcessCompletedLoads()
+void AsyncTextureLoader::ProcessCompletedLoads(CommandBuffer& cmd)
 {
 	std::queue<TextureLoadRequest> toProcess;
 
@@ -200,12 +201,7 @@ void AsyncTextureLoader::ProcessCompletedLoads()
 				else if (req.target->channels == 2)
 					format = TextureFormat::RG8;
 
-				req.target->gpuTexture.SetData(
-					req.target->cpuData,
-					req.target->width,
-					req.target->height,
-					format
-				);
+				cmd.SetDataTexture2D(req.target->gpuTexture, req.target->cpuData, req.target->width, req.target->height, format);
 
 				stbi_image_free(req.target->cpuData);
 				req.target->cpuData = nullptr;
@@ -399,12 +395,12 @@ int Texture::GetNumInstances()
 	return s_numTextures;
 }
 
-void Texture::LoadTexture(const std::string& path)
+void Texture::LoadTexture(CommandBuffer& cmd, const std::string& path)
 {
-	LoadTextureOptimised(path, -1, -1);
+	LoadTextureOptimised(cmd, path, -1, -1);
 }
 
-void Texture::LoadTextureOptimised(const std::string& path, int width, int height)
+void Texture::LoadTextureOptimised(CommandBuffer& cmd, const std::string& path, int width, int height)
 {
 	ImageHash hash = GetImageHash(path, width, height);
 
@@ -433,7 +429,7 @@ void Texture::LoadTextureOptimised(const std::string& path, int width, int heigh
 	}
 
 	uint8_t placeholder[] = { 128, 128, 128 };
-	tex->gpuTexture.SetData(placeholder, 1, 1, TextureFormat::RGB8);
+	cmd.SetDataTexture2D(tex->gpuTexture, placeholder, 1, 1, TextureFormat::RGB8);
 
 	tex->state = TextureLoadState::Loading;
 	tex->lastUsed = std::chrono::steady_clock::now();
@@ -478,7 +474,7 @@ void Texture::DeregisterDependancy(BaseComponent* component)
 	);
 }
 
-void Texture::GenerateDefaultTexture()
+void Texture::GenerateDefaultTexture(CommandBuffer& cmd)
 {
 	uint32_t pixels[16] = {
 		0xFF000000, 0xFFFF00FF, 0xFF000000, 0xFFFF00FF,
@@ -489,7 +485,7 @@ void Texture::GenerateDefaultTexture()
 
 	auto tex = std::make_shared<CachedGpuTexture>();
 
-	tex->gpuTexture.SetData((uint8_t*)pixels, 4, 4, TextureFormat::RGBA8);
+	cmd.SetDataTexture2D(tex->gpuTexture, (uint8_t*)pixels, 4, 4, TextureFormat::RGBA8);
 
 	tex->width = 4;
 	tex->height = 4;
@@ -504,16 +500,6 @@ void Texture::SetDefaultTexture(uint32_t texID)
 	m_defaultTexID = texID;
 }
 
-void Texture::Bind()
-{
-	if (m_cachedGpu)
-	{
-		AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
-
-		m_cachedGpu->gpuTexture.Bind();
-	}
-}
-
 bool Texture::IsLoaded() const
 {
 	return m_cachedGpu && m_cachedGpu->state == TextureLoadState::Uploaded;
@@ -524,7 +510,7 @@ TextureLoadState Texture::GetLoadState() const
 	return m_cachedGpu ? m_cachedGpu->state : TextureLoadState::Empty;
 }
 
-void SableUI::StepCachedTexturesCleaner()
+void SableUI::StepCachedTexturesCleaner(CommandBuffer& cmd)
 {
 	static int iterations = 0;
 	if (iterations++ < 500) return;
@@ -543,14 +529,17 @@ void SableUI::StepCachedTexturesCleaner()
 	for (auto& h : toDelete)
 		textureCache.erase(h);
 
-	AsyncTextureLoader::GetInstance().ProcessCompletedLoads();
+	AsyncTextureLoader::GetInstance().ProcessCompletedLoads(cmd);
 }
 
-const GpuTexture2D* Texture::GetGpuTexture() const
+SableUI::ResourceHandle Texture::GetGpuTexture() const
 {
 	auto gpu = m_cachedGpu;
 	if (!gpu)
-		return nullptr;
+	{
+		SableUI_Error("GetGpuTexture() called on an empty texture");
+		return{};
+	}
 
-	return &gpu->gpuTexture;
+	return gpu->gpuTexture;
 }

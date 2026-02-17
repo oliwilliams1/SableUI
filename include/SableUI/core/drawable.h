@@ -5,13 +5,13 @@
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/renderer/resource_handle.h>
 #include <SableUI/renderer/command_buffer.h>
-#include <SableUI/core/component.h>
 #include <vector>
 #include <optional>
 #include <cstdint>
 
 namespace SableUI
 {
+	class BaseComponent;
 	enum class PanelType
 	{
 		Root,

@@ -1,5 +1,4 @@
 #include <SableUI/core/component.h>
-#include <SableUI/states/floating_panel_base.h>
 #include <SableUI/SableUI.h>
 #include <SableUI/core/element.h>
 #include <SableUI/core/events.h>
@@ -250,9 +249,9 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
 	rootElement->DistributeInputToElements(ctx);
 	
-	for (FloatingPanelStateBase* panel : m_floatingPanels)
-		if (panel->IsOpen())
-			panel->HandleInput(ctx);
+	//for (FloatingPanelStateBase* panel : m_floatingPanels)
+	//	if (panel->IsOpen())
+	//		panel->HandleInput(ctx);
 
 	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
@@ -278,9 +277,9 @@ void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 	for (auto* child : m_componentChildren)
 		child->PostLayoutUpdate(ctx);
 
-	for (FloatingPanelStateBase* panel : m_floatingPanels)
-		if (panel->IsOpen())
-			panel->PostLayoutUpdate(ctx);
+	//for (FloatingPanelStateBase* panel : m_floatingPanels)
+	//	if (panel->IsOpen())
+	//		panel->PostLayoutUpdate(ctx);
 
 	OnUpdatePostLayout(ctx);
 }
@@ -290,11 +289,11 @@ void SableUI::BaseComponent::RegisterState(StateBase* state)
 	m_states.push_back(state);
 }
 
-void SableUI::BaseComponent::RegisterFloatingPanel(FloatingPanelStateBase* state)
-{
-	m_states.push_back(static_cast<StateBase*>(state));
-	m_floatingPanels.push_back(state);
-}
+//void SableUI::BaseComponent::RegisterFloatingPanel(FloatingPanelStateBase* state)
+//{
+//	m_states.push_back(static_cast<StateBase*>(state));
+//	m_floatingPanels.push_back(state);
+//}
 
 void SableUI::BaseComponent::MarkDirty()
 {

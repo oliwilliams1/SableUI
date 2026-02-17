@@ -216,8 +216,8 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 			{
 				dataCopy.isFocused = false;
 				m_cursorBlinkInterval.Stop();
-				if (queueInitialised)
-					queue.window->RemoveQueueReference(&queue);
+				//if (queueInitialised)
+				//	queue.window->RemoveQueueReference(&queue);
 				change = true;
 			}
 		}
@@ -248,8 +248,8 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 				{
 					dataCopy.isFocused = false;
 					m_cursorBlinkInterval.Stop();
-					if (queueInitialised)
-						queue.window->RemoveQueueReference(&queue);
+					//if (queueInitialised)
+					//	queue.window->RemoveQueueReference(&queue);
 					change = true;
 				}
 			}
@@ -422,64 +422,64 @@ void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
 
 	if (!queueInitialised)
 	{
-		queue.window = m_window;
-		queue.target = m_window->GetSurface();
-		queueInitialised = true;
+		//queue.window = m_window;
+		//queue.target = m_window->GetSurface();
+		//queueInitialised = true;
 	}
 
-	StartCustomLayoutScope(&queue);
+	//StartCustomLayoutScope(&queue);
 
-	Element* text = GetElementById("TextFieldText");
-	if (!text)
-	{
-		EndCustomLayoutScope(&queue);
-		return;
-	}
+	//Element* text = GetElementById("TextFieldText");
+	//if (!text)
+	//{
+	//	EndCustomLayoutScope(&queue);
+	//	return;
+	//}
 
-	auto cursorInfo = QueryCursorPosition(
-		externalState->get().content,
-		cursorPos,
-		text->rect.w,
-		text->info.text.fontSize,
-		text->info.text.lineHeight,
-		text->info.text.justification.value_or(TextJustification::Left)
-	);
+	//auto cursorInfo = QueryCursorPosition(
+	//	externalState->get().content,
+	//	cursorPos,
+	//	text->rect.w,
+	//	text->info.text.fontSize,
+	//	text->info.text.lineHeight,
+	//	text->info.text.justification.value_or(TextJustification::Left)
+	//);
 
-	if (cursorVisible.get())
-	{
-		Rect cursorRect = {
-			text->rect.x + cursorInfo.x,
-			text->rect.y + cursorInfo.y,
-			1,
-			cursorInfo.lineHeight
-		};
+	//if (cursorVisible.get())
+	//{
+	//	Rect cursorRect = {
+	//		text->rect.x + cursorInfo.x,
+	//		text->rect.y + cursorInfo.y,
+	//		1,
+	//		cursorInfo.lineHeight
+	//	};
 
-		queue.AddRect(cursorRect, Colour(220, 220, 220));
-	}
+	//	queue.AddRect(cursorRect, Colour(220, 220, 220));
+	//}
 
-	if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
-	{
-		auto initialCursorInfo = QueryCursorPosition(
-			externalState->get().content,
-			initialCursorPos,
-			text->rect.w,
-			text->info.text.fontSize,
-			text->info.text.lineHeight,
-			text->info.text.justification.value_or(TextJustification::Left)
-		);
+	//if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
+	//{
+	//	auto initialCursorInfo = QueryCursorPosition(
+	//		externalState->get().content,
+	//		initialCursorPos,
+	//		text->rect.w,
+	//		text->info.text.fontSize,
+	//		text->info.text.lineHeight,
+	//		text->info.text.justification.value_or(TextJustification::Left)
+	//	);
 
-		if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
-		{
-			Rect highlightRect = {
-				text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
-				text->rect.y + cursorInfo.y,
-				std::abs(initialCursorInfo.x - cursorInfo.x),
-				cursorInfo.lineHeight
-			};
+	//	if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
+	//	{
+	//		Rect highlightRect = {
+	//			text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
+	//			text->rect.y + cursorInfo.y,
+	//			std::abs(initialCursorInfo.x - cursorInfo.x),
+	//			cursorInfo.lineHeight
+	//		};
 
-			queue.AddRect(highlightRect, Colour(80, 150, 255, 120));
-		}
-	}
+	//		queue.AddRect(highlightRect, Colour(80, 150, 255, 120));
+	//	}
+	//}
 
-	EndCustomLayoutScope(&queue);
+	//EndCustomLayoutScope(&queue);
 }

@@ -3,6 +3,7 @@
 #include <SableUI/core/events.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/text.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/utils/utils.h>
 #include <vector>
 #include <string>
@@ -123,7 +124,7 @@ namespace SableUI
 		void AddChild(Child* component);
 		void SetImage(const std::string& path);
 		void SetText(const SableString& text);
-		int GetMinWidth();
+		int GetMinWidth(CommandBuffer& cmd);
 		int GetMinHeight();
 
 		ElementInfo info;

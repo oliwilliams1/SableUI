@@ -392,69 +392,69 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 	parent->AddChild(e);
 }
 
-// ============================================================================
-// CustomLayoutTarget Element Builder
-// ============================================================================
-bool s_customLayoutMode = false;
-void SableUI::StartCustomLayoutScope(
-	CustomTargetQueue* queuePtr)
-{
-	if (s_customLayoutMode)
-		SableUI_Runtime_Error("Cannot nest custom layouts");
-
-	if (s_reconciliationMode)
-		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
-
-	if (!queuePtr->window)
-	{
-		SableUI_Runtime_Error("Custom target queue does not have a context");
-		return;
-	}
-
-	if (!queuePtr->target)
-		SableUI_Runtime_Error("Custom target queue does not have a target");
-
-	if (queuePtr != nullptr)
-	{
-		queuePtr->window->RemoveQueueReference(queuePtr);
-		for (DrawableBase* dr : queuePtr->drawables)
-			SB_delete(dr);
-			
-		queuePtr->drawables.clear();
-	}
-	else
-	{
-		SableUI_Runtime_Error("Custom target queue not initialised");
-		return;
-	}
-
-	s_rendererStack.push(queuePtr->window->GetBaseRenderer());
-	s_customLayoutMode = true;
-}
-
-void SableUI::EndCustomLayoutScope(
-	CustomTargetQueue* queuePtr)
-{
-	if (!s_customLayoutMode)
-		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
-
-	if (!queuePtr)
-	{
-		SableUI_Runtime_Error("Custom target queue not initialised");
-		return;
-	}
-
-	if (!queuePtr->window)
-	{
-		SableUI_Runtime_Error("Custom target queue does not have a context");
-		return;
-	}
-
-	queuePtr->window->SubmitCustomQueue(queuePtr);
-	s_rendererStack.pop();
-
-	s_customLayoutMode = false;
-}
+//// ============================================================================
+//// CustomLayoutTarget Element Builder
+//// ============================================================================
+//bool s_customLayoutMode = false;
+//void SableUI::StartCustomLayoutScope(
+//	CustomTargetQueue* queuePtr)
+//{
+//	if (s_customLayoutMode)
+//		SableUI_Runtime_Error("Cannot nest custom layouts");
+//
+//	if (s_reconciliationMode)
+//		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
+//
+//	if (!queuePtr->window)
+//	{
+//		SableUI_Runtime_Error("Custom target queue does not have a context");
+//		return;
+//	}
+//
+//	if (!queuePtr->target)
+//		SableUI_Runtime_Error("Custom target queue does not have a target");
+//
+//	if (queuePtr != nullptr)
+//	{
+//		queuePtr->window->RemoveQueueReference(queuePtr);
+//		for (DrawableBase* dr : queuePtr->drawables)
+//			SB_delete(dr);
+//			
+//		queuePtr->drawables.clear();
+//	}
+//	else
+//	{
+//		SableUI_Runtime_Error("Custom target queue not initialised");
+//		return;
+//	}
+//
+//	s_rendererStack.push(queuePtr->window->GetRenderer());
+//	s_customLayoutMode = true;
+//}
+//
+//void SableUI::EndCustomLayoutScope(
+//	CustomTargetQueue* queuePtr)
+//{
+//	if (!s_customLayoutMode)
+//		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
+//
+//	if (!queuePtr)
+//	{
+//		SableUI_Runtime_Error("Custom target queue not initialised");
+//		return;
+//	}
+//
+//	if (!queuePtr->window)
+//	{
+//		SableUI_Runtime_Error("Custom target queue does not have a context");
+//		return;
+//	}
+//
+//	queuePtr->window->SubmitCustomQueue(queuePtr);
+//	s_rendererStack.pop();
+//
+//	s_customLayoutMode = false;
+//}
 
 SableUI::Window* SableUI::_getCurrentContext()
 {
@@ -619,7 +619,7 @@ App::App(const char* name, int width, int height, const SableUI::WindowInitInfo&
 
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
-	SableUI::InitFontManager();
+	SableUI::InitFontManager(m_mainWindow->GetRenderer()->GetCommandBuffer());
 	
 	SetContext(m_mainWindow);
 }
@@ -732,7 +732,7 @@ void App::Render()
 App::~App()
 {
 	SableUI::DestroyFontManager();
-	SableUI::DestroyGlobalResources(m_mainWindow->GetBaseRenderer());
+	SableUI::DestroyGlobalResources(m_mainWindow->GetRenderer());
 
 	for (SableUI::Window* window : m_secondaryWindows) SB_delete(window);
 	m_secondaryWindows.clear();

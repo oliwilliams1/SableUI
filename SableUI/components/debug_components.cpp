@@ -15,7 +15,6 @@
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/string.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/text_cache.h>
 #include <string>
 
 using namespace SableUI;
@@ -116,11 +115,6 @@ void SableUI::MemoryDebugger::Layout()
 		Text(SableString::Format("Drawable Image: %d    (%zukb)",
 			DrawableImage::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
-		Text(SableString::Format("GPU Objects: %d    (%zukb)",
-			GpuObject::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
-		Text(SableString::Format("CustomDrawTargets: %d",
-			CustomTargetQueue::GetNumInstances()));
 
 		TextSeperator("Utilities");
 		Text(SableString::Format("Text: %d", TextObj::GetNumInstances()));
@@ -130,14 +124,6 @@ void SableUI::MemoryDebugger::Layout()
 		TextSeperator("Font Manager");
 		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
 		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
-
-		int instanceCount = 0;
-		for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
-		{
-			instanceCount++;
-			Text(SableString::Format("Instance %d Text Cache: %d",
-				instanceCount, factory->GetNumInstances()));
-		}
 	}
 }
 
