@@ -208,6 +208,7 @@ void OpenGL3Backend::CheckErrors()
 
 void OpenGL3Backend::ExecuteCommandBuffer()
 {
+	m_commandBuffer.DebugPrintAndClear();
 	m_executor->Execute(m_commandBuffer);
 }
 

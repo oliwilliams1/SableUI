@@ -428,7 +428,6 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 		return !glfwWindowShouldClose(m_window);
 
 	SetContext(this);
-
 	AsyncTextureLoader::GetInstance().ProcessCompletedLoads(m_renderer->GetCommandBuffer());
 
 	if (m_needsRefresh)
@@ -441,17 +440,9 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	ctx.firedTimers = firedTimers;
 
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
-		m_framebuffer,
-		m_windowSize.x,
-		m_windowSize.y,
-		GetContextResources(m_renderer)
-	);
+		m_renderer->GetCommandBuffer(), m_framebuffer,
+		m_windowSize.x, m_windowSize.y, GetContextResources(m_renderer));
 
-	CommandBuffer& cmd = m_renderer->GetCommandBuffer();
-	ContextResources& contextResources = GetContextResources(m_renderer);
-
-	// regular panels
 	m_root->DistributeEvents(ctx);
 	bool dirty = m_root->UpdateComponents(drData);
 	if (dirty)
@@ -462,10 +453,18 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	m_root->PostLayoutUpdate(ctx);
 
 	StepCachedTexturesCleaner(m_renderer->GetCommandBuffer());
-
-	// TODO: clean up this call:
 	m_renderer->m_textCacheFactory.CleanCache(m_renderer->GetCommandBuffer());
+
 	HandleResize();
+
+	if (m_needsRefresh)
+	{
+		m_renderer->ResetCommandBuffer();
+		m_renderer->GetCommandBuffer().BeginRenderPass(m_framebuffer);
+		RecalculateNodes();
+		RerenderAllNodes();
+		m_needsRefresh = false;
+	}
 
 	ctx.mousePressed.reset();
 	ctx.mouseReleased.reset();
@@ -575,6 +574,7 @@ void SableUI::Window::RerenderAllNodes()
 	m_root->Render(drData);
 
 	m_needsStaticRedraw = true;
+	Draw();
 }
 
 void SableUI::Window::RecalculateNodes()
@@ -936,45 +936,76 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 
 void SableUI::Window::Resize(SableUI::ivec2 pos, SableUI::BasePanel* panel)
 {
-	const int threshold = 1;
 	static SableUI::ivec2 oldPos = { 0, 0 };
-	static SableUI::ivec2 pendingDelta = { 0, 0 };
+	auto& state = m_resizeState;
 
-	SableUI::ivec2 deltaPos = pos - oldPos;
-	pendingDelta = pendingDelta + deltaPos;
-
-	while (std::abs(pendingDelta.x) > threshold || std::abs(pendingDelta.y) > threshold)
+	if (panel != nullptr)
 	{
-		SableUI::ivec2 stepDelta = { 0, 0 };
+		state.selectedPanel = panel;
+		state.oldPanelRect = panel->rect;
+		state.totalDelta = { 0, 0 };
+		state.olderSiblingNode = nullptr;
 
-		if (std::abs(pendingDelta.x) > threshold)
+		if (panel->parent == nullptr) { oldPos = pos; return; }
+
+		auto& siblings = panel->parent->children;
+		auto it = std::find(siblings.begin(), siblings.end(), panel);
+		if (it == siblings.end() || std::next(it) == siblings.end()) { oldPos = pos; return; }
+
+		state.olderSiblingNode = *std::next(it);
+		state.olderSiblingOldRect = state.olderSiblingNode->rect;
+
+		switch (panel->parent->type)
 		{
-			stepDelta.x = (pendingDelta.x > 0) ? threshold : -threshold;
-		}
-		else
-		{
-			stepDelta.x = pendingDelta.x;
+		case PanelType::HorizontalSplitter: state.currentEdgeType = EdgeType::EW_EDGE; break;
+		case PanelType::VerticalSplitter:   state.currentEdgeType = EdgeType::NS_EDGE; break;
+		default: state.olderSiblingNode = nullptr; break;
 		}
 
-		if (std::abs(pendingDelta.y) > threshold)
-		{
-			stepDelta.y = (pendingDelta.y > 0) ? threshold : -threshold;
-		}
-		else
-		{
-			stepDelta.y = pendingDelta.y;
-		}
-
-		ResizeStep(stepDelta, panel, m_root);
-
-		pendingDelta = pendingDelta - stepDelta;
+		oldPos = pos;
+		return;
 	}
 
-	// Clear accumulated draw calls from resize steps
-	m_renderer->ResetCommandBuffer();
-	m_needsRefresh = true;
+	if (!state.selectedPanel || !state.olderSiblingNode) return;
 
+	const ivec2 delta = pos - oldPos;
 	oldPos = pos;
+	if (delta.x == 0 && delta.y == 0) return;
+
+	state.totalDelta = state.totalDelta + delta;
+
+	switch (state.currentEdgeType)
+	{
+	case EdgeType::EW_EDGE:
+	{
+		int w = state.oldPanelRect.w + state.totalDelta.x;
+		w = (std::max)(w, state.selectedPanel->minBounds.x);
+		w = (std::min)(w, state.selectedPanel->parent->rect.w - state.olderSiblingNode->minBounds.x);
+		if (state.selectedPanel->maxBounds.x > 0)
+			w = (std::min)(w, state.selectedPanel->maxBounds.x);
+
+		state.selectedPanel->wType = RectType::Fixed;
+		state.selectedPanel->rect.w = w;
+		state.olderSiblingNode->wType = RectType::Fill;
+		break;
+	}
+	case EdgeType::NS_EDGE:
+	{
+		int h = state.oldPanelRect.h + state.totalDelta.y;
+		h = (std::max)(h, state.selectedPanel->minBounds.y);
+		h = (std::min)(h, state.selectedPanel->parent->rect.h - state.olderSiblingNode->minBounds.y);
+		if (state.selectedPanel->maxBounds.y > 0)
+			h = (std::min)(h, state.selectedPanel->maxBounds.y);
+
+		state.selectedPanel->hType = RectType::Fixed;
+		state.selectedPanel->rect.h = h;
+		state.olderSiblingNode->hType = RectType::Fill;
+		break;
+	}
+	default: return;
+	}
+
+	m_needsRefresh = true;
 }
 
 SableUI::Window::~Window()

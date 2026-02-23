@@ -4,6 +4,7 @@
 #include <SableUI/utils/console.h>
 #include <cstring>
 #include <cstdint>
+#include <cstdio>
 #include <utility>
 
 #undef SABLEUI_SUBSYSTEM
@@ -657,4 +658,61 @@ void CommandBuffer::BlitToScreen(ResourceHandle framebuffer, TextureInterpolatio
     cmd.type = CommandType::BlitToScreen;
     cmd.data = BlitToScreenCmd{ framebuffer, filter };
     m_commands.push_back(std::move(cmd));
+}
+
+static const char* CommandTypeToString(CommandType type)
+{
+    switch (type)
+    {
+    case CommandType::SetPipeline:                return "SetPipeline";
+    case CommandType::SetBlendState:              return "SetBlendState";
+    case CommandType::SetScissor:                 return "SetScissor";
+    case CommandType::DisableScissor:             return "DisableScissor";
+    case CommandType::Clear:                      return "Clear";
+    case CommandType::BlitFramebuffer:            return "BlitFramebuffer";
+    case CommandType::BlitToScreen:               return "BlitToScreen";
+    case CommandType::SetViewport:                return "SetViewport";
+    case CommandType::CreateGpuObject:            return "CreateGpuObject";
+    case CommandType::BindGpuObject:              return "BindGpuObject";
+    case CommandType::DrawGpuObject:              return "DrawGpuObject";
+    case CommandType::DestroyGpuObject:           return "DestroyGpuObject";
+    case CommandType::CreateTexture2D:            return "CreateTexture2D";
+    case CommandType::CreateStorageTexture2D:     return "CreateStorageTexture2D";
+    case CommandType::BindTexture:                return "BindTexture";
+    case CommandType::DestroyTexture:             return "DestroyTexture";
+    case CommandType::SetDataTexture2D:           return "SetDataTexture2D";
+    case CommandType::CreateTexture2DArray:       return "CreateTexture2DArray";
+    case CommandType::ResizeTexture2DArray:       return "ResizeTexture2DArray";
+    case CommandType::SubImageTexture2DArray:     return "SubImageTexture2DArray";
+    case CommandType::CopyImageDataTexture2DArray:return "CopyImageDataTexture2DArray";
+    case CommandType::CreateUniformBuffer:        return "CreateUniformBuffer";
+    case CommandType::BindUniformBuffer:          return "BindUniformBuffer";
+    case CommandType::UpdateUniformBuffer:        return "UpdateUniformBuffer";
+    case CommandType::DestroyUniformBuffer:       return "DestroyUniformBuffer";
+    case CommandType::CreateFramebuffer:          return "CreateFramebuffer";
+    case CommandType::DestroyFramebuffer:         return "DestroyFramebuffer";
+    case CommandType::BindFramebuffer:            return "BindFramebuffer";
+    case CommandType::AttachColourTexture:        return "AttachColourTexture";
+    case CommandType::AttachDepthStencilTexture:  return "AttachDepthStencilTexture";
+    case CommandType::BakeFramebuffer:            return "BakeFramebuffer";
+    case CommandType::SetFramebufferSize:         return "SetFramebufferSize";
+    case CommandType::DrawIndexed:                return "DrawIndexed";
+    case CommandType::Draw:                       return "Draw";
+    case CommandType::BeginRenderPass:            return "BeginRenderPass";
+    case CommandType::EndRenderPass:              return "EndRenderPass";
+    default:                                      return "Unknown";
+    }
+}
+
+void CommandBuffer::DebugPrintAndClear() const
+{
+    if (m_commands.size() < 10) return;
+    printf("\033[2J\033[H");
+    printf("=== CommandBuffer (%zu commands)\n", m_commands.size());
+
+    for (size_t i = 0; i < m_commands.size(); i++)
+        printf("  [%03zu] %s\n", i, CommandTypeToString(m_commands[i].type));
+
+    printf("\n\n");
+    fflush(stdout);
 }

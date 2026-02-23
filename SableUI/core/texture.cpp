@@ -417,6 +417,8 @@ void Texture::LoadTextureOptimised(CommandBuffer& cmd, const std::string& path, 
 
 	auto tex = std::make_shared<CachedGpuTexture>();
 
+	tex->gpuTexture = cmd.CreateTexture2D(1, 1, TextureFormat::RGB8);
+
 	if (width > 0 && height > 0)
 	{
 		tex->width = width;

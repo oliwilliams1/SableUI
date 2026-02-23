@@ -440,7 +440,7 @@ void DrawableImage::RecordCommands(const DrawableDrawData& drData)
 	data.rect[1] = y;
 	data.rect[2] = w;
 	data.rect[3] = h;
-
+	
 	data.realRect[0] = m_rect.x;
 	data.realRect[1] = m_rect.y;
 	data.realRect[2] = m_rect.w;
@@ -459,24 +459,20 @@ void DrawableImage::RecordCommands(const DrawableDrawData& drData)
 	if (m_borderColour)
 	{
 		Colour bc = *m_borderColour;
-		data.borderColour[0] = bc.r / 255.0f;
-		data.borderColour[1] = bc.g / 255.0f;
-		data.borderColour[2] = bc.b / 255.0f;
-		data.borderColour[3] = bc.a / 255.0f;
+		data.borderColour[0] = bc.r / 255.0f; data.borderColour[1] = bc.g / 255.0f;
+		data.borderColour[2] = bc.b / 255.0f; data.borderColour[3] = bc.a / 255.0f;
 	}
 
 	data.useTexture = 1;
 
 	drData.cmd.SetPipeline(PipelineType::Image);
 
-	//ResourceHandle texHandle = m_texture.GetTextureHandle();
-	//if (texHandle.IsValid())
-	//{
-	//	cmd.BindTexture(0, texHandle);
-	//}
-	//
-	//cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
-	//cmd.DrawGpuObject(contextResources.rectObject);
+	ResourceHandle texHandle = m_texture.GetGpuTexture();
+	if (texHandle.IsValid())
+		drData.cmd.BindTexture(0, texHandle);
+
+	drData.cmd.UpdateUniformBuffer(g_res.ubo_rect, 0, sizeof(RectDrawData), &data);
+	drData.cmd.DrawGpuObject(drData.contextResources.rectObject);
 }
 
 void SableUI::DrawableImage::RegisterTextureDependancy(BaseComponent* component)
@@ -519,29 +515,21 @@ void SableUI::DrawableText::Update(Rect& rect, bool clipEnabled, const Rect& cli
 
 void DrawableText::RecordCommands(const DrawableDrawData& drData)
 {
-	//if (!m_text.HasGeometry())
-	//	return;
-	//
-	//TextDrawData data{};
-	//data.targetSize[0] = static_cast<float>(fbWidth);
-	//data.targetSize[1] = static_cast<float>(fbHeight);
-	//
-	//data.pos[0] = m_rect.x;
-	//data.pos[1] = m_rect.y + m_rect.h;
-	//
-	//cmd.SetPipeline(PipelineType::Text);
-	//
-	//ResourceHandle atlasTexture = m_text.GetAtlasTexture();
-	//if (atlasTexture.IsValid())
-	//{
-	//	cmd.BindTexture(0, atlasTexture);
-	//}
-	//
-	//cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
-	//
-	//ResourceHandle textGeometry = m_text.GetGpuObjectHandle();
-	//if (textGeometry.IsValid())
-	//{
-	//	cmd.DrawGpuObject(textGeometry);
-	//}
+	if (!m_text.m_gpuObject.IsValid())
+		return;
+
+	TextDrawData data{};
+	data.targetSize[0] = static_cast<float>(drData.fbWidth);
+	data.targetSize[1] = static_cast<float>(drData.fbHeight);
+	data.pos[0] = static_cast<float>(m_rect.x);
+	data.pos[1] = static_cast<float>(m_rect.y + m_rect.h);
+
+	drData.cmd.SetPipeline(PipelineType::Text);
+
+	ResourceHandle atlasTexture = SableUI::GetTextAtlasTexture();
+	if (atlasTexture.IsValid())
+		drData.cmd.BindTexture(0, atlasTexture);
+
+	drData.cmd.UpdateUniformBuffer(g_res.ubo_text, 0, sizeof(TextDrawData), &data);
+	drData.cmd.DrawGpuObject(m_text.m_gpuObject);
 }

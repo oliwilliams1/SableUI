@@ -109,6 +109,8 @@ namespace SableUI
 		bool empty() const { return m_commands.empty(); }
 		size_t GetCommandCount() const { return m_commands.size(); }
 
+		void DebugPrintAndClear() const;
+
 	private:
 		ResourceHandleAllocator* m_allocator = nullptr;
 		std::vector<Command> m_commands;
