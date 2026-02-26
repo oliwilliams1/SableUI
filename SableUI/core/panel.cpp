@@ -588,10 +588,10 @@ void SableUI::ContentPanel::Update(const DrawableDrawData& drData)
 	auto* splitter = dynamic_cast<SplitterPanel*>(parent);
 	if (splitter != nullptr)
 	{
-		realRect.x += splitter->bSize;
-		realRect.y += splitter->bSize;
-		realRect.w -= splitter->bSize * 2;
-		realRect.h -= splitter->bSize * 2;
+		realRect.x;
+		realRect.y;
+		realRect.w;
+		realRect.h;
 	}
 
 	m_component->GetRootElement()->SetRect(realRect);

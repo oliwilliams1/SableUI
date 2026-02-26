@@ -706,13 +706,13 @@ static const char* CommandTypeToString(CommandType type)
 
 void CommandBuffer::DebugPrintAndClear() const
 {
-    if (m_commands.size() < 10) return;
-    printf("\033[2J\033[H");
-    printf("=== CommandBuffer (%zu commands)\n", m_commands.size());
+    //if (m_commands.size() < 10) return;
+    //printf("\033[2J\033[H");
+    //printf("=== CommandBuffer (%zu commands)\n", m_commands.size());
 
-    for (size_t i = 0; i < m_commands.size(); i++)
-        printf("  [%03zu] %s\n", i, CommandTypeToString(m_commands[i].type));
+    //for (size_t i = 0; i < m_commands.size(); i++)
+    //    printf("  [%03zu] %s\n", i, CommandTypeToString(m_commands[i].type));
 
-    printf("\n\n");
-    fflush(stdout);
+    //printf("\n\n");
+    //fflush(stdout);
 }
