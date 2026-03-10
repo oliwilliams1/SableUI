@@ -1,10 +1,9 @@
 #pragma once
-#include <SableUI/core/component.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/core/events.h>
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/drawable.h>
 #include <SableUI/core/element.h>
 #include <vector>
 #include <string>
@@ -23,8 +22,8 @@ namespace SableUI
         virtual void Render(const DrawableDrawData& drData) {};
         virtual void Recalculate(const DrawableDrawData& drData) {};
 
-        virtual SplitterPanel* AddSplitter(PanelType type) = 0;
-        virtual ContentPanel* AddPanel() = 0;
+        virtual SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) = 0;
+        virtual ContentPanel* AddPanel(CommandBuffer& cmd) = 0;
 
         virtual void CalculateScales() {};
         virtual void CalculatePositions(const DrawableDrawData& drData) {};
@@ -64,8 +63,8 @@ namespace SableUI
         void Render(const DrawableDrawData& drData) override;
         void Recalculate(const DrawableDrawData& drData) override;
 
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
 
         void CalculateScales() override;
         void CalculatePositions(const DrawableDrawData& drData) override;
@@ -79,8 +78,8 @@ namespace SableUI
 
         void Render(const DrawableDrawData& drData) override;
 
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
 
         void CalculateScales() override;
         void CalculatePositions(const DrawableDrawData& drData) override;
@@ -94,6 +93,7 @@ namespace SableUI
         bool m_drawableUpToDate = false;
     };
 
+    class BaseComponent;
     struct ContentPanel : public BasePanel
     {
         ContentPanel(BasePanel* parent, RendererBackend* renderer);
@@ -101,8 +101,8 @@ namespace SableUI
         static int GetNumInstances();
 
         void Render(const DrawableDrawData& drData) override;
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
         BaseComponent* AttachComponent(const std::string& componentName);
 
         void Update(const DrawableDrawData& drData) override;

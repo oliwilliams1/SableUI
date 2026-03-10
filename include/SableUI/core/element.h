@@ -119,11 +119,11 @@ namespace SableUI
 		// functions for engine
 		void Init(RendererBackend* renderer);
 		void SetInfo(const ElementInfo& info);
-		void SetRect(const Rect& rect);
+		void SetRect(CommandBuffer& cmd, const Rect& rect);
 		void AddChild(Element* child);
 		void AddChild(Child* component);
-		void SetImage(const std::string& path);
-		void SetText(const SableString& text);
+		void SetImage(CommandBuffer& cmd, const std::string& path);
+		void SetText(CommandBuffer& cmd, const SableString& text);
 		int GetMinWidth(CommandBuffer& cmd);
 		int GetMinHeight();
 
@@ -147,7 +147,7 @@ namespace SableUI
 		Rect clipRect = { 0, 0, 0, 0 };
 
 		// children handling
-		void LayoutChildren();
+		void LayoutChildren(CommandBuffer& cmd);
 		bool layoutDirty = false;
 		int measuredHeight = 0;
 		std::vector<Child*> children;

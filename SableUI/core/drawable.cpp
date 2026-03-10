@@ -59,12 +59,10 @@ static inline void RectToNDC(
 // ============================================================================
 // Global Resources
 // ============================================================================
-void SableUI::DestroyGlobalResources(RendererBackend* renderer)
+void SableUI::DestroyGlobalResources(CommandBuffer& cmd, RendererBackend* renderer)
 {
 	if (!g_res.initialised)
 		return;
-
-	CommandBuffer& cmd = renderer->GetCommandBuffer();
 
 	if (g_res.ubo_rect.IsValid())
 		cmd.DestroyUniformBuffer(g_res.ubo_rect);
@@ -72,8 +70,8 @@ void SableUI::DestroyGlobalResources(RendererBackend* renderer)
 	if (g_res.ubo_text.IsValid())
 		cmd.DestroyUniformBuffer(g_res.ubo_text);
 
-	renderer->ExecuteCommandBuffer();
-	renderer->ResetCommandBuffer();
+	renderer->ExecuteCommandBuffer(cmd);
+	cmd.Reset();
 
 	g_res.initialised = false;
 }
@@ -124,20 +122,19 @@ void SableUI::SetupContextResources(CommandBuffer& cb, RendererBackend* renderer
 	cb.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Text), g_res.ubo_text);
 }
 
-void SableUI::DestroyContextResources(RendererBackend* renderer)
+void SableUI::DestroyContextResources(CommandBuffer& cmd, RendererBackend* renderer)
 {
 	void* ctx = SableUI::GetCurrentContext_voidType();
 
 	auto it = g_contextResources.find(ctx);
 	if (it != g_contextResources.end())
 	{
-		CommandBuffer& cmd = renderer->GetCommandBuffer();
 		auto& res = it->second;
 
 		if (res.rectObject.IsValid())
 			cmd.DestroyGpuObject(res.rectObject);
 
-		renderer->ExecuteCommandBuffer();
+		renderer->ExecuteCommandBuffer(cmd);
 	}
 
 	g_contextResources.clear();

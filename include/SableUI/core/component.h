@@ -6,6 +6,7 @@
 #include <SableUI/utils/memory.h>
 #include <SableUI/states/state_base.h>
 #include <SableUI/core/drawable.h>
+#include <SableUI/types/floating_panel_types.h>
 #include <type_traits>
 #include <vector>
 #include <string>
@@ -47,7 +48,7 @@ namespace SableUI
 		void PostLayoutUpdate(const UIEventContext& ctx);
 
 		void RegisterState(StateBase* state);
-		//void RegisterFloatingPanel(FloatingPanelStateBase* state);
+		void RegisterFloatingPanel(FloatingPanelBase* state);
 
 		void MarkDirty();
 		bool IsDirty() const { return needsRerender; }
@@ -61,7 +62,7 @@ namespace SableUI
 	protected:
 		std::vector<BaseComponent*> m_garbageChildren;
 		std::vector<StateBase*> m_states;
-		//std::vector<FloatingPanelStateBase*> m_floatingPanels;
+		std::vector<FloatingPanelBase*> m_floatingPanels;
 		std::vector<Element*> m_hoverElements;
 
 		void UpdateHoverStyling(const UIEventContext& ctx);
@@ -136,3 +137,4 @@ namespace SableUI
 #include <SableUI/states/ref.h>
 #include <SableUI/states/interval.h>
 #include <SableUI/states/timer.h>
+#include <SableUI/states/floating_panel.h>

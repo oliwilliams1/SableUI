@@ -123,7 +123,7 @@ void SableUI::RootPanel::Recalculate(const DrawableDrawData& drData)
 	}
 }
 
-SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
+SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(CommandBuffer& cmd, PanelType type)
 {
 	if (children.size() > 0)
 	{
@@ -135,7 +135,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 
 	const Window* window = _getCurrentContext();
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		cmd,
 		window->GetSurface(),
 		window->m_windowSize.x,
 		window->m_windowSize.y,
@@ -146,7 +146,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(PanelType type)
 	return node;
 }
 
-SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
+SableUI::ContentPanel* SableUI::RootPanel::AddPanel(CommandBuffer& cmd)
 {
 	if (children.size() > 0)
 	{
@@ -158,7 +158,7 @@ SableUI::ContentPanel* SableUI::RootPanel::AddPanel()
 
 	const Window* window = _getCurrentContext();
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		cmd,
 		window->GetSurface(),
 		window->m_windowSize.x,
 		window->m_windowSize.y,
@@ -221,14 +221,14 @@ void SableUI::SplitterPanel::Render(const DrawableDrawData& drData)
 	m_drawable->RecordCommands(drData);
 }
 
-SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
+SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(CommandBuffer& cmd, PanelType type)
 {
 	SplitterPanel* node = SB_new<SplitterPanel>(this, type, m_renderer);
 	children.push_back(node);
 
 	const Window* window = _getCurrentContext();
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		cmd,
 		window->GetSurface(),
 		window->m_windowSize.x,
 		window->m_windowSize.y,
@@ -239,14 +239,14 @@ SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(PanelType type)
 	return node;
 }
 
-SableUI::ContentPanel* SableUI::SplitterPanel::AddPanel()
+SableUI::ContentPanel* SableUI::SplitterPanel::AddPanel(CommandBuffer& cmd)
 {
 	ContentPanel* node = SB_new<ContentPanel>(this, m_renderer);
 	children.push_back(node);
 
 	const Window* window = _getCurrentContext();
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		cmd,
 		window->GetSurface(),
 		window->m_windowSize.x,
 		window->m_windowSize.y,
@@ -562,13 +562,13 @@ int SableUI::ContentPanel::GetNumInstances()
 	return s_panelCount;
 }
 
-SableUI::SplitterPanel* SableUI::ContentPanel::AddSplitter(PanelType type)
+SableUI::SplitterPanel* SableUI::ContentPanel::AddSplitter(CommandBuffer& cmd, PanelType type)
 {
 	SableUI_Error("Base node cannot have any children, skipping call");
 	return nullptr;
 }
 
-SableUI::ContentPanel* SableUI::ContentPanel::AddPanel()
+SableUI::ContentPanel* SableUI::ContentPanel::AddPanel(CommandBuffer& cmd)
 {
 	SableUI_Error("Base node cannot have any children, skipping call");
 	return nullptr;
@@ -594,8 +594,8 @@ void SableUI::ContentPanel::Update(const DrawableDrawData& drData)
 		realRect.h;
 	}
 
-	m_component->GetRootElement()->SetRect(realRect);
-	m_component->GetRootElement()->LayoutChildren();
+	m_component->GetRootElement()->SetRect(drData.cmd, realRect);
+	m_component->GetRootElement()->LayoutChildren(drData.cmd);
 	Render(drData);
 }
 
@@ -620,7 +620,7 @@ bool SableUI::ContentPanel::UpdateComponents(const DrawableDrawData& drData)
 
 	if (changed)
 	{
-		m_component->GetRootElement()->LayoutChildren();
+		m_component->GetRootElement()->LayoutChildren(drData.cmd);
 		Update(drData);
 	}
 

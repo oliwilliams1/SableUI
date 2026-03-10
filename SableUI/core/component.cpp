@@ -7,6 +7,11 @@
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/drawable.h>
+#include <SableUI/renderer/command_buffer.h>
+#include <SableUI/renderer/renderer.h>
+#include <SableUI/states/state_base.h>
+#include <SableUI/types/floating_panel_types.h>
+#include <SableUI/states/floating_panel.h>
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -93,7 +98,7 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 	SetElementBuilderContext(m_renderer, rootElement, false);
 	LayoutWrapper();
 
-	rootElement->LayoutChildren();
+	rootElement->LayoutChildren(_getCurrentContext()->GetMainCommandBuffer());
 }
 
 void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info)
@@ -102,6 +107,8 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 
 	if (!m_renderer)
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
+
+	CommandBuffer& cmd = _getCurrentContext()->GetMainCommandBuffer();
 
 	ElementInfo info = p_info;
 	info.type = ElementType::Div;
@@ -113,14 +120,14 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 	info.layout.wType = RectType::Fixed;
 	info.layout.hType = RectType::Fixed;
 	rootElement = SB_new<Element>(m_renderer, info);
-	rootElement->SetRect(rect);
+	rootElement->SetRect(cmd, rect);
 	rootElement->m_owner = this;
 
 	SetCurrentComponent(this);
 	SetElementBuilderContext(m_renderer, rootElement, false);
 	LayoutWrapper();
 
-	rootElement->LayoutChildren();
+	rootElement->LayoutChildren(cmd);
 }
 
 void SableUI::BaseComponent::SetRenderer(RendererBackend* renderer)
@@ -210,8 +217,8 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 	m_hoverElements.clear();
 	RebuildHoverListRecursive(rootElement, m_hoverElements);
 
-	rootElement->LayoutChildren();
-	rootElement->LayoutChildren();
+	rootElement->LayoutChildren(drData.cmd);
+	rootElement->LayoutChildren(drData.cmd);
 
 	for (Element* el : m_hoverElements)
 	{
@@ -231,7 +238,7 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 				el->info.appearance.bg = el->originalBg;
 			}
 
-			el->SetRect(el->rect);
+			el->SetRect(drData.cmd, el->rect);
 		}
 	}
 
@@ -289,11 +296,10 @@ void SableUI::BaseComponent::RegisterState(StateBase* state)
 	m_states.push_back(state);
 }
 
-//void SableUI::BaseComponent::RegisterFloatingPanel(FloatingPanelStateBase* state)
-//{
-//	m_states.push_back(static_cast<StateBase*>(state));
-//	m_floatingPanels.push_back(state);
-//}
+void SableUI::BaseComponent::RegisterFloatingPanel(FloatingPanelBase* state)
+{
+	m_floatingPanels.push_back(state);
+}
 
 void SableUI::BaseComponent::MarkDirty()
 {
@@ -350,7 +356,7 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 			else
 				el->info.appearance.bg = el->originalBg;
 
-			el->SetRect(el->rect);
+			//el->SetRect(cmd, el->rect);
 			MarkDirty();
 		}
 	}

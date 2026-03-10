@@ -163,6 +163,8 @@ add_library(SableUI STATIC
 	"include/SableUI/renderer/resource_handle.h"
  	"include/SableUI/renderer/command_buffer.h"
 	"SableUI/renderer/resource_handle.cpp"
+ 	"include/SableUI/states/floating_panel.h"
+ 	"include/SableUI/types/floating_panel_types.h"
 )
 
 add_dependencies(SableUI EmbedShaders EmbedResources)

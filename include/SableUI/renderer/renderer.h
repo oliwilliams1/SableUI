@@ -36,18 +36,13 @@ namespace SableUI
 	class RendererBackend
 	{
 	public:
-		static RendererBackend* Create(Backend backend);
+		static RendererBackend* Create(CommandBuffer& cmd, Backend backend);
 		virtual ~RendererBackend() = default;
-		virtual void Initialise() = 0;
+		virtual void Initialise(CommandBuffer& cmd) = 0;
 		virtual void CheckErrors() = 0;
 
-		CommandBuffer& GetCommandBuffer() { return m_commandBuffer; };
-		void ResetCommandBuffer() { m_commandBuffer.Reset(); };
-		virtual void ExecuteCommandBuffer() = 0;
-
+		virtual void ExecuteCommandBuffer(CommandBuffer& cmd) = 0;
 		CommandBuffer CreateSecondaryCommandBuffer() { return CommandBuffer(&m_resourceAllocator); }
-
-		bool isDirty() const { return !m_commandBuffer.empty(); };
 		ResourceHandleAllocator& GetResourceAllocator() { return m_resourceAllocator; }
 
 		TextCacheFactory m_textCacheFactory;
@@ -59,7 +54,6 @@ namespace SableUI
 		std::vector<uint32_t> m_freeHandles;
 		Backend m_backend = Backend::Undef;
 
-		CommandBuffer m_commandBuffer;
 		CommandBufferExecutor* m_executor = nullptr;
 		ResourceHandleAllocator m_resourceAllocator;
 	};

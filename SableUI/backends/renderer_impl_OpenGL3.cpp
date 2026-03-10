@@ -27,12 +27,12 @@ using namespace SableUI;
 class OpenGL3Backend : public RendererBackend
 {
 public:
-	OpenGL3Backend() { Initialise(); }
+	OpenGL3Backend(CommandBuffer& cmd) { Initialise(cmd); }
 	~OpenGL3Backend();
-	void Initialise() override;
+	void Initialise(CommandBuffer& cmd) override;
 	void CheckErrors() override;
 
-	void ExecuteCommandBuffer() override;
+	void ExecuteCommandBuffer(CommandBuffer& cmd) override;
 
 private:
 	struct OpenGLMesh
@@ -43,16 +43,16 @@ private:
 	friend class OpenGLCommandExecutor;
 };
 
-RendererBackend* SableUI::RendererBackend::Create(Backend backend)
+RendererBackend* SableUI::RendererBackend::Create(CommandBuffer& cmd, Backend backend)
 {
 	switch (backend)
 	{
 	case SableUI::Backend::OpenGL:
-		return SableMemory::SB_new<OpenGL3Backend>();
+		return SableMemory::SB_new<OpenGL3Backend>(cmd);
 		break;
 	default:
 		SableUI_Error("Resorting to OpenGL");
-		return SableMemory::SB_new<OpenGL3Backend>();
+		return SableMemory::SB_new<OpenGL3Backend>(cmd);
 		break;
 	}
 }
@@ -167,7 +167,7 @@ static inline void VertexFormatToGL(VertexFormat format, bool& isInteger, int& c
 // OpenGL3Backend Implementations
 // ============================================================================
 bool gladInitialised = false;
-void OpenGL3Backend::Initialise()
+void OpenGL3Backend::Initialise(CommandBuffer& cmd)
 {
 	if (!gladInitialised)
 	{
@@ -182,7 +182,7 @@ void OpenGL3Backend::Initialise()
 		gladInitialised = true;
 	}
 
-	m_commandBuffer.SetAllocator(&m_resourceAllocator);
+	cmd.SetAllocator(&m_resourceAllocator);
 
 	CommandBuffer tempCB = CreateSecondaryCommandBuffer();
 	SetupContextResources(tempCB, this);
@@ -206,10 +206,10 @@ void OpenGL3Backend::CheckErrors()
 	}
 }
 
-void OpenGL3Backend::ExecuteCommandBuffer()
+void OpenGL3Backend::ExecuteCommandBuffer(CommandBuffer& cmd)
 {
-	m_commandBuffer.DebugPrintAndClear();
-	m_executor->Execute(m_commandBuffer);
+	cmd.DebugPrintAndClear();
+	m_executor->Execute(cmd);
 }
 
 // ============================================================================

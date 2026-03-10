@@ -1,6 +1,7 @@
 #include <SableUI/states/interval.h>
 #include <SableUI/core/component.h>
 #include <SableUI/core/event_scheduler.h>
+#include <SableUI/states/state_base.h>
 
 SableUI::Interval::Interval(BaseComponent* owner)
     : m_owner(owner), m_period(0)

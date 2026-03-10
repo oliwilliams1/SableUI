@@ -144,7 +144,7 @@ SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 		return nullptr;
 	}
 
-	SableUI::SplitterPanel* splitter = s_currentPanel->AddSplitter(orientation);
+	SableUI::SplitterPanel* splitter = s_currentPanel->AddSplitter(_getCurrentContext()->GetMainCommandBuffer(), orientation);
 	splitter->maxBounds = g_nextPanelMaxBounds;
 	g_nextPanelMaxBounds = { 0, 0 };
 
@@ -185,7 +185,7 @@ SableUI::ContentPanel* SableUI::AddPanel()
 		return nullptr;
 	}
 
-	SableUI::ContentPanel* panel = s_currentPanel->AddPanel();
+	SableUI::ContentPanel* panel = s_currentPanel->AddPanel(_getCurrentContext()->GetMainCommandBuffer());
 	panel->maxBounds = g_nextPanelMaxBounds;
 	panel->minBounds = g_nextPanelMinBounds;
 	g_nextPanelMinBounds = { 20, 20 };
@@ -352,7 +352,7 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 	newImage->m_owner = parent->m_owner;
 	newImage->RegisterForHover();
 
-	newImage->SetImage(path);
+	newImage->SetImage(_getCurrentContext()->GetMainCommandBuffer(), path);
 	parent->AddChild(newImage);
 }
 
@@ -387,7 +387,7 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 	Element* e = SB_new<Element>(s_rendererStack.top(), info);
 	e->m_owner = parent->m_owner;
 	e->RegisterForHover();
-	e->SetText(text);
+	e->SetText(_getCurrentContext()->GetMainCommandBuffer(), text);
 
 	parent->AddChild(e);
 }
@@ -619,7 +619,7 @@ App::App(const char* name, int width, int height, const SableUI::WindowInitInfo&
 
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
-	SableUI::InitFontManager(m_mainWindow->GetRenderer()->GetCommandBuffer());
+	SableUI::InitFontManager(m_mainWindow->GetMainCommandBuffer());
 	
 	SetContext(m_mainWindow);
 }
@@ -732,7 +732,7 @@ void App::Render()
 App::~App()
 {
 	SableUI::DestroyFontManager();
-	SableUI::DestroyGlobalResources(m_mainWindow->GetRenderer());
+	SableUI::DestroyGlobalResources(m_mainWindow->GetMainCommandBuffer(), m_mainWindow->GetRenderer());
 
 	for (SableUI::Window* window : m_secondaryWindows) SB_delete(window);
 	m_secondaryWindows.clear();

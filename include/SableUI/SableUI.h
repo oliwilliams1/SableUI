@@ -5,9 +5,10 @@
 #include <SableUI/core/element.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/renderer/renderer.h>
-#include <SableUI/styles/styles.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/console.h>
+#include <SableUI/types/renderer_types.h>
+#include <SableUI/styles/styles.h>
 #include <SableUI/core/component_registry.h>
 #include <SableUI/styles/theme.h>
 
@@ -36,8 +37,6 @@ namespace SableUI
 
 	void Render();
 
-	void PostEmptyEvent();
-
 	void SetElementBuilderContext(RendererBackend* renderer, Element* rootElement, bool isVirtual);
 	void SetCurrentComponent(BaseComponent* component);
 	Element* GetCurrentElement();
@@ -65,8 +64,6 @@ namespace SableUI
 
 	//void StartCustomLayoutScope(CustomTargetQueue* queuePtr);
 	//void EndCustomLayoutScope(CustomTargetQueue* queuePtr);
-
-	Window* _getCurrentContext();
 
 	struct DivScope
 	{

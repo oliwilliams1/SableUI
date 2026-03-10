@@ -2,6 +2,7 @@
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/events.h>
 #include <SableUI/renderer/renderer.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/styles/theme.h>
 #include <SableUI/utils/console.h>
 #include <SableUI/utils/memory.h>
@@ -93,7 +94,7 @@ void SableUI::Element::Init(RendererBackend* renderer)
     }
 }
 
-void SableUI::Element::SetRect(const Rect& r)
+void SableUI::Element::SetRect(CommandBuffer& cmd, const Rect& r)
 {
     this->rect = r;
 
@@ -148,7 +149,7 @@ void SableUI::Element::SetRect(const Rect& r)
     case ElementType::Text:
         if (DrawableText* drText = dynamic_cast<DrawableText*>(drawable))
         {
-            rect.h = drText->m_text.UpdateMaxWidth(renderer->GetCommandBuffer(), rect.w);
+            rect.h = drText->m_text.UpdateMaxWidth(cmd, rect.w);
             info.layout.height = rect.h;
             drText->Update(rect, clipEnabled, clipRect);
         }
@@ -304,13 +305,13 @@ void SableUI::Element::AddChild(Child* child)
     children.emplace_back(child);
 }
 
-void SableUI::Element::SetImage(const std::string& path)
+void SableUI::Element::SetImage(CommandBuffer& cmd, const std::string& path)
 {
     if (info.type != ElementType::Image) SableUI_Error("Cannot set image on element not of type image");
 
     if (DrawableImage* drImage = dynamic_cast<DrawableImage*>(drawable))
     {
-        drImage->m_texture.LoadTextureOptimised(renderer->GetCommandBuffer(), path, info.layout.width, info.layout.height);
+        drImage->m_texture.LoadTextureOptimised(cmd, path, info.layout.width, info.layout.height);
         info.text.content = path;
 
         if (m_owner)
@@ -322,7 +323,7 @@ void SableUI::Element::SetImage(const std::string& path)
     }
 }
 
-void SableUI::Element::SetText(const SableString& text)
+void SableUI::Element::SetText(CommandBuffer& cmd, const SableString& text)
 {
     if (info.type != ElementType::Text) SableUI_Error("Cannot set text on element not of type text");
 
@@ -338,7 +339,7 @@ void SableUI::Element::SetText(const SableString& text)
             SableUI_Warn("Text colour not set, using default");
             drText->m_text.m_colour = GetTheme().text;
         }
-        drText->m_text.SetContent(renderer->GetCommandBuffer(), renderer, text, drawable->m_rect.w,
+        drText->m_text.SetContent(cmd, renderer, text, drawable->m_rect.w,
             info.text.fontSize, info.layout.maxH, info.text.lineHeight, info.text.justification.value_or(TextJustification::Left));
     }
     else
@@ -460,12 +461,10 @@ int SableUI::Element::GetMinHeight()
     return calculatedMinHeight + info.layout.pT + info.layout.pB + info.layout.bT + info.layout.bB;
 }
 
-void SableUI::Element::LayoutChildren()
+void SableUI::Element::LayoutChildren(CommandBuffer& cmd)
 {
     if (info.type != ElementType::Div) return;
     if (children.empty()) return;
-
-    CommandBuffer& cmd = renderer->GetCommandBuffer();
 
     if (info.layout.pos.x != -1 || info.layout.pos.y != -1)
     {
@@ -483,7 +482,6 @@ void SableUI::Element::LayoutChildren()
     rect.w = std::max(rect.w, GetMinWidth(cmd));
     rect.h = std::max(rect.h, GetMinHeight());
 
-    // Calculate container area (no padding or border)
     ivec2 containerSize = { rect.w, rect.h };
 
     if (containerSize.x <= 0 || containerSize.y <= 0)
@@ -491,14 +489,12 @@ void SableUI::Element::LayoutChildren()
         for (Child* child : children)
         {
             Element* childElement = (Element*)*child;
-            childElement->SetRect({ rect.x, rect.y, 0, 0 });
-            childElement->LayoutChildren();
+            childElement->SetRect(cmd, { rect.x, rect.y, 0, 0 });
+            childElement->LayoutChildren(cmd);
         }
         return;
     }
 
-    // NEW: Calculate content area (after padding AND border)
-    // Border is applied INSIDE the padding
     ivec2 contentAreaPosition = {
         rect.x + info.layout.pL + info.layout.bL,
         rect.y + info.layout.pT + info.layout.bT
@@ -513,8 +509,8 @@ void SableUI::Element::LayoutChildren()
         for (Child* child : children)
         {
             Element* childElement = (Element*)*child;
-            childElement->SetRect({ contentAreaPosition.x, contentAreaPosition.y, 0, 0 });
-            childElement->LayoutChildren();
+            childElement->SetRect(cmd, { contentAreaPosition.x, contentAreaPosition.y, 0, 0 });
+            childElement->LayoutChildren(cmd);
         }
         return;
     }
@@ -621,7 +617,6 @@ void SableUI::Element::LayoutChildren()
 
         int childContentWidth, childContentHeight;
 
-        // Rest of the layout logic remains the same...
         if (isVerticalFlow)
         {
             if (childElement->info.layout.wType == RectType::Fixed)
@@ -817,8 +812,8 @@ void SableUI::Element::LayoutChildren()
             std::min(childContentHeight, (contentAreaPosition.y + contentAreaSize.y) - childY)
         };
 
-        childElement->SetRect(childFinalRect);
-        childElement->LayoutChildren();
+        childElement->SetRect(cmd, childFinalRect);
+        childElement->LayoutChildren(cmd);
     }
 }
 

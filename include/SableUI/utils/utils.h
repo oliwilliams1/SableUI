@@ -9,6 +9,10 @@ typedef SableUI::String SableString;
 
 namespace SableUI
 {
+	class Window;
+	void PostEmptyEvent();
+	Window* _getCurrentContext();
+
 	inline int f2i(float f) { return static_cast<int>(std::round(f)); }
 
 	struct uvec2

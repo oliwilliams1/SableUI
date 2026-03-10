@@ -62,11 +62,11 @@ namespace SableUI
 		const ContextResources& contextResources;
 	};
 
-	void DestroyGlobalResources(RendererBackend* renderer);
+	void DestroyGlobalResources(CommandBuffer& cmd, RendererBackend* renderer);
 	GlobalResources& GetGlobalResources();
 
 	void SetupContextResources(CommandBuffer& cb, RendererBackend* renderer);
-	void DestroyContextResources(RendererBackend* renderer);
+	void DestroyContextResources(CommandBuffer& cmd, RendererBackend* renderer);
 	ContextResources& GetContextResources(RendererBackend* backend);
 
 	class DrawableBase

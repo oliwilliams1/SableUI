@@ -1,12 +1,15 @@
 #pragma once
 #include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/types/renderer_types.h>
+#include <SableUI/types/floating_panel_types.h>
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 
 #include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <array>
 
@@ -72,6 +75,13 @@ namespace SableUI
 
 		ResourceHandle GetSurface() const { return m_windowSurface; }
 		RendererBackend* GetRenderer() const { return m_renderer; }
+		CommandBuffer& GetMainCommandBuffer() { return m_mainCommandBuffer; }
+
+		void UnregisterFloatingPanel(int id);
+		void RegisterFloatingPanel(int id, FloatingPanelBase* panel);
+		void ReassociateFloatingPanel(int id, FloatingPanelBase* panel);
+		void RebuildCompositeCommandBuffer();
+		FloatingPanelEntry& GetFloatingPanelEntry(int id);
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
@@ -83,6 +93,10 @@ namespace SableUI
 		ResourceHandle m_framebuffer;
 		ResourceHandle m_colourAttachment;
 
+		CommandBuffer m_mainCommandBuffer{};
+		
+		std::unordered_map<int, FloatingPanelEntry> m_floatingPanels;
+
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled, bool isLastChild);
 		void Resize(ivec2 pos, BasePanel* panel = nullptr);
@@ -92,6 +106,7 @@ namespace SableUI
 		RootPanel* m_root = nullptr;
 		bool m_resizing = false;
 		bool m_isMinimized = false;
+		bool m_compositeRebuildNeeded = true;
 
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

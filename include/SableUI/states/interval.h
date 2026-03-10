@@ -1,4 +1,5 @@
 #pragma once
+#include <SableUI/states/state_base.h>
 #include <SableUI/core/component.h>
 #include <chrono>
 

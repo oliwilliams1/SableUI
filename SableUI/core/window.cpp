@@ -12,6 +12,7 @@
 #include <SableUI/generated/resources.h>
 #include <SableUI/types/renderer_types.h>
 #include <SableUI/renderer/command_buffer.h>
+#include <SableUI/types/floating_panel_types.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 #include <unordered_set>
@@ -21,6 +22,7 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <utility>
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
@@ -147,14 +149,12 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 	instance->m_isMinimized = false;
 	instance->MakeContextCurrent();
 
-	CommandBuffer& cb = instance->m_renderer->GetCommandBuffer();
-
-	cb.SetViewport(0, 0, width, height);
+	instance->m_mainCommandBuffer.SetViewport(0, 0, width, height);
 	if (width > 0 && height > 0)
 	{
-		cb.CreateStorageTexture2D(instance->m_colourAttachment, width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-		cb.SetFramebufferSize(instance->m_framebuffer, width, height);
-		cb.SetFramebufferSize(instance->m_windowSurface, width, height);
+		instance->m_mainCommandBuffer.CreateStorageTexture2D(instance->m_colourAttachment, width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+		instance->m_mainCommandBuffer.SetFramebufferSize(instance->m_framebuffer, width, height);
+		instance->m_mainCommandBuffer.SetFramebufferSize(instance->m_windowSurface, width, height);
 	}
 
 	instance->m_root->Resize(width, height);
@@ -254,7 +254,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 		m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, primary->m_window);
 
 	MakeContextCurrent();
-	
+
 	int iconWidth = 0, iconHeight = 0, iconChannels = 0;
 	unsigned char* iconData = stbi_load_from_memory(sableui_64x_png_data, sableui_64x_png_size, &iconWidth, &iconHeight, &iconChannels, 4);
 	GLFWimage image{};
@@ -279,23 +279,22 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	ShowWindow(hwnd, SW_SHOW);
 #endif
 
-	m_renderer = RendererBackend::Create(backend);
-	CommandBuffer& cb = m_renderer->GetCommandBuffer();
-	cb.SetBlendState(true, BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-	cb.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
+	m_renderer = RendererBackend::Create(m_mainCommandBuffer, backend);
+	m_mainCommandBuffer.SetBlendState(true, BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_mainCommandBuffer.Clear(32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f);
 
-	m_colourAttachment = cb.CreateTexture2D(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
-	m_framebuffer = cb.CreateFramebuffer(width, height, false);
-	m_windowSurface = cb.CreateFramebuffer(width, height, true);
+	m_colourAttachment = m_mainCommandBuffer.CreateTexture2D(width, height, TextureFormat::RGBA8, TextureUsage::RenderTarget);
+	m_framebuffer = m_mainCommandBuffer.CreateFramebuffer(width, height, false);
+	m_windowSurface = m_mainCommandBuffer.CreateFramebuffer(width, height, true);
 
 	if (width > 0 && height > 0)
 	{
-		cb.AttachColourTexture(m_framebuffer, m_colourAttachment, 0);
-		cb.BakeFramebuffer(m_framebuffer);
+		m_mainCommandBuffer.AttachColourTexture(m_framebuffer, m_colourAttachment, 0);
+		m_mainCommandBuffer.BakeFramebuffer(m_framebuffer);
 	}
 
-	cb.SetFramebufferSize(m_windowSurface, m_windowSize.x, m_windowSize.y);
-	cb.BeginRenderPass(m_framebuffer);
+	m_mainCommandBuffer.SetFramebufferSize(m_windowSurface, m_windowSize.x, m_windowSize.y);
+	m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
 
 	if (m_root != nullptr)
 	{
@@ -316,6 +315,54 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetCharCallback(m_window, CharCallback);
 
 	m_root = SB_new<SableUI::RootPanel>(m_renderer, width, height);
+}
+
+void SableUI::Window::UnregisterFloatingPanel(int id)
+{
+	if (!m_floatingPanels.contains(id))
+	{
+		SableUI_Error("UnregisterFloatingPanel() called with a non-existent id");
+	}
+
+	FloatingPanelEntry& entry = m_floatingPanels[id];
+
+	if (entry.texture.IsValid())
+		m_mainCommandBuffer.DestroyTexture(entry.texture);
+	if (entry.framebuffer.IsValid())
+		m_mainCommandBuffer.DestroyFramebuffer(entry.framebuffer);
+
+	m_floatingPanels.erase(id);
+	m_compositeRebuildNeeded = true;
+}
+
+void SableUI::Window::RegisterFloatingPanel(int id, FloatingPanelBase* panel)
+{
+	if (!m_floatingPanels.contains(id))
+	{
+		SableUI_Error("Floating panel with id %d already registered!", id);
+	}
+
+	FloatingPanelEntry entry;
+	entry.panel = panel;
+	m_floatingPanels[id] = std::move(entry);
+}
+
+void SableUI::Window::ReassociateFloatingPanel(int id, FloatingPanelBase* panel)
+{
+	if (m_floatingPanels.contains(id))
+		m_floatingPanels[id].panel = panel;
+	else
+		SableUI_Error("ReassociateFloatingPanel() called with a non-existent id");
+}
+
+void SableUI::Window::RebuildCompositeCommandBuffer()
+{
+	SableUI_Warn("Feature not implemented");
+}
+
+SableUI::FloatingPanelEntry& SableUI::Window::GetFloatingPanelEntry(int id)
+{
+	return m_floatingPanels.at(id);
 }
 
 void SableUI::Window::MakeContextCurrent()
@@ -427,7 +474,7 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 		return !glfwWindowShouldClose(m_window);
 
 	SetContext(this);
-	AsyncTextureLoader::GetInstance().ProcessCompletedLoads(m_renderer->GetCommandBuffer());
+	AsyncTextureLoader::GetInstance().ProcessCompletedLoads(m_mainCommandBuffer);
 
 	if (m_needsRefresh)
 	{
@@ -439,8 +486,12 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	ctx.firedTimers = firedTimers;
 
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(), m_framebuffer,
-		m_windowSize.x, m_windowSize.y, GetContextResources(m_renderer));
+		m_mainCommandBuffer,
+		m_framebuffer,
+		m_windowSize.x,
+		m_windowSize.y,
+		GetContextResources(m_renderer)
+	);
 
 	m_root->DistributeEvents(ctx);
 	bool dirty = m_root->UpdateComponents(drData);
@@ -453,16 +504,16 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 
 	if (!m_resizing)
 	{
-		StepCachedTexturesCleaner(m_renderer->GetCommandBuffer());
-		m_renderer->m_textCacheFactory.CleanCache(m_renderer->GetCommandBuffer());
+		StepCachedTexturesCleaner(m_mainCommandBuffer);
+		m_renderer->m_textCacheFactory.CleanCache(m_mainCommandBuffer);
 	}
 
 	HandleResize();
 
 	if (m_needsRefresh)
 	{
-		m_renderer->ResetCommandBuffer();
-		m_renderer->GetCommandBuffer().BeginRenderPass(m_framebuffer);
+		m_mainCommandBuffer.Reset();
+		m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
 		RecalculateNodes();
 		RerenderAllNodes();
 		m_needsRefresh = false;
@@ -486,22 +537,23 @@ void SableUI::Window::Draw()
 	SetContext(this);
 	MakeContextCurrent();
 
-	CommandBuffer& cb = m_renderer->GetCommandBuffer();
-	bool baseLayerDirty = m_renderer->isDirty() || m_needsStaticRedraw;
+	bool baseLayerDirty = m_needsStaticRedraw;
 
 	if (baseLayerDirty)
 	{
-		cb.EndRenderPass();
-		cb.BlitToScreen(m_framebuffer);
-		m_renderer->ExecuteCommandBuffer();
+		m_mainCommandBuffer.EndRenderPass();
+		m_mainCommandBuffer.BlitToScreen(m_framebuffer);
+
+		m_renderer->ExecuteCommandBuffer(m_mainCommandBuffer);
+
+		m_mainCommandBuffer.Reset();
+		m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
+
 		m_renderer->CheckErrors();
 		glfwSwapBuffers(m_window);
 
 		m_needsStaticRedraw = false;
 		m_syncFrames--;
-
-		cb.Reset();
-		cb.BeginRenderPass(m_framebuffer);
 	}
 }
 
@@ -517,13 +569,11 @@ SableUI::RootPanel* SableUI::Window::GetRoot()
 
 void SableUI::Window::RerenderAllNodes()
 {
-	m_renderer->ExecuteCommandBuffer();
-	m_renderer->ResetCommandBuffer();
-	CommandBuffer& cb = m_renderer->GetCommandBuffer();
-	cb.BeginRenderPass(m_framebuffer);
+	m_renderer->ExecuteCommandBuffer(m_mainCommandBuffer);
+	m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
 
 	DrawableDrawData drData = DrawableDrawData(
-		cb,
+		m_mainCommandBuffer,
 		m_framebuffer,
 		m_windowSize.x,
 		m_windowSize.y,
@@ -538,7 +588,7 @@ void SableUI::Window::RerenderAllNodes()
 void SableUI::Window::RecalculateNodes()
 {
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		m_mainCommandBuffer,
 		m_framebuffer,
 		m_windowSize.x,
 		m_windowSize.y,
@@ -838,7 +888,7 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 	}
 
 	DrawableDrawData drData = DrawableDrawData(
-		m_renderer->GetCommandBuffer(),
+		m_mainCommandBuffer,
 		m_framebuffer,
 		m_windowSize.x,
 		m_windowSize.y,
@@ -972,7 +1022,7 @@ SableUI::Window::~Window()
 		MakeContextCurrent();
 
 	SB_delete(m_root);
-	DestroyContextResources(m_renderer);
+	DestroyContextResources(m_mainCommandBuffer, m_renderer);
 
 	SB_delete(m_renderer);
 
