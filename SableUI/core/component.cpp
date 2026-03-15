@@ -256,9 +256,9 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 {
 	rootElement->DistributeInputToElements(ctx);
 	
-	//for (FloatingPanelStateBase* panel : m_floatingPanels)
-	//	if (panel->IsOpen())
-	//		panel->HandleInput(ctx);
+	for (FloatingPanelBase* panel : m_floatingPanels)
+		if (panel->IsOpen())
+			panel->HandleInput(ctx);
 
 	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
@@ -267,6 +267,14 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
 
 bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
 {
+	for (FloatingPanelBase* panel : m_floatingPanels)
+	{
+		if (panel->IsOpen())
+		{
+			panel->CheckAndUpdate(drData);
+		}
+	}
+
 	if (!needsRerender)
 	{
 		bool childChanged = rootElement->CheckElementTreeForChanges(drData);
@@ -284,9 +292,9 @@ void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
 	for (auto* child : m_componentChildren)
 		child->PostLayoutUpdate(ctx);
 
-	//for (FloatingPanelStateBase* panel : m_floatingPanels)
-	//	if (panel->IsOpen())
-	//		panel->PostLayoutUpdate(ctx);
+	for (FloatingPanelBase* panel : m_floatingPanels)
+		if (panel->IsOpen())
+			panel->PostLayoutUpdate(ctx);
 
 	OnUpdatePostLayout(ctx);
 }

@@ -269,7 +269,7 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 	glfwSetWindowUserPointer(m_window, reinterpret_cast<void*>(this));
 
 #ifdef _WIN32
-	// Enable immersive dark mode on windows via api 
+	// Enable immersive dark mode on windows 
 	HWND hwnd = FindWindowA(NULL, title.c_str());
 
 	BOOL dark_mode = true;
@@ -295,6 +295,8 @@ SableUI::Window::Window(const Backend& backend, Window* primary, const std::stri
 
 	m_mainCommandBuffer.SetFramebufferSize(m_windowSurface, m_windowSize.x, m_windowSize.y);
 	m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
+
+	m_compositeCommandBuffer = m_renderer->CreateSecondaryCommandBuffer();
 
 	if (m_root != nullptr)
 	{
@@ -332,14 +334,13 @@ void SableUI::Window::UnregisterFloatingPanel(int id)
 		m_mainCommandBuffer.DestroyFramebuffer(entry.framebuffer);
 
 	m_floatingPanels.erase(id);
-	m_compositeRebuildNeeded = true;
 }
 
 void SableUI::Window::RegisterFloatingPanel(int id, FloatingPanelBase* panel)
 {
-	if (!m_floatingPanels.contains(id))
+	if (m_floatingPanels.contains(id))
 	{
-		SableUI_Error("Floating panel with id %d already registered!", id);
+		SableUI_Error("Floating panel with id %d already registered", id);
 	}
 
 	FloatingPanelEntry entry;
@@ -355,9 +356,16 @@ void SableUI::Window::ReassociateFloatingPanel(int id, FloatingPanelBase* panel)
 		SableUI_Error("ReassociateFloatingPanel() called with a non-existent id");
 }
 
-void SableUI::Window::RebuildCompositeCommandBuffer()
+void SableUI::Window::BuildCompositeCommandBuffer()
 {
-	SableUI_Warn("Feature not implemented");
+	for (auto& entry : m_floatingPanels)
+	{
+		FloatingPanelEntry& fpEntry = entry.second;
+		if (!fpEntry.panel->IsOpen()) continue;
+		m_compositeCommandBuffer.BlitFramebuffer(fpEntry.framebuffer, m_framebuffer, 0, 0, fpEntry.size.x, fpEntry.size.y, fpEntry.pos.x, fpEntry.pos.y, fpEntry.pos.x + fpEntry.size.x, fpEntry.pos.y + fpEntry.size.y);
+	}
+
+	m_compositeCommandBuffer.BlitToScreen(m_framebuffer);
 }
 
 SableUI::FloatingPanelEntry& SableUI::Window::GetFloatingPanelEntry(int id)
@@ -494,12 +502,14 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	);
 
 	m_root->DistributeEvents(ctx);
+
 	bool dirty = m_root->UpdateComponents(drData);
 	if (dirty)
 	{
 		m_root->Render(drData);
 		m_needsStaticRedraw = true;
 	}
+
 	m_root->PostLayoutUpdate(ctx);
 
 	if (!m_resizing)
@@ -542,12 +552,13 @@ void SableUI::Window::Draw()
 	if (baseLayerDirty)
 	{
 		m_mainCommandBuffer.EndRenderPass();
-		m_mainCommandBuffer.BlitToScreen(m_framebuffer);
-
 		m_renderer->ExecuteCommandBuffer(m_mainCommandBuffer);
-
 		m_mainCommandBuffer.Reset();
 		m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
+
+		BuildCompositeCommandBuffer();
+		m_renderer->ExecuteCommandBuffer(m_compositeCommandBuffer);
+		m_compositeCommandBuffer.Reset();
 
 		m_renderer->CheckErrors();
 		glfwSwapBuffers(m_window);

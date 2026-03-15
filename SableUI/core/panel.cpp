@@ -619,10 +619,7 @@ bool SableUI::ContentPanel::UpdateComponents(const DrawableDrawData& drData)
 	bool changed = m_component->CheckAndUpdate(drData);
 
 	if (changed)
-	{
-		m_component->GetRootElement()->LayoutChildren(drData.cmd);
 		Update(drData);
-	}
 
 	return changed;
 }

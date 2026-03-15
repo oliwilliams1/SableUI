@@ -80,7 +80,7 @@ namespace SableUI
 		void UnregisterFloatingPanel(int id);
 		void RegisterFloatingPanel(int id, FloatingPanelBase* panel);
 		void ReassociateFloatingPanel(int id, FloatingPanelBase* panel);
-		void RebuildCompositeCommandBuffer();
+		void BuildCompositeCommandBuffer();
 		FloatingPanelEntry& GetFloatingPanelEntry(int id);
 
 		void MakeContextCurrent();
@@ -94,6 +94,7 @@ namespace SableUI
 		ResourceHandle m_colourAttachment;
 
 		CommandBuffer m_mainCommandBuffer{};
+		CommandBuffer m_compositeCommandBuffer{};
 		
 		std::unordered_map<int, FloatingPanelEntry> m_floatingPanels;
 
@@ -106,7 +107,6 @@ namespace SableUI
 		RootPanel* m_root = nullptr;
 		bool m_resizing = false;
 		bool m_isMinimized = false;
-		bool m_compositeRebuildNeeded = true;
 
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

@@ -9,6 +9,8 @@
 #include <SableUI/core/window.h>
 #include <SableUI/types/floating_panel_types.h>
 #include <SableUI/utils/memory.h>
+#include <SableUI/core/events.h>
+#include <SableUI/core/drawable.h>
 #include <type_traits>
 
 namespace SableUI
@@ -22,17 +24,17 @@ namespace SableUI
 		FloatingPanel(BaseComponent* owner);
 		~FloatingPanel();
 
-		void Open(Rect rect = {});
+		void Open(Rect rect);
 		void Open(int x, int y, int width, int height);
 		void Close();
-		void Toggle();
-		bool IsOpen() const;
-
-		void SetPosition(int x, int y);
-		void SetSize(int width, int height);
-		void SetRect(Rect rect);
+		void Toggle(Rect rect);
+		bool IsOpen() const override;
 
 		void Sync(StateBase* other) override;
+
+		void PostLayoutUpdate(const UIEventContext& ctx) override;
+		bool CheckAndUpdate(const DrawableDrawData& externalDrawData) override;
+		void HandleInput(const UIEventContext& ctx) override;
 
 	private:
 		ResourceHandle m_framebuffer;
@@ -54,6 +56,12 @@ namespace SableUI
 
 		m_owner->RegisterState(this);
 		m_owner->RegisterFloatingPanel(this);
+
+		if (Window* ctx = _getCurrentContext())
+			ctx->RegisterFloatingPanel(m_stableId, this);
+
+		m_child = SableMemory::SB_new<T>();
+		m_child->SetRenderer(m_owner->GetRenderer());
 	}
 
 	template<typename T>
@@ -66,12 +74,17 @@ namespace SableUI
 		// if m_stableId == -1, this means Sync() transferred ownership, no need to unregister
 
 		if (m_child)
+		{
 			SableMemory::SB_delete(m_child);
+			m_child = nullptr;
+		}
 	}
 
 	template<typename T>
 	inline void FloatingPanel<T>::Open(Rect rect)
 	{
+		if (m_open) return;
+
 		m_rect = rect;
 		m_open = true;
 
@@ -88,7 +101,7 @@ namespace SableUI
 			entry.framebuffer = mainCB.CreateFramebuffer(rect.w, rect.h);
 			mainCB.AttachColourTexture(entry.framebuffer, entry.texture, 0);
 			mainCB.BakeFramebuffer(entry.framebuffer);
-			entry.cb = ctx->GetRenderer()->CreateSecondaryCommandBuffer();
+			entry.cmd = ctx->GetRenderer()->CreateSecondaryCommandBuffer();
 
 			m_child->SetRenderer(ctx->GetRenderer());
 			m_child->BackendInitialiseFloatingPanel(rect);
@@ -96,13 +109,12 @@ namespace SableUI
 		else if (needsGpuResize)
 		{
 			mainCB.SetFramebufferSize(entry.framebuffer, rect.w, rect.h);
-			m_child->GetRootElement()->SetRect(rect);
+			m_child->GetRootElement()->SetRect(entry.cmd, rect);
 		}
 
 		entry.pos = { rect.x, rect.y };
 		entry.size = { rect.w, rect.h };
 		entry.dirty = true;
-		ctx->RebuildCompositeCommandBuffer();
 		PostEmptyEvent();
 	}
 
@@ -116,7 +128,6 @@ namespace SableUI
 	void FloatingPanel<T>::Close()
 	{
 		if (!m_open) return;
-		m_open = false;
 
 		Window* ctx = _getCurrentContext();
 		FloatingPanelEntry& entry = ctx->GetFloatingPanelEntry(m_stableId);
@@ -132,43 +143,23 @@ namespace SableUI
 			mainCB.DestroyFramebuffer(entry.framebuffer);
 			entry.framebuffer = {};
 		}
-		entry.cb = {};
+		entry.cmd = {};
 		entry.size = {};
 
-		ctx->RebuildCompositeCommandBuffer();
+		m_open = false;
 		PostEmptyEvent();
 	}
 
 	template<typename T>
-	inline void FloatingPanel<T>::Toggle()
+	inline void FloatingPanel<T>::Toggle(Rect rect)
 	{
-		m_open = !m_open;
+		m_open ? Close() : Open(rect);
 	}
 
 	template<typename T>
 	inline bool FloatingPanel<T>::IsOpen() const
 	{
 		return m_open;
-	}
-
-	template<typename T>
-	inline void FloatingPanel<T>::SetPosition(int x, int y)
-	{
-		m_rect.x = x;
-		m_rect.y = y;
-	}
-
-	template<typename T>
-	inline void FloatingPanel<T>::SetSize(int width, int height)
-	{
-		m_rect.w = width;
-		m_rect.h = height;
-	}
-
-	template<typename T>
-	inline void FloatingPanel<T>::SetRect(Rect rect)
-	{
-		m_rect = rect;
 	}
 
 	template<typename T>
@@ -183,5 +174,44 @@ namespace SableUI
 
 		_getCurrentContext()->ReassociateFloatingPanel(m_stableId, this);
 		otherPtr->m_stableId = -1;
+	}
+
+	template<typename T>
+	inline void FloatingPanel<T>::PostLayoutUpdate(const UIEventContext& ctx)
+	{
+		if (m_child)
+			m_child->PostLayoutUpdate(ctx);
+	}
+
+	template<typename T>
+	inline bool FloatingPanel<T>::CheckAndUpdate(const DrawableDrawData& externalDrawData)
+	{
+		if (!m_child) return false;
+		FloatingPanelEntry& entry = _getCurrentContext()->GetFloatingPanelEntry(m_stableId);
+		
+		DrawableDrawData drData{
+			entry.cmd,
+			entry.framebuffer,
+			entry.size.x,
+			entry.size.y,
+			externalDrawData.contextResources
+		};
+
+		bool changed = m_child->CheckAndUpdate(drData);
+
+		if (changed)
+		{
+			m_child->GetRootElement()->LayoutChildren(drData.cmd);
+			m_child->Render(drData);
+		}
+
+		return changed;
+	}
+
+	template<typename T>
+	inline void FloatingPanel<T>::HandleInput(const UIEventContext& ctx)
+	{
+		if (m_child)
+			m_child->PostLayoutUpdate(ctx);
 	}
 }

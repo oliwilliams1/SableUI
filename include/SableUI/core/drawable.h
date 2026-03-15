@@ -49,7 +49,7 @@ namespace SableUI
 
 	struct DrawableDrawData
 	{
-		DrawableDrawData(CommandBuffer& cmd, ResourceHandle framebuffer, int fbWidth, int fbHeight, const ContextResources& contextResources)
+		DrawableDrawData(CommandBuffer& cmd, ResourceHandle framebuffer, int fbWidth, int fbHeight, ContextResources& contextResources)
 			: cmd(cmd),
 			framebuffer(framebuffer), 
 			fbWidth(fbWidth), 
@@ -59,7 +59,7 @@ namespace SableUI
 		CommandBuffer& cmd;
 		ResourceHandle framebuffer;
 		int fbWidth, fbHeight;
-		const ContextResources& contextResources;
+		ContextResources& contextResources;
 	};
 
 	void DestroyGlobalResources(CommandBuffer& cmd, RendererBackend* renderer);
