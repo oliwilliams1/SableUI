@@ -112,13 +112,12 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 
 	ElementInfo info = p_info;
 	info.type = ElementType::Div;
-	if (!info.appearance.bg.has_value())
-		info.appearance.bg = GetTheme().base;
 
 	info.layout.width = rect.w;
 	info.layout.height = rect.h;
 	info.layout.wType = RectType::Fixed;
 	info.layout.hType = RectType::Fixed;
+	info.appearance.bg = Colour(0, 0, 0, 0);
 	rootElement = SB_new<Element>(m_renderer, info);
 	rootElement->SetRect(cmd, rect);
 	rootElement->m_owner = this;
@@ -355,7 +354,7 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 	for (Element* el : m_hoverElements)
 	{
 		el->wasHovered = el->isHovered;
-		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos);
+		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos, ctx.obscurers);
 
 		if (el->isHovered != el->wasHovered)
 		{
@@ -364,7 +363,6 @@ void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
 			else
 				el->info.appearance.bg = el->originalBg;
 
-			//el->SetRect(cmd, el->rect);
 			MarkDirty();
 		}
 	}

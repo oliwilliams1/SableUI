@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <cstdint>
 
 #ifdef _WIN32
 #pragma comment(lib, "Dwmapi.lib")
@@ -148,6 +149,9 @@ void SableUI::Window::ResizeCallback(GLFWwindow* window, int width, int height)
 
 	instance->m_isMinimized = false;
 	instance->MakeContextCurrent();
+
+	instance->m_renderer->ExecuteCommandBuffer(instance->m_mainCommandBuffer);
+	instance->m_mainCommandBuffer.Reset();
 
 	instance->m_mainCommandBuffer.SetViewport(0, 0, width, height);
 	if (width > 0 && height > 0)
@@ -358,13 +362,38 @@ void SableUI::Window::ReassociateFloatingPanel(int id, FloatingPanelBase* panel)
 
 void SableUI::Window::BuildCompositeCommandBuffer()
 {
+	ContextResources& ctxRes = GetContextResources(m_renderer);
+	GlobalResources& globalRes = GetGlobalResources();
+
+	m_compositeCommandBuffer.BeginRenderPass(m_framebuffer);
+	m_compositeCommandBuffer.SetBlendState(true, BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+	m_compositeCommandBuffer.SetPipeline(PipelineType::Image);
+	m_compositeCommandBuffer.BindUniformBuffer(static_cast<uint32_t>(UboBinding::Rect), globalRes.ubo_rect);
+
 	for (auto& entry : m_floatingPanels)
 	{
 		FloatingPanelEntry& fpEntry = entry.second;
 		if (!fpEntry.panel->IsOpen()) continue;
-		m_compositeCommandBuffer.BlitFramebuffer(fpEntry.framebuffer, m_framebuffer, 0, 0, fpEntry.size.x, fpEntry.size.y, fpEntry.pos.x, fpEntry.pos.y, fpEntry.pos.x + fpEntry.size.x, fpEntry.pos.y + fpEntry.size.y);
+
+		float height = ((fpEntry.size.y / static_cast<float>(m_windowSize.y)) * 2.0f);
+
+		RectDrawData data{};
+		data.rect[0] = (fpEntry.pos.x / static_cast<float>(m_windowSize.x)) * 2.0f - 1.0f;
+		data.rect[1] = -((fpEntry.pos.y / static_cast<float>(m_windowSize.y)) * 2.0f - 1.0f) - height;
+		data.rect[2] = (fpEntry.size.x / static_cast<float>(m_windowSize.x)) * 2.0f;
+		data.rect[3] = height;
+		data.realRect[0] = static_cast<float>(fpEntry.pos.x);
+		data.realRect[1] = static_cast<float>(fpEntry.pos.y);
+		data.realRect[2] = static_cast<float>(fpEntry.size.x);
+		data.realRect[3] = static_cast<float>(fpEntry.size.y);
+		data.useTexture = 1;
+
+		m_compositeCommandBuffer.UpdateUniformBuffer(globalRes.ubo_rect, 0, sizeof(RectDrawData), &data);
+		m_compositeCommandBuffer.BindTexture(0, fpEntry.texture);
+		m_compositeCommandBuffer.DrawGpuObject(ctxRes.rectObject);
 	}
 
+	m_compositeCommandBuffer.EndRenderPass();
 	m_compositeCommandBuffer.BlitToScreen(m_framebuffer);
 }
 
@@ -496,10 +525,20 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	DrawableDrawData drData = DrawableDrawData(
 		m_mainCommandBuffer,
 		m_framebuffer,
-		m_windowSize.x,
-		m_windowSize.y,
+		{ 0, 0, m_windowSize.x, m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
+
+	ctx.obscurers.clear();
+	for (auto& panel : m_floatingPanels)
+	{
+		Rect r{};
+		r.x = panel.second.pos.x;
+		r.y = panel.second.pos.y;
+		r.w = panel.second.size.w;
+		r.h = panel.second.size.h;
+		ctx.obscurers.push_back(r);
+	}
 
 	m_root->DistributeEvents(ctx);
 
@@ -547,14 +586,22 @@ void SableUI::Window::Draw()
 	SetContext(this);
 	MakeContextCurrent();
 
-	bool baseLayerDirty = m_needsStaticRedraw;
-
-	if (baseLayerDirty)
+	if (m_needsStaticRedraw)
 	{
 		m_mainCommandBuffer.EndRenderPass();
 		m_renderer->ExecuteCommandBuffer(m_mainCommandBuffer);
 		m_mainCommandBuffer.Reset();
 		m_mainCommandBuffer.BeginRenderPass(m_framebuffer);
+
+		for (auto& [id, entry] : m_floatingPanels)
+		{
+			if (!entry.panel->IsOpen() || !entry.dirty) continue;
+
+			m_renderer->ExecuteCommandBuffer(entry.cmd);
+			entry.cmd.Reset();
+			entry.cmd.BeginRenderPass(entry.framebuffer);
+			entry.dirty = false;
+		}
 
 		BuildCompositeCommandBuffer();
 		m_renderer->ExecuteCommandBuffer(m_compositeCommandBuffer);
@@ -586,8 +633,7 @@ void SableUI::Window::RerenderAllNodes()
 	DrawableDrawData drData = DrawableDrawData(
 		m_mainCommandBuffer,
 		m_framebuffer,
-		m_windowSize.x,
-		m_windowSize.y,
+		{ 0, 0, m_windowSize.x, m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 
@@ -601,8 +647,7 @@ void SableUI::Window::RecalculateNodes()
 	DrawableDrawData drData = DrawableDrawData(
 		m_mainCommandBuffer,
 		m_framebuffer,
-		m_windowSize.x,
-		m_windowSize.y,
+		{ 0, 0, m_windowSize.x, m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 
@@ -901,8 +946,7 @@ void SableUI::Window::ResizeStep(SableUI::ivec2 deltaPos, SableUI::BasePanel* pa
 	DrawableDrawData drData = DrawableDrawData(
 		m_mainCommandBuffer,
 		m_framebuffer,
-		m_windowSize.x,
-		m_windowSize.y,
+		{ 0, 0, m_windowSize.x, m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 

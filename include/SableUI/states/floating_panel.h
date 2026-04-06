@@ -105,11 +105,22 @@ namespace SableUI
 
 			m_child->SetRenderer(ctx->GetRenderer());
 			m_child->BackendInitialiseFloatingPanel(rect);
+
+			entry.cmd.BeginRenderPass(entry.framebuffer);
+			entry.cmd.Clear(0.0f, 0.0f, 0.0f, 0.0f);
+
+			m_child->MarkDirty();
 		}
 		else if (needsGpuResize)
 		{
+			entry.cmd.EndRenderPass();
 			mainCB.SetFramebufferSize(entry.framebuffer, rect.w, rect.h);
 			m_child->GetRootElement()->SetRect(entry.cmd, rect);
+
+			entry.cmd.Reset();
+			entry.cmd.BeginRenderPass(entry.framebuffer);
+			entry.cmd.Clear(0.0f, 0.0f, 0.0f, 0.0f);
+			m_child->MarkDirty();
 		}
 
 		entry.pos = { rect.x, rect.y };
@@ -133,6 +144,12 @@ namespace SableUI
 		FloatingPanelEntry& entry = ctx->GetFloatingPanelEntry(m_stableId);
 		CommandBuffer& mainCB = ctx->GetMainCommandBuffer();
 
+		if (!entry.cmd.empty())
+		{
+			entry.cmd.EndRenderPass();
+			entry.cmd.Reset();
+		}
+
 		if (entry.texture.IsValid())
 		{
 			mainCB.DestroyTexture(entry.texture);
@@ -145,6 +162,7 @@ namespace SableUI
 		}
 		entry.cmd = {};
 		entry.size = {};
+		entry.dirty = false;
 
 		m_open = false;
 		PostEmptyEvent();
@@ -188,22 +206,17 @@ namespace SableUI
 	{
 		if (!m_child) return false;
 		FloatingPanelEntry& entry = _getCurrentContext()->GetFloatingPanelEntry(m_stableId);
-		
+
 		DrawableDrawData drData{
 			entry.cmd,
 			entry.framebuffer,
-			entry.size.x,
-			entry.size.y,
+			{ entry.pos.x, entry.pos.y, entry.size.x, entry.size.y },
 			externalDrawData.contextResources
 		};
 
 		bool changed = m_child->CheckAndUpdate(drData);
-
 		if (changed)
-		{
-			m_child->GetRootElement()->LayoutChildren(drData.cmd);
-			m_child->Render(drData);
-		}
+			entry.dirty = true;
 
 		return changed;
 	}

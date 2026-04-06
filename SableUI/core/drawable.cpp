@@ -35,14 +35,13 @@ unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
 static inline void RectToNDC(
 	const Rect& r,
-	int fbWidth,
-	int fbHeight,
+	const Rect& fbo,
 	float& x, float& y, float& w, float& h)
 {
-	x = (r.x / (float)fbWidth);
-	y = (r.y / (float)fbHeight);
-	w = (r.w / (float)fbWidth);
-	h = (r.h / (float)fbHeight);
+	x = ((r.x - fbo.x) / (float)fbo.w);
+	y = ((r.y - fbo.y) / (float)fbo.h);
+	w = (r.w / (float)fbo.w);
+	h = (r.h / (float)fbo.h);
 
 	x = x * 2.0f - 1.0f;
 	y = y * 2.0f - 1.0f;
@@ -230,7 +229,7 @@ void DrawableRect::Update(
 void DrawableRect::RecordCommands(const DrawableDrawData& drData)
 {
 	float x, y, w, h;
-	RectToNDC(m_rect, drData.fbWidth, drData.fbHeight, x, y, w, h);
+	RectToNDC(m_rect, drData.fbRect, x, y, w, h);
 
 	RectDrawData data{};
 
@@ -251,8 +250,8 @@ void DrawableRect::RecordCommands(const DrawableDrawData& drData)
 	data.borderColour[2] = bc.b / 255.0f;
 	data.borderColour[3] = bc.a / 255.0f;
 
-	data.realRect[0] = m_rect.x;
-	data.realRect[1] = m_rect.y;
+	data.realRect[0] = m_rect.x - drData.fbRect.x;
+	data.realRect[1] = m_rect.y - drData.fbRect.y;
 	data.realRect[2] = m_rect.w;
 	data.realRect[3] = m_rect.h;
 
@@ -332,22 +331,22 @@ void DrawableSplitter::RecordCommands(const DrawableDrawData& drData)
 
 	data.useTexture = 0;
 
-	int startX = std::clamp(m_rect.x, 0, drData.fbWidth);
-	int startY = std::clamp(m_rect.y, 0, drData.fbHeight);
-	int boundW = std::clamp(m_rect.w, 0, drData.fbWidth - startX);
-	int boundH = std::clamp(m_rect.h, 0, drData.fbHeight - startY);
+	int startX = std::clamp(m_rect.x, 0, drData.fbRect.w);
+	int startY = std::clamp(m_rect.y, 0, drData.fbRect.h);
+	int boundW = std::clamp(m_rect.w, 0, drData.fbRect.w- startX);
+	int boundH = std::clamp(m_rect.h, 0, drData.fbRect.h - startY);
 
 	auto drawRect = [&](Rect r) {
 		float x, y, w, h;
-		RectToNDC(r, drData.fbWidth, drData.fbHeight, x, y, w, h);
+		RectToNDC(r, drData.fbRect, x, y, w, h);
 
 		data.rect[0] = x;
 		data.rect[1] = y;
 		data.rect[2] = w;
 		data.rect[3] = h;
 
-		data.realRect[0] = r.x;
-		data.realRect[1] = r.y;
+		data.realRect[0] = m_rect.x - drData.fbRect.x;
+		data.realRect[1] = m_rect.y - drData.fbRect.y;
 		data.realRect[2] = r.w;
 		data.realRect[3] = r.h;
 
@@ -431,15 +430,15 @@ void DrawableImage::RecordCommands(const DrawableDrawData& drData)
 	RectDrawData data{};
 
 	float x, y, w, h;
-	RectToNDC(m_rect, drData.fbWidth, drData.fbHeight, x, y, w, h);
+	RectToNDC(m_rect, drData.fbRect, x, y, w, h);
 
 	data.rect[0] = x;
 	data.rect[1] = y;
 	data.rect[2] = w;
 	data.rect[3] = h;
 	
-	data.realRect[0] = m_rect.x;
-	data.realRect[1] = m_rect.y;
+	data.realRect[0] = m_rect.x - drData.fbRect.x;
+	data.realRect[1] = m_rect.y - drData.fbRect.y;
 	data.realRect[2] = m_rect.w;
 	data.realRect[3] = m_rect.h;
 
@@ -516,10 +515,10 @@ void DrawableText::RecordCommands(const DrawableDrawData& drData)
 		return;
 
 	TextDrawData data{};
-	data.targetSize[0] = static_cast<float>(drData.fbWidth);
-	data.targetSize[1] = static_cast<float>(drData.fbHeight);
-	data.pos[0] = static_cast<float>(m_rect.x);
-	data.pos[1] = static_cast<float>(m_rect.y + m_rect.h);
+	data.targetSize[0] = static_cast<float>(drData.fbRect.w);
+	data.targetSize[1] = static_cast<float>(drData.fbRect.h);
+	data.pos[0] = static_cast<float>(m_rect.x - drData.fbRect.x);
+	data.pos[1] = static_cast<float>((m_rect.y + m_rect.h) - drData.fbRect.y);
 
 	drData.cmd.SetPipeline(PipelineType::Text);
 

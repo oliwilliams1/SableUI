@@ -49,16 +49,15 @@ namespace SableUI
 
 	struct DrawableDrawData
 	{
-		DrawableDrawData(CommandBuffer& cmd, ResourceHandle framebuffer, int fbWidth, int fbHeight, ContextResources& contextResources)
+		DrawableDrawData(CommandBuffer& cmd, ResourceHandle framebuffer, const Rect& fbRect, ContextResources& contextResources)
 			: cmd(cmd),
 			framebuffer(framebuffer), 
-			fbWidth(fbWidth), 
-			fbHeight(fbHeight), 
+			fbRect(fbRect),
 			contextResources(contextResources) {}
 
 		CommandBuffer& cmd;
 		ResourceHandle framebuffer;
-		int fbWidth, fbHeight;
+		Rect fbRect;
 		ContextResources& contextResources;
 	};
 

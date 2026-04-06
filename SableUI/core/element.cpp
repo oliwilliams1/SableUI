@@ -1007,7 +1007,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
 
 void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx)
 {
-    if (RectBoundingBox(rect, ctx.mousePos))
+    if (RectBoundingBox(rect, ctx.mousePos, ctx.obscurers))
     {
         if (ctx.mouseReleased[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
             info.onClickFunc();

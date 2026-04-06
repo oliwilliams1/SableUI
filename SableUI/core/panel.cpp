@@ -137,8 +137,7 @@ SableUI::SplitterPanel* SableUI::RootPanel::AddSplitter(CommandBuffer& cmd, Pane
 	DrawableDrawData drData = DrawableDrawData(
 		cmd,
 		window->GetSurface(),
-		window->m_windowSize.x,
-		window->m_windowSize.y,
+		{ 0, 0, window->m_windowSize.x, window->m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 
@@ -160,8 +159,7 @@ SableUI::ContentPanel* SableUI::RootPanel::AddPanel(CommandBuffer& cmd)
 	DrawableDrawData drData = DrawableDrawData(
 		cmd,
 		window->GetSurface(),
-		window->m_windowSize.x,
-		window->m_windowSize.y,
+		{ 0, 0, window->m_windowSize.x, window->m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 
@@ -230,8 +228,7 @@ SableUI::SplitterPanel* SableUI::SplitterPanel::AddSplitter(CommandBuffer& cmd, 
 	DrawableDrawData drData = DrawableDrawData(
 		cmd,
 		window->GetSurface(),
-		window->m_windowSize.x,
-		window->m_windowSize.y,
+		{ 0, 0, window->m_windowSize.x, window->m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 
@@ -248,8 +245,7 @@ SableUI::ContentPanel* SableUI::SplitterPanel::AddPanel(CommandBuffer& cmd)
 	DrawableDrawData drData = DrawableDrawData(
 		cmd,
 		window->GetSurface(),
-		window->m_windowSize.x,
-		window->m_windowSize.y,
+		{ 0, 0, window->m_windowSize.x, window->m_windowSize.y },
 		GetContextResources(m_renderer)
 	);
 

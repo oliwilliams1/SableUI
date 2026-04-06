@@ -174,6 +174,7 @@ namespace SableUI
 		std::bitset<SABLE_MAX_KEYS> keyReleasedEvent;
 
 		std::vector<unsigned int> typedCharBuffer{};
+		std::vector<Rect> obscurers;
 
 		std::unordered_set<TimerHandle> firedTimers;
 		bool IsFired(TimerHandle handle) const

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 #include <cmath>
 
 typedef SableUI::String SableString;
@@ -347,7 +348,16 @@ namespace SableUI
 		NONE
 	};
 
-	bool RectBoundingBox(Rect r, ivec2 p);
+	inline bool RectBoundingBox(const Rect& r, ivec2 p)
+	{
+		const int rx1 = r.x + r.w;
+		const int ry1 = r.y + r.h;
+
+		return p.x >= r.x && p.x < rx1 &&
+			p.y >= r.y && p.y < ry1;
+	}
+
+	bool RectBoundingBox(const Rect& r, const ivec2& p, const std::vector<Rect>& obscurers);
 
 	Colour StringTupleToColour(const char* str);
 }
