@@ -11,7 +11,7 @@
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/states/state_base.h>
 #include <SableUI/types/floating_panel_types.h>
-#include <SableUI/states/floating_panel.h>
+#include <SableUI/core/window.h>
 #include <algorithm>
 #include <cstring>
 #include <string>
@@ -217,29 +217,6 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 	RebuildHoverListRecursive(rootElement, m_hoverElements);
 
 	rootElement->LayoutChildren(drData.cmd);
-	rootElement->LayoutChildren(drData.cmd);
-
-	for (Element* el : m_hoverElements)
-	{
-		if (el->info.appearance.hasHoverBg)
-		{
-			bool res = RectBoundingBox(el->rect, m_lastEventCtx.mousePos);
-
-			el->isHovered = res;
-			el->wasHovered = false;
-
-			if (res)
-			{
-				el->info.appearance.bg = el->info.appearance.hoverBg;
-			}
-			else
-			{
-				el->info.appearance.bg = el->originalBg;
-			}
-
-			el->SetRect(drData.cmd, el->rect);
-		}
-	}
 
 	Rect newRect = rootElement->rect;
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
@@ -251,17 +228,17 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 	return false;
 }
 
-void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx)
+void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx, int z)
 {
-	rootElement->DistributeInputToElements(ctx);
-	
+	rootElement->DistributeInputToElements(ctx, z);
+
 	for (FloatingPanelBase* panel : m_floatingPanels)
 		if (panel->IsOpen())
-			panel->HandleInput(ctx);
+			panel->HandleInput(ctx, panel->GetZIndex());
 
 	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
-	UpdateHoverStyling(ctx);
+	UpdateHoverStyling(ctx, z);
 }
 
 bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
@@ -317,7 +294,7 @@ void SableUI::BaseComponent::MarkDirty()
 void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 {
 	/* Ensure both components have the same number of states,
-	 * Since components are defined at compile time it should always match, 
+	 * Since components are defined at compile time it should always match,
 	 * but sanity check >> */
 	if (m_states.size() != other.m_states.size())
 	{
@@ -336,7 +313,7 @@ SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
 {
 	if (!rootElement)
 	{
-		SableUI_Warn("GetElementById() returned nullptr for ID: %s" , std::string(id).c_str());
+		SableUI_Warn("GetElementById() returned nullptr for ID: %s", std::string(id).c_str());
 		return nullptr;
 	}
 
@@ -349,12 +326,12 @@ void SableUI::BaseComponent::RegisterHoverElement(Element* el)
 		m_hoverElements.push_back(el);
 }
 
-void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx)
+void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx, int z)
 {
 	for (Element* el : m_hoverElements)
 	{
 		el->wasHovered = el->isHovered;
-		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos, ctx.obscurers);
+		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos, ctx.obscurers, z);
 
 		if (el->isHovered != el->wasHovered)
 		{

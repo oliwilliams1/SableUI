@@ -4,13 +4,13 @@
 #include <cstring>
 #include <vector>
 
-bool SableUI::RectBoundingBox(const Rect& r, const ivec2& p, const std::vector<Rect>& obscurers)
+bool SableUI::RectBoundingBox(const Rect& r, const ivec2& p, const std::vector<Obscurer>& obscurers, int z)
 {
 	if (!RectBoundingBox(r, p))
 		return false;
 
-	for (const Rect& o : obscurers)
-		if (RectBoundingBox(o, p))
+	for (const Obscurer& o : obscurers)
+		if (o.z > z && RectBoundingBox(o.r, p))
 			return false;
 
 	return true;

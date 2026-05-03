@@ -13,20 +13,21 @@ namespace SableUI
 	public:
 		virtual ~FloatingPanelBase() = default;
 		virtual bool IsOpen() const = 0;
+		virtual int GetZIndex() const = 0;
 
 		virtual void PostLayoutUpdate(const UIEventContext& ctx) = 0;
 		virtual bool CheckAndUpdate(const DrawableDrawData& externalDrawData) = 0;
-		virtual void HandleInput(const UIEventContext& ctx) = 0;
+		virtual void HandleInput(const UIEventContext& ctx, int z) = 0;
 	};
 
 	struct FloatingPanelEntry {
-		FloatingPanelBase* panel;
-		ivec2 pos;
-		ivec2 size;
-		int zIndex;
-		ResourceHandle texture;
-		ResourceHandle framebuffer;
-		CommandBuffer cmd;
+		FloatingPanelBase* panel = nullptr;
+		ivec2 pos{};
+		ivec2 size{};
+		int zIndex = 1;
+		ResourceHandle texture{};
+		ResourceHandle framebuffer{};
+		CommandBuffer cmd{};
 		bool dirty = true;
 	};
 }

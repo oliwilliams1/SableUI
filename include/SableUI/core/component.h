@@ -43,7 +43,7 @@ namespace SableUI
 		int GetNumChildren() const;
 		bool Rerender(const DrawableDrawData& drData, bool* hasContentsChanged = nullptr);
 
-		void HandleInput(const UIEventContext& ctx);
+		void HandleInput(const UIEventContext& ctx, int z);
 		bool CheckAndUpdate(const DrawableDrawData& drData);
 		void PostLayoutUpdate(const UIEventContext& ctx);
 
@@ -65,7 +65,7 @@ namespace SableUI
 		std::vector<FloatingPanelBase*> m_floatingPanels;
 		std::vector<Element*> m_hoverElements;
 
-		void UpdateHoverStyling(const UIEventContext& ctx);
+		void UpdateHoverStyling(const UIEventContext& ctx, int z);
 
 	private:
 		bool needsRerender = false;

@@ -30,7 +30,7 @@ namespace SableUI
         virtual void CalculateMinBounds() {};
         virtual void Update(const DrawableDrawData& drData) {};
 
-        virtual void DistributeEvents(const UIEventContext& ctx);
+        virtual void DistributeEvents(const UIEventContext& ctx, int z);
         virtual bool UpdateComponents(const DrawableDrawData& drData);
         virtual void PostLayoutUpdate(const UIEventContext& ctx);
 
@@ -107,7 +107,7 @@ namespace SableUI
 
         void Update(const DrawableDrawData& drData) override;
 
-        void DistributeEvents(const UIEventContext& ctx) override;
+        void DistributeEvents(const UIEventContext& ctx, int z) override;
         bool UpdateComponents(const DrawableDrawData& drData) override;
         void PostLayoutUpdate(const UIEventContext& ctx) override;
 

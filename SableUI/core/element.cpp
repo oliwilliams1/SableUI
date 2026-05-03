@@ -1005,14 +1005,14 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
     }
 }
 
-void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx)
+void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx, int z)
 {
-    if (RectBoundingBox(rect, ctx.mousePos, ctx.obscurers))
+    if (RectBoundingBox(rect, ctx.mousePos, ctx.obscurers, z))
     {
-        if (ctx.mouseReleased[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
+        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_LEFT] && info.onClickFunc)
             info.onClickFunc();
 
-        if (ctx.mouseReleased[SABLE_MOUSE_BUTTON_RIGHT] && info.onSecondaryClickFunc)
+        if (ctx.mousePressed[SABLE_MOUSE_BUTTON_RIGHT] && info.onSecondaryClickFunc)
             info.onSecondaryClickFunc();
 
         if (ctx.mouseDoubleClicked[SABLE_MOUSE_BUTTON_LEFT] && info.onDoubleClickFunc)
@@ -1022,9 +1022,9 @@ void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx)
     for (Child* child : children)
     {
         if (child->type == ChildType::COMPONENT)
-            child->component->HandleInput(ctx);
+            child->component->HandleInput(ctx, z);
         else
-            child->element->DistributeInputToElements(ctx);
+            child->element->DistributeInputToElements(ctx, z);
     }
 }
 

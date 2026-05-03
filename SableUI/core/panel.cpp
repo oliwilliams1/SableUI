@@ -35,10 +35,10 @@ int SableUI::BasePanel::GetNumInstances()
 	return s_basePanelCount;
 }
 
-void SableUI::BasePanel::DistributeEvents(const UIEventContext& ctx)
+void SableUI::BasePanel::DistributeEvents(const UIEventContext& ctx, int z)
 {
 	for (BasePanel* child : children)
-		child->DistributeEvents(ctx);
+		child->DistributeEvents(ctx, z);
 }
 
 bool SableUI::BasePanel::UpdateComponents(const DrawableDrawData& drData)
@@ -601,10 +601,10 @@ void SableUI::ContentPanel::Render(const DrawableDrawData& drData)
 		m_component->Render(drData);
 }
 
-void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx)
+void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx, int z)
 {
 	if (m_component)
-		m_component->HandleInput(ctx);
+		m_component->HandleInput(ctx, z);
 }
 
 bool SableUI::ContentPanel::UpdateComponents(const DrawableDrawData& drData)

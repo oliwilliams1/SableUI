@@ -357,7 +357,13 @@ namespace SableUI
 			p.y >= r.y && p.y < ry1;
 	}
 
-	bool RectBoundingBox(const Rect& r, const ivec2& p, const std::vector<Rect>& obscurers);
+	struct Obscurer
+	{
+		Rect r;
+		int z;
+	};
+
+	bool RectBoundingBox(const Rect& r, const ivec2& p, const std::vector<Obscurer>& obscurers, int z);
 
 	Colour StringTupleToColour(const char* str);
 }

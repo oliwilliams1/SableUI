@@ -29,12 +29,13 @@ namespace SableUI
 		void Close();
 		void Toggle(Rect rect);
 		bool IsOpen() const override;
+		int GetZIndex() const override;
 
 		void Sync(StateBase* other) override;
 
 		void PostLayoutUpdate(const UIEventContext& ctx) override;
 		bool CheckAndUpdate(const DrawableDrawData& externalDrawData) override;
-		void HandleInput(const UIEventContext& ctx) override;
+		void HandleInput(const UIEventContext& ctx, int z) override;
 
 	private:
 		ResourceHandle m_framebuffer;
@@ -43,6 +44,7 @@ namespace SableUI
 
 		bool m_open = false;
 		T* m_child = nullptr;
+		int zIndex = 1;
 		BaseComponent* m_owner = nullptr;
 		inline static int s_nextId = 0;
 		int m_stableId = -1;
@@ -181,6 +183,12 @@ namespace SableUI
 	}
 
 	template<typename T>
+	inline int FloatingPanel<T>::GetZIndex() const
+	{
+		return zIndex;
+	}
+
+	template<typename T>
 	inline void FloatingPanel<T>::Sync(StateBase* other)
 	{
 		auto* otherPtr = static_cast<FloatingPanel<T>*>(other);
@@ -195,10 +203,10 @@ namespace SableUI
 	}
 
 	template<typename T>
-	inline void FloatingPanel<T>::PostLayoutUpdate(const UIEventContext& ctx)
+	inline void FloatingPanel<T>::HandleInput(const UIEventContext& ctx, int z)
 	{
 		if (m_child)
-			m_child->PostLayoutUpdate(ctx);
+			m_child->HandleInput(ctx, z);
 	}
 
 	template<typename T>
@@ -222,7 +230,7 @@ namespace SableUI
 	}
 
 	template<typename T>
-	inline void FloatingPanel<T>::HandleInput(const UIEventContext& ctx)
+	inline void FloatingPanel<T>::PostLayoutUpdate(const UIEventContext& ctx)
 	{
 		if (m_child)
 			m_child->PostLayoutUpdate(ctx);

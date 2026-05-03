@@ -532,15 +532,16 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 	ctx.obscurers.clear();
 	for (auto& panel : m_floatingPanels)
 	{
-		Rect r{};
-		r.x = panel.second.pos.x;
-		r.y = panel.second.pos.y;
-		r.w = panel.second.size.w;
-		r.h = panel.second.size.h;
-		ctx.obscurers.push_back(r);
+		Obscurer o{};
+		o.r.x = panel.second.pos.x;
+		o.r.y = panel.second.pos.y;
+		o.r.w = panel.second.size.w;
+		o.r.h = panel.second.size.h;
+		o.z = panel.second.zIndex;
+		ctx.obscurers.push_back(o);
 	}
 
-	m_root->DistributeEvents(ctx);
+	m_root->DistributeEvents(ctx, 0);
 
 	bool dirty = m_root->UpdateComponents(drData);
 	if (dirty)
