@@ -57,9 +57,6 @@ SableUI::Element::Element(RendererBackend* renderer, const ElementInfo& p_info)
     n_elements++;
     SetInfo(p_info);
 
-    if (info.appearance.hasHoverBg)
-        originalBg = info.appearance.bg;
-
     Init(renderer);
 }
 
@@ -815,12 +812,6 @@ void SableUI::Element::LayoutChildren(CommandBuffer& cmd)
         childElement->SetRect(cmd, childFinalRect);
         childElement->LayoutChildren(cmd);
     }
-}
-
-void SableUI::Element::RegisterForHover()
-{
-    if (info.appearance.hasHoverBg && m_owner)
-        m_owner->RegisterHoverElement(this);
 }
 
 SableUI::ElementInfo SableUI::Element::GetInfo() const

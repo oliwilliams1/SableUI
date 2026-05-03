@@ -81,7 +81,7 @@ void Calendar::Layout()
 					},
 					w(32), h(32),
 					fontSize(14),
-					hoverBg(rgba(0, 0, 0, 0), t.surface1),
+					bg(rgba(0, 0, 0, 0)),
 					rounded(999),
 					textColour(t.subtext0)
 				);
@@ -101,7 +101,7 @@ void Calendar::Layout()
 					},
 					w(32), h(32),
 					fontSize(14),
-					hoverBg(rgba(0, 0, 0, 0), t.surface1),
+					bg(rgba(0, 0, 0, 0)),
 					rounded(999),
 					textColour(t.subtext0)
 				);
@@ -244,14 +244,13 @@ void Calendar::RenderDays(int cellSize, const CalendarContext& ctx)
 						bool selected = IsSelectedDay(vy, vm, thisDay, ctx);
 
 						Colour baseColour = selected ? t.primary : rgba(0, 0, 0, 0);
-						Colour hoverColour = selected ? t.primary : t.surface1;
 
 						Button(
 							SableString::Format("%d", thisDay),
 							([this, vy, vm, thisDay]() { SetSelectedDate(vy, vm, thisDay); }),
 							w(cellSize), h(cellSize),
 							centerXY, justify_center,
-							hoverBg(baseColour, hoverColour),
+							bg(baseColour),
 							rounded(999),
 							fontSize(12),
 							size_none

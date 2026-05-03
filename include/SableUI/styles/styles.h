@@ -238,13 +238,4 @@ namespace SableUI::Style
 	inline constexpr Property<Pos> absolutePos(int x, int y) {
 		return { {x, y}, [](ElementInfo& i, Pos v) { i.layout.pos.x = v.x; i.layout.pos.y = v.y; } };
 	}
-
-	// hoverable
-	inline constexpr Property<std::pair<Colour, Colour>> hoverBg(Colour normal, Colour hover) {
-		return { {normal, hover}, [](ElementInfo& i, std::pair<Colour, Colour> val) {
-			i.appearance.bg = val.first;
-			i.appearance.hoverBg = val.second;
-			i.appearance.hasHoverBg = true;
-		} };
-	}
 }

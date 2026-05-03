@@ -58,24 +58,9 @@ static void ApplyButtonBackground(
 	const Theme& t = GetTheme();
 	const float dFac = 0.9f;
 
-	if (src.appearance.hasHoverBg)
-	{
-		Colour base = src.appearance.bg.value_or(t.primary);
-
-		PackStylesToInfo(i,
-			pressed ? hoverBg(base * dFac, src.appearance.hoverBg * dFac)
-			: hoverBg(base, src.appearance.hoverBg)
-		);
-		return;
-	}
-
-
 	Colour base = src.appearance.bg.value_or(t.primary);
 
-	PackStylesToInfo(i,
-		pressed ? hoverBg(base * dFac, base * dFac * dFac)
-		: hoverBg(base, base * dFac)
-	);
+	PackStylesToInfo(i, pressed ? bg(base * dFac) : bg(base));
 }
 
 static void ApplyDisabledStyle(ElementInfo& i, Colour& textColour)
@@ -147,7 +132,7 @@ void Button::OnUpdate(const UIEventContext& ctx)
 	{
 		if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
 			isPressed.set(true);
-		else if (ctx.mouseReleased.test(SABLE_MOUSE_BUTTON_LEFT))
+		else if (isPressed.get())
 			isPressed.set(false);
 	}
 }

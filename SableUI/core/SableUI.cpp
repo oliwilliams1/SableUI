@@ -217,7 +217,7 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 	{
 		if (rootElement == nullptr)
 		{
-			SableUI_Error("rootElement is nullptr in SetElementBuilderContext");
+			SableUI_Error("m_rootElement is nullptr in SetElementBuilderContext");
 			return;
 		}
 
@@ -272,7 +272,6 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	Element* newDiv = SB_new<Element>(s_rendererStack.top(), info);
 
 	newDiv->m_owner = parent->m_owner;
-	newDiv->RegisterForHover();
 
 	if (child == nullptr)
 	{
@@ -322,7 +321,6 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	Element* newRect = SB_new<Element>(s_rendererStack.top(), info);
 
 	newRect->m_owner = parent->m_owner;
-	newRect->RegisterForHover();
 
 	parent->AddChild(newRect);
 }
@@ -350,7 +348,6 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 	Element* newImage = SB_new<Element>(s_rendererStack.top(), info);
 
 	newImage->m_owner = parent->m_owner;
-	newImage->RegisterForHover();
 
 	newImage->SetImage(_getCurrentContext()->GetMainCommandBuffer(), path);
 	parent->AddChild(newImage);
@@ -386,7 +383,6 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 
 	Element* e = SB_new<Element>(s_rendererStack.top(), info);
 	e->m_owner = parent->m_owner;
-	e->RegisterForHover();
 	e->SetText(_getCurrentContext()->GetMainCommandBuffer(), text);
 
 	parent->AddChild(e);

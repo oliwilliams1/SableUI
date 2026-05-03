@@ -102,7 +102,7 @@ void Checkbox::Layout()
 		}
 		else
 		{
-			Div(w(size), h(size), hoverBg(col, col * 0.8f), rounded(4), mr(6), centerY)
+			Div(w(size), h(size), bg(col), rounded(4), mr(6), centerY)
 			{
 				if (checked)
 				{

@@ -30,7 +30,7 @@ SableUI::BaseComponent::~BaseComponent()
 {
 	s_numComponents--;
 
-	if (rootElement) SB_delete(rootElement);
+	if (m_rootElement) SB_delete(m_rootElement);
 
 	for (BaseComponent* child : m_componentChildren)
 		if (child) SB_delete(child);
@@ -41,20 +41,6 @@ SableUI::BaseComponent::~BaseComponent()
 		SB_delete(garbage);
 
 	m_garbageChildren.clear();
-}
-
-static void RebuildHoverListRecursive(SableUI::Element* el, std::vector<SableUI::Element*>& list)
-{
-	if (el->info.appearance.hasHoverBg)
-		list.push_back(el);
-
-	for (SableUI::Child* child : el->children)
-	{
-		if (child->type == SableUI::ChildType::ELEMENT)
-		{
-			RebuildHoverListRecursive(child->element, list);
-		}
-	}
 }
 
 int SableUI::BaseComponent::GetNumInstances()
@@ -79,7 +65,7 @@ void SableUI::BaseComponent::LayoutWrapper()
 
 void SableUI::BaseComponent::BackendInitialisePanel()
 {
-	if (rootElement) SB_delete(rootElement);
+	if (m_rootElement) SB_delete(m_rootElement);
 
 	if (!m_renderer)
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
@@ -91,19 +77,19 @@ void SableUI::BaseComponent::BackendInitialisePanel()
 	info.appearance.bg = t.base;
 	info.layout.wType = RectType::Fill;
 	info.layout.hType = RectType::Fill;
-	rootElement = SB_new<Element>(m_renderer, info);
-	rootElement->m_owner = this;
+	m_rootElement = SB_new<Element>(m_renderer, info);
+	m_rootElement->m_owner = this;
 
 	SetCurrentComponent(this);
-	SetElementBuilderContext(m_renderer, rootElement, false);
+	SetElementBuilderContext(m_renderer, m_rootElement, false);
 	LayoutWrapper();
 
-	rootElement->LayoutChildren(_getCurrentContext()->GetMainCommandBuffer());
+	m_rootElement->LayoutChildren(_getCurrentContext()->GetMainCommandBuffer());
 }
 
 void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info)
 {
-	if (rootElement) SB_delete(rootElement);
+	if (m_rootElement) SB_delete(m_rootElement);
 
 	if (!m_renderer)
 		SableUI_Runtime_Error("Renderer has not been initialised for component");
@@ -118,15 +104,15 @@ void SableUI::BaseComponent::BackendInitialiseFloatingPanel(const Rect& rect, co
 	info.layout.wType = RectType::Fixed;
 	info.layout.hType = RectType::Fixed;
 	info.appearance.bg = Colour(0, 0, 0, 0);
-	rootElement = SB_new<Element>(m_renderer, info);
-	rootElement->SetRect(cmd, rect);
-	rootElement->m_owner = this;
+	m_rootElement = SB_new<Element>(m_renderer, info);
+	m_rootElement->SetRect(cmd, rect);
+	m_rootElement->m_owner = this;
 
 	SetCurrentComponent(this);
-	SetElementBuilderContext(m_renderer, rootElement, false);
+	SetElementBuilderContext(m_renderer, m_rootElement, false);
 	LayoutWrapper();
 
-	rootElement->LayoutChildren(cmd);
+	m_rootElement->LayoutChildren(cmd);
 }
 
 void SableUI::BaseComponent::SetRenderer(RendererBackend* renderer)
@@ -153,7 +139,7 @@ static size_t GetHash(int n, const char* name)
 
 void SableUI::BaseComponent::Render(const DrawableDrawData& drData, int z)
 {
-	rootElement->Render(drData, z);
+	m_rootElement->Render(drData, z);
 }
 
 void SableUI::BaseComponent::BackendInitialiseChild(const std::string& name, BaseComponent* parent, const ElementInfo& info)
@@ -176,16 +162,16 @@ void SableUI::BaseComponent::BackendInitialiseChild(const std::string& name, Bas
 
 SableUI::Element* SableUI::BaseComponent::GetRootElement()
 {
-	if (rootElement == nullptr)
+	if (m_rootElement == nullptr)
 	{
-		SableUI_Runtime_Error("Attempt to access rootElement before is was initialised. Are you calling GetRootElement() inside of Layout()? -> this is unsupported, wrap your layout logic inside another div instead.");
+		SableUI_Runtime_Error("Attempt to access m_rootElement before is was initialised. Are you calling GetRootElement() inside of Layout()? -> this is unsupported, wrap your layout logic inside another div instead.");
 	}
-	return rootElement;
+	return m_rootElement;
 }
 
 void SableUI::BaseComponent::SetRootElement(Element* element)
 {
-	rootElement = element;
+	m_rootElement = element;
 }
 
 int SableUI::BaseComponent::GetNumChildren() const
@@ -195,17 +181,15 @@ int SableUI::BaseComponent::GetNumChildren() const
 
 bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasContentsChanged)
 {
-	Rect oldRect = { rootElement->rect };
-
-	m_hoverElements.clear();
+	Rect oldRect = { m_rootElement->rect };
 
 	// Generate virtual tree
 	SetCurrentComponent(this);
-	SetElementBuilderContext(m_renderer, rootElement, true);
+	SetElementBuilderContext(m_renderer, m_rootElement, true);
 	LayoutWrapper();
 	VirtualNode* virtualRoot = SableUI::GetVirtualRootNode();
 
-	if (rootElement->Reconcile(virtualRoot) && hasContentsChanged)
+	if (m_rootElement->Reconcile(virtualRoot) && hasContentsChanged)
 		*hasContentsChanged = true;
 
 	for (BaseComponent* garbage : m_garbageChildren)
@@ -213,12 +197,9 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 
 	m_garbageChildren.clear();
 
-	m_hoverElements.clear();
-	RebuildHoverListRecursive(rootElement, m_hoverElements);
+	m_rootElement->LayoutChildren(drData.cmd);
 
-	rootElement->LayoutChildren(drData.cmd);
-
-	Rect newRect = rootElement->rect;
+	Rect newRect = m_rootElement->rect;
 	if (oldRect.w != newRect.w || oldRect.h != newRect.h)
 		return true;
 
@@ -230,7 +211,7 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 
 void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx, int z)
 {
-	rootElement->DistributeInputToElements(ctx, z);
+	m_rootElement->DistributeInputToElements(ctx, z);
 
 	for (FloatingPanelBase* panel : m_floatingPanels)
 		if (panel->IsOpen())
@@ -238,23 +219,19 @@ void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx, int z)
 
 	m_lastEventCtx = ctx;
 	OnUpdate(ctx);
-	UpdateHoverStyling(ctx, z);
 }
 
 bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
 {
+	bool fpChanged = false;
 	for (FloatingPanelBase* panel : m_floatingPanels)
-	{
 		if (panel->IsOpen())
-		{
-			panel->CheckAndUpdate(drData);
-		}
-	}
+			fpChanged |= panel->CheckAndUpdate(drData);
 
 	if (!needsRerender)
 	{
-		bool childChanged = rootElement->CheckElementTreeForChanges(drData);
-		return childChanged;
+		bool childChanged = m_rootElement->CheckElementTreeForChanges(drData);
+		return childChanged || fpChanged;
 	}
 
 	Rerender(drData, nullptr);
@@ -311,38 +288,13 @@ void SableUI::BaseComponent::CopyStateFrom(const BaseComponent& other)
 
 SableUI::Element* SableUI::BaseComponent::GetElementById(const SableString& id)
 {
-	if (!rootElement)
+	if (!m_rootElement)
 	{
 		SableUI_Warn("GetElementById() returned nullptr for ID: %s", std::string(id).c_str());
 		return nullptr;
 	}
 
-	return rootElement->GetElementById(id);
-}
-
-void SableUI::BaseComponent::RegisterHoverElement(Element* el)
-{
-	if (el->info.appearance.hasHoverBg)
-		m_hoverElements.push_back(el);
-}
-
-void SableUI::BaseComponent::UpdateHoverStyling(const UIEventContext& ctx, int z)
-{
-	for (Element* el : m_hoverElements)
-	{
-		el->wasHovered = el->isHovered;
-		el->isHovered = RectBoundingBox(el->rect, ctx.mousePos, ctx.obscurers, z);
-
-		if (el->isHovered != el->wasHovered)
-		{
-			if (el->isHovered)
-				el->info.appearance.bg = el->info.appearance.hoverBg;
-			else
-				el->info.appearance.bg = el->originalBg;
-
-			MarkDirty();
-		}
-	}
+	return m_rootElement->GetElementById(id);
 }
 
 SableUI::BaseComponent* SableUI::BaseComponent::AttachComponent(BaseComponent* component)

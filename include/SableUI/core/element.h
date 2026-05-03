@@ -53,9 +53,7 @@ namespace SableUI
 
 	struct AppearanceProps {
 		std::optional<Colour> bg = std::nullopt;
-		Colour hoverBg = { 0, 0, 0, 0 };
 		std::optional<Colour> borderColour = std::nullopt;
-		bool hasHoverBg = false;
 		bool inheritBg = true;
 		float rTL = 0.0f, rTR = 0.0f, rBL = 0.0f, rBR = 0.0f;
 
@@ -152,11 +150,7 @@ namespace SableUI
 		int measuredHeight = 0;
 		std::vector<Child*> children;
 
-		// logic for hover styling
-		void RegisterForHover();
 		BaseComponent* m_owner = nullptr;
-		bool isHovered = false;
-		bool wasHovered = false;
 		std::optional<Colour> originalBg = std::nullopt;
 
 	private:

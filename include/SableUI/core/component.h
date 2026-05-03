@@ -57,21 +57,17 @@ namespace SableUI
 		Element* GetElementById(const SableString& id);
 
 		std::vector<BaseComponent*> m_componentChildren;
-		void RegisterHoverElement(Element* el);
 
 	protected:
 		std::vector<BaseComponent*> m_garbageChildren;
 		std::vector<StateBase*> m_states;
 		std::vector<FloatingPanelBase*> m_floatingPanels;
-		std::vector<Element*> m_hoverElements;
-
-		void UpdateHoverStyling(const UIEventContext& ctx, int z);
 
 	private:
 		bool needsRerender = false;
 		BaseComponent* AttachComponent(BaseComponent* component);
 		UIEventContext m_lastEventCtx;
-		Element* rootElement = nullptr;
+		Element* m_rootElement = nullptr;
 		size_t m_hash = 0;
 		RendererBackend* m_renderer = nullptr;
 		Colour m_bgColour = Colour{ 32, 32, 32 };
