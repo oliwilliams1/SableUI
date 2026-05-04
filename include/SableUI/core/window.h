@@ -70,7 +70,7 @@ namespace SableUI
 		SableString GetClipboardContent();
 		void SetClipboardContent(const SableString& content);
 
-		UIEventContext ctx;
+		UIInputState ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
 		ResourceHandle GetSurface() const { return m_windowSurface; }

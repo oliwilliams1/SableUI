@@ -36,8 +36,8 @@ namespace SableUI
 		virtual void ContentLeft() {};
 		virtual void ContentRight() {};
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
-		void OnUpdatePostLayout(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
+		void OnUpdatePostLayout(const UIUpdateContext& ctx) override;
 
 	protected:
 		ElementInfo info;

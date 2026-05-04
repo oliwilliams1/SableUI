@@ -103,7 +103,7 @@ void ButtonComponent::Layout()
 	}
 }
 
-void ButtonComponent::OnUpdate(const UIEventContext& ctx)
+void ButtonComponent::OnUpdate(const UIUpdateContext& ctx)
 {
 	Element* root = GetRootElement();
 	if (!root)
@@ -112,18 +112,18 @@ void ButtonComponent::OnUpdate(const UIEventContext& ctx)
 		return;
 	}
 
-	bool isHovered = RectBoundingBox(root->rect, ctx.mousePos);
+	bool isHovered = RectBoundingBox(root->rect, ctx.input.mousePos, ctx.input.obscurers, ctx.zIndex);
 
 	if (!info.appearance.disabled)
 	{
 		if (isHovered)
 		{
-			if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+			if (ctx.input.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
 				isPressed.set(true);
-			else if (!ctx.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
+			else if (!ctx.input.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
 				isPressed.set(false);
 		}
-		else if (isPressed.get() && !ctx.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
+		else if (isPressed.get() && !ctx.input.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
 			isPressed.set(false);
 	}
 }

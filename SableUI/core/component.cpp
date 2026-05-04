@@ -209,16 +209,18 @@ bool SableUI::BaseComponent::Rerender(const DrawableDrawData& drData, bool* hasC
 	return false;
 }
 
-void SableUI::BaseComponent::HandleInput(const UIEventContext& ctx, int z)
+void SableUI::BaseComponent::HandleInput(const UIInputState& inputState, int z)
 {
-	m_rootElement->DistributeInputToElements(ctx, z);
+	m_rootElement->DistributeInputToElements(inputState, z);
 
 	for (FloatingPanelBase* panel : m_floatingPanels)
 		if (panel->IsOpen())
-			panel->HandleInput(ctx, panel->GetZIndex());
+			panel->HandleInput(inputState, panel->GetZIndex());
 
-	m_lastEventCtx = ctx;
-	OnUpdate(ctx);
+	m_lastInputState = inputState;
+
+	UIUpdateContext updateCtx{ inputState, z };
+	OnUpdate(updateCtx);
 }
 
 bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
@@ -240,16 +242,18 @@ bool SableUI::BaseComponent::CheckAndUpdate(const DrawableDrawData& drData)
 	return true;
 }
 
-void SableUI::BaseComponent::PostLayoutUpdate(const UIEventContext& ctx)
+void SableUI::BaseComponent::PostLayoutUpdate(const UIInputState& inputState, int z)
 {
 	for (auto* child : m_componentChildren)
-		child->PostLayoutUpdate(ctx);
+		child->PostLayoutUpdate(inputState, z);
 
 	for (FloatingPanelBase* panel : m_floatingPanels)
 		if (panel->IsOpen())
-			panel->PostLayoutUpdate(ctx);
+			panel->PostLayoutUpdate(inputState, panel->GetZIndex());
 
-	OnUpdatePostLayout(ctx);
+	UIUpdateContext updateCtx{ inputState, z };
+
+	OnUpdatePostLayout(updateCtx);
 }
 
 void SableUI::BaseComponent::RegisterState(StateBase* state)

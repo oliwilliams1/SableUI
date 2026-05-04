@@ -127,7 +127,7 @@ void SableUI::MemoryDebugger::Layout()
 	}
 }
 
-void SableUI::MemoryDebugger::OnUpdate(const UIEventContext& ctx)
+void SableUI::MemoryDebugger::OnUpdate(const UIUpdateContext& ctx)
 {
 	if (live) MarkDirty();
 }
@@ -190,13 +190,13 @@ void SableUI::LayoutDebugger::Layout()
 	}
 }
 
-void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
+void SableUI::LayoutDebugger::OnUpdate(const UIUpdateContext& ctx)
 {
 	TabUpdateHandler(tabs);
-	ScrollUpdateHandler(treeScroll);
+	ScrollUpdateHandler(treeScroll, ctx);
 }
 
-void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIUpdateContext& ctx)
 {
 	ScrollUpdatePostLayoutHandler(treeScroll);
 }
@@ -254,7 +254,7 @@ void SableUI::PropertiesPanel::Layout()
 	}
 }
 
-void SableUI::PropertiesPanel::OnUpdate(const UIEventContext& ctx)
+void SableUI::PropertiesPanel::OnUpdate(const UIUpdateContext& ctx)
 {
 	if (lastSelectedHash != g_selectedHash)
 	{

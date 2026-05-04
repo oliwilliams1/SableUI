@@ -30,9 +30,9 @@ namespace SableUI
         virtual void CalculateMinBounds() {};
         virtual void Update(const DrawableDrawData& drData) {};
 
-        virtual void DistributeEvents(const UIEventContext& ctx, int z);
+        virtual void DistributeEvents(const UIInputState& ctx, int z);
         virtual bool UpdateComponents(const DrawableDrawData& drData);
-        virtual void PostLayoutUpdate(const UIEventContext& ctx);
+        virtual void PostLayoutUpdate(const UIInputState& ctx, int z);
 
         virtual Element* GetElementById(const SableString& id);
 
@@ -107,9 +107,9 @@ namespace SableUI
 
         void Update(const DrawableDrawData& drData) override;
 
-        void DistributeEvents(const UIEventContext& ctx, int z) override;
+        void DistributeEvents(const UIInputState& ctx, int z) override;
         bool UpdateComponents(const DrawableDrawData& drData) override;
-        void PostLayoutUpdate(const UIEventContext& ctx) override;
+        void PostLayoutUpdate(const UIInputState& ctx, int z) override;
 
         BaseComponent* GetComponent() const { return m_component; }
         Element* GetElementById(const SableString& id) override;

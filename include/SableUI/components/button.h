@@ -12,7 +12,7 @@ namespace SableUI
 	{
 	public:
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
 
 		void Init(const SableString& label,
 			std::function<void()> callback,

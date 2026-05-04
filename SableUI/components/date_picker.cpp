@@ -68,7 +68,7 @@ void SableUI::DatePickerComponent::ContentRight()
 	);
 }
 
-void SableUI::DatePickerComponent::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::DatePickerComponent::OnUpdatePostLayout(const UIUpdateContext& ctx)
 {
 	TextFieldComponent::OnUpdatePostLayout(ctx);
 

@@ -550,7 +550,7 @@ bool SableUI::Window::Update(const std::unordered_set<TimerHandle>& firedTimers)
 		m_needsStaticRedraw = true;
 	}
 
-	m_root->PostLayoutUpdate(ctx);
+	m_root->PostLayoutUpdate(ctx, 0);
 
 	if (!m_resizing)
 	{

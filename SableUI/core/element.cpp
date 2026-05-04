@@ -995,7 +995,7 @@ void SableUI::Element::BuildSingleElementFromVirtual(VirtualNode* vnode)
     }
 }
 
-void SableUI::Element::DistributeInputToElements(const UIEventContext& ctx, int z)
+void SableUI::Element::DistributeInputToElements(const UIInputState& ctx, int z)
 {
     if (RectBoundingBox(rect, ctx.mousePos, ctx.obscurers, z))
     {

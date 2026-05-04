@@ -15,9 +15,9 @@ namespace SableUI
 		virtual bool IsOpen() const = 0;
 		virtual int GetZIndex() const = 0;
 
-		virtual void PostLayoutUpdate(const UIEventContext& ctx) = 0;
+		virtual void HandleInput(const UIInputState& ctx, int z) = 0;
 		virtual bool CheckAndUpdate(const DrawableDrawData& externalDrawData) = 0;
-		virtual void HandleInput(const UIEventContext& ctx, int z) = 0;
+		virtual void PostLayoutUpdate(const UIInputState& ctx, int z) = 0;
 	};
 
 	struct FloatingPanelEntry {

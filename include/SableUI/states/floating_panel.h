@@ -33,9 +33,9 @@ namespace SableUI
 
 		void Sync(StateBase* other) override;
 
-		void PostLayoutUpdate(const UIEventContext& ctx) override;
+		void PostLayoutUpdate(const UIInputState& ctx, int z) override;
 		bool CheckAndUpdate(const DrawableDrawData& externalDrawData) override;
-		void HandleInput(const UIEventContext& ctx, int z) override;
+		void HandleInput(const UIInputState& ctx, int z) override;
 
 	private:
 		ResourceHandle m_framebuffer;
@@ -203,7 +203,7 @@ namespace SableUI
 	}
 
 	template<typename T>
-	inline void FloatingPanel<T>::HandleInput(const UIEventContext& ctx, int z)
+	inline void FloatingPanel<T>::HandleInput(const UIInputState& ctx, int z)
 	{
 		if (m_child)
 			m_child->HandleInput(ctx, z);
@@ -230,9 +230,9 @@ namespace SableUI
 	}
 
 	template<typename T>
-	inline void FloatingPanel<T>::PostLayoutUpdate(const UIEventContext& ctx)
+	inline void FloatingPanel<T>::PostLayoutUpdate(const UIInputState& ctx, int z)
 	{
 		if (m_child)
-			m_child->PostLayoutUpdate(ctx);
+			m_child->PostLayoutUpdate(ctx, z);
 	}
 }

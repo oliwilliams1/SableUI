@@ -35,7 +35,7 @@ int SableUI::BasePanel::GetNumInstances()
 	return s_basePanelCount;
 }
 
-void SableUI::BasePanel::DistributeEvents(const UIEventContext& ctx, int z)
+void SableUI::BasePanel::DistributeEvents(const UIInputState& ctx, int z)
 {
 	for (BasePanel* child : children)
 		child->DistributeEvents(ctx, z);
@@ -49,10 +49,10 @@ bool SableUI::BasePanel::UpdateComponents(const DrawableDrawData& drData)
 	return anyChanged;
 }
 
-void SableUI::BasePanel::PostLayoutUpdate(const UIEventContext& ctx)
+void SableUI::BasePanel::PostLayoutUpdate(const UIInputState& ctx, int z)
 {
 	for (BasePanel* child : children)
-		child->PostLayoutUpdate(ctx);
+		child->PostLayoutUpdate(ctx, z);
 }
 
 SableUI::Element* SableUI::BasePanel::GetElementById(const SableString& id)
@@ -601,7 +601,7 @@ void SableUI::ContentPanel::Render(const DrawableDrawData& drData)
 		m_component->Render(drData);
 }
 
-void SableUI::ContentPanel::DistributeEvents(const UIEventContext& ctx, int z)
+void SableUI::ContentPanel::DistributeEvents(const UIInputState& ctx, int z)
 {
 	if (m_component)
 		m_component->HandleInput(ctx, z);
@@ -620,10 +620,10 @@ bool SableUI::ContentPanel::UpdateComponents(const DrawableDrawData& drData)
 	return changed;
 }
 
-void SableUI::ContentPanel::PostLayoutUpdate(const UIEventContext& ctx)
+void SableUI::ContentPanel::PostLayoutUpdate(const UIInputState& ctx, int z)
 {
 	if (m_component)
-		m_component->PostLayoutUpdate(ctx);
+		m_component->PostLayoutUpdate(ctx, z);
 }
 
 

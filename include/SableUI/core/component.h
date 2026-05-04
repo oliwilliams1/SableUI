@@ -23,8 +23,8 @@ namespace SableUI
 		virtual ~BaseComponent();
 
 		virtual void Layout() {};
-		virtual void OnUpdate(const UIEventContext& ctx) {};
-		virtual void OnUpdatePostLayout(const UIEventContext& ctx) {};
+		virtual void OnUpdate(const UIUpdateContext& ctx) {};
+		virtual void OnUpdatePostLayout(const UIUpdateContext& ctx) {};
 
 		void LayoutWrapper();
 		void BackendInitialisePanel();
@@ -43,9 +43,9 @@ namespace SableUI
 		int GetNumChildren() const;
 		bool Rerender(const DrawableDrawData& drData, bool* hasContentsChanged = nullptr);
 
-		void HandleInput(const UIEventContext& ctx, int z);
+		void HandleInput(const UIInputState& ctx, int z);
 		bool CheckAndUpdate(const DrawableDrawData& drData);
-		void PostLayoutUpdate(const UIEventContext& ctx);
+		void PostLayoutUpdate(const UIInputState& ctx, int z);
 
 		void RegisterState(StateBase* state);
 		void RegisterFloatingPanel(FloatingPanelBase* state);
@@ -66,7 +66,7 @@ namespace SableUI
 	private:
 		bool needsRerender = false;
 		BaseComponent* AttachComponent(BaseComponent* component);
-		UIEventContext m_lastEventCtx;
+		UIInputState m_lastInputState;
 		Element* m_rootElement = nullptr;
 		size_t m_hash = 0;
 		RendererBackend* m_renderer = nullptr;

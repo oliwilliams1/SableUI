@@ -156,7 +156,7 @@ namespace SableUI
 {
 	using TimerHandle = size_t;
 
-	struct UIEventContext
+	struct UIInputState
 	{
 		float deltaTime = 0.0f;
 
@@ -181,9 +181,16 @@ namespace SableUI
 		{
 			return firedTimers.find(handle) != firedTimers.end();
 		}
+
 	};
 
-	inline bool IsMouseDown(const UIEventContext& ctx, uint8_t button) { return ctx.mouseDown.test(button); }
-	inline bool IsMousePressed(const UIEventContext& ctx, uint8_t button) { return ctx.mousePressed.test(button); }
-	inline bool IsMouseReleased(const UIEventContext& ctx, uint8_t button) { return ctx.mouseReleased.test(button); }
+	struct UIUpdateContext
+	{
+		const UIInputState& input;
+		int zIndex = 0;
+	};
+
+	inline bool IsMouseDown(const UIInputState& ctx, uint8_t button) { return ctx.mouseDown.test(button); }
+	inline bool IsMousePressed(const UIInputState& ctx, uint8_t button) { return ctx.mousePressed.test(button); }
+	inline bool IsMouseReleased(const UIInputState& ctx, uint8_t button) { return ctx.mouseReleased.test(button); }
 }

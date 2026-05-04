@@ -17,7 +17,7 @@ bool SableUI::ScrollData::operator!=(const ScrollData& other) const
         contentSize.y != other.contentSize.y;
 }
 
-void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIEventContext& eventCtx)
+void SableUI::ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIInputState& eventCtx)
 {
     Element* viewportEl = comp->GetElementById(ctx.GetViewportID());
     if (!viewportEl) return;

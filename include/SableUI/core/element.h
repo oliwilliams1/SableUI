@@ -134,7 +134,7 @@ namespace SableUI
 		void BuildSingleElementFromVirtual(VirtualNode* vnode);
 
 		// event system
-		void DistributeInputToElements(const UIEventContext& ctx, int z);
+		void DistributeInputToElements(const UIInputState& ctx, int z);
 		bool CheckElementTreeForChanges(const DrawableDrawData& drData);
 		Element* GetElementById(const SableString& id);
 

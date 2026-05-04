@@ -13,7 +13,7 @@ namespace SableUI
 	{
 	public:
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
 	private:
 		State<bool> live{ this, true };
 	};
@@ -23,8 +23,8 @@ namespace SableUI
 	public:
 		LayoutDebugger();
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
-		void OnUpdatePostLayout(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
+		void OnUpdatePostLayout(const UIUpdateContext& ctx) override;
 		void InitData(Window* window) { this->window = window; }
 
 	private:
@@ -39,7 +39,7 @@ namespace SableUI
 	{
 	public:
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
 
 	private:
 		State<Rect> selectedRect{ this, {} };
