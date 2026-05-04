@@ -836,30 +836,36 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
     }
 
     hash_combine(h, ((int)info.layout.wType << 8) | (int)info.layout.hType);
-
     hash_combine(h, (info.layout.width << 16) | info.layout.height);
     hash_combine(h, (info.layout.minW << 16) | info.layout.minH);
     hash_combine(h, (info.layout.maxW << 16) | info.layout.maxH);
-
     hash_combine(h, (info.layout.mT << 24) | (info.layout.mR << 16) |
         (info.layout.mB << 8) | info.layout.mL);
-
     hash_combine(h, (info.layout.pT << 24) | (info.layout.pR << 16) |
         (info.layout.pB << 8) | info.layout.pL);
-
     hash_combine(h, (info.text.fontSize << 16) |
         (static_cast<int>(info.text.lineHeight * 1000) & 0xFFFF));
 
     if (info.text.colour.has_value())
     {
         const SableUI::Colour& c = info.text.colour.value();
-		hash_combine(h, (c.r << 24) | (c.g << 16) |
-			(c.b << 8) | c.a);
+        hash_combine(h, (c.r << 24) | (c.g << 16) | (c.b << 8) | c.a);
+    }
+
+    if (info.appearance.bg.has_value())
+    {
+        const SableUI::Colour& c = info.appearance.bg.value();
+        hash_combine(h, (c.r << 24) | (c.g << 16) | (c.b << 8) | c.a);
+    }
+
+    if (info.appearance.borderColour.has_value())
+    {
+        const SableUI::Colour& c = info.appearance.borderColour.value();
+        hash_combine(h, (c.r << 24) | (c.g << 16) | (c.b << 8) | c.a);
     }
 
     hash_combine(h, ((int)info.text.justification.value_or(SableUI::TextJustification::Left) << 16) |
         (info.text.wrap ? 1 : 0));
-
     hash_combine(h, ((int)info.layout.layoutDirection << 24) |
         (info.layout.centerX ? (1 << 16) : 0) |
         (info.layout.centerY ? (1 << 8) : 0));
@@ -868,13 +874,6 @@ static size_t ComputeHash(const SableUI::ElementInfo& info)
     hash_combine(h, info.appearance.rTR);
     hash_combine(h, info.appearance.rBL);
     hash_combine(h, info.appearance.rBR);
-
-    if (info.text.colour.has_value())
-    {
-        const SableUI::Colour& c = info.text.colour.value();
-		hash_combine(h, (c.r << 24) | (c.g << 16) |
-			(c.b << 8) | c.a);
-    }
 
     return h;
 }

@@ -8,7 +8,7 @@
 
 namespace SableUI
 {
-	class Button : public BaseComponent
+	class ButtonComponent : public BaseComponent
 	{
 	public:
 		void Layout() override;
@@ -31,7 +31,7 @@ namespace SableUI
 #define Button(label, callback, ...)											\
 	ComponentScopedWithStyle(													\
 		btn,																	\
-		SableUI::Button,														\
+		SableUI::ButtonComponent,												\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\

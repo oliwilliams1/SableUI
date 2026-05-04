@@ -12,7 +12,7 @@
 using namespace SableUI;
 using namespace SableUI::Style;
 
-void Button::Init(
+void ButtonComponent::Init(
 	const SableString& p_label,
 	std::function<void()> p_callback,
 	const ElementInfo& p_info)
@@ -50,19 +50,6 @@ static Rect ResolvePadding(const ElementInfo& info)
 	return GetDefaultPadding(info);
 }
 
-static void ApplyButtonBackground(
-	ElementInfo& i,
-	const ElementInfo& src,
-	bool pressed)
-{
-	const Theme& t = GetTheme();
-	const float dFac = 0.9f;
-
-	Colour base = src.appearance.bg.value_or(t.primary);
-
-	PackStylesToInfo(i, pressed ? bg(base * dFac) : bg(base));
-}
-
 static void ApplyDisabledStyle(ElementInfo& i, Colour& textColour)
 {
 	const Theme& t = GetTheme();
@@ -70,7 +57,7 @@ static void ApplyDisabledStyle(ElementInfo& i, Colour& textColour)
 	PackStylesToInfo(i, bg(t.subtext0));
 }
 
-void Button::Layout()
+void ButtonComponent::Layout()
 {
 	Rect padding = ResolvePadding(info);
 
@@ -89,10 +76,9 @@ void Button::Layout()
 	else
 		col = GetTheme().text;
 
-	if (info.appearance.disabled)
-		ApplyDisabledStyle(i, col);
-	else
-		ApplyButtonBackground(i, info, isPressed.get());
+	i.appearance.bg = (info.appearance.disabled) 
+		? GetTheme().subtext0 
+		: info.appearance.bg.value_or(GetTheme().primary) * (isPressed.get() ? 0.9f : 1.0f);
 
 	i.appearance.rTL = info.appearance.rTL > 0.0f ? info.appearance.rTL : 4.0f;
 	i.appearance.rTR = info.appearance.rTR > 0.0f ? info.appearance.rTR : 4.0f;
@@ -117,7 +103,7 @@ void Button::Layout()
 	}
 }
 
-void Button::OnUpdate(const UIEventContext& ctx)
+void ButtonComponent::OnUpdate(const UIEventContext& ctx)
 {
 	Element* root = GetRootElement();
 	if (!root)
@@ -128,11 +114,16 @@ void Button::OnUpdate(const UIEventContext& ctx)
 
 	bool isHovered = RectBoundingBox(root->rect, ctx.mousePos);
 
-	if (!info.appearance.disabled && isHovered)
+	if (!info.appearance.disabled)
 	{
-		if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
-			isPressed.set(true);
-		else if (isPressed.get())
+		if (isHovered)
+		{
+			if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT))
+				isPressed.set(true);
+			else if (!ctx.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
+				isPressed.set(false);
+		}
+		else if (isPressed.get() && !ctx.mouseDown.test(SABLE_MOUSE_BUTTON_LEFT))
 			isPressed.set(false);
 	}
 }

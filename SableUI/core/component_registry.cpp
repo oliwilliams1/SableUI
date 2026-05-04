@@ -82,7 +82,7 @@ void SableUI::RegisterSableUIComponents()
     RegisterComponent<MemoryDebugger>("MemoryDebugger");
     RegisterComponent<PropertiesPanel>("PropertiesPanel");
     
-    RegisterComponent<Button>("sableui_button");
+    RegisterComponent<ButtonComponent>("sableui_button");
     RegisterComponent<Checkbox>("sableui_checkbox");
     RegisterComponent<TextFieldComponent>("sableui_text_field");
 }
