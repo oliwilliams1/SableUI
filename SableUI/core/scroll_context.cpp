@@ -164,6 +164,7 @@ SableUI::ScrollViewScope::~ScrollViewScope()
 {
     SableUI::EndDiv();
 
+    int padding = 4;
     if (ctx.scrollData.contentSize.y > 0 && ctx.scrollData.viewportSize.y > 0)
     {
         float fac = ctx.scrollData.viewportSize.y / ctx.scrollData.contentSize.y;
@@ -173,22 +174,32 @@ SableUI::ScrollViewScope::~ScrollViewScope()
             float maxScroll = ctx.scrollData.contentSize.y - ctx.scrollData.viewportSize.y;
             float progress = (maxScroll > 0) ? (ctx.scrollPos.y / maxScroll) : 0.0f;
 
-            int padding = 4;
             float trackRange = ctx.scrollData.viewportSize.y - thumbHeight - (padding * 2);
             float topMargin = progress * trackRange;
 
-            if (ctx.barHovered)
+            Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
             {
-                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
+                if (ctx.barHovered)
                 {
                     RectElement(w(6), h(static_cast<int>(thumbHeight)), mt(static_cast<int>(topMargin)), rounded(3), bg(149, 149, 149));
                 }
-            }
-            else
-            {
-                Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
+                else
                 {
                     RectElement(w(2), m(2), h(static_cast<int>(thumbHeight)), mt(static_cast<int>(topMargin)), rounded(1), bg(128, 128, 128));
+                }
+            }
+        }
+        else
+        {
+            Div(id(ctx.GetBarID()), w_fit, p(padding), h_fill, bg(bgColour))
+            {
+                if (ctx.barHovered)
+                {
+                    RectElement(w(6), h_fill, rounded(3), bg(149, 149, 149));
+                }
+                else
+                {
+                    RectElement(w(2), m(2), h_fill, rounded(1), bg(128, 128, 128));
                 }
             }
         }

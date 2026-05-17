@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(OpenGL REQUIRED)
 
 # glfw
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 add_subdirectory("vendor/glfw")
 
 # glad
