@@ -14,6 +14,11 @@ SableUI::Interval::~Interval()
     Unregister();
 }
 
+bool SableUI::Interval::IsFired(const UIUpdateContext& ctx)
+{
+    return (ctx.input.IsFired(m_handle));
+}
+
 void SableUI::Interval::Start(int milliseconds)
 {
     m_period = std::chrono::milliseconds(milliseconds);

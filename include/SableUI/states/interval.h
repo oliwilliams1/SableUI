@@ -14,6 +14,7 @@ namespace SableUI
         ~Interval();
 
         TimerHandle GetHandle() const { return m_handle; }
+        bool IsFired(const UIUpdateContext& ctx);
         void Start(int milliseconds);
         void Stop();
         void Reset();

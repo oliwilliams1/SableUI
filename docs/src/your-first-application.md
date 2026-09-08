@@ -1,143 +1,310 @@
-# Your First Application
-Create `main.cpp`:
+# Building a Counter
+
+This walks through one small, complete SableUI application, built up piece by piece. By the end it covers application setup, components, layout, styling, reactive state, interaction, composing components, and reacting to time.
+
+### Setup
+
+Create `main.cpp` and include the main SableUI header, along with the (optional) style namespace:
+
 ```cpp
 #include <SableUI/SableUI.h>
 
-class Counter : public SableUI::BaseComponent {
+using namespace SableUI;
+using namespace SableUI::Style;
+```
+
+### The application lifecycle
+
+Every SableUI application follows the same shape in `main()`:
+
+```cpp
+int main()
+{
+	InitialisePrimaryWindow();
+
+	while (WaitEvents())
+		Render();
+
+	Shutdown();
+
+	return 0;
+}
+```
+
+`InitialisePrimaryWindow()` creates the window and sets up the renderer. `WaitEvents()` handles input and returns `false` once the window should close, so it doubles as the loop condition. `Render()` draws the current frame. `Shutdown()` cleans everything up. This shape doesn't change regardless of what the application actually does — application logic lives elsewhere, not in this loop.
+
+> **Note:** `WaitEvents()` can be switched out with `WaitEventsTimeout(double timeout)` or `PollEvents()` based on application type. `WaitEvents()` is typically used for general applications that do not require updates to match the refresh rate of a display, `PollEvents()` loops instantanously, useful for games, and `WaitEventsTimeout(double timeout)` is a balance between the two, which waits for events or the specified time runs out.
+
+### Your first component
+
+A component is a class deriving from `BaseComponent` that overrides `Layout()`:
+
+```cpp
+class Counter : public BaseComponent
+{
 public:
-    void Layout() override {
-        Div(bg(245, 245, 245) p(30) centerXY w_fit h_fit rounded(10)) {
-            Text(SableString::Format("Count: %d", count),
-                fontSize(28) mb(20) textColour(20, 20, 20) justify_center);
+	void Layout() override
+	{
+		Text("Count: 0");
+	}
+};
+```
 
-            Div(left_right p(4) centerX rounded(9)) {
-                Div(bg(90, 160, 255) p(8) mr(5) rounded(5)
-                    onClick([this]() { setCount(count + 1); })) {
-                    Text("Increment", 
-                        textColour(255, 255, 255) fontSize(16) justify_center);
-                }
+`Layout()` is called during rendering and is where the component's contents are declared — including any conditional logic or loops, since it's ordinary C++. `Text(...)` adds a text element to the layout.
 
-                Div(bg(255, 120, 120) p(8) rounded(5)
-                    onClick([this]() { setCount(count - 1); })) {
-                    Text("Decrement",
-                        textColour(255, 255, 255) fontSize(16) justify_center);
-                }
-            }
-        }
-    }
+For example, you can have the following code which lays out exactly as it reads, which is a luxery some solutions don't have, and is built right into the core of SableUI.
+
+```cpp
+class Counter : public BaseComponent
+{
+public:
+	void Layout() override
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			if (i % 2 == 0)
+			{
+				Text(SableString::Format("Element number: %d", i));
+			}
+		}
+	}
+};
+```
+
+But for the sake of this tutorial, we will revert back to the earlier snippet.
+
+### Displaying it
+
+Before the main loop, register the component under a name, then add a panel that uses it:
+
+```cpp
+int main()
+{
+	InitialisePrimaryWindow();
+	RegisterComponent<Counter>("Counter");
+
+	Panel("Counter");
+
+	while (WaitEvents())
+		Render();
+
+	Shutdown();
+
+	return 0;
+}
+```
+
+`RegisterComponent<T>(string key)` makes `Counter` creatable by string elsewhere in the framework. `Panel("Counter")` adds a panel to the window's panel tree and attaches an instance of the registered component to it.
+
+### Layout and styling
+
+`Div(...) { ... }` groups elements together and applies styling to the group. It's a scoped construct — the braces aren't decorative, they define which elements are children of that div:
+
+```cpp
+void Layout() override
+{
+	const Theme& t = GetTheme();
+
+	Div(bg(t.surface0), p(30), centerXY, rounded(10))
+	{
+		Text("Count: 0", fontSize(28), mb(20), textWrap(false));
+	}
+}
+```
+
+Each argument to `Div(...)` or `Text(...)` — `bg(...)`, `p(30)`, `centerXY`, `rounded(10)`, `fontSize(28)`, `mb(20)` — is a small style value. They can be freely mixed and chained in any order. `GetTheme()` returns the current theme, so colours can be pulled from it (`t.surface0`) rather than hardcoded, which keeps components reusable across different themes.
+
+### Making the count reactive
+
+To make `Count: 0` into a real counter, add a `State<int>` member:
+
+```cpp
+class Counter : public BaseComponent
+{
+public:
+	void Layout() override
+	{
+		const Theme& t = GetTheme();
+
+		Div(bg(t.surface0), p(30), centerXY, rounded(10))
+		{
+			Text(SableString::Format("Count: %d", count.get()), fontSize(28), mb(20), textWrap(false));
+		}
+	}
 
 private:
-    useState(count, setCount, int, 0);
-};
-
-int main(int argc, char** argv) {
-    // Register your component
-    SableUI::RegisterComponent<Counter>("Counter");
-
-    // Initialize window
-    SableUI::Window* window = SableUI::Initialise("Counter App", 800, 600);
-
-    // Create layout
-    Panel("Counter");
-
-    // Main loop
-    while (SableUI::PollEvents())
-        SableUI::Render();
-
-    SableUI::Shutdown();
-    return 0;
-}
-```
-### First build
-**Windows:**
-```bash
-mkdir build
-cd build
-cmake ..
-```
-Open `MyApp.sln` in Visual Studio, set `MyApp` or your project as startup, and build. <br>
-**OR** open `CMakeLists.txt` in Visual Studio and everything should configure by itself.
-
-**Linux/macOS:**
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-Building and running your application you should now see the following on your screen:
-![SableUI counter app example](counter-example-quickstart.png)
-Having Issues? Check [troubleshooting](troubleshooting-configuration.md)
-
----
-
-## Understanding the Code
-**1. Component Definition**
-```cpp
-class Counter : public SableUI::BaseComponent {
-    void Layout() override { /* ... */ }
+	State<int> count{ this, 0 };
 };
 ```
-Components inherit from `BaseComponent` and override `Layout()` to describe their UI.
 
-**2. State Management**
+`State<T>` takes the owning component (`this`) and a default value. Unlike a plain member variable, a `State<T>` survives across rerenders and reconciliation, and calling `.set(...)` on it automatically marks the component dirty and schedules a rerender — there's no separate step to tell the framework something changed. `.get()` reads the current value. `SableString::Format(...)` works like `sprintf`.
+
+### Adding interactivity
+
+`Button(label, callback, ...)` wires a click to a callback, and takes the same style arguments as `Div` or `Text`:
+
 ```cpp
-useState(count, setCount, int, 0);
-```
-This declares a reactive state, calling `setCount()` modifies `count` and triggers a re-render.
-> NOTE: This is simmilar to react's `useState`, synonymous with:
-> ```js
-> const [count, setCount] = useState<int>(0)
-> ```
-**3. Declarative UI**
-```cpp
-Div(bg(245, 245, 245) p(30)) {
-    Text("Hello");
+Div(left_right, mb(8))
+{
+	Button("Increment", [this]() { count.set(count.get() + 1); }, mr(4));
+	Button("Decrement", [this]() { count.set(count.get() - 1); });
 }
 ```
-The use of macros (`div(...)`) and RAII ensure elements are properly opened and closed.
 
-**4. Event Handling**
+`left_right` lays the div's children out horizontally instead of the default vertical stacking. The callback is a lambda capturing `this`, so it can reach back into the component's own state — clicking the button calls `count.set(...)`, which triggers the same rerender as any other state change.
+
+### Composing components
+
+A component can nest another component inside its `Layout()`. Here's a second component that just displays a string it's given:
+
 ```cpp
-onClick([this]() { setCount(count + 1); })
-```
-Lambda callbacks capture state and trigger updates.
+class IntervalDisplay : public BaseComponent
+{
+public:
+	void Layout() override
+	{
+		Text("Child component");
+		Text(formattedTime, textWrap(false));
+	}
 
-**5. Registration & Initialisation**
+	void SetFormattedTime(const SableString& str)
+	{
+		formattedTime = str;
+	}
+
+private:
+	SableString formattedTime = ""; // Not state!
+};
+```
+
+`formattedTime` is a plain member, not a `State<T>`. It doesn't need to be state because it's recomputed and handed down fresh by the parent every time `Layout()` runs. If it were a state, and improper state would be preserved, as it will initialise the internal state after the component scope in the parent ends.
+
+To use it inside `Counter`, register it and nest it with `ComponentScoped`:
+
 ```cpp
-SableUI::RegisterComponent<Counter>("Counter");
-SableUI::Window* window = SableUI::Initialise("App", 800, 600);
+ComponentScoped(intervalDisplay, IntervalDisplay, this, bg(t.surface1), rounded(8), p(8))
+{
+	intervalDisplay->SetFormattedTime(
+		SableString::Format("Seconds since application start: %d", time.get())
+	);
+}
 ```
-Register component types by name, then initiliase your first window.
 
-**6. Panel Layout**
+`ComponentScoped(name, Type, owner, <optional> styleArgs) { ... }` creates a child component of the given type, gives back a pointer (`intervalDisplay`) usable inside the braces, and attaches it to `owner` once the block ends. Data flows one way here: `Counter` calls a setter on `IntervalDisplay`, and `IntervalDisplay` has no way to reach back into `Counter`'s state. The optional field: `styleArgs` is used for applying styling to the childs containing element.
+
+### Reacting to time
+
+`OnUpdate(const UIUpdateContext&)` is a separate override from `Layout()`, called every frame, for logic that reacts to time or input rather than declaring what's on screen. Combined with an `Interval`, it can drive state changes on a schedule:
+
 ```cpp
-Panel("Counter");
+class Counter : public BaseComponent
+{
+public:
+	Counter()
+	{
+		interval.Start(1000);
+	}
+
+	void OnUpdate(const UIUpdateContext& ctx) override
+	{
+		if (interval.IsFired(ctx))
+		{
+			time.set(time.get() + 1);
+		}
+	}
+
+private:
+	Interval interval{ this };
+	State<int> time{ this, 0 };
+};
 ```
-Attach registed components to panels, the scope for panel layout is created after window initialisation.
 
-<br><br>
+`interval.Start(1000)` schedules the interval to fire every 1000ms, starting in the constructor. `interval.IsFired(ctx)` checks whether it fired this frame. Because `time.set(...)` marks the component dirty the same way `count.set(...)` did earlier, updating `time` from `OnUpdate` triggers a rerender through the exact same path a button click does — there's no separate mechanism to learn for time-driven versus user-driven updates.
 
----
+### Putting it together
 
-### Next Steps
-By here, you now have a working SableUI application, you can either get a better understanding on the specifics of certain areas above, or go to the following pages. <br>
-<br>
-<div class="card-grid">
-  <div class="card">
-    <img src="path/to/image3.jpg" alt="Card image">
-    <h2>Core concepts</h2>
-    <p class="subtitle">Understand concepts such as components, states and more</p>
-  </div>
+```cpp
+#include <SableUI/SableUI.h>
 
-  <div class="card">
-    <img src="path/to/image1.jpg" alt="Card image">
-    <h2>API reference</h2>
-    <p class="subtitle">Learn how to build a anything using SableUI's layout system</p>
-  </div>
+using namespace SableUI;
+using namespace SableUI::Style;
 
-  <div class="card">
-    <img src="path/to/image2.jpg" alt="Card image">
-    <h2>Examples</h2>
-    <p class="subtitle">See real applications</p>
-  </div>
-</div>
+class IntervalDisplay : public BaseComponent
+{
+public:
+	void Layout() override
+	{
+		Text("Child component");
+		Text(formattedTime, textWrap(false));
+	}
+
+	void SetFormattedTime(const SableString& str)
+	{
+		formattedTime = str;
+	}
+
+private:
+	SableString formattedTime = ""; // Not state!
+};
+
+class Counter : public BaseComponent
+{
+public:
+	Counter()
+	{
+		interval.Start(1000);
+	}
+
+	void Layout() override
+	{
+		const Theme& t = GetTheme();
+
+		Div(bg(t.surface0), p(30), centerXY, rounded(10))
+		{
+			Text(SableString::Format("Count: %d", count.get()), fontSize(28), mb(20), textWrap(false));
+
+			Div(left_right, mb(8))
+			{
+				Button("Increment", [this]() { count.set(count.get() + 1); }, mr(4));
+				Button("Decrement", [this]() { count.set(count.get() - 1); });
+			}
+			ComponentScoped(intervalDisplay, IntervalDisplay, this, bg(t.surface1), rounded(8), p(8))
+			{
+				intervalDisplay->SetFormattedTime(
+					SableString::Format("Seconds since application start: %d", time.get())
+				);
+			}
+		}
+	}
+
+	void OnUpdate(const UIUpdateContext& ctx) override
+	{
+		if (interval.IsFired(ctx))
+		{
+			time.set(time.get() + 1);
+		}
+	}
+
+private:
+	State<int> count{ this, 0 };
+
+	Interval interval{ this };
+	State<int> time{ this, 0 };
+};
+
+int main()
+{
+	InitialisePrimaryWindow();
+	RegisterComponent<Counter>("Counter");
+	RegisterComponent<IntervalDisplay>("IntervalDisplay");
+
+	Panel("Counter");
+
+	while (WaitEvents())
+		Render();
+
+	Shutdown();
+
+	return 0;
+}
+```
