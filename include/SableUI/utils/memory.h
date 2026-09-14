@@ -39,8 +39,7 @@ namespace SableMemory
 		DrawableRect,
 		DrawableImage,
 		DrawableText,
-		DrawableSplitter,
-		GpuObject
+		DrawableSplitter
 	};
 
 	struct SizeData {

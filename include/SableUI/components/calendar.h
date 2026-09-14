@@ -1,6 +1,6 @@
 #pragma once
 #include <SableUI/core/component.h>
-#include <functional>
+#include <SableUI/states/state.h>
 
 namespace SableUI
 {

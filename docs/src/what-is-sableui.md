@@ -1,6 +1,8 @@
 # What is SableUI?
 The driving force behind SableUI is to solve a problem with modern UI development. When building an application, web technologies are often preferable, but they come with heavy performance costs and annoying abstraction layers. SableUI brings modern UI development to a lower level with zero runtime overhead.
 
+> # OUT OF DATE
+
 ## Core Philosophy
 Traditional C++ UI frameworks require verbose code that's often hard to read. Web frameworks like react solved this with declarative components, but at the cost of performance and introduces an abstraction layer between UI and application logic. SableUI attempts to bridge this gap.
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <string>
 #include <memory>
 #include <cstdint>
@@ -11,7 +13,7 @@
 
 namespace SableUI
 {
-	void StepCachedTexturesCleaner();
+	void StepCachedTexturesCleaner(CommandBuffer& cmd);
 
 	struct CachedGpuTexture;
 
@@ -42,7 +44,7 @@ namespace SableUI
 
 		void QueueLoad(const std::string& path, int width, int height, std::shared_ptr<CachedGpuTexture> target);
 
-		void ProcessCompletedLoads();
+		void ProcessCompletedLoads(CommandBuffer& cmd);
 
 	private:
 		AsyncTextureLoader() = default;
@@ -74,8 +76,8 @@ namespace SableUI
 
 		static int GetNumInstances();
 
-		void LoadTexture(const std::string& path);
-		void LoadTextureOptimised(const std::string& path, int width = -1, int height = -1);
+		void LoadTexture(CommandBuffer& cmd, const std::string& path);
+		void LoadTextureOptimised(CommandBuffer& cmd, const std::string& path, int width = -1, int height = -1);
 
 		void SetDefaultTexture(uint32_t texID);
 		void Bind();
@@ -89,10 +91,10 @@ namespace SableUI
 		int m_width = -1;
 		int m_height = -1;
 
-		const GpuTexture2D* GetGpuTexture() const;
+		ResourceHandle GetGpuTexture() const;
 
 	private:
-		void GenerateDefaultTexture();
+		void GenerateDefaultTexture(CommandBuffer& cmd);
 
 		uint32_t m_defaultTexID = 0;
 		std::shared_ptr<CachedGpuTexture> m_cachedGpu;

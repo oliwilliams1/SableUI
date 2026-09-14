@@ -15,7 +15,7 @@ namespace SableUI
 		void Init(State<InputFieldData>& data, const ElementInfo& info);
 		void ContentRight() override;
 
-		void OnUpdatePostLayout(const UIEventContext& ctx) override;
+		void OnUpdatePostLayout(const UIUpdateContext& ctx) override;
 
 	private:
 		State<CalendarContext> calendarCtx{ this, {} };

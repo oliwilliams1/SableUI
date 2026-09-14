@@ -1,15 +1,17 @@
 #pragma once
+#include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
+#include <SableUI/types/renderer_types.h>
+#include <SableUI/types/floating_panel_types.h>
 #include <SableUI/renderer/renderer.h>
 #include <SableUI/core/panel.h>
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/utils/memory.h>
-#include <SableUI/utils/console.h>
-#include <SableUI/core/drawable.h>
 
+#include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <array>
-#include <vector>
 
 struct GLFWcursor;
 struct GLFWwindow;
@@ -68,23 +70,33 @@ namespace SableUI
 		SableString GetClipboardContent();
 		void SetClipboardContent(const SableString& content);
 
-		UIEventContext ctx;
+		UIInputState ctx;
 		ivec2 m_windowSize = { 0, 0 };
 
-		void SubmitCustomQueue(CustomTargetQueue* queue);
-		void RemoveQueueReference(CustomTargetQueue* queue);
-		GpuFramebuffer* GetSurface() { return &m_windowSurface; }
-		RendererBackend* GetBaseRenderer() const { return m_baseRenderer; }
+		ResourceHandle GetSurface() const { return m_windowSurface; }
+		RendererBackend* GetRenderer() const { return m_renderer; }
+		CommandBuffer& GetMainCommandBuffer() { return m_mainCommandBuffer; }
+
+		void UnregisterFloatingPanel(int id);
+		void RegisterFloatingPanel(int id, FloatingPanelBase* panel);
+		void ReassociateFloatingPanel(int id, FloatingPanelBase* panel);
+		void BuildCompositeCommandBuffer();
+		FloatingPanelEntry& GetFloatingPanelEntry(int id);
 
 		void MakeContextCurrent();
 		bool IsMinimized() const;
 	
 	private:
-		GpuFramebuffer m_baseFramebuffer;
-		RendererBackend* m_baseRenderer = nullptr;
-		GpuTexture2D m_baseColourAttachment;
+		RendererBackend* m_renderer = nullptr;
+		ResourceHandle m_windowSurface;
 
-		GpuFramebuffer m_windowSurface;
+		ResourceHandle m_framebuffer;
+		ResourceHandle m_colourAttachment;
+
+		CommandBuffer m_mainCommandBuffer{};
+		CommandBuffer m_compositeCommandBuffer{};
+		
+		std::unordered_map<int, FloatingPanelEntry> m_floatingPanels;
 
 		void HandleResize();
 		GLFWcursor* CheckResize(BasePanel* node, bool* resCalled, bool isLastChild);
@@ -119,8 +131,6 @@ namespace SableUI
 
 		std::array<double, SABLE_MAX_MOUSE_BUTTONS> m_lastClickTime = {};
 		std::array<ivec2, SABLE_MAX_MOUSE_BUTTONS> m_lastClickPos = {};
-
-		std::vector<CustomTargetQueue*> m_customTargetQueues;
 
 	private:
 		int m_syncFrames = 2;

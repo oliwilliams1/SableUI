@@ -1,10 +1,9 @@
 #pragma once
-#include <SableUI/core/component.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/core/events.h>
 #include <SableUI/renderer/renderer.h>
-#include <SableUI/renderer/gpu_framebuffer.h>
-#include <SableUI/utils/utils.h>
 #include <SableUI/core/drawable.h>
+#include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
 #include <vector>
 #include <string>
@@ -20,20 +19,20 @@ namespace SableUI
         virtual ~BasePanel();
         static int GetNumInstances();
 
-        virtual void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) {};
-        virtual void Recalculate(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) {};
+        virtual void Render(const DrawableDrawData& drData) {};
+        virtual void Recalculate(const DrawableDrawData& drData) {};
 
-        virtual SplitterPanel* AddSplitter(PanelType type) = 0;
-        virtual ContentPanel* AddPanel() = 0;
+        virtual SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) = 0;
+        virtual ContentPanel* AddPanel(CommandBuffer& cmd) = 0;
 
         virtual void CalculateScales() {};
-        virtual void CalculatePositions(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) {};
+        virtual void CalculatePositions(const DrawableDrawData& drData) {};
         virtual void CalculateMinBounds() {};
-        virtual void Update(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) {};
+        virtual void Update(const DrawableDrawData& drData) {};
 
-        virtual void DistributeEvents(const UIEventContext& ctx);
-        virtual bool UpdateComponents(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources);
-        virtual void PostLayoutUpdate(const UIEventContext& ctx);
+        virtual void DistributeEvents(const UIInputState& ctx, int z);
+        virtual bool UpdateComponents(const DrawableDrawData& drData);
+        virtual void PostLayoutUpdate(const UIInputState& ctx, int z);
 
         virtual Element* GetElementById(const SableString& id);
 
@@ -61,14 +60,14 @@ namespace SableUI
         static int GetNumInstances();
 
         void Resize(int w, int h);
-        void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
-        void Recalculate(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void Render(const DrawableDrawData& drData) override;
+        void Recalculate(const DrawableDrawData& drData) override;
 
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
 
         void CalculateScales() override;
-        void CalculatePositions(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void CalculatePositions(const DrawableDrawData& drData) override;
     };
 
     struct SplitterPanel : public BasePanel
@@ -77,15 +76,15 @@ namespace SableUI
         ~SplitterPanel();
         static int GetNumInstances();
 
-        void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void Render(const DrawableDrawData& drData) override;
 
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
 
         void CalculateScales() override;
-        void CalculatePositions(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void CalculatePositions(const DrawableDrawData& drData) override;
         void CalculateMinBounds() override;
-        void Update(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void Update(const DrawableDrawData& drData) override;
 
         int bSize = 1;
 
@@ -94,22 +93,23 @@ namespace SableUI
         bool m_drawableUpToDate = false;
     };
 
+    class BaseComponent;
     struct ContentPanel : public BasePanel
     {
         ContentPanel(BasePanel* parent, RendererBackend* renderer);
         ~ContentPanel();
         static int GetNumInstances();
 
-        void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
-        SplitterPanel* AddSplitter(PanelType type) override;
-        ContentPanel* AddPanel() override;
+        void Render(const DrawableDrawData& drData) override;
+        SplitterPanel* AddSplitter(CommandBuffer& cmd, PanelType type) override;
+        ContentPanel* AddPanel(CommandBuffer& cmd) override;
         BaseComponent* AttachComponent(const std::string& componentName);
 
-        void Update(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
+        void Update(const DrawableDrawData& drData) override;
 
-        void DistributeEvents(const UIEventContext& ctx) override;
-        bool UpdateComponents(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
-        void PostLayoutUpdate(const UIEventContext& ctx) override;
+        void DistributeEvents(const UIInputState& ctx, int z) override;
+        bool UpdateComponents(const DrawableDrawData& drData) override;
+        void PostLayoutUpdate(const UIInputState& ctx, int z) override;
 
         BaseComponent* GetComponent() const { return m_component; }
         Element* GetElementById(const SableString& id) override;

@@ -3,6 +3,7 @@
 #include <SableUI/core/events.h>
 #include <SableUI/core/drawable.h>
 #include <SableUI/core/text.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <SableUI/utils/utils.h>
 #include <vector>
 #include <string>
@@ -52,9 +53,7 @@ namespace SableUI
 
 	struct AppearanceProps {
 		std::optional<Colour> bg = std::nullopt;
-		Colour hoverBg = { 0, 0, 0, 0 };
 		std::optional<Colour> borderColour = std::nullopt;
-		bool hasHoverBg = false;
 		bool inheritBg = true;
 		float rTL = 0.0f, rTR = 0.0f, rBL = 0.0f, rBR = 0.0f;
 
@@ -118,12 +117,12 @@ namespace SableUI
 		// functions for engine
 		void Init(RendererBackend* renderer);
 		void SetInfo(const ElementInfo& info);
-		void SetRect(const Rect& rect);
+		void SetRect(CommandBuffer& cmd, const Rect& rect);
 		void AddChild(Element* child);
 		void AddChild(Child* component);
-		void SetImage(const std::string& path);
-		void SetText(const SableString& text);
-		int GetMinWidth();
+		void SetImage(CommandBuffer& cmd, const std::string& path);
+		void SetText(CommandBuffer& cmd, const SableString& text);
+		int GetMinWidth(CommandBuffer& cmd);
 		int GetMinHeight();
 
 		ElementInfo info;
@@ -135,27 +134,23 @@ namespace SableUI
 		void BuildSingleElementFromVirtual(VirtualNode* vnode);
 
 		// event system
-		void DistributeInputToElements(const UIEventContext& ctx);
-		bool CheckElementTreeForChanges(CommandBuffer& cmd, const GpuFramebuffer* fbo, ContextResources& ctx);
+		void DistributeInputToElements(const UIInputState& ctx, int z);
+		bool CheckElementTreeForChanges(const DrawableDrawData& drData);
 		Element* GetElementById(const SableString& id);
 
 		// rendering
-		void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& countextResources, int z = 1);
+		void Render(const DrawableDrawData& drData, int z = 1);
 		Rect rect = { 0, 0, 0, 0 };
 		bool clipEnabled = false;
 		Rect clipRect = { 0, 0, 0, 0 };
 
 		// children handling
-		void LayoutChildren();
+		void LayoutChildren(CommandBuffer& cmd);
 		bool layoutDirty = false;
 		int measuredHeight = 0;
 		std::vector<Child*> children;
 
-		// logic for hover styling
-		void RegisterForHover();
 		BaseComponent* m_owner = nullptr;
-		bool isHovered = false;
-		bool wasHovered = false;
 		std::optional<Colour> originalBg = std::nullopt;
 
 	private:

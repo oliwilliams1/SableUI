@@ -3,13 +3,15 @@
 #include <SableUI/core/text.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/renderer/renderer.h>
-#include <SableUI/renderer/gpu_framebuffer.h>
+#include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
 #include <vector>
 #include <optional>
 #include <cstdint>
 
 namespace SableUI
 {
+	class BaseComponent;
 	enum class PanelType
 	{
 		Root,
@@ -45,13 +47,26 @@ namespace SableUI
 		float pos[2];
 	};
 
-	void SetupGlobalResources(RendererBackend* renderer);
-	void DestroyGlobalResources(RendererBackend* renderer);
-	void SetupContextBindings(RendererBackend* renderer);
-	void DestroyContextResources(RendererBackend* renderer);
-	class RendererBackend;
-	ContextResources& GetContextResources(RendererBackend* backend);
+	struct DrawableDrawData
+	{
+		DrawableDrawData(CommandBuffer& cmd, ResourceHandle framebuffer, const Rect& fbRect, ContextResources& contextResources)
+			: cmd(cmd),
+			framebuffer(framebuffer), 
+			fbRect(fbRect),
+			contextResources(contextResources) {}
+
+		CommandBuffer& cmd;
+		ResourceHandle framebuffer;
+		Rect fbRect;
+		ContextResources& contextResources;
+	};
+
+	void DestroyGlobalResources(CommandBuffer& cmd, RendererBackend* renderer);
 	GlobalResources& GetGlobalResources();
+
+	void SetupContextResources(CommandBuffer& cb, RendererBackend* renderer);
+	void DestroyContextResources(CommandBuffer& cmd, RendererBackend* renderer);
+	ContextResources& GetContextResources(RendererBackend* backend);
 
 	class DrawableBase
 	{
@@ -59,11 +74,8 @@ namespace SableUI
 		DrawableBase();
 		virtual ~DrawableBase();
 		static int GetNumInstances();
-		
-		virtual void RecordCommands(
-			CommandBuffer& cmd, 
-			const GpuFramebuffer* framebuffer, 
-			ContextResources& contextResources) = 0;
+
+		virtual void RecordCommands(const DrawableDrawData& data) = 0;
 
 		void setZ(int z) { this->m_zIndex = z; }
 		int m_zIndex = 0;
@@ -85,9 +97,9 @@ namespace SableUI
 		DrawableRect();
 		~DrawableRect();
 		static int GetNumInstances();
-		
+
 		void Update(
-			const Rect& rect, 
+			const Rect& rect,
 			std::optional<Colour> colour,
 			float rTL, float rTR,
 			float rBL, float rBR,
@@ -97,10 +109,7 @@ namespace SableUI
 			bool clipEnabled,
 			const Rect& clipRect);
 
-		void RecordCommands(
-			CommandBuffer& cmd,
-			const GpuFramebuffer* framebuffer,
-			ContextResources& contextResources) override;
+		void RecordCommands(const DrawableDrawData& data) override;
 
 		std::optional<Colour> m_colour = std::nullopt;
 		std::optional<Colour> m_borderColour = std::nullopt;
@@ -113,7 +122,7 @@ namespace SableUI
 		DrawableSplitter(Rect& r, Colour colour);
 		~DrawableSplitter();
 		static int GetNumInstances();
-		
+
 		void Update(
 			Rect& rect,
 			Colour colour,
@@ -121,10 +130,7 @@ namespace SableUI
 			float pBSize = 0.0f,
 			const std::vector<int>& segments = { 0 });
 
-		void RecordCommands(
-			CommandBuffer& cmd,
-			const GpuFramebuffer* framebuffer,
-			ContextResources& contextResources) override;
+		void RecordCommands(const DrawableDrawData& data) override;
 
 		Colour m_colour = { 255, 255, 255, 255 };
 		int m_bSize = 2;
@@ -138,21 +144,18 @@ namespace SableUI
 		DrawableImage();
 		~DrawableImage();
 		static int GetNumInstances();
-		
+
 		void Update(
 			Rect& rect,
 			float rTL, float rTR,
 			float rBL, float rBR,
 			std::optional<Colour> borderColour,
-			int bT, int bB, 
+			int bT, int bB,
 			int bL, int bR,
 			bool clipEnabled,
 			const Rect& clipRect);
 
-		void RecordCommands(
-			CommandBuffer& cmd,
-			const GpuFramebuffer* framebuffer,
-			ContextResources& contextResources) override;
+		void RecordCommands(const DrawableDrawData& data) override;
 
 		void RegisterTextureDependancy(BaseComponent* component);
 		void DeregisterTextureDependancy(BaseComponent* component);
@@ -167,9 +170,11 @@ namespace SableUI
 		DrawableText();
 		~DrawableText();
 		static int GetNumInstances();
-		void Update(Rect& rect, bool clipEnabled,
-			const Rect& clipRect);
-		void RecordCommands(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources) override;
-		_Text m_text;
+
+		void Update(Rect& rect, bool clipEnabled, const Rect& clipRect);
+
+		void RecordCommands(const DrawableDrawData& data) override;
+
+		TextObj m_text;
 	};
 }

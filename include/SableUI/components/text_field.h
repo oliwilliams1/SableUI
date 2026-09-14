@@ -5,6 +5,7 @@
 #include <SableUI/core/events.h>
 #include <SableUI/utils/utils.h>
 #include <SableUI/core/element.h>
+#include <SableUI/states/state.h>
 #include <functional>
 
 namespace SableUI
@@ -35,8 +36,8 @@ namespace SableUI
 		virtual void ContentLeft() {};
 		virtual void ContentRight() {};
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
-		void OnUpdatePostLayout(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
+		void OnUpdatePostLayout(const UIUpdateContext& ctx) override;
 
 	protected:
 		ElementInfo info;
@@ -50,7 +51,7 @@ namespace SableUI
 		Interval m_cursorBlinkInterval{ this };
 
 		bool queueInitialised = false;
-		CustomTargetQueue queue;
+		//CustomTargetQueue queue;
 		Window* m_window = nullptr;
 		bool m_multiline = false;
 

@@ -5,6 +5,8 @@
 #include <SableUI/utils/utils.h>
 #include <SableUI/utils/memory.h>
 #include <SableUI/states/state_base.h>
+#include <SableUI/core/drawable.h>
+#include <SableUI/types/floating_panel_types.h>
 #include <type_traits>
 #include <vector>
 #include <string>
@@ -12,7 +14,6 @@
 
 namespace SableUI
 {
-	class FloatingPanelStateBase;
 	class Window;
 	class BaseComponent
 	{
@@ -22,8 +23,8 @@ namespace SableUI
 		virtual ~BaseComponent();
 
 		virtual void Layout() {};
-		virtual void OnUpdate(const UIEventContext& ctx) {};
-		virtual void OnUpdatePostLayout(const UIEventContext& ctx) {};
+		virtual void OnUpdate(const UIUpdateContext& ctx) {};
+		virtual void OnUpdatePostLayout(const UIUpdateContext& ctx) {};
 
 		void LayoutWrapper();
 		void BackendInitialisePanel();
@@ -31,7 +32,7 @@ namespace SableUI
 		void BackendInitialiseFloatingPanel(const Rect& rect, const ElementInfo& p_info = {});
 		void SetRenderer(RendererBackend* renderer);
 		RendererBackend* GetRenderer();
-		void Render(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, int z = 0);
+		void Render(const DrawableDrawData& drData, int z = 0);
 
 		BaseComponent* AddComponent(const std::string& componentName);
 		template <typename T>
@@ -40,14 +41,14 @@ namespace SableUI
 		Element* GetRootElement();
 		void SetRootElement(Element* element);
 		int GetNumChildren() const;
-		bool Rerender(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources, bool* hasContentsChanged = nullptr);
+		bool Rerender(const DrawableDrawData& drData, bool* hasContentsChanged = nullptr);
 
-		void HandleInput(const UIEventContext& ctx);
-		bool CheckAndUpdate(CommandBuffer& cmd, const GpuFramebuffer* framebuffer, ContextResources& contextResources);
-		void PostLayoutUpdate(const UIEventContext& ctx);
+		void HandleInput(const UIInputState& ctx, int z);
+		bool CheckAndUpdate(const DrawableDrawData& drData);
+		void PostLayoutUpdate(const UIInputState& ctx, int z);
 
 		void RegisterState(StateBase* state);
-		void RegisterFloatingPanel(FloatingPanelStateBase* state);
+		void RegisterFloatingPanel(FloatingPanelBase* state);
 
 		void MarkDirty();
 		bool IsDirty() const { return needsRerender; }
@@ -56,21 +57,17 @@ namespace SableUI
 		Element* GetElementById(const SableString& id);
 
 		std::vector<BaseComponent*> m_componentChildren;
-		void RegisterHoverElement(Element* el);
 
 	protected:
 		std::vector<BaseComponent*> m_garbageChildren;
 		std::vector<StateBase*> m_states;
-		std::vector<FloatingPanelStateBase*> m_floatingPanels;
-		std::vector<Element*> m_hoverElements;
-
-		void UpdateHoverStyling(const UIEventContext& ctx);
+		std::vector<FloatingPanelBase*> m_floatingPanels;
 
 	private:
 		bool needsRerender = false;
 		BaseComponent* AttachComponent(BaseComponent* component);
-		UIEventContext m_lastEventCtx;
-		Element* rootElement = nullptr;
+		UIInputState m_lastInputState;
+		Element* m_rootElement = nullptr;
 		size_t m_hash = 0;
 		RendererBackend* m_renderer = nullptr;
 		Colour m_bgColour = Colour{ 32, 32, 32 };

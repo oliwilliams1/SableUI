@@ -8,11 +8,11 @@
 
 namespace SableUI
 {
-	class Button : public BaseComponent
+	class ButtonComponent : public BaseComponent
 	{
 	public:
 		void Layout() override;
-		void OnUpdate(const UIEventContext& ctx) override;
+		void OnUpdate(const UIUpdateContext& ctx) override;
 
 		void Init(const SableString& label,
 			std::function<void()> callback,
@@ -31,7 +31,7 @@ namespace SableUI
 #define Button(label, callback, ...)											\
 	ComponentScopedWithStyle(													\
 		btn,																	\
-		SableUI::Button,														\
+		SableUI::ButtonComponent,												\
 		this,																	\
 		SableUI::StripAppearanceStyles(SableUI::PackStyles(__VA_ARGS__))		\
 	)																			\

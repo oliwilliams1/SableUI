@@ -5,13 +5,13 @@ out vec2 uv;
 
 layout(std140, binding = 1) uniform RectBlock
 {
-	vec4  uRect;         // x, y, w, h (NDC)
-	vec4  uColour;
-	vec4  uBorderColour;
-	vec4  uRealRect;     // x, y, w, h (pixels)
-	vec4  uRadius;       // tl, tr, bl, br
-	ivec4 uBorderSize;   // t, b, l, r
-	int   uUseTexture;
+	vec4	uRect;			// x, y, w, h (NDC)
+	vec4	uColour;
+	vec4	uBorderColour;
+	vec4	uRealRect;		// x, y, w, h (pixels)
+	vec4	uRadius;		// tl, tr, bl, br
+	ivec4	uBorderSize;	// t, b, l, r
+	int		uUseTexture;
 };
 
 void main()

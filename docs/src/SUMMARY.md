@@ -4,29 +4,22 @@
     - [What is SableUI?](what-is-sableui.md)
     - [Getting Started](getting-started.md)
     - [Your First Application](your-first-application.md)
-    - [Troubleshooting](troubleshooting-configuration.md)
 
 - [Core Concepts]()
     - [Components & Lifecycle]()
-    - [State Management (`useState`, `useRef`)]()
     - [Element Tree & Layout]()
     - [Styling Guide](styling-guide.md)
-    - [Panel System]()
-    - [Events]()
+    - [State Management](state-management.md)
 
 - [API Reference]()
-    - [Components]()
-    - [Style macro reference](style-reference.md)
-    - [Element Type]()
     - [Panels]()
+    - [Components]()
+    - [Elements]()
+    - [Styling Modifiers](style-reference.md)
     - [State Management]()
     - [Events](events.md)
-    - [SableString](sablestring.md)
+    - [Theming](theming.md)
     - [Utilities]()
-
-- [Examples](examples.md)
-    - [Todo List]()
-    - [Modal](modal.md)
 
 - [Advanced Topics]()
     - [Virtual DOM & Reconciliation]()
@@ -34,6 +27,8 @@
     - [Memory Mangement]()
     - [Text Rendering]()
     - [Graphics Backends]()
+
+- [Components](components.md)
 
 - [Contributing/Development]()
     - [Building from source]()

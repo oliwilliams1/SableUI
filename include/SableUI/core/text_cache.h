@@ -1,4 +1,8 @@
 #pragma once
+#include <SableUI/renderer/resource_handle.h>
+#include <SableUI/renderer/command_buffer.h>
+#include <SableUI/types/renderer_types.h>
+#include <SableUI/core/text.h>
 #include <unordered_map>
 #include <chrono>
 #include <cstdint>
@@ -7,13 +11,9 @@
 
 namespace SableUI
 {
-	struct _Text;
-	struct GpuObject;
-	enum class TextJustification;
-	class RendererBackend;
 	struct TextCacheKey
 	{
-		TextCacheKey(const _Text* text);
+		TextCacheKey(const TextObj* text);
 		uint64_t stringHash;
 		int maxWidth;
 		int fontSize;
@@ -58,32 +58,26 @@ namespace SableUI
 {
 	struct TextCache
 	{
-		GpuObject* gpuObject;
+		ResourceHandle gpuHandle;
 		int refCount;
 		int maxWidth;
 		int height;
 		int lastConsumedFrame;
 
-		bool operator==(const TextCache& other) const { return gpuObject == other.gpuObject; }
+		bool operator==(const TextCache& other) const { return gpuHandle == other.gpuHandle; }
 	};
 
 	class TextCacheFactory
 	{
 	public:
-		static GpuObject* Get(const _Text* key, int& height);
-		static void Release(RendererBackend* renderer, const TextCacheKey& key);
-		static void ShutdownFactory(RendererBackend* renderer);
-		static void CleanCache(RendererBackend* renderer);
-
-		static std::vector<const TextCacheFactory*> GetFactories();
+		void CleanCache(CommandBuffer& cmd);
+		ResourceHandle Get(CommandBuffer& cmd, const TextObj* key, int& height);
+		void Release(TextCacheKey key);
+		void Delete(CommandBuffer& cmd, TextCacheKey key);
 		int GetNumInstances() const;
 
 	private:
-		void CleanCache_priv();
 		int m_currentFrame = 0;
-		GpuObject* Get_priv(const _Text* key, int& height);
-		void Release_priv(TextCacheKey key);
-		void Delete(TextCacheKey key);
 		std::unordered_map<TextCacheKey, TextCache> m_cache;
 	};
 }

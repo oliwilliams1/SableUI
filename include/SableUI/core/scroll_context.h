@@ -31,7 +31,7 @@ namespace SableUI
         std::string GetBarID() const { return "BAR_" + std::to_string((size_t)this); }
     };
 
-    void ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIEventContext& eventCtx);
+    void ScrollUpdateHandler_Phase1(BaseComponent* comp, ScrollContext& ctx, const UIInputState& eventCtx);
     void ScrollUpdateHandler_Phase2(BaseComponent* comp, ScrollContext& ctx);
 
     struct ScrollViewScope
@@ -47,8 +47,8 @@ namespace SableUI
     };
 }
 
-#define ScrollUpdateHandler(scrollCtx)                          \
-    SableUI::ScrollUpdateHandler_Phase1(this, scrollCtx, ctx)
+#define ScrollUpdateHandler(scrollCtx, ctx)                     \
+    SableUI::ScrollUpdateHandler_Phase1(this, scrollCtx, ctx.input)
 
 #define ScrollUpdatePostLayoutHandler(scrollCtx)                \
     SableUI::ScrollUpdateHandler_Phase2(this, scrollCtx)

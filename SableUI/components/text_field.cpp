@@ -122,22 +122,24 @@ void SableUI::TextFieldComponent::Layout()
 	}
 }
 
-void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
+void SableUI::TextFieldComponent::OnUpdate(const UIUpdateContext& ctx)
 {
 	if (!externalState) return;
 	InputFieldData dataCopy = externalState->get();
 
-	if (ctx.IsFired(m_cursorBlinkInterval.GetHandle()))
+	const auto& input = ctx.input;
+
+	if (input.IsFired(m_cursorBlinkInterval.GetHandle()))
 	{
 		cursorVisible.set(!cursorVisible.get());
 	}
 
-	bool ctrlDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_CONTROL) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_CONTROL));
-	bool shiftDown = (ctx.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || ctx.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
+	bool ctrlDown = (input.isKeyDown.test(SABLE_KEY_LEFT_CONTROL) || input.isKeyDown.test(SABLE_KEY_RIGHT_CONTROL));
+	bool shiftDown = (input.isKeyDown.test(SABLE_KEY_LEFT_SHIFT) || input.isKeyDown.test(SABLE_KEY_RIGHT_SHIFT));
 	bool sectionHighlighted = initialCursorPos >= 0 && initialCursorPos != cursorPos;
-	bool vPressed = ctx.keyPressedEvent.test(SABLE_KEY_V);
-	bool cPressed = ctx.keyPressedEvent.test(SABLE_KEY_C);
-	bool xPressed = ctx.keyPressedEvent.test(SABLE_KEY_X);
+	bool vPressed = input.keyPressedEvent.test(SABLE_KEY_V);
+	bool cPressed = input.keyPressedEvent.test(SABLE_KEY_C);
+	bool xPressed = input.keyPressedEvent.test(SABLE_KEY_X);
 	bool change = false;
 	
 	if (dataCopy.isFocused && ctrlDown && (cPressed || xPressed))
@@ -203,12 +205,12 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		}
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT_SHIFT) || ctx.keyPressedEvent.test(SABLE_KEY_RIGHT_SHIFT))
+	if (input.keyPressedEvent.test(SABLE_KEY_LEFT_SHIFT) || input.keyPressedEvent.test(SABLE_KEY_RIGHT_SHIFT))
 	{
 		initialCursorPos.set(cursorPos);
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_ESCAPE))
+	if (input.keyPressedEvent.test(SABLE_KEY_ESCAPE))
 	{
 		if (initialCursorPos == -1)
 		{
@@ -216,8 +218,8 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 			{
 				dataCopy.isFocused = false;
 				m_cursorBlinkInterval.Stop();
-				if (queueInitialised)
-					queue.window->RemoveQueueReference(&queue);
+				//if (queueInitialised)
+				//	queue.window->RemoveQueueReference(&queue);
 				change = true;
 			}
 		}
@@ -225,12 +227,12 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		initialCursorPos.set(-1);
 	}
 
-	if (ctx.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT) || ctx.mousePressed.test(SABLE_MOUSE_BUTTON_RIGHT))
+	if (input.mousePressed.test(SABLE_MOUSE_BUTTON_LEFT) || input.mousePressed.test(SABLE_MOUSE_BUTTON_RIGHT))
 	{
 		Element* el = GetElementById("TextField");
 		if (el)
 		{
-			bool clickedInside = RectBoundingBox(el->rect, ctx.mousePos);
+			bool clickedInside = RectBoundingBox(el->rect, input.mousePos);
 
 			if (clickedInside)
 			{
@@ -248,8 +250,8 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 				{
 					dataCopy.isFocused = false;
 					m_cursorBlinkInterval.Stop();
-					if (queueInitialised)
-						queue.window->RemoveQueueReference(&queue);
+					//if (queueInitialised)
+					//	queue.window->RemoveQueueReference(&queue);
 					change = true;
 				}
 			}
@@ -263,7 +265,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		return;
 	}
 
-	if (ctx.typedCharBuffer.size() != 0)
+	if (input.typedCharBuffer.size() != 0)
 	{
 		SableString baseText = dataCopy.content;
 		int newCursor = cursorPos;
@@ -272,7 +274,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 			DeleteSelection(baseText, newCursor, initialCursorPos.get());
 
 		SableString newText = baseText.substr(0, newCursor);
-		for (unsigned int c : ctx.typedCharBuffer)
+		for (unsigned int c : input.typedCharBuffer)
 		{
 			if (!m_multiline && (c == '\n' || c == '\r'))
 				continue;
@@ -283,12 +285,12 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		newText = newText + baseText.substr(newCursor);
 
 		dataCopy.content = newText;
-		cursorPos.set(newCursor + ctx.typedCharBuffer.size());
+		cursorPos.set(newCursor + input.typedCharBuffer.size());
 		initialCursorPos.set(-1);
 		change = true;
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_BACKSPACE))
+	if (input.keyPressedEvent.test(SABLE_KEY_BACKSPACE))
 	{
 		if (sectionHighlighted)
 		{
@@ -318,7 +320,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		change = true;
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_DELETE))
+	if (input.keyPressedEvent.test(SABLE_KEY_DELETE))
 	{
 		if (sectionHighlighted)
 		{
@@ -346,7 +348,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		change = true;
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_ENTER))
+	if (input.keyPressedEvent.test(SABLE_KEY_ENTER))
 	{
 		if (m_multiline)
 		{
@@ -374,7 +376,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		}
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_LEFT))
+	if (input.keyPressedEvent.test(SABLE_KEY_LEFT))
 	{
 		if (sectionHighlighted)
 			cursorPos.set(std::min(cursorPos.get(), initialCursorPos.get()));
@@ -390,7 +392,7 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 		change = true;
 	}
 
-	if (ctx.keyPressedEvent.test(SABLE_KEY_RIGHT))
+	if (input.keyPressedEvent.test(SABLE_KEY_RIGHT))
 	{
 		if (sectionHighlighted)
 			cursorPos.set(std::max(cursorPos.get(), initialCursorPos.get()));
@@ -416,70 +418,70 @@ void SableUI::TextFieldComponent::OnUpdate(const UIEventContext& ctx)
 	externalState->set(dataCopy);
 }
 
-void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::TextFieldComponent::OnUpdatePostLayout(const UIUpdateContext& ctx)
 {
 	if (!externalState || !externalState->get().isFocused || !m_window) return;
 
 	if (!queueInitialised)
 	{
-		queue.window = m_window;
-		queue.target = m_window->GetSurface();
-		queueInitialised = true;
+		//queue.window = m_window;
+		//queue.target = m_window->GetSurface();
+		//queueInitialised = true;
 	}
 
-	StartCustomLayoutScope(&queue);
+	//StartCustomLayoutScope(&queue);
 
-	Element* text = GetElementById("TextFieldText");
-	if (!text)
-	{
-		EndCustomLayoutScope(&queue);
-		return;
-	}
+	//Element* text = GetElementById("TextFieldText");
+	//if (!text)
+	//{
+	//	EndCustomLayoutScope(&queue);
+	//	return;
+	//}
 
-	auto cursorInfo = QueryCursorPosition(
-		externalState->get().content,
-		cursorPos,
-		text->rect.w,
-		text->info.text.fontSize,
-		text->info.text.lineHeight,
-		text->info.text.justification.value_or(TextJustification::Left)
-	);
+	//auto cursorInfo = QueryCursorPosition(
+	//	externalState->get().content,
+	//	cursorPos,
+	//	text->rect.w,
+	//	text->info.text.fontSize,
+	//	text->info.text.lineHeight,
+	//	text->info.text.justification.value_or(TextJustification::Left)
+	//);
 
-	if (cursorVisible.get())
-	{
-		Rect cursorRect = {
-			text->rect.x + cursorInfo.x,
-			text->rect.y + cursorInfo.y,
-			1,
-			cursorInfo.lineHeight
-		};
+	//if (cursorVisible.get())
+	//{
+	//	Rect cursorRect = {
+	//		text->rect.x + cursorInfo.x,
+	//		text->rect.y + cursorInfo.y,
+	//		1,
+	//		cursorInfo.lineHeight
+	//	};
 
-		queue.AddRect(cursorRect, Colour(220, 220, 220));
-	}
+	//	queue.AddRect(cursorRect, Colour(220, 220, 220));
+	//}
 
-	if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
-	{
-		auto initialCursorInfo = QueryCursorPosition(
-			externalState->get().content,
-			initialCursorPos,
-			text->rect.w,
-			text->info.text.fontSize,
-			text->info.text.lineHeight,
-			text->info.text.justification.value_or(TextJustification::Left)
-		);
+	//if (initialCursorPos >= 0 && initialCursorPos != cursorPos)
+	//{
+	//	auto initialCursorInfo = QueryCursorPosition(
+	//		externalState->get().content,
+	//		initialCursorPos,
+	//		text->rect.w,
+	//		text->info.text.fontSize,
+	//		text->info.text.lineHeight,
+	//		text->info.text.justification.value_or(TextJustification::Left)
+	//	);
 
-		if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
-		{
-			Rect highlightRect = {
-				text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
-				text->rect.y + cursorInfo.y,
-				std::abs(initialCursorInfo.x - cursorInfo.x),
-				cursorInfo.lineHeight
-			};
+	//	if (cursorInfo.lineIndex == initialCursorInfo.lineIndex)
+	//	{
+	//		Rect highlightRect = {
+	//			text->rect.x + std::min(initialCursorInfo.x, cursorInfo.x),
+	//			text->rect.y + cursorInfo.y,
+	//			std::abs(initialCursorInfo.x - cursorInfo.x),
+	//			cursorInfo.lineHeight
+	//		};
 
-			queue.AddRect(highlightRect, Colour(80, 150, 255, 120));
-		}
-	}
+	//		queue.AddRect(highlightRect, Colour(80, 150, 255, 120));
+	//	}
+	//}
 
-	EndCustomLayoutScope(&queue);
+	//EndCustomLayoutScope(&queue);
 }

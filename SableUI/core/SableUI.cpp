@@ -144,7 +144,7 @@ SableUI::SplitterPanel* SableUI::StartSplitter(PanelType orientation)
 		return nullptr;
 	}
 
-	SableUI::SplitterPanel* splitter = s_currentPanel->AddSplitter(orientation);
+	SableUI::SplitterPanel* splitter = s_currentPanel->AddSplitter(_getCurrentContext()->GetMainCommandBuffer(), orientation);
 	splitter->maxBounds = g_nextPanelMaxBounds;
 	g_nextPanelMaxBounds = { 0, 0 };
 
@@ -185,7 +185,7 @@ SableUI::ContentPanel* SableUI::AddPanel()
 		return nullptr;
 	}
 
-	SableUI::ContentPanel* panel = s_currentPanel->AddPanel();
+	SableUI::ContentPanel* panel = s_currentPanel->AddPanel(_getCurrentContext()->GetMainCommandBuffer());
 	panel->maxBounds = g_nextPanelMaxBounds;
 	panel->minBounds = g_nextPanelMinBounds;
 	g_nextPanelMinBounds = { 20, 20 };
@@ -217,7 +217,7 @@ void SableUI::SetElementBuilderContext(RendererBackend* renderer, Element* rootE
 	{
 		if (rootElement == nullptr)
 		{
-			SableUI_Error("rootElement is nullptr in SetElementBuilderContext");
+			SableUI_Error("m_rootElement is nullptr in SetElementBuilderContext");
 			return;
 		}
 
@@ -272,7 +272,6 @@ void SableUI::StartDiv(const ElementInfo& p_info, BaseComponent* child)
 	Element* newDiv = SB_new<Element>(s_rendererStack.top(), info);
 
 	newDiv->m_owner = parent->m_owner;
-	newDiv->RegisterForHover();
 
 	if (child == nullptr)
 	{
@@ -322,7 +321,6 @@ void SableUI::AddRect(const ElementInfo& p_info)
 	Element* newRect = SB_new<Element>(s_rendererStack.top(), info);
 
 	newRect->m_owner = parent->m_owner;
-	newRect->RegisterForHover();
 
 	parent->AddChild(newRect);
 }
@@ -350,9 +348,8 @@ void SableUI::AddImage(const SableString& path, const ElementInfo& p_info)
 	Element* newImage = SB_new<Element>(s_rendererStack.top(), info);
 
 	newImage->m_owner = parent->m_owner;
-	newImage->RegisterForHover();
 
-	newImage->SetImage(path);
+	newImage->SetImage(_getCurrentContext()->GetMainCommandBuffer(), path);
 	parent->AddChild(newImage);
 }
 
@@ -386,75 +383,74 @@ void SableUI::AddText(const SableString& text, const ElementInfo& p_info)
 
 	Element* e = SB_new<Element>(s_rendererStack.top(), info);
 	e->m_owner = parent->m_owner;
-	e->RegisterForHover();
-	e->SetText(text);
+	e->SetText(_getCurrentContext()->GetMainCommandBuffer(), text);
 
 	parent->AddChild(e);
 }
 
-// ============================================================================
-// CustomLayoutTarget Element Builder
-// ============================================================================
-bool s_customLayoutMode = false;
-void SableUI::StartCustomLayoutScope(
-	CustomTargetQueue* queuePtr)
-{
-	if (s_customLayoutMode)
-		SableUI_Runtime_Error("Cannot nest custom layouts");
-
-	if (s_reconciliationMode)
-		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
-
-	if (!queuePtr->window)
-	{
-		SableUI_Runtime_Error("Custom target queue does not have a context");
-		return;
-	}
-
-	if (!queuePtr->target)
-		SableUI_Runtime_Error("Custom target queue does not have a target");
-
-	if (queuePtr != nullptr)
-	{
-		queuePtr->window->RemoveQueueReference(queuePtr);
-		for (DrawableBase* dr : queuePtr->drawables)
-			SB_delete(dr);
-			
-		queuePtr->drawables.clear();
-	}
-	else
-	{
-		SableUI_Runtime_Error("Custom target queue not initialised");
-		return;
-	}
-
-	s_rendererStack.push(queuePtr->window->GetBaseRenderer());
-	s_customLayoutMode = true;
-}
-
-void SableUI::EndCustomLayoutScope(
-	CustomTargetQueue* queuePtr)
-{
-	if (!s_customLayoutMode)
-		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
-
-	if (!queuePtr)
-	{
-		SableUI_Runtime_Error("Custom target queue not initialised");
-		return;
-	}
-
-	if (!queuePtr->window)
-	{
-		SableUI_Runtime_Error("Custom target queue does not have a context");
-		return;
-	}
-
-	queuePtr->window->SubmitCustomQueue(queuePtr);
-	s_rendererStack.pop();
-
-	s_customLayoutMode = false;
-}
+//// ============================================================================
+//// CustomLayoutTarget Element Builder
+//// ============================================================================
+//bool s_customLayoutMode = false;
+//void SableUI::StartCustomLayoutScope(
+//	CustomTargetQueue* queuePtr)
+//{
+//	if (s_customLayoutMode)
+//		SableUI_Runtime_Error("Cannot nest custom layouts");
+//
+//	if (s_reconciliationMode)
+//		SableUI_Runtime_Error("Custom layouts not supported in reconciliation yet");
+//
+//	if (!queuePtr->window)
+//	{
+//		SableUI_Runtime_Error("Custom target queue does not have a context");
+//		return;
+//	}
+//
+//	if (!queuePtr->target)
+//		SableUI_Runtime_Error("Custom target queue does not have a target");
+//
+//	if (queuePtr != nullptr)
+//	{
+//		queuePtr->window->RemoveQueueReference(queuePtr);
+//		for (DrawableBase* dr : queuePtr->drawables)
+//			SB_delete(dr);
+//			
+//		queuePtr->drawables.clear();
+//	}
+//	else
+//	{
+//		SableUI_Runtime_Error("Custom target queue not initialised");
+//		return;
+//	}
+//
+//	s_rendererStack.push(queuePtr->window->GetRenderer());
+//	s_customLayoutMode = true;
+//}
+//
+//void SableUI::EndCustomLayoutScope(
+//	CustomTargetQueue* queuePtr)
+//{
+//	if (!s_customLayoutMode)
+//		SableUI_Runtime_Error("EndCustomLayoutScope called without StartCustomLayoutScope");
+//
+//	if (!queuePtr)
+//	{
+//		SableUI_Runtime_Error("Custom target queue not initialised");
+//		return;
+//	}
+//
+//	if (!queuePtr->window)
+//	{
+//		SableUI_Runtime_Error("Custom target queue does not have a context");
+//		return;
+//	}
+//
+//	queuePtr->window->SubmitCustomQueue(queuePtr);
+//	s_rendererStack.pop();
+//
+//	s_customLayoutMode = false;
+//}
 
 SableUI::Window* SableUI::_getCurrentContext()
 {
@@ -619,8 +615,7 @@ App::App(const char* name, int width, int height, const SableUI::WindowInitInfo&
 
 	m_mainWindow = SB_new<SableUI::Window>(s_backend, nullptr, name, width, height, info);
 
-	SableUI::InitFontManager();
-	SableUI::SetupGlobalResources(m_mainWindow->GetBaseRenderer());
+	SableUI::InitFontManager(m_mainWindow->GetMainCommandBuffer());
 	
 	SetContext(m_mainWindow);
 }
@@ -733,7 +728,7 @@ void App::Render()
 App::~App()
 {
 	SableUI::DestroyFontManager();
-	SableUI::DestroyGlobalResources(m_mainWindow->GetBaseRenderer());
+	SableUI::DestroyGlobalResources(m_mainWindow->GetMainCommandBuffer(), m_mainWindow->GetRenderer());
 
 	for (SableUI::Window* window : m_secondaryWindows) SB_delete(window);
 	m_secondaryWindows.clear();

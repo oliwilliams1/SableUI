@@ -15,7 +15,6 @@
 #include <SableUI/utils/memory.h>
 #include <SableUI/utils/string.h>
 #include <SableUI/utils/utils.h>
-#include <SableUI/core/text_cache.h>
 #include <string>
 
 using namespace SableUI;
@@ -116,32 +115,19 @@ void SableUI::MemoryDebugger::Layout()
 		Text(SableString::Format("Drawable Image: %d    (%zukb)",
 			DrawableImage::GetNumInstances(),
 			SableMemory::GetSizeData(SableMemory::PoolType::DrawableImage).sizeInKB));
-		Text(SableString::Format("GPU Objects: %d    (%zukb)",
-			GpuObject::GetNumInstances(),
-			SableMemory::GetSizeData(SableMemory::PoolType::GpuObject).sizeInKB));
-		Text(SableString::Format("CustomDrawTargets: %d",
-			CustomTargetQueue::GetNumInstances()));
 
 		TextSeperator("Utilities");
-		Text(SableString::Format("Text: %d", _Text::GetNumInstances()));
+		Text(SableString::Format("Text: %d", TextObj::GetNumInstances()));
 		Text(SableString::Format("Textures: %d", Texture::GetNumInstances()));
 		Text(SableString::Format("Strings: %d", String::GetNumInstances()));
 
 		TextSeperator("Font Manager");
 		Text(SableString::Format("Font Packs: %d", FontPack::GetNumInstances()));
 		Text(SableString::Format("Font Ranges: %d", FontRange::GetNumInstances()));
-
-		int instanceCount = 0;
-		for (const TextCacheFactory* factory : TextCacheFactory::GetFactories())
-		{
-			instanceCount++;
-			Text(SableString::Format("Instance %d Text Cache: %d",
-				instanceCount, factory->GetNumInstances()));
-		}
 	}
 }
 
-void SableUI::MemoryDebugger::OnUpdate(const UIEventContext& ctx)
+void SableUI::MemoryDebugger::OnUpdate(const UIUpdateContext& ctx)
 {
 	if (live) MarkDirty();
 }
@@ -204,13 +190,13 @@ void SableUI::LayoutDebugger::Layout()
 	}
 }
 
-void SableUI::LayoutDebugger::OnUpdate(const UIEventContext& ctx)
+void SableUI::LayoutDebugger::OnUpdate(const UIUpdateContext& ctx)
 {
 	TabUpdateHandler(tabs);
-	ScrollUpdateHandler(treeScroll);
+	ScrollUpdateHandler(treeScroll, ctx);
 }
 
-void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::LayoutDebugger::OnUpdatePostLayout(const UIUpdateContext& ctx)
 {
 	ScrollUpdatePostLayoutHandler(treeScroll);
 }
@@ -268,7 +254,7 @@ void SableUI::PropertiesPanel::Layout()
 	}
 }
 
-void SableUI::PropertiesPanel::OnUpdate(const UIEventContext& ctx)
+void SableUI::PropertiesPanel::OnUpdate(const UIUpdateContext& ctx)
 {
 	if (lastSelectedHash != g_selectedHash)
 	{

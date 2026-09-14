@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(OpenGL REQUIRED)
 
 # glfw
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 add_subdirectory("vendor/glfw")
 
 # glad
@@ -117,8 +118,6 @@ add_library(SableUI STATIC
 	"include/SableUI/core/window.h"
 	"include/SableUI/generated/resources.h"
 	"include/SableUI/generated/shaders.h"
-	"include/SableUI/states/floating_panel.h"
-	"include/SableUI/states/floating_panel_base.h"
 	"include/SableUI/states/interval.h"
 	"include/SableUI/states/ref.h"
 	"include/SableUI/states/state.h"
@@ -161,7 +160,13 @@ add_library(SableUI STATIC
 	"SableUI/utils/memory.cpp"
 	"SableUI/utils/string.cpp"
 	"SableUI/utils/utils.cpp"
- "include/SableUI/types/renderer_types.h" "include/SableUI/renderer/gpu_texture.h" "include/SableUI/renderer/gpu_framebuffer.h" "include/SableUI/renderer/gpu_object.h")
+	"include/SableUI/types/renderer_types.h"
+	"include/SableUI/renderer/resource_handle.h"
+ 	"include/SableUI/renderer/command_buffer.h"
+	"SableUI/renderer/resource_handle.cpp"
+ 	"include/SableUI/states/floating_panel.h"
+ 	"include/SableUI/types/floating_panel_types.h"
+)
 
 add_dependencies(SableUI EmbedShaders EmbedResources)
 

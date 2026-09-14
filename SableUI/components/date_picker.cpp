@@ -63,12 +63,12 @@ void SableUI::DatePickerComponent::ContentRight()
 		m(2),
 		fontSize(8),
 		size_none,
-		hoverBg(rgba(0, 0, 0, 0), t.overlay0),
+		bg(rgba(0, 0, 0, 0)),
 		rounded(999)
 	);
 }
 
-void SableUI::DatePickerComponent::OnUpdatePostLayout(const UIEventContext& ctx)
+void SableUI::DatePickerComponent::OnUpdatePostLayout(const UIUpdateContext& ctx)
 {
 	TextFieldComponent::OnUpdatePostLayout(ctx);
 

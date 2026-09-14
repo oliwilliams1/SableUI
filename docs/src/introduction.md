@@ -2,19 +2,27 @@
 **SableUI** is a high-performance C++ UI framework that brings React's component model and Tailwind's styling approach to native applications - without the overhead of web technologies.
 
 ```cpp
-class Counter : public SableUI::BaseComponent {
-    void Layout() override {
-        Div(bg(245, 245, 245) p(30) centerXY rounded(10)) {
-            Text(SableString::Format("Count: %d", count),
-                fontSize(28) mb(20) textColour(20, 20, 20));
-            
-            Div(onClick([=]() { setCount(count + 1); })) {
-                Text("Increment");
-            }
-        }
-    }
+class Counter : public BaseComponent
+{
+public:
+	void Layout() override
+	{
+		const Theme& t = GetTheme();
+
+		Div(bg(t.surface0), p(30), centerXY, rounded(10))
+		{
+			Text(SableString::Format("Count: %d", count.get()), fontSize(28), mb(20), textWrap(false));
+
+			Div(left_right)
+			{
+				Button("Increment", [this]() { count.set(count.get() + 1); }, mr(4));
+				Button("Decrement", [this]() { count.set(count.get() - 1); });
+			}
+		}
+	}
+
 private:
-    useState(count, setCount, int, 0);
+	State<int> count{ this, 0 };
 };
 ```
 <br>

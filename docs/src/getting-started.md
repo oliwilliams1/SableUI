@@ -7,11 +7,10 @@ Get SableUI runnning in under 5 minutes.
 - C++20 compiler
 - CMake 3.15+
 - Git
-- ~Vulkan SDK~
 
 #### Platform-specific requirements:
 - **Linux:** - Development libraries for OpenGL
-- **macOS** Xcode Command Line Tools
+- **macOS** -Development libraries for OpenGL & Xcode Command Line Tools
 
 ## Installation
 ### Add to Existing CMake Project
@@ -52,7 +51,5 @@ target_link_libraries(MyApp PRIVATE SableUI)
 ---
 
 <br>
-
-Having Issues? Check [troubleshooting](troubleshooting-configuration.md)
 
 Now you have configured SableUI, you can now create [your first application](your-first-application.md)!

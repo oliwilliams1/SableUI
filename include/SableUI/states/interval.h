@@ -1,4 +1,5 @@
 #pragma once
+#include <SableUI/states/state_base.h>
 #include <SableUI/core/component.h>
 #include <chrono>
 
@@ -13,6 +14,7 @@ namespace SableUI
         ~Interval();
 
         TimerHandle GetHandle() const { return m_handle; }
+        bool IsFired(const UIUpdateContext& ctx);
         void Start(int milliseconds);
         void Stop();
         void Reset();
